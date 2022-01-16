@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Webmention</title>
+    <meta charset='utf-8'>
+    <script src='https://www.w3.org/Tools/respec/respec-w3c-common' async class='remove'></script>
+    <script src='add-paragraph-ids.js' class='remove'></script>
+    <script class='remove'>
+      var respecConfig = {
+          useExperimentalStyles: true,
+          publishDate: "2017-01-12",
+          specStatus: "ED",
+          previousMaturity: "PR",
+          previousPublishDate: "2016-11-01",
+          shortName:  "webmention",
+          edDraftURI: "https://webmention.net/draft/",
+          testSuiteURI: "https://webmention.rocks/",
+          implementationReportURI: "https://webmention.net/implementation-reports/",
+          editors: [
+                {   name:       "Aaron Parecki",
+                    url:        "https://aaronparecki.com/",
+                    w3cid:      "59996" }
+          ],
+          wg:           "Social Web Working Group",
+          wgURI:        "http://www.w3.org/Social/WG",
+          wgPublicList: "public-socialweb",
+          wgPatentURI:  "http://www.w3.org/2004/01/pp-impl/72531/status",
+          errata: "https://webmention.net/errata/",
+          license: "w3c-software-doc",
+          postProcess: [addParagraphIDs],
+          otherLinks: [{
+            key: 'Repository',
+            data: [
+              {
+                value: 'Github',
+                href: 'https://github.com/w3c/webmention'
+              },
+              {
+                value: 'Issues',
+                href: 'https://github.com/w3c/webmention/issues'
+              },
+              {
+                value: 'Commits',
+                href: 'https://github.com/w3c/webmention/commits/master'
+              }
+            ]
+          }],
+          localBiblio:  {
+            "Vouch": {
+              title:    "Vouch",
+              href:     "https://indieweb.org/Vouch",
+              authors:  [
+                "Aaron Parecki",
+                "Tantek Çelik"
+              ],
+              status:   "Living Specification",
+              publisher:  "IndieWeb"
+            },
+            "Salmention": {
+              title:    "Salmention",
+              href:     "https://indieweb.org/Salmention",
+              authors:  [
+                "Ben Roberts",
+                "Tantek Çelik"
+              ],
+              status:   "Living Specification",
+              publisher:  "IndieWeb"
+            },
+            "Private-Webmention": {
+              title:    "Private Webmention",
+              href:     "https://indieweb.org/Private-Webmention",
+              authors:  [
+                "Aaron Parecki"
+              ],
+              status:   "Living Specification",
+              publisher:  "IndieWeb"
+            },
+            "microformats2-parsing": {
+              title: "Microformats2 Parsing",
+              href: "http://microformats.org/wiki/microformats2-parsing",
+              authors: [
+                "Tantek Çelik"
+              ],
+              status:   "Living Specification",
+              publisher:  "microformats.org"
+            },
+            "h-entry": {
+              title: "h-entry",
+              href: "http://microformats.org/wiki/h-entry",
+              authors: [
+                "Tantek Çelik"
+              ],
+              status:   "Living Specification",
+              publisher:  "microformats.org"
+            },
+            "Pingback": {
+              title: "Pingback 1.0",
+              href: "http://www.hixie.ch/specs/pingback/pingback",
+              authors: [
+                "Stuart Langridge",
+                "Ian Hickson"
+              ],
+              status: "Stable Specification",
+              publisher: "hixie.ch"
+            },
+            "URL": {
+              title: "URL Standard",
+              href: "https://url.spec.whatwg.org/",
+              authors: [
+                '<div class="note"><p><b>Note:</b> URLs can be used in numerous different manners, in many differing contexts. For the purpose of producing strict URLs one may wish to consider [<a href="https://www.ietf.org/rfc/rfc3986">RFC3986</a>] and [<a href="https://www.ietf.org/rfc/rfc3987">RFC3987</a>]. The URL specification defines the term URL, various algorithms for dealing with URLs, and an API for constructing, parsing, and resolving URLs. Developers are advised to keep abreast of the latest URL developments by tracking the progress of <a href="https://url.spec.whatwg.org/">https://url.spec.whatwg.org/</a>.</p> <p>As a word of caution, there are notable differences in the manner in which Web browsers and other software stacks outside the HTML context handle URLs. While no changes would be accepted to URL processing that would break existing Web content, some important parts of URL processing should therefore be considered as implementation-defined (e.g. parsing <code>file:</code> URLs or operating on URLs that would be syntax errors under the [<a href="https://www.ietf.org/rfc/rfc3986">RFC3986</a>] [<a href="https://www.ietf.org/rfc/rfc3987">RFC3987</a>] syntax).</p></div> Anne van Kesteren'
+              ],
+              status: "Continually Updated Specification",
+              publisher: "WHATWG"
+            },
+            "CSRF": {
+              title: "Cross-Site Request Forgery",
+              href: "https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF)",
+              authors: [],
+              status: "Living Document",
+              publisher: "OWASP"
+            },
+            "XSS": {
+              title: "Cross-Site Scripting",
+              href: "https://www.owasp.org/index.php/Cross-site_Scripting_(XSS)",
+              authors: [],
+              status: "Living Document",
+              publisher: "OWASP"
+            }
+          }
+      };
+    </script>
+    <link rel="pingback" href="https://webmention.net/pingback.php">
+    <link rel="webmention" href="https://webmention.net/endpoint.php">
+  </head>
+  <body>
+    <section id='abstract'>
+      <p>
+        Webmention is a simple way to notify any URL when you mention it on your site. From the receiver's perspective, it's a way to request notifications when other sites mention it.
+      </p>
+
+      <section id="authorsnote" class="informative">
+        <h2>Author's Note</h2>
+        <p>This specification was contributed to the W3C from the
+          <a href="https://indieweb.org/">IndieWeb</a> community. More
+          history and evolution of Webmention can be found on the
+          <a href="https://indieweb.org/webmention">IndieWeb wiki</a>.</p>
+      </section>
+    </section>
+
+    <section id='sotd'>
+      <p>W3C expects the functionality specified in this Recommendation will not be affected by changes to Fetch.</p>
+    </section>
+
+    <section>
+      <h2>Introduction</h2>
+
+      <p>A Webmention is a notification that one URL links to another. For example, Alice writes an interesting post on her blog. Bob then writes a response to her post on his own site, linking back to Alice's original post. Bob's publishing software sends a Webmention to Alice notifying that her article was replied to, and Alice's software can show that reply as a comment on the original post.</p>
+
+      <p>Sending a Webmention is not limited to blog posts, and can be used for additional kinds of content and responses as well. For example, a response can be an RSVP to an event, an indication that someone "likes" another post, a "bookmark" of another post, and many others. Webmention enables these interactions to happen across different websites, enabling a distributed social web.</p>
+
+      <section class="informative">
+        <h3>Social Web Working Group</h3>
+
+        <p><a href="https://www.w3.org/TR/webmention">Webmention</a> is one of several related specifications being produced by the Social Web Working Group. Implementers interested in alternative approaches and complimentary protocols should start by reading the overview document [[social-web-protocols]].</p>
+      </section>
+
+      <section class="informative">
+        <h3>Background</h3>
+
+        <p>The Webmention spec began as a simplified version of the [[Pingback]] spec. Where Pingback required sending the source and target URLs in an XML-RPC payload, Webmention simplified that to a form-encoded payload, which meant it could easily be used in HTML forms, was easier to work with since more tools exist for form-encoded payloads, and was not vulnerable to accidentally exposing other parts of a system's code via XML-RPC.</p>
+        <p>Webmention then continued on to more thoroughly specify the details of sending and verifying the request, and expanded to support sending notifications when a source document was updated or deleted. More information can be found in the <a href="https://indieweb.org/Webmention-faq">Webmention FAQ</a> on the IndieWeb wiki.</p>
+      </section>
+
+      <section class="informative">
+        <h3>Overview</h3>
+
+        <p>A typical Webmention flow is as follows:
+          <ol>
+            <li>Alice posts some interesting content on her site (which is set up to receive Webmentions).</li>
+            <li>Bob sees this content and comments about it on his site, linking back to Alice's original post.</li>
+            <li>Using Webmention, Bob's publishing software automatically notifies Alice's server that her post has been linked to by the URL of Bob's post.</li>
+            <li>Alice's publishing software verifies that Bob's post actually contains a mention of her post and then includes this information on her site.</li>
+          </ol>
+        </p>
+      </section>
+
+      <section class="informative">
+        <h3>Protocol Summary</h3>
+
+        <p>Webmentions are sent "from" a source URL "to" a target URL to notify the target that it has been mentioned at the source URL.</p>
+
+        <ol>
+          <li>User Aaron writes a post on his blog.</li>
+          <li>User Barnaby writes a post on his blog that links to Aaron's post.</li>
+          <li>After publishing the post (i.e., after it has a URL), Barnaby's server notices the mention of Aaron's post as part of the publishing process.</li>
+          <li>Barnaby's server does Webmention discovery on Aaron's post to find its Webmention endpoint (if not found, process stops).</li>
+          <li>Barnaby's server sends a Webmention notification to Aaron's post's Webmention endpoint with:
+            <ul>
+              <li><code>source</code> set to Barnaby's post's permalink</li>
+              <li><code>target</code> set to Aaron's post's permalink.</li>
+            </ul>
+          </li>
+          <li>Aaron's server receives the Webmention.</li>
+          <li>Aaron's server verifies that <code>target</code> in the Webmention is a valid permalink on Aaron's blog (if not, processing stops).</li>
+          <li>Aaron's server verifies that the <code>source</code> in the Webmention (when retrieved, after following redirects [[!FETCH]]) contains a hyperlink to the <code>target</code> (if not, processing stops).</li>
+        </ol>
+
+      </section>
+    </section>
+
+    <section>
+      <h2>Conformance</h2>
+
+      <p>The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+      "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
+      document are to be interpreted as described in [[!RFC2119]].</p>
+
+      <section>
+        <h3>Conformance Classes</h3>
+
+        <p>Webmention implementations are either senders or receivers. This section describes the conformance criteria for both.</p>
+
+        <p>Listed below are known types of Webmention implementations.</p>
+
+        <h4>Senders</h4>
+        <p>A Webmention Sender is an implementation that sends Webmentions. In order for a Sender to send a Webmention, there must first be a document at a URL that is accessible to the Receiver.</p>
+        <p>The conformance criteria for Webmention senders is described in <a href="#sending-webmentions">Sending Webmentions</a></p>
+        <p>Listed below are some known types of Webmention Senders.</p>
+        <ul>
+          <li>Blogging or microblogging software</li>
+          <li>Plugins for existing CMS software</li>
+          <li>Browser plugins to send a Webmention from a context menu on behalf of the page you're viewing</li>
+          <li>Web APIs to offload the Webmention endpoint discovery and Webmention delivery</li>
+          <li>Proxy services that converts existing social media posts to HTML posts and sends Webmentions</li>
+        </ul>
+
+        <h4>Receivers</h4>
+        <p>A Webmention Receiver is an implementation that receives Webmentions to one or more target URLs on which the Receiver's Webmention endpoint is advertised. In order to receive a Webmention, there must be a URL that advertises the Receiver's Webmention endpoint. The URL is not considered part of the Receiver's implementation, as it may exist in an entirely different system or domain.</p>
+        <p>The conformance criteria for Webmention receivers is described in <a href="#receiving-webmentions">Receiving Webmentions</a></p>
+        <p>Listed below are some known types of Webmention Receivers.</p>
+        <ul>
+          <li>Blogging or microblogging software</li>
+          <li>Plugins for existing CMS software</li>
+          <li>Web services and APIs to receive Webmentions and display them as comments via Javascript embed</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>Test Suite and Reporting</h3>
+
+        <p>Please submit your implementation reports at <a href="https://webmention.net/implementation-reports/">http://webmention.net/implementation-reports/</a>. Instructions are provided at the URL. The implementation report template references the tests available at <a href="https://webmention.rocks/">webmention.rocks</a>.</p>
+
+        <p><a href="https://webmention.rocks/">webmention.rocks</a> provides many test cases you can use to live-test your implementation. It also is a useful tool to use while developing a Webmention implementation, as it provides detailed responses when errors are encountered.</p>
+      </section>
+    </section>
+
+    <section>
+      <h2>Webmention Protocol</h2>
+
+      <p>This specification uses the link rel registry as defined by [[!HTML5]]
+        for both HTML and HTTP link relations.</p>
+
+      <section>
+        <h3>Sending Webmentions</h3>
+
+        <section>
+          <h4>Create a source document that mentions the target</h4>
+
+          <p>Webmentions are sent "from" a source URL "to" a target URL to notify the target that it has been mentioned at the source URL. Before a Webmention can be sent, there needs to be a source URL to send the Webmention "from", often a blog post but may be any type of content.</p>
+
+          <p>For example, the URL at https://waterpigs.example/post-by-barnaby may contain the following HTML that has a link to Aaron's post.</p>
+          <p><pre class="example">&lt;!doctype html&gt;
+&lt;html&gt;
+  &lt;body&gt;
+    &lt;a href="https://aaronpk.example/post-by-aaron"&gt;This is a great post&lt;/a&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+          </pre></p>
+        </section>
+
+        <section>
+          <h4>Sender discovers receiver Webmention endpoint</h4>
+
+          <p>The sender MUST fetch the target URL (and follow redirects [[!FETCH]]) 
+            and check for an HTTP Link header [[!RFC5988]]
+            with a rel value of <code>webmention</code>. If the content type of the document
+            is HTML, then the sender MUST look for an HTML <code>&lt;link&gt;</code> and
+            <code>&lt;a&gt;</code> element with a rel value of <code>webmention</code>. If more than
+            one of these is present, the first HTTP Link header takes precedence,
+            followed by the first <code>&lt;link&gt;</code> or <code>&lt;a&gt;</code> 
+            element in document order. Senders MUST support all
+            three options and fall back in this order.</p>
+
+          <p>The endpoint MAY be a relative
+            URL, in which case the sender MUST resolve it relative to the
+            <code>target</code> URL according to [[!URL]].</p>
+
+          <p>The endpoint MAY contain query string parameters, which MUST be 
+            preserved as query string parameters and MUST NOT be sent as POST body 
+            parameters when sending the Webmention request.</p>
+
+          <p>Senders MAY initially make an HTTP HEAD request [[!RFC7231]] to
+            check for the Link header before making a GET request.</p>
+
+          <p><pre class="example">GET /post-by-aaron HTTP/1.1
+Host: aaronpk.example
+HTTP/1.1 200 OK
+Link: &lt;http://aaronpk.example/webmention-endpoint&gt;; rel="webmention"
+
+&lt;html&gt;
+&lt;head&gt;
+...
+&lt;link href="http://aaronpk.example/webmention-endpoint" rel="webmention" /&gt;
+...
+&lt;/head&gt;
+&lt;body&gt;
+....
+&lt;a href="http://aaronpk.example/webmention-endpoint" rel="webmention"&gt;webmention&lt;/a&gt;
+...
+&lt;/body&gt;
+&lt;/html&gt;</pre></p>
+
+          <p>Senders MAY customize the HTTP User Agent [[RFC7231]] used when fetching the target URL
+          in order to indicate to the recipient that this request is made as part of Webmention discovery.
+          In this case, it is recommended to include the string "Webmention" in the User Agent. This 
+          provides people with a pointer to find out why the discovery request was made.</p>
+
+        </section>
+        <section>
+          <h4>Sender notifies receiver</h4>
+
+          <p>The sender MUST post x-www-form-urlencoded [[!HTML5]] <code>source</code> and
+            <code>target</code> parameters to the Webmention endpoint, where
+            <code>source</code> is the URL of the sender's page containing a link,
+            and <code>target</code> is the URL of the page being linked to.</p>
+
+          <p>Note that if the Webmention endpoint URL contains query string parameters,
+            the query string parameters MUST be preserved, and MUST NOT be sent in the
+            POST body.</p>
+
+          <p>The Webmention endpoint will validate and process the request, and
+            return an HTTP status code [[!RFC7231]]. Most often, <code>202 Accepted</code>
+            or <code>201 Created</code> will be returned, indicating that the
+            request is queued and being processed asynchronously to prevent
+            DoS (Denial of Service) attacks. If the response code is 201, the <code>Location</code>
+            header will include a URL that can be used to monitor the
+            status of the request.</p>
+
+          <p>Any <code>2xx</code> response code MUST be considered a success.</p>
+
+          <p><pre class="example">POST /webmention-endpoint HTTP/1.1
+Host: aaronpk.example
+Content-Type: application/x-www-form-urlencoded
+
+source=https://waterpigs.example/post-by-barnaby&amp;
+target=https://aaronpk.example/post-by-aaron
+
+
+HTTP/1.1 202 Accepted</pre></p>
+
+        </section>
+        <section>
+          <h4>Sending Webmentions for updated posts</h4>
+
+          <p>If the source URL was updated, the sender SHOULD re-send any previously sent Webmentions,
+          (including re-sending a Webmention to a URL that may have been removed from the document),
+          and SHOULD send Webmentions for any new links that appear at the URL.</p>
+
+          <p>This allows the recipients of Webmentions to update their display of the source document,
+          or otherwise notify the recipient that a post that mentioned one of their URLs was updated.</p>
+
+          <p>When sending a Webmention when a post is updated, the sender MUST re-discover the Webmention endpoint of each target URL, in case the target has updated their Webmention endpoint.</p>
+
+          <p>If a response to the source URL is shown on the source URL page (e.g. as a comment), then sender SHOULD treat that as an update of the source URL and re-send any previously sent Webmentions.</p>
+        </section>
+        <section>
+          <h4>Sending Webmentions for deleted posts</h4>
+
+          <p>If the source URL was deleted, the sender SHOULD return an HTTP <code>410 Gone</code>
+          status code for the URL, and SHOULD display a "tombstone" representation of
+          the deleted post, typically by blanking out the values of any properties in the post, and/or
+          replacing the primary content of the post (e.g. the name and/or content of [[h-entry]]) 
+          with "Deleted". The sender SHOULD then re-send Webmentions for every previously sent 
+          Webmention for that document.</p>
+
+          <p>This allows receivers which may have displayed a previously received Webmention
+          as a comment or other interaction to remove it from view if they support deletes, while
+          providing a reasonable fallback for receivers which only support updates.</p>
+        </section>
+      </section>
+
+      <section>
+        <h3>Receiving Webmentions</h3>
+
+        <p>Upon receipt of a POST request containing the <code>source</code> and
+          <code>target</code> parameters, the receiver SHOULD verify the parameters 
+          (see <a href="#request-verification">Request Verification</a> below) and then
+          SHOULD queue and process the request asynchronously, to prevent DoS attacks. 
+          There are three possible responses to the request, depending on how the receiver
+          processes it.</p>
+
+        <p>If the receiver creates a status page which the sender can use to
+          check the status, the receiver MUST reply with an <code>HTTP 201 Created</code>
+          response with a <code>Location</code> header pointing to the status
+          URL. The response body MAY contain content.</p>
+
+        <p><pre class="example">HTTP/1.1 201 Created
+Location: http://aaronpk.example/webmention/DEhB9Jme</pre></p>
+
+        <p>If the receiver processes the request asynchronously but does not
+          return a status URL, the receiver MUST reply with an <code>HTTP 202 Accepted</code>
+          response. The response body MAY contain content, in which case a
+          human-readable response is recommended.</p>
+
+        <p><pre class="example">HTTP/1.1 202 Accepted</pre></p>
+
+        <p>If the receiver chooses to process the request and perform the
+          verification step synchronously (not recommended), it MUST respond
+          with a <code>200 OK</code> status on success.</p>
+
+        <section>
+          <h4>Request Verification</h4>
+
+          <p>The receiver MUST check that <code>source</code> and <code>target</code> are valid URLs [[!URL]]
+            and are of schemes that are supported by the receiver. (Most
+            commonly this means checking that the <code>source</code> and <code>target</code>
+            schemes are http or https).</p>
+
+          <p>The receiver MUST reject the request if the source URL is the same as the target URL.</p>
+
+          <p>The receiver SHOULD check that <code>target</code> is a valid resource for which
+            it can accept Webmentions. This check SHOULD happen
+            synchronously to reject invalid Webmentions before more in-depth
+            verification begins. What a "valid resource" means is up to the receiver. For example, 
+            some receivers may accept Webmentions for multiple domains, others may accept
+            Webmentions for only the same domain the endpoint is on.</p>
+
+          <p>Note that a target URL may contain a fragment identifier, and if the
+            receiver limits which URLs can receive Webmentions, the fragment SHOULD be
+            ignored when checking if the URL is supported.</p>
+        </section>
+
+        <section>
+          <h4>Webmention Verification</h4>
+
+          <p>Webmention verification SHOULD be handled asynchronously to
+            prevent DoS (Denial of Service) attacks.</p>
+
+          <p>If the receiver is going to use the Webmention in some way,
+            (displaying it as a comment on a post, incrementing a "like"
+            counter, notifying the author of a post), then it MUST perform an
+            HTTP GET request on source, following any HTTP redirects (and SHOULD 
+            limit the number of redirects it follows) to confirm that it actually
+            mentions the target. The receiver SHOULD include an HTTP Accept header
+            indicating its preference of content types that are acceptable.</p>
+
+          <p>The receiver SHOULD use per-media-type rules to determine whether
+            the source document mentions the target URL. For example, in an
+            [[HTML5]] document, the receiver should look for <code>&lt;a href="*"&gt;</code>,
+            <code>&lt;img src="*"&gt;</code>, <code>&lt;video src="*"&gt;</code>
+            and other similar links. In a JSON ([[RFC7159]]) document, the receiver should
+            look for properties whose values are an exact match for the URL.
+            If the document is plain text, the receiver should look for the URL
+            by searching for the string. Other content types may be handled at
+            the implementer's discretion. The source document MUST have an exact
+            match of the <code>target</code> URL provided in order for it to be considered a
+            valid Webmention.</p>
+
+          <p>At this point, the receiver MAY publish content from the source page
+            on the target page or other pages, along with any other data it picks
+            up from the source. For example, the receiver may display the
+            contents of the source as a comment on the post, or may display the author's
+            profile photo in a list of others who have sent similar Webmentions, e.g.
+            showing a list of people who have all "liked" a post.</p>
+
+          <p class="note">When republishing content from the source page, care should be taken to 
+            ensure you are not unintentionally changing the visibility of the content. For example,
+            if the source document is visible only to a limited audience, you should
+            ensure the republished content is not visible to the general public. The source
+            document may be restricted to a specific audience either by some form of 
+            authentication, or because the source URL was behind a firewall that the receiver
+            is also behind.</p>
+        </section>
+
+        <section>
+          <h4>Error Responses</h4>
+
+          <p>If the Webmention was not successful because of something the
+            <i>sender</i> did, it MUST return a <code>400 Bad Request</code>
+            status code and MAY include a description of the error in the response body.</p>
+
+          <p>Possible sender-related errors that can be returned synchronously
+            before making a GET request to the source:
+
+            <ul>
+              <li>Specified <code>target</code> URL not found.</li>
+              <li>Specified <code>target</code> URL does not accept Webmentions.</li>
+              <li><code>source</code> URL was malformed or is not a supported URL scheme (e.g. a mailto: link)</li>
+            </ul>
+          </p>
+
+          <p>Possible sender-related errors that can occur after fetching the
+            contents of the source URL:
+
+            <ul>
+              <li><code>source</code> URL not found.</li>
+              <li><code>source</code> URL does not contain a link to the <code>target</code> URL.</li>
+            </ul>
+          </p>
+
+          <p>If the Webmention was not successful because of an error on
+            the receiver's server, it SHOULD return a <code>500 Internal Server Error</code>
+            status code and MAY include a description of the error in the response body.</p>
+
+        </section>
+
+        <section>
+          <h4>Updating existing Webmentions</h4>
+
+          <p>If receiver had received a Webmention in the past with the same
+            <code>source</code> and <code>target</code> then,
+
+            <ul>
+              <li>
+                If both the verification steps are successful, it SHOULD update any existing data it picked from <code>source</code> for the existing Webmention.
+                <ul>
+                  <li>
+                    When a Webmention implementation does support updating (i.e., a "Webmention update implementation"), it MUST support updating data from properties of the primary object of the source. (e.g. properties of the [[h-entry]] of the page).
+                    <ul>
+                      <li>
+                        A Webmention update implementation MAY support updating data from children, or other descendant objects of the primary object (e.g. a comment h-entry inside the h-entry of the page). Note: Implementations that support this may wish to consider supporting it according to the [[Salmention]] extension.
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+
+              <li>If it received a <code>410 Gone</code> status code on step 2 (performing a GET request on source), or received a <code>200 OK</code> status code and does not find a mention of <code>target</code> on <code>source</code>, it SHOULD delete the existing Webmention, or mark it as deleted.</li>
+
+              <li>Processing Webmentions SHOULD be idempotent. That is, receiving multiple Webmentions for the same <code>source</code> and <code>target</code> with no content changes should not show as multiple replies.</li>
+            </ul>
+          </p>
+        </section>
+
+      </section>
+    </section>
+
+    <section>
+      <h2>Security Considerations</h2>
+
+      <section>
+        <h3>Preventing Abuse</h3>
+
+        <ul>
+          <li>The verification process SHOULD be queued and processed asynchronously to prevent DoS attacks per <a href="#receiving-webmentions">section 3.2</a>.</li>
+          <li>Receivers MUST verify Webmentions per <a href="#webmention-verification">section 3.2.2</a>.</li>
+          <li>If a receiver chooses to display data it picks up from source, it MUST ensure that the data is encoded and/or filtered to prevent [[XSS]] and [[CSRF]] attacks.</li>
+          <li>Receivers MAY moderate Webmentions before publishing them.</li>
+          <li>Receivers MAY periodically re-verify Webmentions and update them.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>Limits on GET requests</h3>
+
+        <p>The Webmention protocol relies on the sender making a GET (or HEAD)
+          request to discover the receiver's endpoint, followed by the receiver
+          making a GET request to the sender's web page to verify the link.
+          This means a sender can cause a receiver to make GET requests to
+          arbitrary URLs, opening up a potential DoS vector.</p>
+        <p>Receivers MAY make an initial HTTP HEAD request when verifying the link
+          and decide whether to make a full GET request after initially inspecting
+          the content type, length, or other HTTP headers returned.</p>
+        <p>Receivers SHOULD place limits on the number of HTTP redirects they follow,
+          for example limiting the number to 20, in order to prevent being stuck
+          in a redirect loop if the sender continues to send redirects.</p>
+        <p>Receivers SHOULD place limits on the amount of data and time they
+          spend fetching unverified source URLs. For example, if a source URL
+          doesn't respond within 5 seconds, it can treat that as a failure.
+          Similarly, the receiver can fetch only the first 1mb of the page,
+          since any reasonable HTML or JSON page will be smaller than that.</p>
+      </section>
+
+      <section>
+        <h3>Avoid sending Webmentions to localhost</h3>
+
+        <p>When the sender discovers the receiver's Webmention endpoint, there
+          are few legitimate reasons for the endpoint to be localhost or any other loopback
+          address. If the sender has any services that listen on localhost that
+          don't require authentication, it's possible for a malicious Webmention 
+          receiver to craft a Webmention endpoint that could cause the sender to 
+          make an arbitrary POST request to itself.</p>
+        <p>During the discovery step, if the sender discovers the endpoint is 
+          localhost or a loopback IP address (127.0.0.0/8), it SHOULD NOT send
+          the Webmention to that endpoint.</p>
+      </section>
+
+      <section>
+        <h3>Cross-Site Request Forgery</h3>
+
+        <p>This specification does not define any special handling of a Webmention request
+          that may contain additional headers or parameters such as authentication headers
+          or session cookies. However, if a Webmention endpoint does accept requests
+          with additional headers, it SHOULD protect itself against Cross-Site
+          Request Forgery (CSRF) attacks. One way to prevent CSRF attacks is by including
+          a CSRF token in a query string parameter of the Webmention endpoint, so that
+          a Webmention sender finds the token when discovering the endpoint.</p>
+
+        <p>For example, the target URL could advertise a Webmention endpoint that includes
+          a CSRF token:</p>
+
+        <p><pre class="example">GET /post-by-aaron HTTP/1.1
+Host: aaronpk.example
+HTTP/1.1 200 OK
+Link: &lt;http://aaronpk.example/webmention?csrf=Q0NTVhYjI0NTVkNDA3M&gt;; rel="webmention"</pre></p>
+
+        <p>Then, when the Webmention endpoint is processing a request, it can first check
+          the validity of the CSRF token before any other processing.</p>
+      </section>
+
+      <section>
+        <h3>Limit access to protected resources</h3>
+
+        <p>It is possible for an attacker to advertise a Webmention endpoint that points to an arbitrary URL. As such, if you install software that sends Webmentions on a server that is behind a firewall or otherwise has access to normally protected resources, you should be aware that an attacker can cause the server to send a POST request to an internal server. You SHOULD take precautions to ensure this server cannot access protected resources by either:</p>
+
+        <ul>
+          <li>running the sender in an environment that does not have access to such internal resources</li>
+          <li>proxying all HTTP requests from this sender through a proxy that blocks access to internal resources</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>Security and Privacy Review</h3>
+
+        <p>These questions provide an overview of security and privacy considerations for this specification as guided by Self-Review Questionnaire: Security and Privacy ([[security-privacy-questionnaire]]).</p>
+
+        <dl>
+          <dt>Does this specification deal with personally-identifiable information?</dt>
+            <dd>The only potentially personally-identifiable information involved in Webmention are the source and target URLs.</dd>
+          <dt>Does this specification deal with high-value data?</dt>
+            <dd>No, there is no authentication or other credentials involved.</dd>
+          <dt>Does this specification introduce new state for an origin that persists across browsing sessions?</dt>
+            <dd>No</dd>
+          <dt>Does this specification expose persistent, cross-origin state to the web?</dt>
+            <dd>The Webmention receiver may create a temporary resource with information about the Webmention request.</dd>
+          <dt>Does this specification expose any other data to an origin that it doesn't currently have access to?</dt>
+            <dd>No</dd>
+          <dt>Does this specification enable new script execution/loading mechanisms?</dt>
+            <dd>No</dd>
+          <dt>Does this specification allow an origin access to a user's location?</dt>
+            <dd>No</dd>
+          <dt>Does this specification allow an origin access to sensors on a user's device?</dt>
+            <dd>No</dd>
+          <dt>Does this specification allow an origin access to aspects of a user's local computing environment?</dt>
+            <dd>No</dd>
+          <dt>Does this specification allow an origin access to other devices?</dt>
+            <dd>No</dd>
+          <dt>Does this specification allow an origin some measure of control over a user agent's native UI?</dt>
+            <dd>No</dd>
+          <dt>Does this specification expose temporary identifiers to the web?</dt>
+            <dd>No</dd>
+          <dt>Does this specification distinguish between behavior in first-party and third-party contexts?</dt>
+            <dd>No</dd>
+          <dt>How should this specification work in the context of a user agent's "incognito" mode?</dt>
+            <dd>Webmention does not maintain any state so there are no considerations when in "incognito" mode.</dd>
+          <dt>Does this specification persist data to a user's local device?</dt>
+            <dd>No</dd>
+          <dt>Does this specification allow downgrading default security characteristics?</dt>
+            <dd>No</dd>
+        </dl>
+      </section>
+
+    </section>
+
+    <section>
+      <h2>Other Considerations</h2>
+
+      <section>
+        <h3>Sending Webmentions from non-HTML content</h3>
+
+        <p>If your source document is not HTML, (such as a PDF), or is otherwise restricted from fetching the raw source via a plain HTTP GET request, (such as behind a paywall, or requires a click-through license agreement), you will need to set up an HTML "landing page" that lists all the targets you wish to send Webmentions to. After creating this HTML landing page, you can use its URL as the source URL when sending Webmentions. This gives receivers a URL they can fetch to verify the link to their target URL, while avoiding making the complete source document public.</p>
+
+        <p>Creating an HTML landing page can help increase the number of inbound links to your content, by providing people with a useful place to link to when referencing otherwise restricted content such as scholarly articles. In the case of a scholarly article, the landing page should include the list of references in the HTML, so that you can use them as Webmention target URLs.</p>
+      </section>
+
+      <section>
+        <h3>Sending Webmentions for large datasets</h3>
+
+        <p>If your Webmention source document is particularly large (such as a large HTML page with thousands of records in a table, or a very large JSON file), you will likely want to avoid sending a Webmention with that source URL. Doing so may cause receivers to download the entire dataset, using a lot of your bandwidth, or receivers may download only the first portion of the file in order to restrict their own bandwidth usage, potentially causing the verification to fail. If the receiver republishes a link to your source document, other visitors may follow that link and inadvertently download the entire dataset as well.</p>
+        <p>Similar to how it is considered good practice to break up large datasets into pages when being viewed in a browser, when sending Webmentions, you should send Webmentions only from smaller pages of data if your source document is large. If your dataset is HTML, then you can use your (likely) existing HTML pages as source URLs. If your dataset is JSON, you may need to create URLs with smaller JSON documents in pages that you can use as source URLs.</p>
+      </section>
+
+      <section>
+        <h3>Respecting cache headers on discovery</h3>
+
+        <p>When performing <a href="#sender-discovers-receiver-webmention-endpoint">Webmention discovery</a>, Senders SHOULD respect the HTTP cache headers [[RFC7234]] returned by the target URL and avoid fetching the target URL more often than is indicated by the headers.</p>
+      </section>
+    </section>
+
+    <section>
+      <h2>IANA Considerations</h2>
+      
+      <p>The link relation type below has been registered by IANA per Section
+   6.2.1 of [[!RFC5988]]:</p>
+      
+      <dl>
+        
+        <dt>Relation Name:</dt>
+        <dd>webmention</dd>
+        
+        <dt>Description:</dt>
+        <dd>Identifies a target URI that supports the Webmention protocol. This
+        allows clients that mention a resource in some form of publishing
+        process to contact that endpoint and inform it that this resource has
+        been mentioned.</dd>
+        
+        <dt>Reference:</dt>
+        <dd><a href="http://www.w3.org/TR/webmention/">W3C Webmention
+        Specification (http://www.w3.org/TR/webmention/)</a></dd>
+        
+        <dt>Notes:</dt>
+        <dd>This is a similar "Linkback" mechanism to the ones of Refback,
+        Trackback, and Pingback. It uses a different protocol, though, and thus
+        should be discoverable through its own link relation type.</dd>
+        
+      </dl>
+    </section>
+
+    <section class="appendix">
+      <h2>URIs for Form-Encoded Properties</h2>
+
+      <p>If your implementation wants to treat the <code>source</code> and <code>target</code> parameters as URIs, you can prefix the terms with <code>http://www.w3.org/ns/webmention#</code>.</p>
+    </section>
+      
+    <section class="appendix informative">
+      <h2>Extensions</h2>
+
+      <p>The following Webmention Extension Specifications have 2+ interoperable implementations live on the web and are thus listed here:</p>
+
+      <section>
+        <h3><a href="https://indieweb.org/Vouch">Vouch</a></h3>
+        <p>The [[Vouch]] protocol is an anti-spam extension to Webmention.</p>
+      </section>
+
+      <section>
+        <h3><a href="https://indieweb.org/Salmention">Salmention</a></h3>
+        <p>The [[Salmention]] protocol is an extension to Webmention to propagate comments and other interactions upstream.</p>
+      </section>
+
+      <section>
+        <h3><a href="https://indieweb.org/Private-Webmention">Private Webmention</a></h3>
+        <p>The [[Private-Webmention]] protocol is an extension to Webmention that supports sending and verifying Webmentions for posts that have access control.</p>
+      </section>
+
+    </section>
+
+    <section class="appendix informative">
+      <h2>Resources</h2>
+
+      <p>
+        <ul>
+          <li><a href="https://webmention.rocks">Test Suite and Debug Tool</a></li>
+          <li><a href="https://indieweb.org/Webmention-faq">FAQ</a></li>
+          <li><a href="https://indieweb.org/webmention-implementation-guide">Implementation Guide</a></li>
+          <li><a href="https://indieweb.org/webmention-implementation-details">Implementation Details</a></li>
+          <li><a href="https://indieweb.org/Webmention-brainstorming">Brainstorming</a></li>
+        </ul>
+      </p>
+
+      <section class="appendix informative">
+        <h3>Articles</h3>
+
+        <p>You can find a list of <a href="https://indieweb.org/webmention#Articles">articles about Webmention</a> on the IndieWeb wiki.</p>
+      </section>
+
+      <section class="appendix informative">
+        <h3>Implementations</h3>
+
+        <p>You can find a list of <a href="http://webmention.net/implementations/">Webmention implementations</a> on webmention.net</p>
+      </section>
+
+    </section>
+
+    <section class="appendix">
+      <h2>Acknowledgements</h2>
+
+      <p>The editor wishes to thank <a href="http://sandeep.io/">Sandeep Shetty</a>
+        for contributing the original draft of the Webmention specification.</p>
+      <p>Additionally, the editor wishes to thank the <a href="https://indieweb.org/">IndieWeb</a>
+        community and other implementers for their support, encouragement and enthusiasm,
+        including but not limited to: Amy Guy, Benjamin Roberts, Ben Werdmüller, Dave Wilkinson, Rob Sanderson, and Tantek Çelik.</p>
+    </section>
+
+    <section class="appendix informative">
+      <h2>Change Log</h2>
+
+      <section>
+        <h3>Changes from <a href="https://www.w3.org/TR/2016/PR-webmention-20161101/">01 November PR</a> to REC</h3>
+
+        <ul>
+          <li>Editorial clarification around sending to loopback addresses</li>
+          <li>Updated JSON reference to RFC7159 from the obsolete RFC4627</li>
+          <li>Added informative note about breaking up large documents into pages when sending Webmentions from large datasets</li>
+          <li>Added note about republishing potentially restricted visibilty content</li>
+          <li>Added informative reference to OWASP documents about XSS and CSRF</li>
+          <li>Clarified "publish" vs "display" in security considerations</li>
+          <li>Added an item to 4.1 security considerations to reiterate verifying Webmentions</li>
+          <li>Re-ordered 4.1 security considerations based on chronological order</li>
+          <li>Editorial nits</li>
+        </ul>
+      </section>
+    </section>
+
+    <script>
+    // After text is selected (mouseup), find the closest element that has an ID
+    // attribute, and update the browser location bar to include that as the fragment
+    document.body.onmouseup = function(){
+      var selection;
+      if(selection=window.getSelection()) {
+        var range = selection.getRangeAt(0);
+        var el = range.startContainer;
+        while((el=el.parentElement) && !el.attributes["id"]);
+        var hash = el.attributes["id"].value;
+        if(history.replaceState) {
+          history.replaceState(null, null, "#"+hash);
+        }
+      }
+    };
+    </script>
+  </body>
+</html>

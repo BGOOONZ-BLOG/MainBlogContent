@@ -1,0 +1,1149 @@
+<h1>Reporting API</h1>
+<pre class="metadata">
+Status: ED
+ED: https://w3c.github.io/reporting/
+Shortname: reporting
+Group: webperf
+Editor: Douglas Creager 103120, GitHub, dcreager@dcreager.net
+Editor: Ian Clelland 76841, Google Inc., iclelland@google.com
+Editor: Mike West 56384, Google Inc., mkwst@google.com
+Former Editor: Ilya Grigorik 56102, Google Inc., igrigorik@google.com
+Former Editor: Paul Meyer 99916, Google Inc., paulmeyer@google.com
+Abstract:
+  This document defines a generic reporting framework which allows web
+  developers to associate a set of named reporting endpoints with an origin.
+  Various platform features can use these endpoints to deliver
+  feature-specific reports in a consistent manner.
+Level: 1
+Indent: 2
+Version History: https://github.com/w3c/reporting/commits/main/index.src.html
+Boilerplate: omit conformance, omit feedback-header
+Repository: https://github.com/w3c/reporting/
+Markup Shorthands: css off, markdown on
+</pre>
+<pre class="anchors">
+spec: CSP; urlPrefix: https://w3c.github.io/webappsec-csp/
+  type: dfn
+    text: Content-Security-Policy
+    text: reports directive; url: directives-reporting
+spec: FETCH; urlPrefix: https://fetch.spec.whatwg.org/
+  type: dfn
+    text: navigation request
+    text: response; url: concept-response
+    text: request; url: concept-request
+    text: header; url: concept-header
+    text: header list; url: concept-header-list
+    text: main fetch
+    text: fetch; url: concept-fetch
+    text: wait for a response
+    text: ok status
+  type: attribute
+    for: response
+      text: url; url: concept-response-url
+      text: HTTPS state; url: concept-response-https-state
+      text: header list; url: concept-response-header-list
+    for: request
+      text: target browsing context; url: concept-request-target-browsing-context
+    for: header
+      text: name; url: concept-header-name
+      text: value; url: concept-header-value
+spec: SECURE-CONTEXTS; urlPrefix: https://w3c.github.io/webappsec-secure-contexts/
+  type: dfn
+    text: potentially trustworthy; url: is-origin-trustworthy
+spec: URL; urlPrefix: https://url.spec.whatwg.org/
+  type: dfn
+    text: origin of a url; url: concept-url-origin
+    text: URL serializer; url: concept-url-serializer
+    text: URL parser; url: concept-url-parser
+  type: interface
+    text: URL; url: concept-url
+  type: attribute
+    for: URL
+      text: username; url: concept-url-username
+      text: password; url: concept-url-password
+spec: HTML; urlPrefix: https://html.spec.whatwg.org/multipage/
+  urlPrefix: webappapis.html
+    type: dfn
+      text: environment settings object
+      text: creation URL
+      text: queue a task
+  urlPrefix: browsers.html
+    type: dfn
+      text: origin
+  urlPrefix: system-state.html
+    type: dfn
+      text: navigator.userAgent; url: dom-navigator-useragent
+spec: RFC2782; for: SRV; urlPrefix: https://tools.ietf.org/html/rfc2782
+  type: dfn
+    text: SRV record; url:
+    text: target selection algorithm; url: page-4
+spec: RFC6797; urlPrefix: https://tools.ietf.org/html/rfc6797
+  type: dfn
+    url: section-8.2
+      text: superdomain match
+spec: RFC8259; urlPrefix: https://tools.ietf.org/html/rfc8259
+  type: dfn
+    text: JSON text; url: section-2
+spec: RFC7230; urlPrefix: https://tools.ietf.org/html/rfc7230
+  type: grammar
+    text: OWS; url: section-3.2.3
+    text: BWS; url: section-3.2.3
+    text: token; url: section-3.2.6
+    text: quoted-string; url: section-3.2.6
+    text: #rule; url: section-7
+spec: RFC7469; urlPrefix: https://tools.ietf.org/html/rfc7469
+  type: dfn
+    text: Public-Key-Pins; url: section-2.1
+spec: HTTP-JFV; urlPrefix: https://tools.ietf.org/html/draft-reschke-http-jfv
+  type: grammar
+    text: json-field-value; url: section-2
+spec: webdriver; urlPrefix: https://w3c.github.io/webdriver/#
+  type: dfn
+    text: current browsing context; url: dfn-current-browsing-context
+    text: handle any user prompts; url: dfn-handle-any-user-prompts
+    text: WebDriver error; url: dfn-error
+    text: WebDriver error code; url: dfn-error-code
+    text: extension command; url: dfn-extension-command
+    text: extension command uri template; url: dfn-extension-command-uri-template
+    text: invalid argument; url: dfn-invalid-argument
+    text: no such window; url: dfn-no-such-window
+    text: local end; url: dfn-local-end
+    text: remote end steps; url: dfn-remote-end-steps
+    text: session; url: dfn-session
+    text: success; url: dfn-success
+    text: trying; url: dfn-try
+spec: STRUCTURED-HEADERS; urlPrefix: https://www.rfc-editor.org/rfc/rfc8941.html#
+  type: grammar
+    text: sf-dictionary; url: section-3.2
+</pre>
+<pre class="biblio">
+{
+  "SECURE-CONTEXTS": {
+    "authors": [ "Mike West", "Yan Zhu" ],
+    "href": "https://w3c.github.io/webappsec-secure-contexts/",
+    "title": "Secure Contexts",
+    "publisher": "W3C"
+  },
+  "STRUCTURED-HEADERS": {
+    "authors": [ "Mark Nottingham", "Poul-Henning Kamp" ],
+    "href": "https://www.rfc-editor.org/rfc/rfc8941.html",
+    "title": "Structured Field Values for HTTP",
+    "publisher": "IETF"
+  }
+}
+
+</pre>
+<section>
+  <h2 id="intro">Introduction</h2>
+
+  This document provides three pieces of infrastructure for generic reporting,
+  which may be used or extended by other specifications:
+
+  1. A generic framework for defining report types and reporting endpoints, and
+     a document format for sending reports to endpoints over HTTP.
+
+  2. A specific mechanism for configuring reporting endpoints in a document or
+     worker, and for delivering reports whose lifetime is tied to that document
+     or worker.
+
+  3. A JavaScript interface for observing reports generated within a document or
+     worker.
+
+  Other specifications may extend or make use of these pieces, for instance by
+  defining concrete report types, or alternative configuration or delivery
+  mechanisms for non-document-based reports.
+
+  <h3 id="guarantees">Guarantees</h3>
+
+  This specification aims to provide a best-effort report delivery system that
+  executes out-of-band with website activity. The user agent will be able to do
+  a better job prioritizing and scheduling delivery of reports, as it has an
+  overview of cross-origin activity that individual websites do not, and can
+  deliver reports based on error conditions that would prevent a website from
+  loading in the first place.
+
+  The delivery is not, however, guaranteed in any way, and reporting is not
+  intended to be used as a reliable communications channel. Network conditions
+  may prevent reports from reaching their destination at all, and user agents
+  are permitted to reject and not deliver a report for any reason.
+
+  <h3 id="examples">Examples</h3>
+
+  <div class="example">
+    MegaCorp Inc. wants to collect Content Security Policy and Key Pinning
+    violation reports. It can do so by delivering the following header to
+    define a set of reporting endpoints named "`endpoint-1`":
+
+    <pre>
+      <a>Reporting-Endpoints</a>: endpoint-1="https://example.com/reports"
+    </pre>
+
+    And the following headers, which direct CSP and HPKP reports to that
+    endpoint:
+
+    <pre>
+      <a>Content-Security-Policy</a>: ...; <a lt="reports directive">report-to</a> endpoint-1
+      <a>Public-Key-Pins</a>: ...; report-to=endpoint-1
+    </pre>
+  </div>
+
+  <div class="example">
+    After processing reports for a little while, MegaCorp Inc. decides to split
+    the processing of these two types of reports out into two distinct endpoints
+    in order to make the processing scripts simpler. It can do so by delivering
+    the following header to define two reporting endpoints:
+
+    <pre>
+      <a>Reporting-Endpoints</a>: csp-endpoint="https://example.com/csp-reports",
+                           hpkp-endpoint="https://example.com/hpkp-reports"
+    </pre>
+
+    And the following headers, which direct CSP and HPKP reports to those named
+    endpoints:
+
+    <pre>
+      <a>Content-Security-Policy</a>: ...; <a lt="reports directive">report-to</a> csp-endpoint
+      <a>Public-Key-Pins</a>: ...; report-to=hpkp-endpoint
+    </pre>
+  </div>
+</section>
+
+<section>
+  <h2 id="generic-reporting">Generic Reporting Framework</h2>
+
+  <p class="informative">
+  This section defines the generic concepts of reports and endpoints, and how
+  reports are serialized into the <a
+  href="#media-type">`application/reports+json`</a> format.</p>
+
+  <h3 id="concept">Concepts</h3>
+
+  <h4 id="concept-endpoints">Endpoints</h4>
+
+  An <dfn export>endpoint</dfn> is location to which <a>reports</a> for a
+  particular <a spec="html">origin</a> may be sent.
+
+  Each <a>endpoint</a> has a
+  <dfn for="endpoint" export attribute>name</dfn>, which is an ASCII string.
+
+  Each <a>endpoint</a> has a <dfn for="endpoint" export attribute>url</dfn>,
+  which is a {{URL}}.
+
+  Each <a>endpoint</a> has a
+  <dfn for="endpoint" export attribute>failures</dfn>, which is a non-negative
+  integer representing the number of consecutive times this endpoint has failed
+  to respond to a request.
+
+  <h4 id="concept-report-type">Report Type</h4>
+
+  A <dfn export>report type</dfn> is a non-empty string that specifies the set
+  of data that is contained in the [=report/body=] of a <a>report</a>.
+
+  When a <a>report type</a> is defined (in this spec or others), it can be
+  specified to be <dfn>visible to <code>ReportingObserver</code>s</dfn>, meaning
+  that <a>reports</a> of that type can be observed by a <a>reporting
+  observer</a>. By default, <a>report types</a> are not <a>visible to
+  <code>ReportingObserver</code>s</a>.
+
+  <h4 id="concept-reports">Reports</h4>
+
+  A <dfn export>report</dfn> is a collection of arbitrary data which the user
+  agent is expected to deliver to a specified endpoint.
+
+  Each <a>report</a> has a <dfn for="report" export>body</dfn>, which is either
+  `null` or an object which can be serialized into a <a>JSON text</a>. The
+  fields contained in a <a>report</a>'s [=report/body=] are determined by
+  the <a>report</a>'s [=report/type=].
+
+  Each <a>report</a> has a <dfn for="report" export>url</dfn>, which
+  is typically the address of the `Document` or `Worker` from which the report
+  was generated.
+
+  Note: We strip the username, password, and fragment from this serialized URL.
+  See [[#capability-urls]].
+
+  Each <a>report</a> has a <dfn for="report" export>user agent</dfn>, which is
+  the value of the <code>User-Agent</code> <a>header</a> of the <a>request</a>
+  from which the report was generated.
+
+  Note: The <a for="report">user agent</a> of a <a>report</a> represents the
+  <code>User-Agent</code> sent by the browser for the page which generated the
+  <a>report</a>.  This is potentially distinct from the <code>User-Agent</code>
+  sent in the HTTP headers when uploading the report to a collector — for
+  instance, where the browser has chosen to use a non-default
+  <code>User-Agent</code> string such as the "request desktop site" feature.
+
+  Each <a>report</a> has a <dfn for="report" export>destination</dfn>,
+  which is a string representing the {{endpoint/name}} of the <a>endpoint</a>
+  that the report will be sent to.
+
+  Each <a>report</a> has a <dfn for="report" id="report-reporttype"
+  export>type</dfn>, which is a <a>report type</a>.
+
+  Each <a>report</a> has a <dfn for="report" export>timestamp</dfn>,
+  which records the time at which the report was generated, in milliseconds
+  since the unix epoch.
+
+  Each <a>report</a> has an <dfn for="report" export>attempts</dfn>
+  counter, which is a non-negative integer representing the number of times the
+  user agent attempted to deliver the report.
+
+  <h3 id="media-type">Media Type</h3>
+
+  The media type used when POSTing reports to a specified endpoint is
+  `application/reports+json`.
+
+  <h3 id="queue-report" algorithm>
+    Queue |data| as |type| for |destination|
+  </h3>
+
+  To <dfn export for="reporting">queue</dfn> a <a>report</a> given a
+  serializable object (|data|), a string (|type|), another string
+  (|destination|), an optional <a>environment settings object</a>
+  (|settings|), and an optional {{URL}} (|url|):
+
+  1.  Let |report| be a new <a>report</a> object with its values initialized as
+      follows:
+
+      :   [=report/body=]
+      ::  |data|
+      :   [=report/user agent=]
+      ::  The current value of <a><code>navigator.userAgent</code></a>
+      :   [=report/destination=]
+      ::  |destination|
+      :   [=report/type=]
+      ::  |type|
+      :   [=report/timestamp=]
+      ::  The current timestamp.
+      :   [=report/attempts=]
+      ::  0
+
+  2.  If |url| was not provided by the caller, let |url| be |settings|'s
+      <a>creation URL</a>.
+
+  3.  Set |url|'s {{URL/username}} to the empty string, and its {{URL/password}}
+      to `null`.
+
+  4.  Set |report|'s [=report/url=] to the result of executing the <a>URL
+      serializer</a> on |url| with the <em>exclude fragment flag</em> set.
+
+  5.  If |settings| is given, then
+
+      1.  Let |scope| be |settings|'s [=environment settings object/global
+          object=].
+
+      2.  If |scope| is an object implementing {{WindowOrWorkerGlobalScope}},
+          then execute [[#notify-observers]] with |scope| and |report|.
+
+  6.  Return |report|.
+
+  Note: <a>reporting observers</a> can only observe reports from the
+  same <a>environment settings object</a>.
+
+  Note: We strip the username, password, and fragment from the serialized URL
+  in the report. See [[#capability-urls]].
+
+  Note: The user agent MAY reject reports for any reason. This API does not
+  guarantee delivery of arbitrary amounts of data, for instance.
+
+  Note: Non user agent clients (with no JavaScript engine) should not interact
+  with <a>reporting observers</a>, and thus should return in step 6.
+
+
+  <h3 id="serialize-reports" algorithm>Serialize Reports</h3>
+
+  To <dfn>serialize a list of |reports| to JSON</dfn>,
+
+  1.  Let |collection| be an empty list.
+
+  2.  For each |report| in |reports|:
+
+      1.  Let |data| be a map with the following key/value pairs:
+
+          :   `age`
+          ::  The number of milliseconds between |report|'s [=report/timestamp=]
+              and the current time.
+          :   `type`
+          ::  |report|'s [=report/type=]
+          :   `url`
+          ::  |report|'s [=report/url=]
+          :   `user_agent`
+          ::  |report|'s [=report/user agent=]
+          :   `body`
+          ::  |report|'s [=report/body=]
+
+          Note: Client clocks are unreliable and subject to skew. We therefore
+          deliver an `age` attribute rather than an absolute timestamp. See
+          also [[#fingerprinting-clock-skew]]
+
+      2.  Increment |report|'s [=report/attempts=].
+
+      3.  Append |data| to |collection|.
+
+  3. Return the [=byte sequence=] resulting from executing [=serialize an Infra
+     value to JSON bytes=] on |collection|.
+</section>
+
+<section>
+  <h2 id="document-reporting">Document Centered Reporting</h2>
+
+  This section defines the mechanism for configuring reporting endpoints for
+  reports generated by actions in a document (or in a worker script). Such
+  reports have a lifetime which is tied to that of the document or worker where
+  they were generated.
+
+  <h3 id="document-configuration">Document configuration</h3>
+
+  Each object implementing {{WindowOrWorkerGlobalScope}} has an <dfn
+  for="WindowOrWorkerGlobalScope" export>endpoints</dfn> list, which
+  is a list of <a for="/">endpoints</a>, each of which MUST have a distinct
+  {{endpoint/name}}.  (Uniqueness is guaranteed by the algorithm in
+  [[#process-header]].)
+
+  Each object implementing {{WindowOrWorkerGlobalScope}} has an <dfn
+  for="WindowOrWorkerGlobalScope" export>reports</dfn> list, which is
+  a list of <a for="/">reports</a>.
+
+  To <dfn export>initialize a global's endpoint list</dfn>, given a
+  {{WindowOrWorkerGlobalScope}} (|scope|) and a <a>response</a> (|response|),
+  set |scope|'s <a for="WindowOrWorkerGlobalScope">endpoints</a> to the result
+  of executing [[#process-header]] given |response|.
+
+  <h3 id="header">The `Reporting-Endpoints` HTTP Response Header Field</h3>
+
+  A server MAY define a set of reporting endpoints for a document or a worker
+  script resource it returns, via the <a>`Reporting-Endpoints`</a> HTTP response
+  header field. This mechanism is defined in [[#header]], and its processing in
+  [[#process-header]].
+
+  The value of the <dfn export>`Reporting-Endpoints`</dfn> HTTP response header
+  field is used to construct the reporting configuration for a resource.
+
+  <a>`Reporting-Endpoints`</a> is a Dictionary Structured Header
+  [[STRUCTURED-HEADERS]]. Each entry in the dictionary defines an
+  <a>endpoint</a> to which reports may be delivered. The entry value MUST be a
+  string.
+
+  Each <a>endpoint</a> is defined by a String Item, which is interpreted as a
+  URI-reference. If its value is not a valid URI-reference, that <a>endpoint</a>
+  member MUST be ignored.
+
+  Moreover, the URL that the member's value represents MUST be <a>potentially
+  trustworthy</a> [[!SECURE-CONTEXTS]]. Non-secure endpoints will be ignored.
+
+  No parameters are defined for <a for="/">endpoints</a>, and any parameters
+  which are specified will be silently ignored.
+
+  The header is represented by the following ABNF grammar [[!RFC5234]]:
+
+  <pre class="abnf" link-type="grammar" dfn-type="grammar">
+    Reporting-Endpoints = <a>sh-dictionary</a>
+  </pre>
+
+  <h3 id="process-header" algorithm>
+    Process reporting endpoints for |response|
+  </h3>
+
+  Given a <a>response</a> (|response|), this algorithm extracts and returns a
+  list of <a for="/">endpoints</a>.
+
+  1.  Abort these steps if |response|'s <a for="response" attribute>HTTPS
+      state</a> is not "`modern`", and the <a lt="origin of a url">origin</a>
+      of |response|'s <a for="response" attribute>url</a> is not <a>potentially
+      trustworthy</a>.
+
+  2.  Let |parsed header| be the result of executing [=get a structured field
+      value=] given "Reporting-Endpoints" and "dictionary" from |response|'s <a
+      for="response" attribute>header list</a>.
+
+  3.  If |parsed header| is null, abort these steps.
+
+  4.  Let |endpoints| be an empty list.
+
+  5.  For each |name| → |value_and_parameters| of |parsed header|:
+
+      1.  Let |endpoint url string| be the first element of the tuple
+          |value_and_parameters|. If |endpoint url string| is not a string,
+          then <a>continue</a>.
+
+      2.  Let |endpoint url| be the result of executing the <a>URL parser</a>
+          on |endpoint url string|, with <a spec="url">base URL</a> set to
+          |response|'s <a for="response" attribute>url</a>. If |endpoint url| is
+          failure, then <a>continue</a>.
+
+      3. If |endpoint url|'s <a>origin</a> is not <a>potentially
+          trustworthy</a>, then <a>continue</a>.
+
+      4.  Let |endpoint| be a new <a>endpoint</a> whose properties are set
+              as follows:
+
+              :   {{endpoint/name}}
+              ::  |name|
+              :   {{endpoint/url}}
+              ::  |endpoint url|
+              :   {{endpoint/failures}}
+              ::  0
+
+      5.  Add |endpoint| to |endpoints|.
+
+  6. Return |endpoints|.
+
+  <h3 id="report-generation">Report Generation</h3>
+
+  <h4 id="generate-report" export algorithm>Generate report of |type| with
+  |data|</h4>
+
+  When the user agent is to <dfn>generate a report</dfn> for a <a>Document</a>
+  or {{WorkerGlobalScope}} object (|context|), given a string (|type|), another
+  string (|destination|), and a serializable object (|data|), it must run the
+  following steps:
+
+  1.  Let |settings| be |context|'s [=relevant settings object=].
+
+  2.  Let |report| be the result of running [[#queue-report]] with |data|,
+      |type|, |destination| and |settings|.
+
+  3. Append |report| to |context|'s [=reports=].
+
+  <h3 id="report-delivery">Report Delivery</h3>
+
+  Over time, various features will queue up a list of <a>reports</a> in
+  documents and workers. The user agent will periodically grab the list of
+  currently queued reports, and deliver them to the associated endpoints. This
+  document does not define a schedule for the user agent to follow, and assumes
+  that the user agent will have enough contextual information to deliver reports
+  in a timely manner, balanced against impacting a user's experience.
+
+  That said, a user agent SHOULD make an effort to deliver reports as soon as
+  possible after queuing, as a report's data might be significantly more useful
+  in the period directly after its generation than it would be a day or a week
+  later.
+
+  <h4 id="send-reports" algorithm>Send reports</h4>
+
+  A user agent sends a list of <a>reports</a> (|reports|) for
+  {{WindowOrWorkerGlobalScope}} object (|context|) by executing the following
+  steps:
+
+  1.  Let |endpoint map| be an empty map of <a>endpoint</a> objects to lists of
+      <a>report</a> objects.
+
+  2.  For each |report| in |reports|:
+
+      1.  If there exists an <a>endpoint</a> (|endpoint|) in |context|'s
+          [=WindowOrWorkerGlobalScope/endpoints=] list whose {{endpoint/name}}
+          is |report|'s [=report/destination=]:
+
+          1.  Append |report| to |endpoint map|'s list of reports for
+              |endpoint|.
+
+          2. Otherwise, remove |report| from |reports|.
+
+  3.  For each (|endpoint|, |report list|) pair in |endpoint map|:
+
+      1.  Let |origin map| be an empty map of <a spec="html">origins</a> to
+          lists of <a>report</a> objects.
+
+      2.  For each |report| in |report list|:
+
+          1.  Let |origin| be the <a>origin</a> of |report|'s [=report/url=].
+
+          2.  Append |report| to |origin map|'s list of reports for |origin|.
+
+      3.  For each (|origin|, |per-origin reports|) pair in |origin map|,
+          execute the following steps asynchronously:
+
+          1.  Let |result| be the result of executing [[#try-delivery]] on
+              |endpoint|, |origin|, and |per-origin reports|.
+
+          2.  If |result| is "`Failure`":
+
+              1.  Increment |endpoint|'s {{endpoint/failures}}.
+
+          3.  If |result| is "`Remove Endpoint`":
+
+              1.  Remove |endpoint| from |context|'s
+                  [=WindowOrWorkerGlobalScope/endpoints=] list.
+
+          4.  Remove each <a>report</a> from |reports|.
+
+          ISSUE: We don't specify any retry mechanism here for failed reports.
+          We may want to add one here, or provide some indication that the
+          delivery failed.
+
+  Note: User agents MAY decide to attempt delivery for only a subset of the
+  collected reports or endpoints (because, for example, sending all the reports
+  at once would consume an unreasonable amount of bandwidth, etc). As reports
+  are only removed from the cache after delivery has been attempted, skipped
+  reports will simply be delivered later.
+
+  <h4 id="try-delivery" algorithm>
+    Attempt to deliver |reports| to |endpoint|
+  </h4>
+
+  Given an <a>endpoint</a> (|endpoint|), an <a spec="html">origin</a>
+  (|origin|), and a list of <a>reports</a> (|reports|), this algorithm will
+  construct a <a>request</a>, and attempt to deliver it to |endpoint|. It
+  returns "`Success`" if that delivery succeeds, "`Remove Endpoint`" if the
+  endpoint explicitly removes itself as a reporting endpoint by sending a 410
+  response, and "`Failure`" otherwise.
+
+
+  1.  Let |body| be the result of executing [=serialize a list of reports to
+      JSON=] on |reports|.
+
+  2.  Let |request| be a new <a>request</a> with the following properties
+      [[FETCH]]:
+
+      :   `method`
+      ::  "`POST`"
+      :   `url`
+      ::  |endpoint|'s {{endpoint/url}}
+      :   `origin`
+      ::  |origin|
+      :   `header list`
+      ::  A new <a>header list</a> containing a <a>header</a> named
+          \``Content-Type`\` whose value is \``application/reports+json`\`
+      :   `client`
+      ::  `null`
+      :   `window`
+      ::  "`no-window`"
+      :   `service-workers mode`
+      ::  "`none`"
+      :   `initiator`
+      ::  ""
+      :   `destination`
+      ::  "`report`"
+      :   `mode`
+      ::  "`cors`"
+      :   `unsafe-request` flag
+      ::  set
+      :   `credentials`
+      ::  "`same-origin`"
+      :   `body`
+      ::  A [=/body=] whose [=body/source=] is |body|.
+
+      Note: Reports are sent with credentials set to `same-origin`. This allows
+      reporting endpoints which are same-origin with the reporting page to get
+      extra context about the nature of the report: for example, to understand
+      whether a given user's account is triggering errors consistently, or if a
+      certain sequence of actions taken on other pages is triggering a report on
+      this page. This does not leak any new information to the reporting
+      endpoint that it could not obtain in other ways. That is not the case for
+      cross-origin reporting endpoints, so they do not receive credentials.
+
+  4.  <a>Queue a task</a> to <a>fetch</a> |request|.
+
+  5.  <a>Wait for a response</a> (|response|).
+
+  6.  If |response|'s `status` is an <a>OK status</a> (200-299), return
+      "`Success`".
+
+  7.  If |response|'s `status` is `410 Gone` [[!RFC7231]], return "`Remove
+      Endpoint`".
+
+  8.  Return "`Failure`".
+</section>
+
+<section>
+  <h2 id="observers">Reporting Observers</h2>
+
+  A <dfn>reporting observer</dfn> observes some types of <a>reports</a> from
+  JavaScript, and is represented in JavaScript by the {{ReportingObserver}}
+  object.
+
+  Each object implementing {{WindowOrWorkerGlobalScope}} has a <dfn
+  for="WindowOrWorkerGlobalScope">registered reporting observer list</dfn>,
+  which is an <a>ordered set</a> of <a>reporting observers</a>.
+
+  Any <a>reporting observer</a> that is in a <a>registered reporting observer
+  list</a> is considered <dfn>registered</dfn>.
+
+  Each object implementing {{WindowOrWorkerGlobalScope}} has a <dfn
+  for="WindowOrWorkerGlobalScope">report buffer</dfn>, which is a <a
+  spec=infra>list</a> of <a>reports</a> that have been generated in that
+  {{WindowOrWorkerGlobalScope}}. This list is initially empty, and the reports
+  are stored in the same order in which they are generated.
+
+  Note: The purpose of the <a>report buffer</a> is to allow <a>reporting
+  observers</a> to observe reports that were generated earlier than that
+  observer could be created (via the {{buffered}} option). For example, some
+  reports might be generated during an earlier stage of page loading than when
+  an observer could first be created, or before a JavaScript library is loaded
+  that wishes to observe these reports.
+
+  Note: </a>Reporting observers</a> are only relevant for user agents with
+  JavaScript engines.
+
+  <h3 id=interface-reporting-observer>Interface {{ReportingObserver}}</h3>
+
+  <pre class="idl">
+[Exposed=(Window,Worker)]
+interface ReportBody {
+  [Default] object toJSON();
+};
+
+[Exposed=(Window,Worker)]
+interface Report {
+  [Default] object toJSON();
+  readonly attribute DOMString type;
+  readonly attribute DOMString url;
+  readonly attribute ReportBody? body;
+};
+
+[Exposed=(Window,Worker)]
+interface ReportingObserver {
+  constructor(ReportingObserverCallback callback, optional ReportingObserverOptions options = {});
+  undefined observe();
+  undefined disconnect();
+  ReportList takeRecords();
+};
+
+callback ReportingObserverCallback = undefined (sequence&lt;Report> reports, ReportingObserver observer);
+
+dictionary ReportingObserverOptions {
+  sequence&lt;DOMString> types;
+  boolean buffered = false;
+};
+
+typedef sequence&lt;Report> ReportList;
+  </pre>
+
+  A <dfn id=dom-report interface>Report</dfn> is the application exposed
+  representation of a <a>report</a>. <dfn attribute for="Report">type</dfn>
+  returns [=report/type=], <dfn attribute for="Report">url</dfn> returns
+  [=report/url=], and <dfn attribute for="Report">body</dfn> returns
+  [=report/body=].
+
+  Each {{ReportingObserver}} object has these associated concepts:
+    - A <dfn for=ReportingObserver>callback</dfn> function set on creation.
+    - A {{ReportingObserverOptions}} dictionary called
+      <dfn for=ReportingObserver>options</dfn>.
+    - A list of {{Report}} objects called the <dfn for=ReportingObserver>report
+      queue</dfn>, which is initially empty.
+
+  A {{ReportList}} represents a sequence of {{Report}}s, providing developers
+  with all the convenience methods found on JavaScript arrays.
+
+  The <dfn constructor for=ReportingObserver><code>
+  ReportingObserver(|callback|, |options|)</code></dfn> constructor, when
+  invoked, must run these steps:
+
+  1. Create a new {{ReportingObserver}} object |observer|.
+
+  2. Set |observer|'s <a>callback</a> to |callback|.
+
+  3. Set |observer|'s <a>options</a> to |options|.
+
+  4. Return |observer|.
+
+  The <dfn method for=ReportingObserver><code>observe()</code></dfn>
+  method, when invoked, must run these steps:
+
+  1. Let |global| be the be the [=relevant global object=] of the <a>context
+     object</a>.
+
+  2. Append the <a>context object</a> to the |global|'s <a>registered reporting
+     observer list</a>.
+
+  3. If the <a>context object</a>'s {{buffered}} <a>option</a> is false, return.
+
+  4. Set <a>context object</a>'s {{buffered}} <a>option</a> to false.
+
+  5. For each |report| in |global|'s <a>report buffer</a>, <a>queue a task</a>
+     to execute [[#add-report]] with |report| and the <a>context object</a>.
+
+  The <dfn method for=ReportingObserver><code>disconnect()</code></dfn> method,
+  when invoked, must run these steps:
+
+  1. If the <a>context object</a> is not <a>registered</a>, return.
+
+  2. Let |global| be the [=relevant global object=] of the <a>context
+     object</a>.
+
+  3. Remove the <a>context object</a> from |global|'s <a>registered reporting
+     observer list</a>.
+
+  The <dfn method for=ReportingObserver><code>takeRecords()</code></dfn> method,
+  when invoked, must run these steps:
+
+  1. Let |reports| be a copy of the <a>context object</a>'s <a>report queue</a>.
+
+  2. Empty the <a>context object</a>'s <a>report queue</a>.
+
+  3. Return |reports|.
+
+  <h3 id="notify-observers" algorithm>
+    Notify reporting observers on |scope| with |report|
+  </h3>
+
+  This algorithm makes |report|'s contents available to any <a>registered</a>
+  <a>reporting observers</a> on the provided {{WindowOrWorkerGlobalScope}}.
+
+  1. For each {{ReportingObserver}} |observer| <a>registered</a> with |scope|,
+     execute [[#add-report]] on |report| and |observer|.
+
+  2. Append |report| to |scope|'s <a>report buffer</a>.
+
+  3. Let |type| be |report|'s <a>type</a>.
+
+  4. If |scope|'s <a>report buffer</a> now contains more than 100 reports with
+     <a>type</a> equal to |type|, remove the earliest item with <a>type</a>
+     equal to |type| in the <a>report buffer</a>.
+
+  <h3 id="add-report" algorithm>
+    Add |report| to |observer|
+  </h3>
+
+  Given a <a>report</a> |report| and a {{ReportingObserver}} |observer|, this
+  algorithm adds |report| to |observer|'s <a>report queue</a>, so long as
+  |report|'s <a>type</a> is observable by |observer|.
+
+  1. If |report|'s [=report/type=] is not <a>visible to
+    <code>ReportingObserver</code>s</a>, return.
+
+  2. If |observer|'s <a>options</a> has a non-empty
+     {{ReportingObserverOptions/types}} member which does not contain |report|'s
+     [=report/type=], return.
+
+  3. Create a new {{Report}} |r| with {{Report/type}} initialized to |report|'s
+     [=report/type=], {{Report/url}} initialized to |report|'s [=report/url=],
+     and {{Report/body}} initialized to |report|'s [=report/body=].
+
+  Issue: how to polymorphically initialize body?
+
+  3. Append |r| to |observer|'s <a>report queue</a>.
+
+  4. If the size of |observer|'s <a>report queue</a> is 1:
+     1. Let |global| be |observer|'s [=relevant global object=].
+     2.  <a>Queue a task</a> to [[#invoke-observers]] with a copy of |global|'s
+         <a>registered reporting observer list</a>.
+
+  <h3 id="invoke-observers" algorthm>
+    Invoke reporting observers with |notify list|
+  </h3>
+
+  This algorithm invokes observer callback functions for reports of previously
+  observed behavior.
+
+  1. For each {{ReportingObserver}} |observer| in |notify list|:
+
+     1. If |observer|'s <a>report queue</a> is empty, then continue.
+
+     2. Let |reports| be a copy of |observer|'s <a>report queue</a>
+
+     3. Empty |observer|'s <a>report queue</a>
+
+     4. <a spec=webidl>Invoke</a> |observer|'s <a>callback</a> with a list of
+        arguments consisting of |reports| and |observer|, and |observer| as the
+        <a>callback this value</a>.  If this throws an exception, <a>report the
+        exception</a>.
+</section>
+
+<section>
+  <h2 id="implementation">Implementation Considerations</h2>
+
+  <h3 id="delivery">Delivery</h3>
+
+  The user agent SHOULD attempt to deliver reports as soon as possible to
+  provide feedback to developers as quickly as possible. However, when this
+  desire is balanced against the impact on the user, the user wins. With that
+  in mind, the user agent MAY delay delivery of reports based on its knowledge
+  of the user's activities and context.
+
+  For instance, the user agent SHOULD prioritize the transmission of reporting
+  data lower than other network traffic. The user's explicit activities on a
+  website should preempt reporting traffic.
+
+  The user agent MAY choose to withhold report delivery entirely until the user
+  is on a fast, cheap network in order to prevent unnecessary data cost.
+
+  The user agent MAY choose to prioritize reports from particular origins over
+  others (perhaps those that the user visits most often?)
+
+  <h3 id="gc">Garbage Collection</h3>
+
+  Periodically, the user agent SHOULD walk through the cached <a
+  for="/">reports</a> and <a for="/">endpoints</a>, and discard those that are
+  no longer relevant. These include:
+
+  *   <a for="/">endpoints</a> whose {{endpoint/failures}} exceed
+      some user-agent-defined threshold (~5 seems reasonable)
+  *   <a for="/">reports</a> which have not been delivered in some arbitrary
+      period of time (perhaps ~2 days?)
+
+  For any <a for="/">reports</a> that are discarded, these <a>reports</a> should
+  also be removed from the <a>report buffer</a> of any <a>reporting
+  observer</a>.
+</section>
+
+<section class="non-normative">
+  <h2 id="sample-reports">Sample Reports</h2>
+
+  *This section is non-normative.*
+
+  This example shows the format in which reports are sent by the user agent to
+  the reporting endpoint. The sample submission contains three reports which
+  have been bundled together and sent in a single HTTP request. (The report
+  types and bodies themselves are not intended to be representative of any
+  actual feature, as those are outside of the scope of this specification).
+
+  <div class="example">
+    <pre>
+      POST / HTTP/1.1
+      Host: example.com
+      ...
+      Content-Type: application/reports+json
+
+      [{
+        "type": "security-violation",
+        "age": 10,
+        "url": "https://example.com/vulnerable-page/",
+        "user_agent": "Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/60.0",
+        "body": {
+          "blocked": "https://evil.com/evil.js",
+          "policy": "bad-behavior 'none'",
+          "status": 200,
+          "referrer": "https://evil.com/"
+        }
+      }, {
+        "type": "certificate-issue",
+        "age": 32,
+        "url": "https://www.example.com/",
+        "user_agent": "Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/60.0",
+        "body": {
+          "date-time": "2014-04-06T13:00:50Z",
+          "hostname": "www.example.com",
+          "port": 443,
+          "effective-expiration-date": "2014-05-01T12:40:50Z",
+          "served-certificate-chain": [
+            "-----BEGIN CERTIFICATE-----\n
+            MIIEBDCCAuygAwIBAgIDAjppMA0GCSqGSIb3DQEBBQUAMEIxCzAJBgNVBAYTAlVT\n
+            ...
+            HFa9llF7b1cq26KqltyMdMKVvvBulRP/F/A8rLIQjcxz++iPAsbw+zOzlTvjwsto\n
+            WHPbqCRiOwY1nQ2pM714A5AuTHhdUDqB1O6gyHA43LL5Z/qHQF1hwFGPa4NrzQU6\n
+            yuGnBXj8ytqU0CwIPX4WecigUCAkVDNx\n
+            -----END CERTIFICATE-----",
+            ...
+          ]
+        }
+      }, {
+        "type": "cpu-on-fire",
+        "age": 29,
+        "url": "https://example.com/thing.js",
+        "user_agent": "Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/60.0",
+        "body": {
+          "temperature": 614.0
+        }
+      }]
+    </pre>
+  </div>
+</section>
+
+<section>
+  <h2 id="automation">Automation</h2>
+
+  For the purposes of user-agent automation and application testing, this
+  document defines a number of <a>extension commands</a> for the [[WebDriver]]
+  specification.
+
+  <h3 id="generate-test-report-command">Generate Test Report</h3>
+
+  The <dfn>Generate Test Report</dfn> <a>extension command</a> simulates the
+  generation of a <a>report</a> for the purposes of testing. This report will be
+  observed by any <a>registered</a> <a>reporting observers</a>.
+
+  The <a>extension command</a> is defined as follows:
+
+  <pre class='idl'>
+    dictionary GenerateTestReportParameters {
+      required DOMString message;
+      DOMString group = "default";
+    };
+  </pre>
+
+  <table style="border-spacing: 20px 0px;">
+    <tbody>
+      <tr>
+        <th>HTTP Method</th>
+        <th><a lt="extension command uri template">URI Template</a></th>
+      </tr>
+      <tr>
+        <td>`POST`</td>
+        <td>`/session/{session id}/reporting/generate_test_report`</td>
+      </tr>
+    </tbody>
+  </table>
+
+  The <a>remote end steps</a> are:
+
+  1. If |parameters| is not a JSON <a>Object</a>, return a <a>WebDriver
+     error</a> with <a>WebDriver error code</a> <a>invalid argument</a>.
+
+  2. Let |message| be the result of <a>trying</a> to get |parameters|'s
+     {{GenerateTestReportParameters/message}} property.
+
+  3. If |message| is not present, return a <a>WebDriver error</a>
+     with <a>WebDriver error code</a> <a>invalid argument</a>.
+
+  4. If the <a>current browsing context</a> is no longer open, return a
+     <a>WebDriver error</a> with <a>WebDriver error code</a> <a>no such
+     window</a>.
+
+  5. <a>Handle any user prompts</a> and return its value if it is a <a>WebDriver
+     error</a>.
+
+  6. Let |group| be |parameters|'s {{GenerateTestReportParameters/group}}
+     property.
+
+  7. Let |body| be a new object that can be serialized into a <a>JSON text</a>,
+     containing a single string field, |body_message|.
+
+  8. Set |body_message| to |message|.
+
+  9. Let |settings| be the <a>environment settings object</a> of the
+     <a>current browsing context</a>'s <a>active document</a>.
+
+  10. Execute [[#queue-report]] with |body|, "test", |group|, and |settings|.
+
+  11. Return <a>success</a> with data null.
+</section>
+
+<section>
+  <h2 id="security">Security Considerations</h2>
+
+  <h3 id="capability-urls">Capability URLs</h3>
+
+  Some URLs are valuable in and of themselves. They may contain explicit
+  credentials in the username and password portion of the URL, or may grant
+  access to some resource to anyone with knowledge of the URL path.
+  Additionally, they may contain information which was never intended leave the
+  user's browser in the URL fragment. See [[CAPABILITY-URLS]] for more
+  information.
+
+  To mitigate the possibility that such URLs will be leaked via this reporting
+  mechanism, the algorithms here strip out credential information and fragment
+  data from the URL sent as a <a>report</a>'s originator. It is still possible,
+  however, for sensitive information in the URL's path to be leaked this way.
+  Sites which use such URLs may need to operate their own reporting endpoints.
+
+  Additionally, such URLs may be present in a report's [=report/body=].
+  Specifications which extend this API and which include any URLs in a report's
+  [=report/body=] SHOULD require that they be similarly stripped.
+</section>
+
+<section>
+  <h2 id="privacy">Privacy Considerations</h2>
+
+  <h3 id="network-leakage">Network Leakage</h3>
+
+  Because there is a delay between a page being loaded and a report being
+  generated and sent, it's entirely possible for a report generated while a user
+  is on one network to be sent while the user is on another network.
+
+  This behaviour is limited to the lifetime of the document which generated the
+  reports, though, and such a document could be generating traffic on the new
+  network through other means in any case, even after the document is closed,
+  through mechanisms such as `navigator.sendBeacon`.
+
+  ISSUE(w3c/BackgroundSync#107): Consider mitigations. For example, we could
+  drop reports if we change from one network to another.
+
+  <h3 id="fingerprinting-clock-skew">Clock Skew</h3>
+
+  Each report is delivered along with an `age` property, rather than the
+  timestamp at which it was generated. We do this because each user's local
+  clock will be skewed from the clock on the server by an arbitrary amount.
+  The difference between the time the report was generated and the time it
+  was sent will be stable, regardless of clock skew, and we can avoid the
+  fingerprinting risk of exposing the clock skew via this API.
+
+  <h3 id="correlation">Cross-origin correlation</h3>
+
+  If multiple origins all use the same reporting endpoint, that endpoint may
+  learn that a particular user has interacted with a certain set of websites,
+  as it will receive origin-tagged reports from each. This doesn't seem worse
+  than the status quo ability to track the same information from cooperative
+  origins, and doesn't grant any new tracking ability above and beyond what's
+  possible with `<img>` today.
+
+  <h3 id="disable">Disabling Reporting</h3>
+
+  Reporting is, to some extent, a question of commons. In the aggregate, it
+  seems useful for everyone for reports to be delivered. There is direct benefit
+  to developers, as they can fix bugs, which means there's indirect benefit to
+  users, as the sites they enjoy will be more stable and enjoyable. As a
+  concrete example, Content Security Policy grants something like herd immunity
+  to cross-site scripting attacks by alerting developers about potential holes
+  in their sites' defenses. Fixing those bugs helps every user, even those whose
+  user agents don't support Content Security Policy.
+
+  The calculus, of course, depends on the nature of data that's being delivered,
+  and the relative maliciousness of the reporting endpoints, but that's the
+  value proposition in broad strokes.
+
+  That said, it can't be the case that this general benefit be allowed to take
+  priority over the ability of a user to individually opt-out of such a system.
+  Sending reports costs bandwidth, and potentially could reveal some small
+  amount of additional information above and beyond what a website can obtain
+  in-band ([[NETWORK-ERROR-LOGGING]], for instance). User agents MUST allow
+  users to disable reporting with some reasonable amount of granularity in order
+  to maintain the priority of constituencies espoused in
+  [[HTML-DESIGN-PRINCIPLES]].
+</section>
+
+<!-- Big Text: IANA -->
+<section>
+  <h2 id="iana-considerations">IANA Considerations</h2>
+
+  <h3 id="header-field-registration">The `Reporting-Endpoints` Header</h3>
+
+  The permanent message header field registry should be updated
+  with the following registration: [[!RFC3864]]
+
+  :   Header field name
+  ::  `Reporting-Endpoints`
+  :   Applicable protocol
+  ::  http
+  :   Status
+  ::  standard
+  :   Author/Change controller
+  ::  W3C
+  :   Specification document
+  ::  This specification (see [[#header]])
+
+  <h3 id="media-type-registration">The `application/reports+json` Media Type</h3>
+
+  :   Type name
+  ::  application
+  :   Subtype name
+  ::  reports+json
+  :   Required parameters
+  ::  N/A
+  :   Optional parameters
+  ::  N/A
+  :   Encoding considerations
+  ::  Encoding considerations are identical to those specified for the "application/json" media type. See [[RFC8259]].
+  :   Security considerations
+  ::  See [[#security]].
+  :   Interoperability considerations
+  ::  This document specifies the format of conforming messages and the interpretation thereof.
+  :   Published specification
+  ::  [[#media-type]]
+  :   Applications that use this media type
+  :   Fragment identifier considerations
+  :   Additional information
+  ::  N/A
+  :   Person and email address to contact for further information
+  ::  This document's editors.
+  :   Intended usage:
+  ::  COMMON
+  :   Restrictions on usage:
+  ::  N/A
+  :   Author
+  ::  This document's editors.
+  :   Change controller
+  ::  W3C
+  :   Provisional registration?
+  ::  Yes.
+</section>

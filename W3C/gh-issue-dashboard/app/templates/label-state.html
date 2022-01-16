@@ -1,0 +1,115 @@
+<!doctype html>
+<html>
+<head><title>Issues sorted by a label-based state</title></head>
+<body>
+  <div id="doc">
+  <p>This template uses well-known labels to sort and display the issues associated with a repository.</p>
+
+  <p>The labels this template relies on are:</p>
+  <ul>
+    <li><code>Chair decision needed</code>: the issue needs attention from the chairs (e.g. because it can be closed)</li>
+    <li><code>Need submitter action</code>: progress on this issue requires clarification or additional information from the issue submitter</li>
+    <li><code>Need assignee action</code>: progress on this issue depends on the person to which the issue is currently assigned</li>
+    <li><code>List discussion needed</code>: before progress on this issue can be made, input or consensus from the mailing list is needed</li>
+    <li><code>PR exists</code>: there is (at least) one pull request submitted to solve this issue</li>
+  </ul>
+  </div>
+    <script id="main" type="text/x-handlebars-template">
+      {{#if error}}
+        <h3>{{ name }} - <b>Error:</b> {{ error.message }}</h3>
+      {{else}}
+
+        {{#if issues}}
+        <section>
+          <h2>{{ name }}</h2>
+          {{#filter issues "!assignee" "!pull_request" "!label:PR exists"}}
+          <h3>Unassigned {{> issuelist}}
+          {{/filter}}
+
+          {{#filter issues "assignee" "!pull_request" "!label:PR exists" "!label:Chair decision needed" "!label:Needs submitter action" "!label:Needs assignee action" "!label:PR exists" "!label:List discussion needed"}}
+          <h3>Unlabelled state {{> issuelist}}
+          {{/filter}}
+
+
+          {{#filter issues "assignee" "!pull_request" "!label:PR exists" "label:Chair decision needed"}}
+          <h3>Chair Decision Needed {{> issuelist}}
+          {{/filter}}
+
+          {{#filter issues "assignee" "!pull_request" "!label:PR exists" "label:List discussion needed"}}
+          <h3>List Discussion Needed {{> issuelist}}
+          {{/filter}}
+
+          {{#filter issues "assignee" "!pull_request" "!label:PR exists" "label:Needs submitter action"}}
+          <h3>Need Submitter Action {{> issuelist}}
+          {{/filter}}
+
+          {{#filter issues "assignee" "!pull_request" "!label:PR exists" "label:Needs assignee action"}}
+          <h3>Need Assignee Action ({{list.length}})</h3>
+          {{#groupby list "assignee"}}
+          <dl>
+
+          {{#each list}}
+          <dt>{{groupby.login}} ({{list.length}})</dt>
+          <dd>{{#each list}}
+            {{> issue }}
+            {{/each}}
+          </dd>
+          {{/each}}
+          </dl>
+          {{/groupby}}
+          {{/filter}}
+
+          {{#filter issues "!pull_request" "label:PR exists"}}
+          <h3>PR Exists {{> issuelist}}
+          {{/filter}}
+
+        </section>
+        {{/if}}
+      {{/if}}
+    </script>
+    <script id="issuelist-template" type="text/x-handlebars-template">
+      ({{list.length}})</h3>
+      {{#each list}}
+        {{>issue }}
+      {{/each}}
+    </script>
+    <script id="issue-template" type="text/x-handlebars-template">
+            <div>
+              <h5>
+                <a href="{{ html_url }}">[{{number}}] {{ title }}</a>
+              </h5>
+
+              
+              <div style="font-style: italic">
+                {{#if pull_request}}
+                 <strong>pull request</strong> -
+                {{/if}}
+
+                <span class="{{#ifCond comments '>' 0}} color--green {{else}} color--red {{/ifCond}}">
+                  {{comments}} {{pluralize comments "comment" "comments" }}
+                </span> -
+
+                <span>
+                  last update: <i class="{{dateColor updated_at}}">{{dateFormat updated_at}}</i>
+                </span> -
+
+                <span>assignee: {{#if assignee}}
+                  <i class="color--green">{{ assignee.login }}</i>
+                {{else}}
+                  <i class="color--red">none</i>
+                {{/if}}
+                </span>
+
+                {{#if labels}}
+                  - {{# each labels}}
+                      <span style="color: #{{color}}">{{name}}</span>
+                    {{/each}}
+                {{/if}}
+
+              </div>
+            </div>
+
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,432 @@
+APPLICATION MathML;
+
+DEFAULT
+   BEGIN
+   ElemActivate.Pre -> DoubleClick;
+   ElemClick.Pre -> SimpleClick;
+   ElemRClick.Pre -> SimpleRClick;
+   ElemNew.Pre -> NewMathElement;
+   ElemNew.Post -> MathElementCreated;
+   ElemPaste.Pre -> NewMathElement;
+   ElemPaste.Post -> MathElementPasted;
+   ElemDelete.Pre -> MathElementWillBeDeleted;
+   ElemDelete.Post -> MathElementDeleted;
+   ElemSelect.Post -> MathSelectionChanged;
+   ElemExtendSelect.Post -> MathSelectionChanged;
+   AttrMenu.Pre -> GlobalMathAttrInMenu;
+   PRuleCreate.Pre -> ChangePRule;
+   PRuleModify.Pre -> ChangePRule;
+   PRuleDelete.Post -> PRuleDeleted;
+   END;
+
+ELEMENTS
+
+   MathML:
+	BEGIN
+  ElemExport.Pre -> CheckValidProfile;
+  ElemPaste.Post -> MathElementPasted;
+	END;
+
+   DOCTYPE:
+	ElemMenu.Pre -> MathMLElementTypeInMenu;
+   BevelledMFRAC:
+	ElemMenu.Pre -> MathMLElementTypeInMenu;
+   SemanticsContent:
+	ElemMenu.Pre -> MathMLElementTypeInMenu;
+   TableRow:
+	ElemMenu.Pre -> MathMLElementTypeInMenu;
+
+   OpeningFence:
+	ElemGraphModify.Post -> FenceModified;
+   ClosingFence:
+	ElemGraphModify.Post -> FenceModified;
+   FencedSeparator:
+	BEGIN
+	ElemTextModify.Post ->  FencedSeparatorModified;
+	ElemGraphModify.Post -> FencedSeparatorModified;
+	END;
+   MTEXT:
+	BEGIN
+	ElemNew.Post -> MtextCreated;
+	ElemTextModify.Post -> MathStringModified;
+	END;
+   MI:
+	ElemTextModify.Post -> MathStringModified;
+   MO:
+	ElemTextModify.Post -> MathStringModified;
+   MN:
+	ElemTextModify.Post -> MathStringModified;
+   MTD:
+	BEGIN
+	ElemNew.Post -> CellCreated;
+	ElemPaste.Post -> CellPasted;
+	END;
+   MColumn_head:
+	BEGIN
+	ElemPaste.Post -> ColumnPasted;
+	ElemDelete.Pre -> DeleteColumn;
+	ElemDelete.Post -> ColumnDeleted;
+	END;
+   TableRow:
+	BEGIN
+	ElemNew.Post -> RowCreated;
+	ElemPaste.Post -> RowPasted;
+	ElemDelete.Pre -> DeleteRow;
+	ElemDelete.Post -> RowDeleted;
+	END;
+   MTR:
+	BEGIN
+	ElemNew.Post -> RowCreated;
+	ElemPaste.Post -> RowPasted;
+	ElemDelete.Pre -> DeleteRow;
+	ElemDelete.Post -> RowDeleted;
+	END;
+   MLABELEDTR:
+	BEGIN
+	ElemNew.Post -> RowCreated;
+	ElemPaste.Post -> RowPasted;
+	ElemDelete.Pre -> DeleteRow;
+	ElemDelete.Post -> RowDeleted;
+	END;
+   MTABLE:
+	BEGIN
+	ElemPaste.Post -> TablePasted;
+	END;
+
+   XMLPI:
+	BEGIN
+	ElemTextModify.Pre -> XmlStyleSheetWillBeModified;
+	ElemTextModify.Post -> XmlStyleSheetModified;
+	END;
+
+   TEXT_UNIT:
+	BEGIN
+	ElemNew.Post -> NewMathString;
+	ElemPaste.Post -> XmlStyleSheetPasted;
+	ElemDelete.Pre -> XmlStyleSheetDeleted;
+	END;
+
+ATTRIBUTES
+
+   Language:
+	BEGIN
+	AttrCreate.Post -> AttrLangCreated;
+	AttrDelete.Pre  -> AttrLangShouldBeDeleted;
+	AttrDelete.Post -> AttrLangDeleted;
+	AttrModify.Pre ->  AttrLangModified;
+	END;
+
+   class:
+        BEGIN
+        AttrCreate.Post -> AttrClassChanged;
+        AttrModify.Post -> AttrClassChanged;
+        AttrDelete.Post -> AttrClassChanged;
+        END;
+
+   style\240:
+	BEGIN
+        AttrDelete.Pre ->  UpdateStyleDelete;
+        AttrModify.Pre ->  UpdateStyleDelete;
+        AttrCreate.Post -> UpdateStylePost;
+        AttrModify.Post -> UpdateStylePost;
+	END;
+
+   id:
+        BEGIN
+        AttrCreate.Post -> UpdateAttrID;
+        AttrModify.Post -> UpdateAttrID;
+        AttrDelete.Post -> UpdateAttrID;
+        END;
+
+   xmlid:
+        BEGIN
+        AttrCreate.Post -> UpdateAttrID;
+        AttrModify.Post -> UpdateAttrID;
+        AttrDelete.Post -> UpdateAttrID;
+        END;
+
+   other:
+	AttrCreate.Post -> MathAttrOtherCreated;
+
+   EntityName:
+	BEGIN
+        AttrModify.Post -> MathEntityModified;
+	AttrExport.Pre ->  CheckValidEntity;
+	END;
+
+   display_:
+	BEGIN
+	AttrCreate.Post -> MathDisplayAttrCreated;
+	AttrModify.Post -> MathDisplayAttrCreated;
+	AttrDelete.Post -> MathDisplayAttrDeleted;
+	END;
+
+   fontsize:
+        BEGIN
+        AttrCreate.Post -> MathPresentAttrCreated;
+        AttrModify.Post -> MathPresentAttrCreated;
+        AttrDelete.Pre ->  MathAttrFontsizeDelete;
+	AttrMenu.Pre ->    MathStyleAttrInMenu;
+        END;
+ 
+   fontweight:
+	AttrMenu.Pre ->    MathStyleAttrInMenu;
+
+   fontstyle:
+	AttrMenu.Pre ->    MathStyleAttrInMenu;
+
+   fontfamily:
+        BEGIN
+        AttrCreate.Post -> MathAttrFontfamilyCreated;
+        AttrModify.Post -> MathAttrFontfamilyCreated;
+        AttrDelete.Pre ->  MathAttrFontfamilyDelete;
+	AttrMenu.Pre ->    MathStyleAttrInMenu;
+        END;
+
+   color:
+        BEGIN
+        AttrCreate.Post -> MathAttrColorCreated;
+        AttrModify.Post -> MathAttrColorCreated;
+        AttrDelete.Pre ->  MathAttrColorDelete;
+	AttrMenu.Pre ->    MathStyleAttrInMenu;
+        END;
+
+   mathsize:
+        BEGIN
+        AttrCreate.Post -> MathPresentAttrCreated;
+        AttrModify.Post -> MathPresentAttrCreated;
+        AttrDelete.Pre ->  MathAttrFontsizeDelete;
+        END;
+
+   mathcolor:
+        BEGIN
+        AttrCreate.Post -> MathAttrColorCreated;
+        AttrModify.Post -> MathAttrColorCreated;
+        AttrDelete.Pre ->  MathAttrColorDelete;
+        END;
+
+   mathbackground:
+        BEGIN
+        AttrCreate.Post -> MathAttrBackgroundCreated;
+        AttrModify.Post -> MathAttrBackgroundCreated;
+        AttrDelete.Pre ->  MathAttrBackgroundDelete;
+        END;
+
+   form:
+	BEGIN
+        AttrCreate.Post -> MathAttrFormChanged;
+        AttrModify.Post -> MathAttrFormChanged;
+        AttrDelete.Post -> MathAttrFormChanged;
+	END;
+
+   lspace:
+        BEGIN
+        AttrCreate.Post -> MathPresentAttrCreated;
+        AttrModify.Post -> MathPresentAttrCreated;
+        AttrDelete.Pre ->  MathAttrLspaceDelete;
+        END;
+   rspace:
+        BEGIN
+        AttrCreate.Post -> MathPresentAttrCreated;
+        AttrModify.Post -> MathPresentAttrCreated;
+        AttrDelete.Pre ->  MathAttrRspaceDelete;
+        END;
+
+   stretchy:
+	BEGIN
+	AttrCreate.Post -> AttrStretchyChanged;
+	AttrModify.Post -> AttrStretchyChanged;
+	AttrDelete.Post -> AttrStretchyChanged;	
+	END;
+
+   largeop:
+	BEGIN
+	AttrCreate.Post -> AttrLargeopChanged;
+	AttrModify.Post -> AttrLargeopChanged;
+	AttrDelete.Post -> AttrLargeopChanged;
+	END;
+
+   movablelimits:
+	BEGIN
+	AttrCreate.Post -> AttrMovablelimitsChanged;
+	AttrModify.Post -> AttrMovablelimitsChanged;
+	AttrDelete.Post -> AttrMovablelimitsChanged;
+	END;
+
+   width\240:
+        BEGIN
+        AttrCreate.Post -> AttrSpacingCreated;
+        AttrModify.Post -> AttrSpacingCreated;
+        AttrDelete.Pre ->  AttrSpacingDelete;
+        END;
+
+   height\240:
+        BEGIN
+        AttrCreate.Post -> AttrSpacingCreated;
+        AttrModify.Post -> AttrSpacingCreated;
+        AttrDelete.Pre ->  AttrSpacingDelete;
+        END;
+
+   depth\240:
+        BEGIN
+        AttrCreate.Post -> AttrSpacingCreated;
+        AttrModify.Post -> AttrSpacingCreated;
+        AttrDelete.Pre ->  AttrSpacingDelete;
+        END;
+
+   linethickness:
+	BEGIN
+	AttrCreate.Post -> MathPresentAttrCreated;
+        AttrModify.Post -> MathPresentAttrCreated;
+        AttrDelete.Pre ->  AttrLinethicknessDelete;
+	END;
+
+   bevelled:
+	BEGIN
+	AttrCreate.Post -> AttrBevelledChanged;
+	AttrModify.Post -> AttrBevelledChanged;
+	AttrDelete.Post -> AttrBevelledChanged;		
+	END;
+
+   scriptlevel:
+        BEGIN
+        AttrCreate.Post -> AttrScriptlevelCreated;
+        AttrModify.Post -> AttrScriptlevelCreated;
+        AttrDelete.Pre ->  AttrScriptlevelDelete;
+        END;
+
+   background\240:
+        BEGIN
+        AttrCreate.Post -> MathAttrBackgroundCreated;
+        AttrModify.Post -> MathAttrBackgroundCreated;
+        AttrDelete.Pre ->  MathAttrBackgroundDelete;
+        END;
+
+   open:
+	BEGIN
+	AttrCreate.Post -> AttrOpenCloseChanged;
+	AttrModify.Post -> AttrOpenCloseChanged;
+	AttrDelete.Post -> AttrOpenCloseChanged;
+	END;
+   close:
+	BEGIN
+	AttrCreate.Post -> AttrOpenCloseChanged;
+	AttrModify.Post -> AttrOpenCloseChanged;
+	AttrDelete.Post -> AttrOpenCloseChanged;
+	END;
+   separators:
+	BEGIN
+	AttrCreate.Post -> AttrSeparatorsChanged;
+	AttrModify.Post -> AttrSeparatorsChanged;
+	AttrDelete.Post -> AttrSeparatorsChanged;
+	END;
+
+   subscriptshift:
+        BEGIN
+        AttrCreate.Post -> AttrScriptShiftCreated;
+        AttrModify.Post -> AttrScriptShiftCreated;
+        AttrDelete.Pre ->  AttrScriptShiftDelete;
+        END;
+   superscriptshift:
+        BEGIN
+        AttrCreate.Post -> AttrScriptShiftCreated;
+        AttrModify.Post -> AttrScriptShiftCreated;
+        AttrDelete.Pre ->  AttrScriptShiftDelete;
+        END;
+
+   alt:
+	BEGIN
+	AttrCreate.Post -> AttrAltModified;
+	AttrModify.Post -> AttrAltModified;
+	AttrDelete.Post -> AttrAltModified;
+	END;
+
+   rowalign:
+        BEGIN
+        AttrCreate.Post -> AttrRowAlignCreated;
+        AttrModify.Post -> AttrRowAlignCreated;
+        AttrDelete.Post -> AttrRowAlignDeleted;
+        END;
+
+   rowalign_mtr:
+        BEGIN
+        AttrCreate.Post -> AttrRowAlignMtrCreated;
+        AttrModify.Post -> AttrRowAlignMtrCreated;
+        AttrDelete.Post -> AttrRowAlignMtrDeleted;
+        END;
+
+   columnalign:
+        BEGIN
+        AttrCreate.Post -> AttrColAlignCreated;
+        AttrModify.Post -> AttrColAlignCreated;
+        AttrDelete.Post -> AttrColAlignDeleted;
+        END;
+
+   columnalign_mtd:
+        BEGIN
+        AttrCreate.Post -> AttrColAlignMtdCreated;
+        AttrModify.Post -> AttrColAlignMtdCreated;
+        AttrDelete.Post -> AttrColAlignMtdDeleted;
+        END;
+
+   rowspacing:
+        BEGIN
+        AttrCreate.Post -> AttrRowspacingCreated;
+        AttrModify.Post -> AttrRowspacingCreated;
+        AttrDelete.Post -> AttrRowspacingDeleted;
+        END;
+
+   columnspacing:
+        BEGIN
+        AttrCreate.Post -> AttrColumnspacingCreated;
+        AttrModify.Post -> AttrColumnspacingCreated;
+        AttrDelete.Post -> AttrColumnspacingDeleted;
+        END;
+
+   rowlines:
+        BEGIN
+        AttrCreate.Post -> AttrRowlinesCreated;
+        AttrModify.Post -> AttrRowlinesCreated;
+        AttrDelete.Post -> AttrRowlinesDeleted;
+        END;
+
+   columnlines:
+        BEGIN
+        AttrCreate.Post -> AttrColumnlinesCreated;
+        AttrModify.Post -> AttrColumnlinesCreated;
+        AttrDelete.Post -> AttrColumnlinesDeleted;
+        END;
+
+   framespacing:
+	BEGIN
+	AttrCreate.Post -> AttrFramespacingCreated;
+	AttrModify.Post -> AttrFramespacingCreated;
+	AttrDelete.Post -> AttrFramespacingDeleted;
+	END;
+
+   displaystyle:
+	BEGIN
+	AttrCreate.Post -> MathDisplaystyleAttrCreated;
+	AttrModify.Post -> MathDisplaystyleAttrCreated;
+	AttrDelete.Post -> MathDisplaystyleAttrDeleted;
+	END;
+
+   columnspan:
+	BEGIN
+	AttrCreate.Post -> ColspanCreated;
+	AttrModify.Pre ->  RegisterColspan;
+	AttrModify.Post -> ColspanModified;
+	AttrDelete.Pre ->  RegisterColspan;
+	AttrDelete.Post -> ColspanDeleted;
+	END;
+
+   rowspan\240:
+	BEGIN
+	AttrCreate.Post -> RowspanCreated;
+	AttrModify.Pre ->  RegisterRowspan;
+	AttrModify.Post -> RowspanModified;
+	AttrDelete.Pre ->  RegisterRowspan;
+	AttrDelete.Post -> RowspanDeleted;
+	END;
+
+END

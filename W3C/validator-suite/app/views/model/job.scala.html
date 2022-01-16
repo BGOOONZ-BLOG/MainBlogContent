@@ -1,0 +1,105 @@
+@(job: JobView, collection: Option[Collection[Model]])
+    <article data-id="@job.id">
+        <dl>
+            @JobView.definitions.map { definition =>
+            <dt>@Messages(s"jobs.${definition.name}")</dt>
+            <dd class="@{definition.name}">
+                @definition.name match {
+
+                case "name" => {
+                <a href="@routes.Resources.index(job.id, None)" title="@Messages("report.job.link")" data-name="">@job.name</a>}
+
+                case "entrypoint" => {
+                <a href="@job.entrypoint" data-entrypoint="@job.entrypoint" class="external" target="_blank" title="@Messages("resource.external.link")">
+                    @Helper.shorten(job.entrypoint, 100)
+                </a>}
+
+                case "status" => {
+
+                @job.status match {
+                case JobDataRunning(progress) => {<span data-status="running" data-progress="@progress" class="running">Running (@progress%)</span>}
+                case JobDataIdle       => {<span data-status="idle" class="idle">Idle</span>}
+                }
+                @if(!collection.isDefined) {
+                <form action="@routes.Job.dispatcher(job.id)" method="post">
+                    <input type="hidden" name="uri" value="@routes.Jobs.index"/>
+                    @job.status match {
+                    case JobDataRunning(_) => {<button type="submit" name="action" value="stop" class="stop">@Messages("job.button.stop")</button>}
+                    case JobDataIdle       => {<button type="submit" name="action" value="run" class="run" title="@Messages("job.button.run.title")">@Messages("job.button.run")</button>}
+                    }
+                </form>}}
+
+                case "completedOn" => {
+                @job.completedOn match{
+                  case Some(date) => {
+                    <time datetime="@date" data-completed="@date" data-completed-legend1="">@Helper.formatTime(date)</time>
+                    <span class="legend" data-completed-legend2="">@Helper.formatLegendTime(date)</span>}
+                  case _ => {<span class="never">Never</span>}
+                }}
+
+                case "warnings" => {
+                <span data-warnings="">@job.warnings</span>}
+
+                case "errors" => {
+                <span data-errors="">@job.errors</span>}
+
+                case "resources" => {
+                <span data-resources="@job.resources">@job.resources<span class="onMax">/@job.maxResources</span></span>}
+
+                case "maxResources" => {
+                <span data-max-resources="">@job.maxResources</span>}
+
+                case "health" => {
+                <progress max="100" value="@job.health" title="Health: @job.health%" data-health="@job.health">@job.health%</progress>}
+
+                case "actions" => {
+                @if(collection.isDefined) {
+                @defining(collection.get) { collection =>
+                <ul class="reportTypes">
+                    @if(!collection.isGroupedBy("message")){
+                    <li><span class="selected" title="View the report grouped by URL (current)">By URL</span></li>
+                    <li><a href="./messages" title="View the report grouped by message">By Message</a></li>
+                    } else {
+                    <li><a href="./resources"  title="View the report grouped by URL">By URL</a></li>
+                    <li><span class="selected"  title="View the report grouped by message (current)">By Message</span></li>
+                    }
+                </ul>
+                }}
+                @if(collection.isDefined) {
+                @defining(collection.get) { collection =>
+                <form method="get" class="jobAction searchForm">
+                    <fieldset>
+                        <legend>Filter results</legend>
+                        <input class="search" name="search" type="text" placeholder="Filter results" title="Filter results" value="@collection.params.search" @if(collection.params.search != None){class="clearable"} required/>
+                        @if(collection.params.search != None) {
+                        <a class="button clear" href="@collection.search().goToPage(1).queryString">@Messages("job.button.clear")</a>}
+                        @collection.search().goToPage(1).queryParameters.map { param =>
+                        <input name="@param.name" type="hidden" value="@param.value"/>}
+                        <button type="submit">@Messages("job.button.search")</button>
+                    </fieldset>
+                </form>
+                }}
+                <form action="@routes.Job.dispatcher(job.id)" method="post" class="jobAction">
+                    @if(!collection.isDefined) {<input type="hidden" name="uri" value="@routes.Jobs.index"/>}
+                    <fieldset>
+                        <legend>Controls</legend>
+                        @job.status match {
+                        case JobDataRunning(_) => {<button type="submit" name="action" value="stop" class="stop">@Messages("job.button.stop")</button>}
+                        case JobDataIdle       => {<button type="submit" name="action" value="run" class="run">@Messages("job.button.run")</button>}
+                        }
+                        <button type="submit" name="action" value="delete" class="delete" title="@Messages("job.button.delete.title")">@Messages("job.button.delete")</button>
+                    </fieldset>
+                </form>
+              }
+            }
+            </dd>}
+
+            @**collection match {
+              case Some(Left(assertions)) => {}
+              case Some(Right(resources)) => {}
+              case _ => {}
+            }**@
+
+        </dl>
+        <hr/>
+    </article>

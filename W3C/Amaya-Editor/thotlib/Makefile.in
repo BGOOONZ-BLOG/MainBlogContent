@@ -1,0 +1,384 @@
+#
+# Makefile for thotlib directory
+# Generated from thotlib/Makefile.in
+# Daniel Veillard, 1997
+#
+
+.SUFFIXES: .cpp .c .o ND.o
+
+@VPATHOPT@= @srcdir@
+THOTDIR = @top_srcdir@
+THOTINCLUDES=@THOTINCLUDES@
+
+include ../Options
+
+INCLUDES= -DHAVE_CONFIG_H -I.. -I@top_srcdir@/amaya/xpm ${THOTINCLUDES} $(GUI_INCLUDES) $(GL_INCLUDES) $(GTK_GL_INCLUDES) $(XFT_INCLUDES) $(FREETYPE_INCLUDES) ${EXTRA_INCLUDES}
+LIBS	= -L. -L.. @LIBS@ $(IMGLIBS) $(GL_LIBRARIES) $(GTK_GL_LIBRARIES) $(XFT_LIBRARIES) $(FREETYPE_LIBRARIES) $(GTK_LIBRARIES) $(WX_LIBRARIES)
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+libdir = @libdir@
+bindir = @bindir@
+MACHINE= @target@
+
+SUBDIRS = include
+OBJDIRS = base content dialogue document editing image presentation tree unicode view
+
+@SET_MAKE@
+
+#
+# Rule to build standard objects
+#
+.c.o :
+	$(CXX) $(CXXFLAGS) $(THOT_OPTIONS) $(INCLUDES) -c $< -o $@
+
+#
+# Rule to build c++ files
+#
+.cpp.o :
+	$(CXX) $(CXXFLAGS) $(THOT_OPTIONS) $(INCLUDES) -c $< -o $@
+
+#
+# Rule to build specific objects for libThotKernel.a
+#
+.cND.o :
+	$(CXX) $(CXXFLAGS) $(THOT_OPTIONS) $(INCLUDES) -DNODISPLAY -c $< -o $@
+
+all : directories libThotKernel.a libThotEditor.a
+
+clean :
+	$(RM) libThotKernel.a libThotEditor.a
+	(for dir in $(OBJDIRS) ; do $(RM) -r $$dir/*.o ; done)
+
+install :
+
+uninstall:
+
+directories :
+	@(for dir in $(OBJDIRS) ; \
+	  do if test ! -d $$dir ; then $(MKDIR) $$dir ; fi ; done)
+
+force :
+
+../amaya/libCSS.a : force
+	@(cd ../amaya ; $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)"  CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" libCSS)
+
+include .depends
+
+../tools/mkdep/mkdep : 
+	@(cd ../tools/mkdep ; $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" )
+
+.depends depend : ../tools/mkdep/mkdep
+	../tools/mkdep/mkdep -relative -vpath $(VPATH) $(INCLUDES) $(VPATH)/*/*.c $(VPATH)/*/*.cpp  > .depends
+
+#########################################################################
+#									#
+#		Rules to build the main libraries			#
+#									#
+#########################################################################
+
+THOTK_OBJ = \
+	base/AmayaAppInstance.o \
+	base/AmayaLogDebug.o \
+	base/wxAmayaTimer.o \
+	base/wxAmayaSocketEvent.o \
+	base/wxAmayaSocketEventLoop.o \
+	base/global.o \
+	base/memory.o \
+	base/message.o \
+	base/platform.o \
+	base/registry.o \
+	base/registry_wx.o \
+	base/message_wx.o \
+	base/actions.o \
+	base/units.o \
+	base/logdebug.o \
+	base/testcase.o \
+	document/externalref.o \
+	document/language.o \
+	document/readprs.o \
+	document/readstr.o \
+	document/readtra.o \
+	document/schtrad.o \
+	document/writeprs.o \
+	document/writestr.o \
+	tree/exceptions.o \
+	tree/tree.o \
+	tree/checkaccess.o \
+	tree/labelalloc.o \
+	unicode/uconvert.o \
+	unicode/ustring.o
+
+KERNEL_OBJ = \
+	base/AmayaApp.o \
+	base/batchmessage.o \
+	base/fileaccessND.o \
+	base/structlist.o \
+	content/contentapiND.o \
+	content/contentND.o \
+	dialogue/nodisplay.o \
+	document/documentapiND.o \
+	document/readpivot.o \
+	document/schemasND.o \
+	document/writepivotND.o \
+	editing/applicationapiND.o \
+	presentation/presentationapiND.o \
+	tree/attributeapiND.o \
+	tree/references.o \
+	tree/referenceapiND.o \
+	tree/structschema.o \
+	tree/treeapiND.o 
+
+DISPLAY_OBJ = \
+	base/fileaccess.o \
+	content/content.o \
+	content/dictionary.o \
+	image/encdec.o \
+	dialogue/fontserver.o \
+	dialogue/fontconfig.o \
+	dialogue/font.o \
+	dialogue/stix.o \
+	document/documentapi.o \
+	document/readpivot.o \
+	document/schemas.o \
+	document/translation.o \
+	editing/applicationapi.o \
+	image/abspictures.o \
+	image/epshandler.o \
+	image/gifhandler.o \
+	image/jpeghandler.o \
+	image/picture.o \
+	image/pnghandler.o \
+	image/xpmhandler.o \
+	presentation/attrpresent.o \
+	presentation/changepresent.o \
+	presentation/presrules.o \
+	presentation/presvariables.o \
+	presentation/pschemaapi.o \
+	presentation/style.o \
+	tree/attributes.o \
+	tree/pagecommands.o \
+	tree/references.o \
+	tree/structschema.o \
+	view/absboxes.o \
+	view/boxmoves.o \
+	view/boxpositions.o \
+	view/boxrelations.o \
+	view/buildboxes.o \
+	view/buildlines.o \
+	view/changeabsbox.o \
+	view/createabsbox.o \
+	view/createpages.o \
+	view/displaybox.o \
+	view/displayview.o \
+	view/frame.o \
+	view/hyphen.o \
+	view/tesse.o \
+	view/glgradient.o \
+	dialogue/glglyph.o \
+	dialogue/openglfont.o \
+	view/glwindowdisplay.o \
+	view/gldisplay.o \
+	view/spline.o
+
+EDITOR_OBJ = \
+	base/AmayaApp.o \
+	base/alloca.o \
+	base/config.o \
+	base/containers.o \
+	base/thotmsg.o \
+	base/structlist.o \
+	content/contentapi.o \
+	content/search.o \
+	content/searchref.o \
+	content/word.o \
+  dialogue/AmayaActionEvent.o \
+	dialogue/AmayaStatusBar.o \
+	dialogue/AmayaConfirmCloseTab.o \
+	dialogue/AmayaAddPointEvtHandler.o \
+	dialogue/AmayaMovePointEvtHandler.o \
+	dialogue/AmayaMovingBoxEvtHandler.o \
+	dialogue/AmayaResizingBoxEvtHandler.o \
+	dialogue/AmayaCreateShapeEvtHandler.o \
+	dialogue/AmayaCreatePathEvtHandler.o \
+	dialogue/AmayaTransformEvtHandler.o \
+	dialogue/AmayaEditPathEvtHandler.o \
+	dialogue/AmayaEditShapeEvtHandler.o \
+	dialogue/AmayaDialog.o \
+	dialogue/AmayaWindow.o \
+	dialogue/AmayaWindowIterator.o \
+	dialogue/AmayaSimpleWindow.o \
+	dialogue/AmayaNormalWindow.o \
+	dialogue/AmayaClassicWindow.o \
+  dialogue/AmayaClassicNotebook.o \
+	dialogue/AmayaAdvancedWindow.o \
+  dialogue/AmayaAdvancedNotebook.o \
+  dialogue/AmayaHelpWindow.o \
+	dialogue/AmayaQuickSplitButton.o \
+	dialogue/AmayaPanel.o \
+	dialogue/AmayaPopupList.o \
+	dialogue/AmayaApplyClassPanel.o \
+	dialogue/AmayaXHTMLPanel.o \
+	dialogue/AmayaElementPanel.o \
+	dialogue/AmayaStylePanel.o \
+	dialogue/AmayaExplorerPanel.o \
+	dialogue/AmayaAttributePanel.o \
+	dialogue/AmayaMathMLPanel.o \
+	dialogue/AmayaSVGPanel.o \
+	dialogue/AmayaXMLPanel.o \
+    dialogue/AmayaTemplatePanel.o \
+	dialogue/AmayaPage.o \
+	dialogue/AmayaFrame.o \
+	dialogue/AmayaCanvas.o \
+	dialogue/AmayaColorButton.o \
+	dialogue/AmayaToolBar.o \
+	dialogue/AmayaScrollBar.o \
+	dialogue/AmayaFileDropTarget.o \
+	dialogue/AmayaSpeCharPanel.o \
+	dialogue/AmayaStatsThread.o \
+	dialogue/AmayaPathControl.o \
+  dialogue/AmayaTipOfTheDay.o \
+	dialogue/appdialogue_wx.o \
+	dialogue/callback.o\
+	dialogue/callbackinit.o \
+	dialogue/appdialogue.o \
+	dialogue/appli.o \
+	dialogue/archives.o \
+	dialogue/attrmenu.o \
+	dialogue/base64.o \
+	dialogue/browser.o \
+	dialogue/closedoc.o \
+	dialogue/context.o \
+	dialogue/creationmenu.o \
+	dialogue/dialogapi.o \
+	dialogue/email.o \
+	dialogue/Elemlist.o \
+	dialogue/geom.o \
+	dialogue/input.o \
+	dialogue/interface.o \
+	dialogue/md5.o \
+	dialogue/modiftype.o \
+	dialogue/profiles.o \
+	dialogue/presentmenu.o \
+	dialogue/printmenu.o \
+	dialogue/searchmenu.o \
+	dialogue/SMTP.o \
+	document/docs.o \
+	document/views.o \
+	document/writedoc.o \
+	document/writepivot.o \
+	editing/checkermenu.o \
+	editing/editcommands.o \
+	editing/scroll.o \
+	editing/spellchecker.o \
+	editing/selectionapi.o \
+	editing/structcommands.o \
+	editing/structcreation.o \
+	editing/structmodif.o \
+	editing/structselect.o \
+	editing/textcommands.o \
+	editing/undo.o \
+	editing/undoapi.o \
+	editing/unstructchange.o\
+	image/pictureapi.o \
+	presentation/presentationapi.o \
+	tree/attributeapi.o \
+	tree/paginate.o \
+	tree/referenceapi.o \
+	tree/res.o \
+	tree/resmatch.o \
+	tree/resgen.o \
+	tree/treeapi.o \
+	view/animbox.o \
+	view/boxlocate.o \
+	view/boxparams.o \
+	view/boxselection.o \
+	view/displayselect.o \
+	view/glbox.o \
+	view/gltimer.o \
+	view/inites.o \
+	view/tableH.o \
+	view/unstructlocate.o\
+	view/viewapi.o
+
+base/registry.o : @srcdir@/base/registry.c
+	$(CXX) $(CXXFLAGS) $(THOT_OPTIONS) $(INCLUDES) \
+	   -DCOMPILED_IN_THOTDIR=\"@top_srcdir@\" \
+	   -DCOMPILED_IN_THOTDIR2=\"@prefix@/thot\" \
+	   -DNODISPLAY \
+	   -DMACHINE=\"$(MACHINE)\" -c @srcdir@/base/registry.c -o $@
+
+libThotKernel : directories libThotKernel.a
+
+libThotKernel.a : $(THOTK_OBJ) $(KERNEL_OBJ)
+	$(AR) libThotKernel.a $(THOTK_OBJ) $(KERNEL_OBJ)
+	$(RANLIB) libThotKernel.a
+	@$(ECHO) "====>" libThotKernel is done
+
+libThotEditor : directories libThotEditor.a
+
+libThotEditor.a : $(THOTK_OBJ) $(DISPLAY_OBJ) $(EDITOR_OBJ)
+	$(AR) libThotEditor.a $(THOTK_OBJ) $(DISPLAY_OBJ) $(EDITOR_OBJ)
+	$(RANLIB) libThotEditor.a
+	@$(ECHO) "====>" libThotEditor is done
+
+#
+# Rules for producing the print binary
+#
+
+PRINT_OBJ= \
+	base/AmayaAppPP.o \
+  dialogue/AmayaActionEvent.o \
+	dialogue/AmayaPrintNotify.o \
+	dialogue/nodialog.o \
+	tree/paginatePP.o \
+	view/initpses.o \
+	view/psdisplay.o \
+	view/printgl.o \
+	view/tableH.o \
+	editing/print.o
+
+base/AmayaAppPP.o : @srcdir@/base/AmayaApp.cpp @srcdir@/include/thot_sys.h
+	$(CXX) $(CXXFLAGS) $(THOT_OPTIONS) $(INCLUDES) -D_GLPRINT -c @srcdir@/base/AmayaApp.cpp -o $@
+
+tree/paginatePP.o : @srcdir@/tree/paginate.c @srcdir@/include/thot_sys.h
+	$(CXX) $(CXXFLAGS) $(THOT_OPTIONS) $(INCLUDES) -DPAGINEETIMPRIME -c @srcdir@/tree/paginate.c -o $@
+
+print : ../bin ../bin/print
+
+../bin :
+	@(mkdir ../bin)
+
+../bin/print : $(THOTK_OBJ) $(DISPLAY_OBJ) $(PRINT_OBJ) \
+        ../amaya/libCSS.a
+	$(CXX) $(LDFLAGS) -o $@ $(THOTK_OBJ) $(DISPLAY_OBJ) $(PRINT_OBJ) ../amaya/libCSS.a $(LIBS)
+	@$(ECHO) "====>" print is done
+
+CEXTRACT= ../bin/cextract
+
+$(CEXTRACT) :
+	@(cd ../tools/cextract-$(CEXTRACT_VER) ; $(MAKE) )
+
+proto : ../bin/cextract
+	@(for i in @srcdir@/*/*.c ; \
+	  do \
+	  dir=`dirname $$i`;base=`basename $$i .c`; \
+	  dir="$$dir/../internals" ; \
+	  if [ ! -d $$dir/f ] ; then $(MKDIR) $$dir/f ;fi;\
+	  $(CEXTRACT) $(CEXTRACT_FLAGS) -o /tmp/cextract.$$base.$$$$ $$i 2> /dev/null ; \
+	  if [ -f $$dir/f/"$$base"_f.h ] ; \
+	  then \
+	      delta=`$(DIFF) /tmp/cextract.$$base.$$$$ $$dir/f/"$$base"_f.h` ; \
+	      if [ "$$delta" != "" ] ; \
+	      then \
+	          echo "  $$i proto changed" ; \
+		  $(MV) /tmp/cextract.$$base.$$$$ $$dir/f/"$$base"_f.h ; \
+              else \
+	          $(RM) /tmp/cextract.$$base.$$$$ ; \
+	      fi ; \
+	  else \
+	      echo "  $$i proto added" ; \
+	      $(MV) /tmp/cextract.$$base.$$$$ $$dir/f/"$$base"_f.h ; \
+	  fi ; \
+	 done)
+

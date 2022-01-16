@@ -1,0 +1,109 @@
+{% assign s = s | plus: 1 %}
+{% assign sc = include.sc %}
+{% assign sc_id = sc.id | replace:'WCAG2:','' %}
+{% assign sc_num = p | append: "." | append: g | append: "." | append: s %}
+{% assign tags = site.data.tags-sc[sc_id] %}
+{% assign keywordscontent = tags.con %}
+{% assign keywordsdeveloping = tags.dev %}
+{% assign keywordsinteraction = tags.int %}
+{% assign keywordsvisual = tags.vis %}
+{% if sc.alt_id[0] %}
+  {% assign qrid = sc.alt_id[0] | prepend: "qr-" %}
+{% else %}
+  {% assign qrid = sc_id | prepend: "qr-" %}
+{% endif%}
+<article role="region" id="{{sc_id}}" data-alt-id="{% for aid in sc.alt_id %}{{aid}} {% endfor %}" class="sc-wrapper current filter-levels-{{sc.level | downcase}} filter-hideversion-{{sc_ver}}" data-tags-con="{{keywordscontent}}" data-tags-dev="{{keywordsdeveloping}}" data-tags-int="{{keywordsinteraction}}" data-tags-vis="{{keywordsvisual}}" data-versions="{% for v in sc.versions %}{{v}} {% endfor %}" aria-labelledby="{{ qrid }}" aria-roledescription="success criterion">
+  <header>
+    <h4 id="{{ qrid }}"><strong>{{ p }}.{{ g }}.{{ s }}</strong> <span>{{sc.handle}}</span></h4>
+    <p class="h4"><span class="level-{{sc.level | downcase}}">Level {{sc.level}}</span>{% unless (sc.versions contains "2.0") %}<span class="newin21">(Added in 2.1)</span>{% endunless %}</p>
+  </header>
+  <div class="sc-content">
+    <div class="sc-text">
+	    <p>{{ sc.title }}</p>
+      {% for detail in sc.details %}
+        {% if detail.type == 'note' %}
+          <div class="note">
+            <p><em>{{ detail.handle }}:</em> {{ detail.text }}</p>
+          </div>
+        {% endif%}
+        {% if detail.type == 'ulist' %}
+          <hr>
+          <ul>{% for li in detail.items %}<li><p>{% if li.handle %}{% unless li.handle == "" %}<strong>{{li.handle}}:</strong> {% endunless %}{% endif %}{{li.text}}</p></li>{% endfor %}</ul>
+        {% endif%}
+        {% if detail.type == 'olist' %}
+          <hr>
+          <ol>{% for li in detail.items %}<li><p>{% if li.handle %}{% unless li.handle == "" %}<strong>{{li.handle}}:</strong> {% endunless %}{% endif %}{{li.text}}</p></li>{% endfor %}</ol>
+        {% endif%}
+        {% if detail.type == 'p' %}
+          <p>{{detail.text}}</p>
+        {% endif%}
+      {% endfor%}
+    </div>
+    <div class="understanding">
+      <a href="{{site.understandingurl}}{{sc_id}}.html" class="btn btn-default btn-sm"><svg aria-hidden="true" class="i-info"><use xlink:href="{{ "img/icons.svg" | relative_url }}#i-info"></use></svg> Understanding {{ p }}.{{ g }}.{{ s }}</a>
+    </div>
+  </div>
+    {% assign stech = [] %}
+    {% assign ssize = 0 %}
+    {% assign atech = [] %}
+    {% assign asize = 0 %}
+    {% assign ftech = [] %}
+    {% assign fsize = 0 %}
+    {% for sctech in sc.techniques %}
+      {% if sctech.sufficient %}
+        {% assign stech = sctech.sufficient %}
+        {% assign ssize = sctech.sufficient | size %}
+      {% else%}
+        {% if sctech.advisory %}
+          {% assign atech = sctech.advisory %}
+          {% assign asize = sctech.advisory | size %}
+        {% else %}
+          {% if sctech.failure %}
+            {% assign ftech = sctech.failure %}
+            {% assign fsize = sctech.failure | size %}
+          {% endif %}
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+    {% assign completesize = ssize | plus: asize | plus: fsize %}
+    {% if completesize >= 1 %}
+    <div class="techniques-button btn-group" role="group">
+      <button data-target="#techniques-{{ p }}{{ g }}{{ s }}" type="button" data-toggle="collapse" aria-expanded="false" aria-controls="techniques-{{ p }}{{ g }}{{ s }}" class="btn btn-info btn-techniques"><span class="word-show"><svg aria-hidden="true" class="i-chevron-right"><use xlink:href="{{ "img/icons.svg" | relative_url }}#i-chevron-right"></use></svg> Show</span><span class="word-hide"><svg aria-hidden="true" class="i-chevron-down"><use xlink:href="{{ "img/icons.svg" | relative_url }}#i-chevron-down"></use></svg> Hide</span> techniques and failures for {{ p }}.{{ g }}.{{ s }}</button>
+      <label class="btn btn-default {% unless ssize > 0 %}disabled{% endunless %}"><input type="checkbox" name="sc-{{ p }}{{ g }}{{ s }}-sufficient" {% if ssize > 0 %}checked{% else %}disabled{% endif %}><span> Sufficient</span></label>
+      <label class="btn btn-default {% unless asize > 0 %}disabled{% endunless %}"><input type="checkbox" name="sc-{{ p }}{{ g }}{{ s }}-advisory" {% if asize > 0 %}checked{% else %}disabled{% endif %}><span> Advisory</span></label>
+      <label class="btn btn-default {% unless fsize > 0 %}disabled{% endunless %}"><input type="checkbox" name="sc-{{ p }}{{ g }}{{ s }}-failures" {% if fsize > 0 %}checked{% else %}disabled{% endif %}><span> Failures</span></label>
+    </div>
+  <div class="collapse" id="techniques-{{ p }}{{ g }}{{ s }}">
+    <div>
+      <div class="tab-wrap">
+        <div class="tab-content">
+          {% if ssize >= 1 %}
+            {% assign theadid = "sc-" |append: p | append: g | append: s | append: "-sufficient-head" %}
+            {% assign theadtitle = "Sufficient Techniques <span class='sr-only'>for Success Criterion " | append: sc_num | append: "</span>" %}
+            <section class="tbox tbox-sufficient tab-pane active" id="sc-{{ p }}{{ g }}{{ s }}-sufficient" data-historicalid="{% for aid in sc.alt_id %}{{aid}}-sufficient-head {% endfor %}" aria-labelledby="{{ theadid }}">
+              {% include techlist.html techtitle=theadtitle techheadid=theadid  techniques=stech notes=sc.sufficientNotes ttype="sufficient" %}
+            </section>
+          {% endif %}
+          {% if asize >= 1 %}
+            {% assign theadid = "sc-" |append: p | append: g | append: s | append: "-advisory-head" %}
+            {% assign theadtitle = "Advisory Techniques <span class='sr-only'>for Success Criterion " | append: sc_num | append: "</span>" %}
+            <section class="tbox tbox-advisory tab-pane active" id="sc-{{ p }}{{ g }}{{ s }}-advisory" data-historicalid="{% for aid in sc.alt_id %}{{aid}}-tech-optional-head {% endfor %}" aria-labelledby="{{ theadid }}">
+              {% include techlist.html techtitle=theadtitle techheadid=theadid techniques=atech ttype="advisory" %}
+            </section>
+          {% endif %}
+          {% if fsize >= 1 %}
+            {% assign theadid = "sc-" |append: p | append: g | append: s | append: "-failures-head" %}
+            {% assign theadtitle = "Failures <span class='sr-only'>for Success Criterion " | append: sc_num | append: "</span>" %}
+            <section class="tbox tbox-failures tab-pane active" id="sc-{{ p }}{{ g }}{{ s }}-failures" data-historicalid="{% for aid in sc.alt_id %}{{aid}}-failures-head {% endfor %}" aria-labelledby="{{ theadid }}">
+              {% include techlist.html techtitle=theadtitle techheadid=theadid techniques=ftech ttype="failure" %}
+            </section>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endif%}
+  <footer>
+    <a href="#top" class="toplink"><svg class="i-arrow-up" aria-hidden="true"><use xlink:href="{{ "img/icons.svg" | relative_url }}#i-arrow-up"></use></svg> Back to top</a>
+  </footer>
+</article>

@@ -1,0 +1,316 @@
+	{ Presentation Schema for XLink.
+
+	  V. Quint		June 2000 }
+
+
+PRESENTATION XLink;
+
+VIEWS
+   Formatted_view,
+   Structure_view merge with Structure_view,
+   Links_view merge with Links_view;
+
+#define TAG_FONTSIZE 11 pt
+#define ATTR_Font Helvetica
+#define ATTR_Style Roman
+#define ATTR_Weight Normal
+#define ATTR_Visibility 6
+#define INVALID_Style Roman
+#define INVALID_Weight Normal
+#define INVALID_Visibility 7
+#define INVALID_Font Helvetica
+#ifdef BLACK_WHITE
+#define ATTR_Color Black
+#define ATTRVALUE_Color Black
+#define INVALID_Color Black
+#else
+#define ATTR_Color DarkMagenta3
+#define ATTRVALUE_Color DarkBlue2
+#define INVALID_Color Red
+#endif
+
+DEFAULT
+
+   BEGIN
+   Visibility: Enclosing =;
+   VertRef: * . Left ;
+   HorizRef: Enclosed . HRef;
+   Height: Enclosed . Height;
+   Width: Enclosed . Width;
+   VertPos: HRef = Previous . HRef;
+   HorizPos: Left = Previous . Right;
+   LineBreak: No;
+   Font: Enclosing =;
+   Style: Roman;
+   Weight: Enclosing =;
+   Size: Enclosing =;
+   Indent: 0;
+   Adjust: Left;
+   LineSpacing: 1;
+   Depth : Enclosing =;
+   UnderLine: Enclosing =;
+   Thickness: Enclosing =;
+   LineStyle: Enclosing =;
+   LineWeight: Enclosing =;
+   Background: Enclosing =;
+   Foreground: Enclosing =;
+   FillPattern: Enclosing =;
+   IN Structure_view BEGIN
+	VertPos: Top = Previous . Bottom;
+	HorizPos: Left = Enclosing . Left;
+	END;
+   IN Links_view
+	Visibility: 0;
+   END;
+
+BOXES
+
+  AttrName: BEGIN
+	Content: (Text ' xlink:' AttributeName Text '=');
+	Visibility: 0;
+	IN Structure_view BEGIN
+		Visibility: ATTR_Visibility;
+		HorizPos: Left = Previous . Right;
+		VertPos: HRef = Previous . HRef;
+		Size: TAG_FONTSIZE;
+		Font: ATTR_Font; Style: ATTR_Style; Weight: ATTR_Weight;
+		Foreground: ATTR_Color;
+		END;
+	END;
+
+  AttrValue: BEGIN
+	Content: (AttributeValue);
+	Visibility: 0;
+	IN Structure_view BEGIN
+		Visibility: ATTR_Visibility;
+		HorizPos: Left = Previous . Right;
+		VertPos: HRef = Previous . HRef;
+		Size: TAG_FONTSIZE;
+		Font: ATTR_Font; Style: ATTR_Style; Weight: ATTR_Weight;
+		END;
+	END;
+
+  AttrNameAndValue: BEGIN
+        Content: (Text ' xlink:' AttributeName Text '=' AttributeValue);
+        Visibility: 0;
+        IN Structure_view BEGIN
+		Visibility: ATTR_Visibility;
+                HorizPos: Left = Previous . Right;
+                VertPos: HRef = Previous . HRef;
+                Size: TAG_FONTSIZE;
+                Font: ATTR_Font; Style: ATTR_Style; Weight: ATTR_Weight;
+                Foreground: ATTR_Color;
+                END;
+        END;
+
+  UnknownAttrValue: BEGIN
+	Content: (AttributeValue);
+	Visibility: 0;
+	IN Structure_view BEGIN
+                HorizPos: Left = Previous . Right;
+                VertPos: HRef = Previous . HRef;
+		Size: TAG_FONTSIZE;
+                Font: INVALID_Font;
+		Style: INVALID_Style;
+		Visibility: INVALID_Visibility;
+		Foreground: INVALID_Color;
+		END;	
+	END;
+
+ Unknown_End: BEGIN
+	Content: Text '>';
+	Visibility: 0;
+	IN Structure_view BEGIN
+		HorizPos: Left = Previous . Right;
+		VertPos: HRef = Previous . HRef;
+		Size: TAG_FONTSIZE;
+		Style: INVALID_Style;
+		Visibility: INVALID_Visibility;
+		Foreground: Creator =;
+		END;
+	END;
+
+  ATTR_href_enclosing: BEGIN
+	Visibility: 0;
+	IN Links_view BEGIN
+		Visibility: ATTR_Visibility;
+		Line;
+		VertPos: Top = Previous . Bottom;
+		HorizPos: Left = Enclosing . Left;
+		Height: Enclosed . Height;
+		Width: Enclosing . Width;
+		END;
+	END;
+
+  ATTRNameAndValue_links_view: BEGIN
+        Content: (Text ' xlink:' AttributeName Text '=' AttributeValue);
+        Visibility: 0;
+        IN Links_view BEGIN
+		Visibility: ATTR_Visibility;
+                HorizPos: Left = Previous . Right;
+                VertPos: HRef = Previous . HRef;
+                Size: TAG_FONTSIZE;
+                Font: ATTR_Font; Style: ATTR_Style; Weight: ATTR_Weight;
+                Foreground: ATTR_Color;
+                END;
+        END;
+
+  ATTR_href_links_view: BEGIN
+        Content: Text ' xlink:href=';
+        Visibility: 0;
+	IN Links_view BEGIN
+		Visibility: ATTR_Visibility;
+        	Size: TAG_FONTSIZE;
+        	Style: ATTR_Style;
+		Weight: ATTR_Weight;
+		Foreground: ATTR_Color;
+                VertPos: HRef = Previous . HRef;
+                HorizPos: Left = Previous . Right;
+		END;
+        END;
+
+  VALUE_href_links_view: BEGIN
+        Content: (href_);
+        Visibility: 0;
+	IN Links_view BEGIN
+		Visibility: ATTR_Visibility;
+        	Size: TAG_FONTSIZE;
+     		Style: ATTR_Style;
+		Weight: ATTR_Weight;
+		Foreground: ATTRVALUE_Color;
+                VertPos: HRef = Previous . HRef;
+                HorizPos: Left = Previous . Right;
+		END;
+        END;
+{
+ Annot_gif1: BEGIN
+#ifndef PAGE
+	Depth: Enclosing - 1;
+	Content: Picture 'annot.gif';
+        HorizRef: * . Bottom;	
+	HorizPos: Left = Enclosing . Left;
+	VertPos: Top = Enclosing . Top;
+   	IN Links_view BEGIN
+		Depth: 0;
+		Visibility: ATTR_Visibility;
+		END;
+#endif
+	END;
+}
+ Annotorph_gif: BEGIN
+#ifndef PAGE
+ 	Visibility: 0;
+	Content: Picture 'annotorp.gif';
+        HorizRef: * . Bottom;
+	HorizPos: Left = Enclosing . Left;
+	VertPos: Top = Enclosing . Top;
+   	IN Links_view
+		Visibility: ATTR_Visibility;
+#endif
+	END;
+
+RULES
+
+ XLink:	BEGIN
+	CreateEnclosing (ATTR_href_enclosing);
+	IN Structure_view BEGIN
+		Visibility: 0;
+		END;
+	IN Links_view
+		BEGIN
+		VertPos: Top = Previous AnyElem . Bottom;
+		HorizPos: Left = Enclosing . Left;
+		Visibility: 5;
+		END;
+	END;
+
+ PICTURE_UNIT: BEGIN
+#ifndef PAGE
+ 	{Visibility: 0;}
+	Depth: Enclosing - 1;
+        HorizRef: * . Bottom;
+	HorizPos: Left = Enclosing . Left;
+	VertPos: Top = Enclosing . Top;
+	Width: 16 px;
+	Height: 16 px;
+   	IN Links_view
+		Visibility: ATTR_Visibility;
+#endif	
+	END;
+
+ATTRIBUTES
+
+  AnnotOrphIcon (XLink):
+	BEGIN
+	Visibility: 0;
+        CreateFirst(Annotorph_gif);
+	IN Links_view
+		Visibility: 5;
+	END;
+
+  type:
+	BEGIN
+	CreateBefore(AttrNameAndValue);
+	CreateFirst(ATTRNameAndValue_links_view);
+   	IN Links_view
+		BEGIN
+		Visibility: 10;
+		Foreground: Enclosing =;
+  		VertPos: Top = Previous . Bottom + 0.2;
+                HorizPos: Left = Enclosing . Left + 1;
+		END;
+	END;
+
+  href_:
+	BEGIN
+	CreateBefore(AttrName);
+	CreateBefore(AttrValue);
+        CreateFirst(ATTR_href_links_view);
+  	CreateFirst(VALUE_href_links_view);
+	Foreground: Blue;
+        {if AnnotIcon1
+                CreateFirst(Annot_gif1);}
+	IN Structure_view
+		Foreground: Enclosing =;
+   	IN Links_view
+		BEGIN
+		Visibility: 10;
+		Foreground: Enclosing =;
+  		VertPos: Top = Previous . Bottom + 0.2;
+                HorizPos: Left = Enclosing . Left + 1;
+		END;
+	END;
+
+  AnnotIsHidden:
+	BEGIN
+ 	Visibility: 0;
+	IN Structure_view
+		Visibility: 0;
+	IN Links_view
+		Visibility: 5;
+	END;
+
+  Unknown_attribute:
+	BEGIN
+	CreateBefore(UnknownAttrValue);
+	if LastAttr
+	   CreateAfter(Unknown_End);
+	END;
+
+{****
+   role = TEXT;
+
+   arcrole = TEXT;
+
+   title = TEXT;
+
+   show = new, replace, embed, other, none_;
+
+   actuate = onLoad, onRequest, other, none_;
+
+   from = TEXT;
+
+   to = TEXT;
+****}
+
+END

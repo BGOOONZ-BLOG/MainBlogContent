@@ -1,0 +1,345 @@
+APPLICATION SVG;
+
+DEFAULT
+   BEGIN
+   ElemActivate.Pre -> DoubleClick;
+   ElemClick.Pre -> SimpleClick;
+   ElemRClick.Pre -> SimpleRClick;
+   ElemNew.Pre -> NewGraphElem;
+   ElemCopy.Pre -> CopyGraphElem;
+   ElemPaste.Pre -> NewGraphElem;
+   ElemPaste.Post -> GraphElemPasted;
+   AttrMenu.Pre -> GlobalSVGAttrInMenu;
+   PRuleCreate.Pre -> GraphicsPRuleChange;
+   PRuleModify.Pre -> GraphicsPRuleChange;
+   PRuleDelete.Post -> GraphicsPRuleDeleted;
+   ElemSelect.Post -> GraphicsSelectionChanged;
+   ElemExtendSelect.Pre -> ExtendSelectSVGElement;
+   ElemExtendSelect.Post -> SelectionChanged;
+   END;
+
+ELEMENTS
+
+   DOCTYPE:
+	ElemMenu.Pre -> SVGElementTypeInMenu;
+   SpanElement:
+	ElemMenu.Pre -> SVGElementTypeInMenu;
+   Timeline_cross:
+	ElemMenu.Pre -> SVGElementTypeInMenu;
+   GraphicsElement:
+	ElemMenu.Pre -> SVGElementTypeInMenu;
+
+   SVG:
+	BEGIN
+	ElemNew.Post ->         SVGCreated;
+	ElemDelete.Pre ->       SVGWillBeDeleted;
+	ElemExport.Pre ->       CheckValidProfile;
+  ElemPaste.Post ->       ElementPasted;
+	END;
+   title:
+	ElemTextModify.Post ->  TitleModified;
+   polyline:
+	ElemGraphModify.Post -> ControlPointChanged;
+   polygon:
+	ElemGraphModify.Post -> ControlPointChanged;
+   tspan:
+	ElemNew.Post ->         TspanCreated;
+   use_:
+	ElemPaste.Post ->       UsePasted;
+   image:
+	ElemNew.Post ->         SvgImageCreated;
+   style__:
+	BEGIN
+	ElemTextModify.Pre ->   ChangeStyle;
+	ElemTextModify.Post ->  StyleChanged;
+	ElemDelete.Pre ->       DeleteStyle;
+	ElemPaste.Post ->       StylePasted;
+	END;
+   foreignObject:
+	ElemExport.Pre ->       ExportForeignObject;
+
+   XMLPI:
+	BEGIN
+	ElemTextModify.Pre -> XmlStyleSheetWillBeModified;
+	ElemTextModify.Post -> XmlStyleSheetModified;
+	END;
+
+   GRAPHICS_UNIT:
+	ElemDelete.Post ->      GraphLeafDeleted;
+   PICTURE_UNIT:
+	ElemPaste.Pre ->        PastePicture;
+   TEXT_UNIT:
+	BEGIN
+	ElemPaste.Post -> SVGTextPasted;
+	ElemDelete.Pre -> XmlStyleSheetDeleted;
+	END;
+
+ {Timeline & edition of animations, 
+ when the bug of Amaya pre value = post value will be fixed,
+ merge this call with the DEFAULT call}
+ Timeline_cross:
+   PRuleModify.Post -> Timeline_cross_prule_modified;
+
+ATTRIBUTES
+
+   Language:
+	BEGIN
+	AttrCreate.Post -> AttrLangCreated;
+	AttrDelete.Pre  -> AttrLangShouldBeDeleted;
+	AttrDelete.Post -> AttrLangDeleted;
+	AttrModify.Pre ->  AttrLangModified;
+	END;
+
+   id:
+        BEGIN
+        AttrCreate.Post -> UpdateAttrID;
+        AttrModify.Post -> UpdateAttrID;
+        AttrDelete.Post -> UpdateAttrID;
+        END;
+
+   xmlid:
+        BEGIN
+        AttrCreate.Post -> UpdateAttrID;
+        AttrModify.Post -> UpdateAttrID;
+        AttrDelete.Post -> UpdateAttrID;
+        END;
+
+   class:
+        BEGIN
+        AttrCreate.Post -> AttrClassChanged;
+        AttrModify.Post -> AttrClassChanged;
+        AttrDelete.Post -> AttrClassChanged;
+        END;
+ 
+   style_:
+        BEGIN
+        AttrDelete.Pre ->  UpdateStyleDelete;
+        AttrModify.Pre ->  UpdateStyleDelete;
+        AttrCreate.Post -> UpdateStylePost;
+        AttrModify.Post -> UpdateStylePost;
+        END;
+
+   Namespace:
+	AttrExport.Post -> NameSpaceGenerated;
+
+   height_:
+	BEGIN
+	AttrCreate.Post -> AttrWidthHeightChanged;
+	AttrModify.Post -> AttrWidthHeightChanged;
+	AttrDelete.Pre ->  AttrWidthHeightDelete;
+	END;
+   width_:
+	BEGIN
+	AttrCreate.Post -> AttrWidthHeightChanged;
+	AttrModify.Post -> AttrWidthHeightChanged;
+	AttrDelete.Pre ->  AttrWidthHeightDelete;
+	END;
+   font_family:
+        BEGIN
+	AttrModify.Post -> AttrCSSequivModified;
+	AttrCreate.Post -> AttrCSSequivModified;
+	AttrDelete.Pre ->  AttrCSSequivDelete;
+	END;
+   font_size:
+        BEGIN
+	AttrModify.Post -> AttrCSSequivModified;
+	AttrCreate.Post -> AttrCSSequivModified;
+	AttrDelete.Pre ->  AttrCSSequivDelete;
+	END;
+   font_style:
+        BEGIN
+	AttrModify.Post -> AttrCSSequivModified;
+	AttrCreate.Post -> AttrCSSequivModified;
+	AttrDelete.Pre ->  AttrCSSequivDelete;
+	END;
+   font_variant:
+        BEGIN
+	AttrModify.Post -> AttrCSSequivModified;
+	AttrCreate.Post -> AttrCSSequivModified;
+	AttrDelete.Pre ->  AttrCSSequivDelete;
+	END;
+   font_weight:
+        BEGIN
+	AttrModify.Post -> AttrCSSequivModified;
+	AttrCreate.Post -> AttrCSSequivModified;
+	AttrDelete.Pre ->  AttrCSSequivDelete;
+	END;
+   text_anchor:
+	BEGIN
+	AttrModify.Post -> AttrTextAnchorModified;
+	AttrCreate.Post -> AttrTextAnchorModified;
+	AttrDelete.Pre ->  AttrTextAnchorDelete;
+	END;
+   text_decoration:
+	BEGIN
+	AttrModify.Post -> AttrCSSequivModified;
+	AttrCreate.Post -> AttrCSSequivModified;
+	AttrDelete.Pre ->  AttrCSSequivDelete;
+	END;	
+   opacity_:
+        BEGIN
+	AttrModify.Post -> AttrCSSequivModified;
+	AttrCreate.Post -> AttrCSSequivModified;
+	AttrDelete.Pre ->  AttrCSSequivDelete;
+	END;
+   stroke_opacity:
+        BEGIN
+	AttrModify.Post -> AttrCSSequivModified;
+	AttrCreate.Post -> AttrCSSequivModified;
+	AttrDelete.Pre ->  AttrCSSequivDelete;
+	END;
+   fill_opacity:
+        BEGIN
+	AttrModify.Post -> AttrCSSequivModified;
+	AttrCreate.Post -> AttrCSSequivModified;
+	AttrDelete.Pre ->  AttrCSSequivDelete;
+	END;	
+   fill:
+        BEGIN
+	AttrModify.Post -> AttrCSSequivModified;
+	AttrCreate.Post -> AttrCSSequivModified;
+	AttrDelete.Pre ->  AttrCSSequivDelete;
+	END;
+   stop_color:
+        BEGIN
+	AttrModify.Post -> AttrCSSequivModified;
+	AttrCreate.Post -> AttrCSSequivModified;
+	AttrDelete.Pre ->  AttrCSSequivDelete;
+	END;
+   gradientUnits:
+        BEGIN
+	AttrModify.Post -> AttrCSSequivModified;
+	AttrCreate.Post -> AttrCSSequivModified;
+	AttrDelete.Pre ->  AttrCSSequivDelete;
+	END;
+   offset:
+        BEGIN
+	AttrModify.Post -> AttrCSSequivModified;
+	AttrCreate.Post -> AttrCSSequivModified;
+	AttrDelete.Pre ->  AttrCSSequivDelete;
+	END;
+   stroke:
+        BEGIN
+	AttrModify.Post -> AttrCSSequivModified;
+	AttrCreate.Post -> AttrCSSequivModified;
+	AttrDelete.Pre ->  AttrCSSequivDelete;
+	END;
+   stroke_width:
+        BEGIN
+	AttrModify.Post -> AttrCSSequivModified;
+	AttrCreate.Post -> AttrCSSequivModified;
+	AttrDelete.Pre ->  AttrCSSequivDelete;
+	END;
+
+   requiredFeatures:
+        BEGIN
+	AttrModify.Post -> EvaluateSwitch;
+	AttrCreate.Post -> EvaluateSwitch;
+	AttrDelete.Post -> EvaluateSwitch;
+	END;
+   requiredExtensions:
+        BEGIN
+	AttrModify.Post -> EvaluateSwitch;
+	AttrCreate.Post -> EvaluateSwitch;
+	AttrDelete.Post -> EvaluateSwitch;
+	END;
+   systemLanguage:
+        BEGIN
+	AttrModify.Post -> EvaluateSwitch;
+	AttrCreate.Post -> EvaluateSwitch;
+	AttrDelete.Post -> EvaluateSwitch;
+	END;
+
+   transform:
+	BEGIN
+	AttrModify.Post -> AttrTransformChanged;
+	AttrCreate.Post -> AttrTransformChanged;
+	AttrDelete.Pre ->  AttrTransformDelete;
+	END;
+   d:
+	BEGIN
+	AttrModify.Post -> AttrPathDataChanged;
+	AttrDelete.Pre ->  AttrPathDataDelete;
+	END;
+   x:
+	BEGIN
+	AttrModify.Post -> AttrCoordChanged;
+	AttrCreate.Post -> AttrCoordChanged;
+	AttrDelete.Post -> AttrCoordDelete;
+	END;
+   y:
+	BEGIN
+	AttrModify.Post -> AttrCoordChanged;
+	AttrCreate.Post -> AttrCoordChanged;
+	AttrDelete.Post -> AttrCoordDelete;
+	END;
+   cx:
+	AttrModify.Post -> AttrCoordChanged;
+   cy:
+	AttrModify.Post -> AttrCoordChanged;
+   r:
+	BEGIN
+	AttrModify.Post -> AttrWidthHeightChanged;
+	AttrDelete.Pre ->  AttrWidthHeightDelete;
+	END;
+   rx:
+	BEGIN
+	AttrModify.Post -> AttrWidthHeightChanged;
+	AttrCreate.Post -> AttrWidthHeightChanged;
+	AttrDelete.Pre ->  AttrWidthHeightDelete;
+	END;
+   ry:
+	BEGIN
+	AttrModify.Post -> AttrWidthHeightChanged;
+	AttrCreate.Post -> AttrWidthHeightChanged;
+	AttrDelete.Pre ->  AttrWidthHeightDelete;
+	END;
+   x1:
+	AttrModify.Post -> AttrCoordChanged;
+   y1:
+	AttrModify.Post -> AttrCoordChanged;
+   x2:
+	AttrModify.Post -> AttrCoordChanged;
+   y2:
+	AttrModify.Post -> AttrCoordChanged;
+   points:
+	BEGIN
+	AttrDelete.Pre ->  DeleteAttrPoints;
+	AttrModify.Post -> AttrPointsModified;
+	END;
+   dx:
+	BEGIN
+	AttrModify.Post -> AttrCoordChanged;
+	AttrCreate.Post -> AttrCoordChanged;
+	AttrDelete.Pre ->  AttrCoordDelete;
+	END;	
+   dy:
+	BEGIN
+	AttrModify.Post -> AttrCoordChanged;
+	AttrCreate.Post -> AttrCoordChanged;
+	AttrDelete.Pre ->  AttrCoordDelete;
+	END;	
+   baseline_shift:
+	BEGIN
+	AttrModify.Post -> AttrBaselineShiftChanged;
+	AttrCreate.Post -> AttrBaselineShiftChanged;
+	AttrDelete.Pre ->  AttrBaselineShiftDelete;
+	END;	
+   xlink_href:
+	BEGIN
+	AttrModify.Post -> AttrXlinkHrefChanged;
+	AttrDelete.Pre ->  DeleteAttrXlinkHref;
+	END;
+   begin_:
+	BEGIN
+	AttrCreate.Post -> AttrAnimTimeChanged;
+	AttrModify.Post -> AttrAnimTimeChanged;
+	AttrDelete.Post -> AttrAnimTimeChanged;
+	END;
+   dur:
+	BEGIN
+	AttrCreate.Post -> AttrAnimTimeChanged;
+	AttrModify.Post -> AttrAnimTimeChanged;
+	AttrDelete.Post -> AttrAnimTimeChanged;
+	END;
+END

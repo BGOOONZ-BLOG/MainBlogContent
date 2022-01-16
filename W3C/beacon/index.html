@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Beacon</title>
+  <meta charset='utf-8'>
+  <script src='//www.w3.org/Tools/respec/respec-w3c-common' async class=
+  'remove'></script>
+  <script class='remove'>
+  var respecConfig = {
+    shortName: "beacon",
+    specStatus: "ED",
+    useExperimentalStyles: true,
+    edDraftURI: "https://w3c.github.io/beacon/",
+    editors: [{
+      name: "Ilya Grigorik",
+      url: "https://www.igvita.com/",
+      mailto: "igrigorik@gmail.com",
+      company: "Shopify",
+      w3cid: "56102"
+    }, {
+      name: "Alois Reitbauer",
+      mailto: "alois.reitbauer@compuware.com",
+      company: "Compuware Corp.",
+      w3cid: "48276"
+    }, {
+      name: "Arvind Jain",
+      mailto: "arvind@google.com",
+      company: "Google Inc.",
+      retiredDate: "2015-01",
+      w3cid: "45188"
+    }, {
+      name: "Jatinder Mann",
+      mailto: "jmann@microsoft.com",
+      company: "Microsoft Corp.",
+      retiredDate: "2014-02",
+      w3cid: "44357"
+    }],
+    wg: "Web Performance Working Group",
+    wgURI: "https://www.w3.org/webperf/",
+    license: 'w3c-software-doc',
+    wgPublicList: "public-web-perf",
+    noLegacyStyle: true,
+    github: "https://github.com/w3c/beacon",
+    testSuiteURI: "https://w3c-test.org/beacon/",
+    otherLinks: [{
+      key: 'Implementation',
+      data: [{
+        value: 'Can I use Beacon?',
+        href: 'http://caniuse.com/#feat=beacon'
+      }]
+    }],
+    wgPatentURI:  "https://www.w3.org/2004/01/pp-impl/45211/status"
+  };
+  </script>
+</head>
+<body data-link-for="Navigator">
+  <section id="abstract">
+    <p>This specification defines an interface that web developers can use to
+    schedule asynchronous and non-blocking delivery of data that minimizes
+    resource contention with other time-critical operations, while ensuring
+    that such requests are still processed and delivered to destination.</p>
+  </section>
+  <section id='sotd'></section>
+  <section id="introduction" class='informative'>
+    <h2>Introduction</h2>
+    <p>Web applications often need to issue requests that report events, state
+    updates, and analytics to one or more servers. Such requests typically do
+    not require response processing on the client (e.g. result in 204, or 200
+    HTTP response codes with an empty response body), and should not compete
+    for network and compute resources with other high priority operations such
+    as fetching critical resources, reacting to input, running animations, and
+    so on. However, such one-way requests (beacons), are also responsible for
+    delivering critical application and measurement data, forcing developers to
+    use costly methods to ensure their delivery:</p>
+    <ul>
+      <li>Developers opt for immediate delivery of each beacon, instead of
+      coalescing and deferring their delivery because this provides improved
+      delivery rates. Deferring delivery may mean that the beacon request may
+      not have sufficient time to complete successfully, which leads to loss of
+      important application data.</li>
+      <li>Developers opt for issuing blocking requests via synchronous
+      XMLHttpRequest's, inserting no-op busy loops, or using other techniques
+      that block the user agent from executing time-critical operations (e.g.
+      click, unload, and other handlers) and hurt the user experience. The
+      blocking behavior is used to provide improved delivery rate, as it
+      prevents the user agent and the operating system from cancelling the
+      request if the page is unloaded, suspended, or killed by the system.</li>
+    </ul>
+    <p>The mismatch between above delivery and processing requirements leaves
+    most developers with a tough choice and widespread adoption of blocking
+    techniques that hurt the user experience. This specification defines an
+    interface that web developers can use to schedule asynchronous and
+    non-blocking delivery of data that minimizes resource contention with other
+    time-critical operations, while ensuring that such requests are still
+    processed and delivered to destination:</p>
+    <ul>
+      <li>Beacon requests are prioritized to avoid competing with time-critical
+      operations and higher priority network requests.</li>
+      <li>Beacon requests may be efficiently coalesced by the user agent to
+      optimize energy use on mobile devices.</li>
+      <li>Beacon requests are guaranteed to be initiated before page is
+      unloaded and are allowed to run to completion without requiring blocking
+      requests or other techniques that block processing of user interactive
+      events.</li>
+    </ul>
+    <p>The following example shows use of the <a>sendBeacon()</a> method to
+    deliver event, click, and analytics data:</p>
+    <pre class='example highlight'>
+      &lt;html&gt;
+      &lt;script&gt;
+        // emit non-blocking beacon to record client-side event
+        function reportEvent(event) {
+          var data = JSON.stringify({
+            event: event,
+            time: performance.now()
+          });
+          navigator.sendBeacon('/collector', data);
+        }
+
+        // emit non-blocking beacon with session analytics as the page
+        // transitions to background state (Page Visibility API)
+        document.addEventListener('visibilitychange', function() {
+          if (document.visibilityState === 'hidden') {
+            var sessionData = buildSessionReport();
+            navigator.sendBeacon('/collector', sessionData);
+          }
+        });
+      &lt;/script&gt;
+
+      &lt;body&gt;
+       &lt;a href='http://www.w3.org/' onclick='reportEvent(this)'&gt;
+       &lt;button onclick="reportEvent('some event')"&gt;Click me&lt;/button&gt;
+      &lt;/body&gt;
+      &lt;/html&gt;
+</pre>
+    <p class="note">Above example uses <a><code>visibilitychange</code></a>
+    event defined in [[PAGE-VISIBILITY-2]] to trigger delivery of session data.
+    This event is the only event that is guaranteed to fire on mobile devices
+    when the page transitions to background state (e.g. when user switches to a
+    different application, goes to homescreen, etc), or is being unloaded.
+    Developers should avoid relying on <a><code>unload</code></a> event because
+    it will not fire whenever a page is in a background state (i.e.
+    <a><code>visibilityState</code></a> equal to <a><code>hidden</code></a>) and
+    the process is terminated by the mobile OS.</p>
+    <p>The requests initiated via the <a>sendBeacon()</a> method do not block
+    or compete with time-critical work, may be prioritized by the user agent to
+    improve network efficiency, and eliminate the need to use blocking
+    operations to ensure delivery of beacon data.</p>
+    <p>What <a>sendBeacon()</a> does not do and is not intended to solve:</p>
+    <ul>
+      <li>The <a>sendBeacon()</a> method does not provide special handling for
+      offline storage or delivery. A beacon request is like any other request
+      and may be combined with [[SERVICE-WORKERS]] to provide offline
+      functionality where necessary.
+      </li>
+      <li>The <a>sendBeacon()</a> method is not intended to provide background
+      synchronization or transfer capabilities. The user agent restricts the
+      maximum accepted payload size to ensure that beacon requests are able to
+      complete quickly and in a timely manner.
+      </li>
+      <li>The <a>sendBeacon()</a> method does not provide ability to customize
+      the request method, provide custom request headers, or change other
+      <a href="#sec-processing-model">processing properties</a> of the request
+      and response. Applications that require non-default settings for such
+      requests should use the [[FETCH]] API with <a>keep-alive flag</a> set to
+      <code>true</code>.
+      </li>
+    </ul>
+  </section>
+  <section id='conformance'>
+    <p>For readability, these words do not appear in all uppercase letters in
+    this specification.</p>
+    <p>Requirements phrased in the imperative as part of algorithms (such as
+    "strip any leading space characters" or "return false and abort these
+    steps") are to be interpreted with the meaning of the key word ("must",
+    "should", "may", etc) used in introducing the algorithm.</p>
+    <p>Some conformance requirements are phrased as requirements on attributes,
+    methods or objects. Such requirements are to be interpreted as requirements
+    on the user agent.</p>
+    <p>Conformance requirements phrased as algorithms or specific steps may be
+    implemented in any manner, so long as the end result is equivalent. (In
+    particular, the algorithms defined in this specification are intended to be
+    easy to follow, and not intended to be performant.)</p>
+    <section>
+      <h2>Dependencies</h2>
+      <dl>
+        <dt>DOM</dt>
+        <dd>
+          <p>The following terms are defined in the DOM specification:
+          [[!DOM]]</p>
+          <ul>
+            <li>the <dfn data-cite="DOM#concept-document-url">document
+            URL</dfn></li>
+            <li><dfn data-cite="DOM#concept-document">document</dfn></li>
+          </ul>
+        </dd>
+        <dt>HTML</dt>
+        <dd>
+          <p>The following terms are defined in the HTML specification:
+          [[!HTML]]</p>
+          <ul>
+            <li><dfn data-cite="HTML#api-base-url">API base URL</dfn></li>
+            <li><dfn data-cite="HTML#entry-settings-object">entry settings
+            object</dfn></li>
+            <li><dfn data-cite=
+            "HTML#multipart/form-data-encoding-algorithm"><code>multipart/form-data</code>
+            boundary string</dfn></li>
+            <li><dfn data-cite=
+            "HTML#multipart/form-data-boundary-string"><code>multipart/form-data</code>
+            encoding algorithm</dfn></li>
+            <li>resource <dfn data-cite="HTML#origin" data-lt="resource origin"
+            data-lt-nodefault="" id="resource-origin">origin</dfn></li>
+            <li>the <code><dfn data-cite=
+            "HTML#navigator">Navigator</dfn></code> object</li>
+          </ul>
+        </dd>
+        <dt>Fetch</dt>
+        <dd>
+          <p>The following terms are defined in the HTML specification:
+          [[!FETCH]]</p>
+          <ul>
+            <li><dfn data-cite="FETCH#concept-header-value">header
+            value</dfn></li>
+            <li><dfn data-cite="FETCH#concept-request">request</dfn></li>
+            <li>request <dfn data-cite=
+            "FETCH#concept-request-method">method</dfn></li>
+            <li>request <dfn data-cite=
+            "FETCH#concept-request-method">client</dfn></li>
+            <li>request <dfn data-cite="FETCH#concept-request-url" id=
+            "request-url" data-lt-nodefault="" data-lt=
+            "request url">url</dfn></li>
+            <li>request <dfn data-cite=
+            "FETCH#concept-request-header-list">header list</dfn></li>
+            <li>request <dfn data-cite="FETCH#concept-request-origin" id=
+            "request-origin" data-lt-nodefault="" data-lt=
+            "request origin">origin</dfn></li>
+            <li>request <dfn data-cite="FETCH#keep-alive-flag">keep-alive
+            flag</dfn></li>
+            <li>request <dfn data-cite=
+            "FETCH#concept-request-body">body</dfn></li>
+            <li>request <dfn data-cite=
+            "FETCH#concept-request-mode">mode</dfn></li>
+            <li>request <dfn data-cite=
+            "FETCH#concept-request-credentials-mode">credentials
+            mode</dfn></li>
+            <li><dfn data-cite="FETCH#concept-response">response</dfn></li>
+            <li><dfn data-cite="FETCH#concept-fetch">fetch</dfn></li>
+            <li><dfn data-cite="FETCH#fetch-processresponseendofbody">processResponseEndOfBody</dfn></li>
+            <li><dfn data-cite="FETCH#finalize-and-report-timing">finalize and report timing</dfn></li>
+            <li><dfn data-cite=
+            "FETCH#http-network-or-cache-fetch">http-network-or-cache-fetch</dfn></li>
+            <li><dfn data-cite="FETCH#bodyinit">BodyInit</dfn></li>
+            <li><dfn data-cite=
+            "FETCH#cors-safelisted-request-header">CORS-safelisted
+            request-header</dfn></li>
+            <li><dfn data-cite=
+            "FETCH#concept-bodyinit-extract">Extract</dfn></li>
+            <li>the <dfn data-cite=
+            "FETCH#http-access-control-allow-credentials"><code>Access-Control-Allow-Credentials</code></dfn>
+            header</li>
+            <li>the <dfn data-cite=
+            "FETCH#http-access-control-allow-origin"><code>Access-Control-Allow-Origin</code></dfn>
+            header</li>
+            <li>the <dfn data-cite=
+            "FETCH#http-access-control-allow-headers"><code>Access-Control-Allow-Headers</code></dfn>
+            header</li>
+          </ul>
+        </dd>
+        <dt>URL</dt>
+        <dd>
+          <p>The following terms are defined in the URL specification:
+          [[!URL]]</p>
+          <ul>
+            <li><dfn data-cite="URL#concept-url-parser">URL parser</dfn></li>
+            <li><dfn data-cite="URL#concept-url-scheme">scheme</dfn></li>
+          </ul>
+        </dd>
+        <dt>Web IDL</dt>
+        <dd>
+          <p>The IDL fragments in this specification must be interpreted as
+          required for conforming IDL fragments, as described in the Web IDL
+          specification [[!WEBIDL]].</p>
+          <p>The following terms are defined in the Web IDL specification:</p>
+          <ul>
+            <li><dfn data-cite="WEBIDL#dfn-throw">throw</dfn></li>
+            <li><dfn data-cite=
+            "WEBIDL#idl-USVString"><code>USVString</code></dfn> type</li>
+            <li><dfn data-cite=
+            "WEBIDL#exceptiondef-typeerror"><code>TypeError</code></dfn>
+            type</li>
+          </ul>
+        </dd>
+        <dt>Page Visibility</dt>
+        <dd>
+          <p>The following term is defined in the Page Visibility
+          specification: [[!PAGE-VISIBILITY-2]]</p>
+          <ul>
+            <li><dfn data-cite=
+            "PAGE-VISIBILITY-2#dfn-visibilitychange"><code>visibilitychange</code></dfn></li>
+            <li><dfn data-cite=
+            "PAGE-VISIBILITY-2#dfn-unload"><code>unload</code></dfn></li>
+            <li><dfn data-cite=
+            "PAGE-VISIBILITY-2#dom-visibilitystate-hidden"><code>hidden</code></dfn></li>
+            <li><dfn data-cite=
+            "PAGE-VISIBILITY-2#dom-visibilitystate"><code>visibilityState</code></dfn></li>
+          </ul>
+        </dd>
+      </dl>
+    </section>
+  </section>
+  <section>
+    <h2>Beacon</h2>
+    <section data-dfn-for="Navigator" data-link-for="Navigator">
+      <h3><code><dfn>sendBeacon()</dfn></code> Method</h3>
+      <pre class="idl">
+  partial interface Navigator {
+      boolean sendBeacon(USVString url, optional BodyInit? data = null);
+  };
+      </pre>
+      <p>The <a>sendBeacon()</a> method transmits data provided by the
+      <a><code>data</code></a> parameter to the URL provided by the <a href=
+      "#url-parameter"><code>url</code></a> parameter:</p>
+      <ul>
+        <li>The user agent MUST initiate a fetch with <a href=
+        "#concept-keep-alive-flag">keepalive</a> flag set, which restricts the
+        amount of data that can be queued by such requests to ensure that
+        beacon requests are able to complete quickly and in a timely manner.
+        </li>
+        <li>The user agent MUST schedule immediate transmission of all beacon
+        requests when the document <a><code>visibilityState</code></a>
+        transitions to <a><code>hidden</code></a>, and must allow all such
+        requests to run to completion without blocking other time-critical and
+        high-priority work.
+        </li>
+        <li>The user agent SHOULD schedule transmission of provided data to
+        minimize resource (CPU and network) contention with other time-critical
+        and high priority work.</li>
+        <li>The user agent MAY delay transmission of provided data to optimize
+        network and energy efficiency - e.g. deliver immediately if the network
+        is active, or wait until network interface is active. However, the user
+        agent SHOULD NOT delay transmission indefinitely and ensure that
+        pending transmissions are periodically flushed even if there is no
+        other network activity.</li>
+      </ul>
+      <div class="note">
+        Beacon API does not provide a response callback. The server is
+        encouraged to omit returning a response body for such requests (e.g.
+        respond with <code>204 No Content</code>).
+      </div>
+      <div>
+        <h4>Parameters</h4>
+        <h4><dfn id="url-parameter" data-lt-nodefault="" data-lt=
+        "url parameter"><code>url</code></dfn></h4>
+        <p>The <a href="#url-parameter"><code>url</code></a> parameter
+        indicates the URL where the data is to be transmitted.</p>
+        <h4><dfn><code>data</code></dfn></h4>
+        <p>The <a><code>data</code></a> parameter is the <a>BodyInit</a> data
+        that is to be transmitted.</p>
+      </div>
+      <div>
+        <h4>Return Value</h4>
+        <p>The <a>sendBeacon()</a> method returns true if the user agent is
+        able to successfully queue the data for transfer. Otherwise it returns
+        false.</p>
+        <p class="note">The user agent imposes limits on the amount of data
+        that can be sent via this API: this helps ensure that such requests are
+        delivered successfully and with minimal impact on other user and
+        browser activity. If the amount of <var>data</var> to be queued exceeds
+        the user agent limit (as defined in
+        <a>http-network-or-cache-fetch</a>), this method returns
+        <code>false</code>; a return value of <code>true</code> implies the
+        browser has queued the data for transfer. However, since the actual
+        data transfer happens asynchronously, this method does not provide any
+        information whether the data transfer has succeeded or not.</p>
+      </div>
+    </section>
+    <section id="sec-processing-model">
+      <h2>Processing Model</h2>
+      <p>On calling the <a>sendBeacon()</a> method with <var>url</var> and
+      optional <var>data</var>, the following steps must be run:</p>
+      <ol>
+        <li>
+          <p>Set <var>base</var> to the <a>entry settings object</a>'s <a>API
+          base URL</a>.</p>
+        </li>
+        <li>
+          <p>Set <var>origin</var> to the <a>entry settings object</a>'s
+          <a href="#resource-origin">origin</a>.</p>
+        </li>
+        <li>
+          <p>Set <var>parsedUrl</var> to the result of the <a>URL parser</a>
+          steps with <var>url</var> and <var>base</var>. If the algorithm
+          returns an error, or if <var>parsedUrl</var>'s <a>scheme</a> is not
+          "http" or "https", <a>throw</a> a "<code><a>TypeError</a></code>"
+          exception and terminate these steps.</p>
+        </li>
+        <li>Let <var>headerList</var> be an empty list.</li>
+        <li>Let <var>corsMode</var> be "<code>no-cors</code>".</li>
+        <li>
+          <p>If <var>data</var> is not <code>null</code>:</p>
+          <ol>
+            <li>Set <var>transmittedData</var> and <var>contentType</var> to the
+              result of <a data-lt="extract">extracting</a> <var>data</var>'s
+              byte stream with the <var>keepalive flag</var> set.
+            </li>
+            <li>If the amount of data that can be queued to be sent by
+              <a href="#concept-keep-alive-flag">keepalive</a> enabled requests
+              is exceeded by the size of <var>transmittedData</var> (as defined
+              in <a>http-network-or-cache-fetch</a>), set the return value to
+              <code>false</code> and terminate these steps.
+              <p class="note">Requests initiated via the Beacon API automatically
+              set the <var>keepalive</var> flag, and developers can similarly set
+              the same flag manually when using the Fetch API. All requests with
+              this flag set share the same in-flight quota restrictions that is
+              enforced within the Fetch API.</p>
+            </li>
+            <li>If <var>contentType</var> is not null:
+              <ul>
+                <li>Set <var>corsMode</var> to "<code>cors</code>".</li>
+                <li>If <var>contentType</var> value is a <a>CORS-safelisted
+                request-header</a> value for the <code>Content-Type</code>
+                header, set <var>corsMode</var> to "<code>no-cors</code>".
+                </li>
+                <li>Append a <code>Content-Type</code> header with value
+                <var>contentType</var> to <var>headerList</var>.</li>
+              </ul>
+            </li>
+          </ol>
+        </li>
+        <li>Set the return value to <code>true</code>, return the
+        <a>sendBeacon()</a> call, and continue to run the following steps in
+        parallel:
+        <ol>
+          <li>
+            <p>Let <var>req</var> be a new <a>request</a>, initialized as
+            follows:</p>
+            <dl>
+              <dt>
+                <a>method</a>
+              </dt>
+              <dd><code>POST</code></dd>
+              <dt>
+                <a>client</a>
+              </dt>
+              <dd>The <a>entry settings object</a>
+              <dt>
+                <a href="#request-url">url</a>
+              </dt>
+              <dd><var>parsedUrl</var></dd>
+              <dt>
+                <a>header list</a>
+              </dt>
+              <dd><var>headerList</var></dd>
+              <dt>
+                <a href="#request-origin">origin</a>
+              </dt>
+              <dd><i>origin</i></dd>
+              <dt>
+                <a>keep-alive flag</a>
+              </dt>
+              <dd><code>true</code></dd>
+              <dt>
+                <a>body</a>
+              </dt>
+              <dd><var>transmittedData</var></dd>
+              <dt>
+                <a>mode</a>
+              </dt>
+              <dd><var>corsMode</var></dd>
+              <dt>
+                <a>credentials mode</a>
+              </dt>
+              <dd><i>include</i></dd>
+            </dl>
+          </li>
+          <li>
+            Let <var>handleBeaconDone</var> given <a>response</a> <var>res</var> be a call to
+            [=finalize and report timing=] with <var>res</var>, the
+            <var>entry settings object</var>, and <code>"beacon"</code>.
+          </li>
+          <li>
+            <a>Fetch</a> <var>req</var>, with <a>processResponseEndOfBody</a> set to
+            <var>handleBeaconDone</var>.
+          </li>
+        </ol>
+      </li>
+    </ol>
+    </section>
+  </section>
+  <section>
+    <h2>Privacy and Security</h2>
+    <p>The <a>sendBeacon()</a> interface provides an asynchronous and
+    non-blocking mechanism for delivery of data. This API can be used to:</p>
+    <ul>
+      <li>Report client-side events to the server. The delivery is prioritized
+      and scheduled by the user agent such that it does not block other
+      interactive work and makes efficient use of system resources.</li>
+      <li>Report session data when the page transitions to background state or
+      is being unloaded, without blocking the user agent.</li>
+      <li>Other use cases that require delivery of small payloads and do not
+      expect a response callback.</li>
+    </ul>
+    <p>The delivered data might contain potentially sensitive information, for
+    example, data about a user's activity on a web page, to a server. While
+    this can have privacy implications for the user, existing methods, such as
+    scripted form-submit, image beacons, and XHR/fetch requests provide similar
+    capabilities, but come with various and costly performance tradeoffs: the
+    requests can be aborted by the user agent unless the developer blocks the
+    user agent from processing other events (e.g. by invoking a synchronous
+    request, or spinning in an empty loop), and the user agent is unable to
+    prioritize and coalesce such requests to optimize use of system
+    resources.</p>
+    <p>A request initiated by <a>sendBeacon()</a> is subject to following
+    properties:</p>
+    <ul>
+      <li>If the request does not contain a payload, or the request
+      <code>Content-Type</code> is a <a>CORS-safelisted request-header</a>,
+      then the request mode is `no-cors`—similar to an image beacon or
+      form-post respectively.
+      </li>
+      <li>Otherwise, a CORS preflight is made and the server needs to first
+      allow such requests by returning the appropriate set of CORS headers: <a>
+        <code>Access-Control-Allow-Credentials</code></a>,
+        <a><code>Access-Control-Allow-Origin</code></a>,
+        <a><code>Access-Control-Allow-Headers</code></a>.
+      </li>
+    </ul>
+    <p>As such, from the security perspective, the Beacon API is subject to
+    same security policies as the current methods in use by developers.
+    Similarly, from the privacy perspective, the resulting requests are
+    initiated immediately when the API is called, or upon a page visibility
+    change, which restricts the exposed information (e.g. user's IP address) to
+    existing lifecycle events accessible to the developers. However, user
+    agents might consider alternative methods to surface such requests to
+    provide transparency to users.</p>
+    <p>Compared to the alternatives, the <a>sendBeacon()</a> API does apply two
+    restrictions: there is no callback method, and the payload size can be
+    restricted by the user agent. Otherwise, the <a>sendBeacon()</a> API is not
+    subject to any additional restrictions. The user agent ought not skip or
+    throttle processing of <a>sendBeacon()</a> calls, as they can contain
+    critical application state, events, and analytics data. Similarly, the user
+    agent ought not disable <a>sendBeacon()</a> when in "private browsing" or
+    equivalent mode, both to avoid breaking the application and to avoid
+    leaking that the user is in such mode.</p>
+  </section>
+  <section class="appendix">
+    <h2>Acknowledgments</h2>
+    <p>Thanks to Alois Reitbauer, Arvind Jain, Anne van Kesteren, Boris
+    Zbarsky, Chase Douglas, Daniel Austin, Jatinder Mann, James Simonsen, Jason
+    Weber, Jonas Sicking, Nick Doty, Philippe Le Hegaret, Todd Reifsteck, Tony
+    Gentilcore, William Chan, and Yoav Weiss for their contributions to this
+    work.</p>
+  </section>
+</body>
+</html>

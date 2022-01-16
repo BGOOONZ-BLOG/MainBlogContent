@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>
+      Page Visibility
+    </title>
+    <script src="https://www.w3.org/Tools/respec/respec-w3c" class=
+    "remove"></script>
+    <script class='remove'>
+    var respecConfig = {
+      level: "2",
+      specStatus: "ED",
+      editors: [
+        {
+          name: "Ilya Grigorik",
+          url: "https://www.igvita.com/",
+          company: "Shopify Inc.",
+          companyURL: "https://shopify.com/",
+          w3cid: "56102",
+        },
+        {
+          name: "Marcos Cáceres",
+          url: "https://marcosc.com/",
+          company: "W3C",
+          companyURL: "https://w3.org/",
+          w3cid: 39125,
+        },
+        {
+          name: "Arvind Jain",
+          company: "Google Inc.",
+          companyURL: "https://google.com/",
+          retiredDate: "2014-12-01",
+        },
+        {
+          name: "Jatinder Mann",
+          company: "Microsoft Corp.",
+          companyURL: "https://microsoft.com",
+          retiredDate: "2014-02-01",
+        },
+      ],
+      github: "w3c/page-visibility",
+      group: "webperf",
+      implementationReportURI: "https://wpt.fyi/page-visibility/",
+      testSuiteURI: "https://wpt.live/page-visibility/",
+      xref: "web-platform",
+
+    };
+    </script>
+  </head>
+  <body>
+    <section id="abstract">
+      <p>
+        This specification defines a means to programmatically determine the
+        visibility state of a document. This can aid in the development of
+        resource efficient web applications.
+      </p>
+    </section>
+    <section id="sotd">
+      <p>
+        This document replaces the first edition of <cite>Page
+        Visibility</cite>, and includes:
+      </p>
+      <ul>
+        <li>Processing and IDL clarifications:
+          <ul>
+            <li>{{VisibilityState}} enum value "unloaded" was removed.
+            </li>
+            <li>{{Document/onvisibilitychange}} event handler was added.
+            </li>
+            <li>Various enhancements and clarifications in the processing model
+            and algorithms.
+            </li>
+          </ul>
+        </li>
+        <li>[=Document/Visibility state=] is set to [=Document/hidden=] when
+        the user agent is unloading a document;
+        </li>
+      </ul>
+    </section>
+    <section id="introduction" class='informative'>
+      <h2>
+        Introduction
+      </h2>
+      <p>
+        The <cite>Page Visibility API</cite> defines a means to
+        programmatically determine the [=Document/visibility state=] of a
+        top-level browsing context, and to be notified if the
+        [=Document/visibility state=] changes. Without knowing the
+        [=Document/visibility state=] of a page, web developers have been
+        designing web pages as if they are always [=Document/visible=]. This
+        not only results in higher machine resource utilization, but it
+        prevents web developers from making runtime decisions based on whether
+        the web page is [=Document/visible=] to the user. Designing web pages
+        with knowledge of the document's [=Document/visibility state=] can
+        result in improved user experiences and power efficient sites.
+      </p>
+      <p>
+        With this API, web applications can choose to alter their behavior
+        based on whether they are [=Document/visible=] to the user or not. For
+        example, this API can be used to scale back work when the page is no
+        longer [=Document/visible=].
+      </p>
+    </section>
+    <section class='informative'>
+      <h2>
+        Examples of usage
+      </h2>
+      <p>
+        To improve the user experience and optimize CPU and power efficiency
+        the application could autoplay a video when the application is
+        [=Document/visible=], and automatically pause the playback when the
+        application is [=Document/hidden=]:
+      </p>
+      <pre class="example js" title="Visibility-aware video playback">
+      const videoElement = document.getElementById("videoElement");
+
+      // Autoplay the video if application is visible
+      if (document.visibilityState === "visible") {
+        videoElement.play();
+      }
+
+      // Handle page visibility change events
+      function visibilityListener() {
+        switch(document.visibilityState) {
+          case "hidden":
+            videoElement.pause();
+            break;
+          case "visible":
+            videoElement.play();
+            break;
+        }
+      }
+
+      document.addEventListener("visibilitychange", visibilityListener);
+      </pre>
+      <p>
+        Similar logic can be applied to intelligently pause and resume, or
+        throttle, execution of application code such as animation loops,
+        analytics, and other types of processing. By combining the
+        {{Document/visibilityState}} attribute of the {{Document}} interface
+        and the `"visibilitychange"` event, the application is able to both
+        query and listen to page visibility events to deliver a better user
+        experience, as well as improve efficiency and performance of its
+        execution.
+      </p>
+    </section>
+    <section>
+      <h2>
+        Visibility states
+      </h2>
+      <p>
+        The [=document=] of the <a>top-level browsing context</a> can be in one
+        of the following <dfn data-dfn-for="Document" data-export="">visibility
+        states</dfn>:
+      </p>
+      <dl data-sort="">
+        <dt>
+          <dfn data-dfn-for="Document" data-export="" data-dfn-type=
+          "dfn">hidden</dfn>
+        </dt>
+        <dd>
+          <p>
+            The [=document=] is not [=Document/visible=] at all on any screen,
+            as determined by running the steps to [=determine the visibility
+            state=] of the [=document=]'s [=relevant global object=]'s
+            [=browsing context=].
+          </p>
+          <aside class="note">
+            <p>
+              Examples of actions that can cause a document to be
+              [=Document/hidden=]:
+            </p>
+            <ul>
+              <li>A tab is made into a background tab.
+              </li>
+              <li>The user agent is minimized.
+              </li>
+              <li>The user agent is moved off of the screen.
+              </li>
+              <li>The operating system's lock screen covers the user agent.
+              </li>
+            </ul>
+          </aside>
+        </dd>
+        <dt>
+          <dfn data-dfn-for="Document" data-export="" data-dfn-type=
+          "dfn">visible</dfn>
+        </dt>
+        <dd>
+          The [=document=] is at least partially visible on at least one
+          screen, as determined by running the steps to [=determine the
+          visibility state=] of the [=document=]'s [=relevant global object=]'s
+          [=browsing context=].
+        </dd>
+      </dl>
+      <p>
+        The [=Document/visibility states=] are reflected in the API via the
+        {{VisibilityState}} enum.
+      </p>
+      <p>
+        The steps to <dfn data-export="" data-dfn-type="dfn">determine the
+        visibility state</dfn> of a [=browsing context=] |context| are as
+        follows. The steps return a [=Document/visibility state=].
+      </p>
+      <ol class="algorithm">
+        <li>Let |doc:Document| be the |context|'s [=top-level browsing
+        context=]'s [=active document=].
+        </li>
+        <li>Assert: |doc| is a [=Document=].
+        </li>
+        <li>Return [=Document/visible=] if:
+          <ul>
+            <li>The user agent has assistive technologies attached to the
+            |doc|.
+            </li>
+            <li>Any of the |doc|'s viewport contents are visible to the user.
+            </li>
+          </ul>
+        </li>
+        <li>Otherwise, return [=Document/hidden=].
+        </li>
+      </ol>
+    </section>
+    <section data-dfn-for="VisibilityState">
+      <h2>
+        <code>VisibilityState</code> enum
+      </h2>
+      <pre class="idl">
+      enum VisibilityState {
+        "hidden", "visible"
+      };
+      </pre>
+      <p>
+        The <dfn>VisibilityState</dfn> enum is used to represent the
+        [=Document/visibility states=].
+      </p>
+      <p>
+        The "<dfn>hidden</dfn>" enum value represents the [=Document/hidden=]
+        [=Document/visibility state=].
+      </p>
+      <p>
+        Likewise, the "<dfn>visible</dfn>" enum value represents the
+        [=Document/visible=] [=Document/visibility state=].
+      </p>
+    </section>
+    <section data-dfn-for="Document">
+      <h2>
+        Extensions to the `Document` interface
+      </h2>
+      <p>
+        This specification extends the {{Document}} interface:
+      </p>
+      <pre class="idl">
+      partial interface Document {
+        readonly attribute boolean hidden;
+        readonly attribute VisibilityState visibilityState;
+        attribute EventHandler onvisibilitychange;
+      };
+      </pre>
+      <section>
+        <h3>
+          <dfn>hidden</dfn> attribute
+        </h3>
+        <p>
+          On getting, the {{Document/hidden}} attribute MUST:
+        </p>
+        <ol class="algorithm">
+          <li>Let |state:Visibility State| be the result of [=determine the
+          visibility state=] of [=this=]'s [=relevant global object=]'s
+          [=browsing context=].
+          </li>
+          <li>If |state| is [=Document/visible=], then return false. Return
+          true otherwise.
+          </li>
+        </ol>
+      </section>
+      <section>
+        <h3>
+          <dfn>visibilityState</dfn> attribute
+        </h3>
+        <p>
+          On getting, the {{Document/visibilityState}} attribute the user agent
+          MUST:
+        </p>
+        <ol class="algorithm">
+          <li>Let |state:Visibility State| be the result of [=determine the
+          visibility state=] of [=this=]'s [=relevant global object=]'s
+          [=browsing context=].
+          </li>
+          <li>If |state| is [=Document/visible=], return
+          {{VisibilityState/"visible"}}. Otherwise, return
+          {{VisibilityState/"hidden"}}.
+          </li>
+        </ol>
+      </section>
+      <section>
+        <h3>
+          <dfn>onvisibilitychange</dfn> event handler attribute
+        </h3>
+        <p>
+          The {{Document/onvisibilitychange}} attribute is an <a>event handler
+          IDL attribute</a> for the `"visibilitychange"` event type (see
+          [[[#reacting-to-visibilitychange]]]).
+        </p>
+      </section>
+    </section>
+    <section>
+      <h2 id="reacting-to-visibilitychange">
+        Reacting to `"visibilitychange"` changes
+      </h2>
+      <p>
+        The <a>task source</a> for these <a>tasks</a> is the <a>user
+        interaction task source</a>.
+      </p>
+      <p>
+        When the user agent determines that the visibility of the {{Document}}
+        of the <a>top-level browsing context</a> has changed, the user agent
+        MUST run the following steps:
+      </p>
+      <ol class="algorithm">
+        <li>Let |doc:Document| be the {{Document}} of the <a>top-level browsing
+        context</a>.
+        </li>
+        <li>If |doc| is now [=Document/visible=]:
+          <ol>
+            <li>If traversing to a <a>session history entry</a>, run the <a>now
+            visible algorithm</a> before running the step to fire the
+            [=Window/pageshow=] event.
+            </li>
+            <li>Otherwise, <a>queue a task</a> that runs the <a>now visible
+            algorithm</a>.
+            </li>
+          </ol>
+        </li>
+        <li>Else if |doc| is now not [=Document/visible=], or if the user agent
+        is to [=Window/unload=] |doc|:
+          <ol>
+            <li>If the user agent is to [=Window/unload=] the {{Document}}, run
+            the <a>now hidden algorithm</a> during the <a>unloading document
+            visibility change steps</a>.
+            </li>
+            <li>Otherwise, <a>queue a task</a> that runs the <a>now hidden
+            algorithm</a>.
+            </li>
+          </ol>
+        </li>
+      </ol>
+      <p>
+        The <dfn data-export="" data-dfn-type="abstract-op">now visible
+        algorithm</dfn> runs the following steps synchronously:
+      </p>
+      <ol class="algorithm">
+        <li>Let |doc:Document| be the {{Document}} of the <a>top-level browsing
+        context</a>.
+        </li>
+        <li>
+          <a>Fire an event</a> named "`visibilitychange`" that bubbles, isn't
+          cancelable, and has no default action, at the |doc|.
+        </li>
+        <li>Run <dfn data-export="" data-dfn-type="abstract-op">external now
+        visible algorithm</dfn> if one is defined by another specification.
+        </li>
+      </ol>
+      <p>
+        The <dfn data-export="" data-dfn-type="abstract-op">now hidden
+        algorithm</dfn> runs the following steps synchronously:
+      </p>
+      <ol class="algorithm">
+        <li>Let |doc:Document| be the {{Document}} of the <a>top-level browsing
+        context</a>.
+        </li>
+        <li>
+          <a>Fire an event</a> named "`visibilitychange`" that bubbles, isn't
+          cancelable, and has no default action, at the |doc|.
+        </li>
+        <li>Run <dfn data-export="">external now hidden algorithm</dfn> if one
+        is defined by another specification.
+        </li>
+      </ol>
+    </section>
+    <section id="privacy-security">
+      <h2>
+        Privacy and Security
+      </h2>
+      <p>
+        The <cite>Page Visibility API</cite> enables developers to know when a
+        {{Document}} is visible or in focus. Existing mechanisms, such as the
+        [=Window/focus=] and [=Window/blur=] events, when attached to the
+        {{Window}} object already provide a mechanism to detect when the
+        {{Document}} is the active document; the [=Window/unload=] event
+        provides a notification that the page is being unloaded.
+      </p>
+    </section>
+    <section>
+      <h2>
+        Accessibility considerations
+      </h2>
+      <p>
+        To accommodate assistive technologies that are typically full screen
+        but still show a view of the page, when applicable, on getting, the
+        {{Document/visibilityState}} attribute MAY return
+        {{VisibilityState/"visible"}}, instead of {{VisibilityState/"hidden"}},
+        when the user agent is not minimized but is fully obscured by other
+        applications.
+      </p>
+    </section>
+    <section>
+      <h3>
+        Terminology
+      </h3>
+      <p>
+        The following concepts and interfaces are defined in the [[!HTML]]
+        specification:
+      </p>
+      <ul data-sort="">
+        <li>
+          <dfn data-cite="!HTML/browsers.html#session-history-entry">session
+          history entry</dfn>
+        </li>
+        <li>
+          <dfn data-cite=
+          "!HTML/browsers.html#unloading-document-visibility-change-steps">unloading
+          document visibility change steps</dfn>
+        </li>
+      </ul>
+    </section>
+    <section id="conformance">
+      <!-- autofilled by respec -->
+    </section>
+    <section id="index" class="appendix"></section>
+    <section id="acknowledgements" class="appendix">
+      <h2>
+        Acknowledgments
+      </h2>
+      <p>
+        Thanks to Alex Komoroske, Arvind Jain, Boris Zbarsky, Cameron
+        McCormack, James Robinson, Jason Weber, Jonas Sicking, Karen Anderson,
+        Kyle Simpson, Nat Duca, Nic Jansma, Philippe Le Hegaret, and Todd
+        Reifsteck for their contributions to this work.
+      </p>
+    </section>
+  </body>
+</html>

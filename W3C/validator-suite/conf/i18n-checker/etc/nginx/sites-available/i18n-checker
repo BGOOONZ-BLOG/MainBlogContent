@@ -1,0 +1,35 @@
+##
+# i18n-checker virtual host configuration for nginx
+# Local instance of the i18n-checker
+##
+
+server {
+  listen         11010;
+  server_name    localhost;
+
+  access_log     /var/log/nginx/i18n-checker-access.log;
+  error_log      /var/log/nginx/i18n-checker-error.log;
+
+  root           /home/validator/i18n-checker/www;
+
+  # PHP-FPM monitoring pages
+  location /fpm/ {
+    fastcgi_pass unix:/var/run/php5-fpm.sock;
+    include      /etc/nginx/fastcgi_params;
+  }
+
+  location / {
+    allow 127.0.0.1;
+    allow ::1;
+    deny all;
+  }
+
+  # FastCGI (with PHP FPM)
+  # from http://wiki.nginx.org/PHPFcgiExample
+  location ~ \.php$ {
+    fastcgi_pass   unix:/var/run/php5-fpm.sock;
+    fastcgi_index  index.php;
+    include        /etc/nginx/fastcgi_params;
+  }
+}
+

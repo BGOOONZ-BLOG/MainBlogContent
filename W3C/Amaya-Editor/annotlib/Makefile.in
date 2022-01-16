@@ -1,0 +1,191 @@
+#
+# Makefile for the annotlib directory
+# Generated from annotlib/Makefile.in
+# Nov 1999 (Jose Kahan) : first version
+# Mar 2000 (Jose Kahan) : rewrote it to take better advantage of gmake.
+#		          Added some missing dependencies.
+# Mar 2001 (Jose Kahan) : a bday gift: fixed the AnnotAPP dependency problem
+
+@VPATHOPT@= @srcdir@
+THOTDIR= @top_srcdir@
+ANNOTLIB= $(THOTDIR)/annotlib
+
+include ../Options
+
+INCLUDES= -DHAVE_CONFIG_H -DANNOTATIONS \
+	  -I.. -I../amaya  -I@srcdir@/f -I@top_srcdir@/amaya \
+	  -I@top_srcdir@/amaya/f \
+	   @LIBWWW_CFLAGS@ \
+	   @AMAYA_RAPTOR_INCLUDES@ @THOTINCLUDES@ $(GUI_INCLUDES)
+
+
+OPTIONS	= @AMAYA_OPTIONS@ @AMAYA_ANNOT_OPTIONS@
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+libdir = @libdir@
+
+############################################
+
+all : libAnnotSchemas libAnnot
+
+clean :
+	$(RM) libAnnot.a
+	$(RM) *.o
+	$(RM) $(ANNOTLIB)/*.PRS
+	$(RM) $(ANNOTLIB)/*.STR
+	$(RM) $(ANNOTLIB)/*.SCH
+	$(RM) $(ANNOTLIB)/*.TRA
+	$(RM) $(ANNOTLIB)/AnnotAPP.c
+	$(RM) $(ANNOTLIB)/TopicsAPP.c
+	$(RM) $(ANNOTLIB)/Annot.h
+	$(RM) $(ANNOTLIB)/Topics.h
+	$(RM) $(ANNOTLIB)/Annotactions.proto
+	$(RM) $(ANNOTLIB)/Topics.proto
+
+install :
+
+uninstall :
+
+include .depends
+
+../tools/mkdep/mkdep : 
+	@(cd ../tools/mkdep ; $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)")
+
+.depends depend : ../tools/mkdep/mkdep
+	../tools/mkdep/mkdep -relative -vpath $(VPATH) $(INCLUDES) $(VPATH)/*.c  > .depends
+
+###################################################
+# Template rules to build objects
+###################################################
+
+.SUFFIXES: .c .o .A .S .STR .T .TRA .P .PRS
+
+#
+# C files
+#
+.c.o :  
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(OPTIONS) -c $< -o $@
+
+#
+# Structure schema compilation
+#
+.S.STR : ../bin/str
+	@(STR=`pwd`/../bin/str; \
+	THOTDIR=`pwd`/.. ; export THOTDIR; \
+	cd `dirname $<`; \
+	$$STR $(ALL_AMAYA_OPTIONS) `basename $<`)
+
+#
+# Translation schema compilation
+#
+.T.TRA : ../bin/tra
+	@(TRA=`pwd`/../bin/tra; \
+	THOTDIR=`pwd`/../.. ;export THOTDIR; \
+	cd `dirname $<`; \
+	$$TRA $(ALL_AMAYA_OPTIONS) `basename $<`)
+
+#
+# Presentation schemas compilation
+#
+.P.PRS : ../bin/prs
+	@(PRS=`pwd`/../bin/prs;\
+	THOTDIR=`pwd`/../.. ;export THOTDIR; \
+	cd `dirname $<`; \
+	$$PRS $(ALL_AMAYA_OPTIONS) `basename $<`)
+
+#
+# Application  schema compilation 
+#
+# A more complicated rule, as we generate a .C file. We force the
+# the compilation of such files a la volee
+
+.A.h  : ../bin/app
+	@(APP=`pwd`/../bin/app;\
+	THOTDIR=`pwd`/../.. ;export THOTDIR; \
+	cd `dirname $<`; \
+	$$APP $(ALL_AMAYA_OPTIONS) `basename $<`)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(OPTIONS) \
+		-c `dirname $<`/`basename $< .A`APP.c;
+
+#########################################################################
+#									#
+#		Rules to build the library				#
+#									#
+#########################################################################
+
+AMAYA_ANNOT_SCHEMA= \
+	Annot.STR \
+	Annot.h \
+	AnnotP.PRS \
+	AnnotT.TRA
+
+AMAYA_ANNOT_OBJ= \
+	AnnotAPP.o \
+	ANNOTevent.o \
+	ANNOTfiles.o \
+	ANNOTlink.o \
+	ANNOTtools.o \
+	AHTrdf2annot.o \
+	ANNOTmenu.o \
+	ANNOTschemas.o
+
+AMAYA_ANNOTLIB_OBJ= $(AMAYA_ANNOT_OBJ)
+
+AMAYA_ANNOTLIB_SCHEMA = $(AMAYA_ANNOT_SCHEMA)
+#
+# dependencies
+#
+
+# If Annot.A changes, force a compilation
+Annot.h : Annot.A
+
+# recompile all the schemas if Annot.S or HTML.S have changed
+$(AMAYA_ANNOT_SCHEMA) : Annot.S $(THOTDIR)/amaya/HTML.S
+
+# recompile all the objects if the h files (generated or not) have changed
+$(AMAYA_ANNOT_OBJ) : Annot.h annotlib.h ../amaya/EDITOR.h
+
+# recompile ANNOTmenu if the menu definitions change
+ANNOTmenu.o : ANNOTmenu.h
+
+libAnnot : $(AMAYA_ANNOT_SCHEMA) ../amaya/HTML.h ../amaya/XLink.h \
+	   ../amaya/TextFile.h libAnnot.a
+
+libAnnotSchemas : $(AMAYA_ANNOTLIB_SCHEMA)
+
+libAnnot.a : Annot.STR  $(AMAYA_ANNOTLIB_OBJ)
+	$(AR) libAnnot.a $(AMAYA_ANNOTLIB_OBJ)
+	$(RANLIB) libAnnot.a
+
+
+##################################################
+# Other common compilation stuff
+##################################################
+
+CEXTRACT= ../bin/cextract
+
+$(CEXTRACT) :
+	@(cd ../tools/cextract-$(CEXTRACT_VER) ; $(MAKE) )
+
+proto : ../bin/cextract
+	@(for i in @srcdir@/*.c ; \
+	  do \
+	  dir=`dirname $$i`;base=`basename $$i .c`; \
+	  if [ ! -d $$dir/f ] ; then $(MKDIR) $$dir/f ;fi;\
+	  $(CEXTRACT) $(CEXTRACT_FLAGS) -o /tmp/cextract.$$base.$$$$ $$i 2> /dev/null ; \
+	  if [ -f $$dir/f/"$$base"_f.h ] ; \
+	  then \
+	      delta=`$(DIFF) /tmp/cextract.$$base.$$$$ $$dir/f/"$$base"_f.h` ; \
+	      if [ "$$delta" != "" ] ; \
+	      then \
+	          echo "  $$i proto changed" ; \
+		  $(MV) /tmp/cextract.$$base.$$$$ $$dir/f/"$$base"_f.h ; \
+              else \
+	          $(RM) /tmp/cextract.$$base.$$$$ ; \
+	      fi ; \
+	  else \
+	      echo "  $$i proto added" ; \
+	      $(MV) /tmp/cextract.$$base.$$$$ $$dir/f/"$$base"_f.h ; \
+	  fi ; \
+	 done)

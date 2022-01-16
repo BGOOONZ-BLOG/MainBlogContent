@@ -1,0 +1,2555 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Activity Streams 2.0</title>
+  <meta charset="UTF-8">
+  <script src="http://www.w3.org/Tools/respec/respec-w3c-common" async class="remove"></script>
+  <script class="remove">
+  var respecConfig = {
+    specStatus: "ED",
+    prEnd: "2017-05-11",
+    crEnd: "2017-01-12",
+    license: "w3c-software-doc",
+    edDraftURI: "http://w3c.github.io/activitystreams/core/",
+    testSuiteURI: "https://github.com/w3c/activitystreams/tree/master/test",
+    implementationReportURI: "https://github.com/w3c/activitystreams/tree/master/implementation-reports",
+    errata: "https://github.com/w3c/activitystreams/blob/master/ERRATA.md",
+    shortName: "activitystreams-core",
+    editors: [
+      {
+        name: "James M Snell",
+        url: "http://jasnell.me",
+        company: "IBM",
+        companyUrl: "http://ibm.com",
+        w3cid:"26988"
+      },
+      {
+        name: "Evan Prodromou",
+        url: "https://fuzzy.ai/about",
+        company: "Fuzzy.ai",
+        companyUrl: "https://fuzzy.ai",
+        w3cid: "43626"
+      }
+      ],
+      
+    maxTocLevel: 2,
+    previousMaturity: "CR",
+    previousPublishDate:  "2016-12-15",
+    wg: "Social Web Working Group",
+    wgURI: "https://www.w3.org/Social/WG",
+    wgPublicList: "public-socialweb",
+    wgPatentURI: "https://www.w3.org/2004/01/pp-impl/72531/status",
+    localBiblio:  {
+      "AS1": {
+        title: "JSON Activity Streams 1.0",
+        href: "http://activitystrea.ms/specs/json/1.0/",
+        authors:  [
+          "J. Snell",
+          "M. Atkins",
+          "W. Norris",
+          "C. Messina",
+          "M. Wilkinson",
+          "R. Dolin"
+        ],
+        status:   "unofficial",
+        publisher:  "http://activitystrea.ms"
+      },
+      "SWP": {
+        title: "Social Web Protocols",
+        href: "https://www.w3.org/TR/social-web-protocols/",
+        authors:  [
+          "A. Guy"
+        ]
+      }
+    },
+    otherLinks: [{
+      key: 'Repository',
+      data: [
+        {
+          value: 'Github',
+          href: 'https://github.com/w3c/activitystreams'
+        },
+        {
+          value: 'Issues',
+          href: 'https://github.com/w3c/activitystreams/issues'
+        },
+        {
+          value: 'Commits',
+          href: 'https://github.com/w3c/activitystreams/commits/master'
+        }
+      ]
+    },
+    {
+      key: 'Test',
+      data: [
+        {
+          value: 'Validator',
+          href: 'https://as2.rocks/'
+        }
+      ]
+    }]
+  };
+  </script>
+  <style>
+    thead {
+      background: #005A9C;
+      color: white;
+    }
+    thead th {
+      font-weight: normal;
+    }
+    table, td, th { border: 1px solid gray }
+    table { width: 100% ;}
+    td {
+      vertical-align: top;
+      padding: 5px;
+    }
+
+.nanotabs > ul li { float:left; list-style:none; }
+.nanotabs > ul li a { display:block; padding:4px 6px; margin-right: 3px; border-left: 1px solid #b9ab2d; border-right: 1px solid #b9ab2d; border-top: 1px solid #b9ab2d; border-collapse: collapse; background:#fcfaee; color:#b9ab2d; font-family: sans-serif;
+ text-decoration:none; }
+.nanotabs > ul li a:hover { background:#FFFCE5; color:#550; }
+.nanotabs > ul li a.selected { background:#555; color:#FFF; }
+  </style>
+</head>
+<body>
+
+  <section id="abstract">
+    <p>
+      This specification details a model for representing potential and
+      completed activities using the JSON format. It is intended to be used
+      with vocabularies that detail the structure of activities, and define
+      specific types of activities.
+    </p>
+
+    <section id="authorsnote" class="informative">
+      <h2>Author's Note</h2>
+      <p>
+        This draft is heavily influenced by the JSON Activity
+        Streams 1.0 specification originally co-authored by Martin
+        Atkins, Will Norris, Chris Messina, Monica Wilkinson, Rob Dolin and
+        James Snell.  The author is very thankful for their significant
+        contributions and gladly stands on their shoulders.  Some portions of
+        the original text of Activity Streams 1.0 are used in this document.
+      </p>
+    </section>
+  </section>
+
+  <section id="sotd">
+  </section>
+
+  <section id="introduction">
+    <h2>Introduction</h2>
+    <p>
+      In the most basic sense, an "Activity" is a semantic description of
+      an action. It is the goal of this specification to provide a JSON-based
+      syntax that is sufficient to express metadata about activities in a rich,
+      human-friendly but machine-processable and extensible manner.  This can
+      include constructing natural-language descriptions or visual
+      representations about the activity, associating actionable information
+      with various types of objects, communicating or recording activity logs,
+      or delegation of potential actions to other applications.
+    </p>
+
+    <p>
+      The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+      "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
+      document are to be interpreted as described in [[!RFC2119]].
+    </p>
+
+    <section id="swp" class="informative">
+
+      <h2>Relationship to Other Social Standards</h2>
+
+      <p>
+        Activity Streams 2.0 is suitable as a social data syntax. It forms
+        part of the [[SWP]] suite of related standards.
+      </p>
+
+    </section>
+
+    <section id="activitystreams-1.0" class="informative">
+
+      <h2>Relationship to JSON Activity Streams 1.0</h2>
+
+      <p>
+        The JSON Activity Streams 1.0 [[AS1]] specification was
+        published in May of 2011 and provided a baseline extensible syntax
+        for the expression of completed activities.  This specification
+        builds upon that initial foundation by incorporating lessons learned
+        through extensive implementation, community feedback and related
+        ongoing work from a variety of other communities.
+      </p>
+
+      <p>
+        Some of the issues that specifically motivated the evolution of
+        Activity Streams 2.0 from Activity Streams 1.0 include:
+      </p>
+
+      <ul>
+        <li>
+          Multi-lingual representation of activities
+        </li>
+        <li>
+          Unification of "verb" and "objectType" to "type"
+        </li>
+        <li>
+          Removal of activity types and object types that weren't core to social
+          use cases
+        </li>
+        <li>
+          Introduction of the Link type for richly-described links
+        </li>
+        <li>
+          Incorporation of audience targeting into the core spec
+        </li>
+        <li>
+          The generalized "Undo" activity type, so all activities can be undone
+        </li>
+        <li>
+          Consistent collection and paging representation
+        </li>
+        <li>
+          Formalizing the namespace of the base vocabulary of object types and
+          activity types
+        </li>
+        <li>
+          Extensibility framework for other types and properties
+        </li>
+        <li>
+          Compatibility with JSON-LD
+        </li>
+      </ul>
+
+      <p>
+        The terms <code>displayName</code>, <code>verb</code>,
+        <code>title</code> and <code>objectType</code> should be treated as
+        reserved terms that SHOULD NOT be used within Activity Streams 2.0
+        documents. When encountered in an Activity Streams 2.0 document, they
+        SHOULD be processed in accordance to the guidelines listed in
+        <a href="#activitystreams-1.0a"></a>
+      </p>
+
+    </section>
+
+  </section>
+    <section id="syntaxconventions">
+
+      <h2>Serialization</h2>
+
+      <p>
+        This specification describes a JSON-based [[!RFC7159]] serialization
+        syntax for the <a href="https://www.w3.org/TR/activitystreams-vocabulary/">Activity
+        Vocabulary</a> that conforms to a subset of [[!JSON-LD]] syntax
+        constraints but does not require JSON-LD processing. While other
+        serialization forms are possible, such alternatives are not discussed
+        by this document.
+      </p>
+
+      <p>
+        When serialized, absent properties are represented by either (a)
+        setting the property value to null, or (b) by omitting the property
+        declaration altogether at the option of the publisher. These
+        representations are semantically equivalent.  If a property has an
+        array value, the absence of any items in that array MUST be
+        represented by omitting the property entirely or by setting the value
+        to null. The appropriate interpretation of an omitted or explicitly
+        null value is that no value has been assigned as opposed to the view
+        that the given value is empty or nil.
+      </p>
+
+      <p>
+        An <dfn>Activity Streams
+        Document</dfn> is a JSON document whose root value is an
+        Activity Streams <a>Object</a> of any type, including a
+        <a>Collection</a>, and whose MIME media type is
+        "<code>application/activity+json</code>".
+      </p>
+
+      <p>
+        Activity Streams 2.0 documents MUST be serialized using the UTF-8
+        character encoding.
+      </p>
+
+      <section id="jsonld">
+        <h3>JSON-LD</h3>
+
+        <p>
+          The serialized JSON form of an Activity Streams 2.0 document MUST
+          be consistent with what would be produced by the standard
+          JSON-LD 1.0 Processing Algorithms and API [[!JSON-LD-API]] Compaction
+          Algorithm using, at least, the normative JSON-LD @context definition
+          provided <a href="https://www.w3.org/ns/activitystreams">here</a>.
+          Implementations MAY augment the provided @context with additional
+          @context definitions but MUST NOT override or change the normative
+          context. Implementations MAY also use additional properties and values
+          not defined in the JSON-LD @context with the understanding that any
+          such properties will likely be unsupported and ignored by consuming
+          implementations that use the standard JSON-LD algorithms. See the
+          <a href="#extensibility">Extensibility</a> section for more information
+          on handling extensions within Activity Streams 2.0 documents.
+        </p>
+
+        <p>
+          JSON-LD uses the special <code>@context</code> property to define the
+          <a href="http://www.w3.org/TR/json-ld/#the-context">processing
+          context</a>. The value of the <code>@context</code> property is defined
+          by the [[JSON-LD]] specification. Implementations producing Activity
+          Streams 2.0 documents SHOULD include a <code>@context</code> property
+          with a value that includes a reference to the normative
+          <a href="https://www.w3.org/ns/activitystreams">Activity Streams 2.0 JSON-LD
+          @context definition</a> using the URL
+          "<code>https://www.w3.org/ns/activitystreams</code>". Implementations
+          MAY use the alternative URL
+          "<code>http://www.w3.org/ns/activitystreams</code>"
+          instead. This can be done using a string, object, or array.
+        </p>
+
+        <section id="example-1context">
+          <h2>Context with a string</h2>
+
+          <figure>
+            <figcaption>
+              Document providing a context as a string.
+            </figcaption>
+            <div id="ex1-context" style="display: block;">
+              <pre class="example highlight json">
+{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "summary": "A note",
+  "type": "Note",
+  "content": "My dog has fleas."
+}
+              </pre>
+            </div>
+          </figure>
+        </section>
+
+        <section id="example-2context">
+          <h2>Context with an object</h2>
+
+          <figure>
+            <figcaption>
+              Document providing context as an object using the <code>@vocab</code> keyword and a prefix for extension terms.
+            </figcaption>
+            <div id="ex2-context" style="display: block;">
+              <pre class="example highlight json">
+{
+  "@context": {
+     "@vocab": "https://www.w3.org/ns/activitystreams",
+     "ext": "https://canine-extension.example/terms/",
+     "@language": "en"
+  },
+  "summary": "A note",
+  "type": "Note",
+  "content": "My dog has fleas.",
+  "ext:nose": 0,
+  "ext:smell": "terrible"
+}
+              </pre>
+            </div>
+          </figure>
+        </section>
+
+        <section id="example-3context">
+          <h2>Context with an array</h2>
+
+          <figure>
+            <figcaption>
+              Document providing context as an array, and including an alias for an additional term.
+            </figcaption>
+            <div id="ex3-context" style="display: block;">
+            <pre class="example highlight json">
+{
+  "@context": [
+     "https://www.w3.org/ns/activitystreams",
+     {
+      "css": "http://www.w3.org/ns/oa#styledBy"
+     }
+  ],
+  "summary": "A note",
+  "type": "Note",
+  "content": "My dog has fleas.",
+  "css": "http://www.csszengarden.com/217/217.css?v=8may2013"
+}
+              </pre>
+            </div>
+          </figure>
+        </section>
+
+        <p>
+          When a JSON-LD enabled Activity Streams 2.0 implementation encounters
+          a JSON document identified using the
+          "<code>application/activity+json</code>" MIME media type, and
+          that document does not contain a <code>@context</code> property
+          whose value includes a reference to the normative
+          <a href="https://www.w3.org/ns/activitystreams">Activity Streams 2.0 JSON-LD
+          @context definition</a>, the implementation MUST assume that the
+          normative @context definition still applies.
+        </p>
+      </section>
+
+      <section id="urls">
+        <h3>IRIs and URLs</h3>
+
+        <p>
+          This specification uses IRIs [[!RFC3987]].  Every URI [[!RFC3986]] is
+          also an IRI, so a URI may be used wherever an IRI is named.  There are
+          two special considerations: (1) when an IRI that is not also a URI is
+          given for dereferencing, it MUST be mapped to a URI using the steps in
+          Section 3.1 of [[!RFC3987]] and (2) when an IRI is serving as an "id"
+          value, it MUST NOT be so mapped.
+        </p>
+
+        <p>
+          Relative IRI (and URL) references SHOULD NOT be used within an
+          Activity Streams 2.0 document due to the fact that many JSON
+          parser implementations are not capable of reliably preserving the base
+          context necessary to properly resolve relative references.
+        </p>
+      </section>
+
+      <section id="dates">
+        <h3>Date and Times</h3>
+        <p>
+          All properties with date and time values MUST conform to the
+          "date-time" production in [[!RFC3339]] with the one exception
+          that seconds MAY be omitted. An uppercase "T"
+          character MUST be used to separate date and time, and an
+          uppercase "Z" character MUST be used in the absence of a numeric time
+          zone offset.
+        </p>
+        <p>
+          This is specified using the following [[ABNF]] syntax description.
+          The "time-hour", "time-minute", "time-second", "time-secfrac",
+          "time-offset" and "full-date" constructs are as defined in
+          [[RFC3339]].
+        </p>
+<pre>
+as2-partial-time = time-hour ":" time-minute [":" time-second]
+                   [time-secfrac]
+as2-full-time    = as2-partial-time time-offset
+as2-date-time    = full-date "T" as2-full-time
+</pre>
+
+        <p>
+          It is important to note that the `time-offset` component does not
+          correlate to time-zones, and while times that include the
+          `time-offset` component work well for timestamps, they cannot be
+          reliably converted to and from local "wall times" without additional
+          information and processing.
+        </p>
+
+      </section>
+
+    </section>
+
+  <section id="examples" class="informative">
+    <h2>Examples</h2>
+
+    <p>
+      Following are three examples of activities with varying degrees of detail.
+    </p>
+
+    <p>
+      Each example is shown using the normative JSON serialization defined
+      by this specification.
+    </p>
+
+    <section id="example-1">
+      <h2>Minimal Activity</h2>
+
+  <figure>
+  <figcaption>
+    Expresses the statement <code>'http://www.test.example/martin' created
+    'http://example.org/foo.jpg'</code>.  No additional detail is given.
+  </figcaption>
+<div id="ex1-jsonld" style="display: block;">
+<pre class="example highlight json">{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "summary": "Martin created an image",
+  "type": "Create",
+  "actor": "http://www.test.example/martin",
+  "object": "http://example.org/foo.jpg"
+}</pre>
+  </div>
+</figure>
+    </section>
+
+    <section id="example-2">
+      <h2>Basic activity with some additional detail</h2>
+
+      <figure>
+      <figcaption>
+        Expresses the statement "Martin Smith added an article to the blog
+        'Martin's Blog' at 3:04 PM UTC on February 10, 2015."  Some additional
+        details about the article, actor and target blog are given using
+        properties defined by the
+        <a href="https://www.w3.org/TR/activitystreams-vocabulary/">Activity Streams 2.0
+        Vocabulary</a>.
+      </figcaption>
+<div id="ex2-jsonld" style="display: block;">
+<pre class="example highlight json">{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "summary": "Martin added an article to his blog",
+  "type": "Add",
+  "published": "2015-02-10T15:04:55Z",
+  "actor": {
+   "type": "Person",
+   "id": "http://www.test.example/martin",
+   "name": "Martin Smith",
+   "url": "http://example.org/martin",
+   "image": {
+     "type": "Link",
+     "href": "http://example.org/martin/image.jpg",
+     "mediaType": "image/jpeg"
+   }
+  },
+  "object" : {
+   "id": "http://www.test.example/blog/abc123/xyz",
+   "type": "Article",
+   "url": "http://example.org/blog/2011/02/entry",
+   "name": "Why I love Activity Streams"
+  },
+  "target" : {
+   "id": "http://example.org/blog/",
+   "type": "OrderedCollection",
+   "name": "Martin's Blog"
+  }
+}</pre>
+  </div>
+    </figure>
+
+    </section>
+
+    <section id="example-3">
+
+      <h2>An extended activity</h2>
+
+      <figure>
+      <figcaption>
+        A more extensive, single-entry "Activity Stream" follows.
+      </figcaption>
+
+<div id="ex3-jsonld" style="display: block;">
+<pre class="example highlight json">{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "summary": "Martin's recent activities",
+  "type": "Collection",
+  "totalItems": 1,
+  "items" : [
+    {
+      "type": "Add",
+      "published": "2011-02-10T15:04:55Z",
+      "generator": "http://example.org/activities-app",
+      "nameMap": {
+        "en": "Martin added a new image to his album.",
+        "ga": "Martin phost le fisean nua a albam."
+      },
+      "actor": {
+        "type": "Person",
+        "id": "http://www.test.example/martin",
+        "name": "Martin Smith",
+        "url": "http://example.org/martin",
+        "image": {
+          "type": "Link",
+          "href": "http://example.org/martin/image",
+          "mediaType": "image/jpeg",
+          "width": 250,
+          "height": 250
+        }
+      },
+      "object" : {
+        "name": "My fluffy cat",
+        "type": "Image",
+        "id": "http://example.org/album/máiréad.jpg",
+        "preview": {
+          "type": "Link",
+          "href": "http://example.org/album/máiréad.jpg",
+          "mediaType": "image/jpeg"
+        },
+        "url": [
+          {
+            "type": "Link",
+            "href": "http://example.org/album/máiréad.jpg",
+            "mediaType": "image/jpeg"
+          },
+          {
+            "type": "Link",
+            "href": "http://example.org/album/máiréad.png",
+            "mediaType": "image/png"
+          }
+        ]
+      },
+      "target": {
+        "type": "Collection",
+        "id": "http://example.org/album/",
+        "nameMap": {
+          "en": "Martin's Photo Album",
+          "ga": "Grianghraif Mairtin"
+        },
+        "image": {
+          "type": "Link",
+          "href": "http://example.org/album/thumbnail.jpg",
+          "mediaType": "image/jpeg"
+        }
+      }
+    }
+  ]
+}</pre>
+  </div>
+</figure>
+    </section>
+  </section>
+
+  <section id="model">
+    <h2>Model</h2>
+
+    <p>
+      The <a href="https://www.w3.org/TR/activitystreams-vocabulary/">Activity Vocabulary</a>
+      normatively defines the core object types and properties for Activity
+      Streams 2.0.
+    </p>
+
+    <p>
+      The object types defined by the vocabulary are segmented into a set of
+      eight core types and an extended set of Activity and Object types common
+      to many social Web applications. The core types include:
+      <ul>
+        <li><a>Object</a>,</li>
+        <li><a>Link</a>,</li>
+        <li><a>Activity</a>,</li>
+        <li><a>IntransitiveActivity</a>,</li>
+        <li><a>Collection</a>,</li>
+        <li><a>OrderedCollection</a>,</li>
+        <li><a>CollectionPage</a>, and</li>
+        <li><a>OrderedCollectionPage</a>.</li>
+      </ul>
+    </p>
+
+    <p>
+      Every JSON object in an Activity Streams 2.0 document is either an
+      <code><a>Object</a></code> or a <code><a>Link</a></code>. All other types
+      defined in the Activity Vocabulary, as well as all extension types, are
+      derived from these two base types.
+    </p>
+
+    <p>
+      A JSON object in the Activity Streams 2.0 document is a
+      <code><a>Link</a></code> if either: (a) the object contains a
+      <code>type</code> property whose value includes "<code>Link</code>" or
+      (b) any of the types included in the value of the <code>type</code>
+      property are defined as extensions of <a>Link</a> (see
+      <a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-mention">Mention</a> for
+      instance); otherwise the JSON object is considered an instance
+      or extension of <code><a>Object</a></code>.
+    </p>
+
+    <section id="object">
+      <h2><dfn id="asobject">Object</dfn></h2>
+
+      <p>
+        The <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-object">Object</a></code>
+        is the primary base type for the Activity Streams vocabulary.
+      </p>
+
+      <p>
+        In addition to having a global identifier (expressed as an
+        absolute IRI using the <code>id</code> property) and an
+        "object type" (expressed using the <code>type</code>
+        property), all instances of the <code>Object</code> type share a
+        common set of properties normatively defined by the
+        <a href="https://www.w3.org/TR/activitystreams-vocabulary/">Activity Vocabulary</a>.
+        These include:
+        <code>
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-attachment">attachment</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-attributedto">attributedTo</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-audience">audience</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-content">content</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-context">context</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-content">contentMap</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-name">name</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-name">nameMap</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-endtime">endTime</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-generator">generator</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-icon">icon</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-image-term">image</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-inreplyto">inReplyTo</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-location">location</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-preview">preview</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-published">published</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-replies">replies</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-starttime">startTime</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-summary">summary</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-summary">summaryMap</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-tag">tag</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-updated">updated</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-url">url</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-to">to</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-bto">bto</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-cc">cc</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-bcc">bcc</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-mediatype">mediaType</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-duration">duration</a></code>
+        </code>
+      </p>
+
+      <p>
+        All properties are optional (including the <code>id</code> and
+        <code>type</code>).
+      </p>
+
+<figure>
+  <figcaption>
+    Following is an example Object that uses the <code>id</code> and
+    <code>type</code> properties to express the global identifier and object
+    type:
+  </figcaption>
+
+<div id="ex4-jsonld" style="display: block;">
+<pre class="example highlight json">{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "id": "http://example.org/foo",
+  "type": "Note",
+  "name": "My favourite stew recipe",
+  "attributedTo": {
+    "id": "http://joe.website.example/",
+    "type": "Person",
+    "name": "Joe Smith"
+  },
+  "published": "2014-08-21T12:34:56Z"
+}</pre>
+  </div>
+</figure>
+
+     <p>
+       The <a href="https://www.w3.org/TR/activitystreams-vocabulary/">Activity Vocabulary</a>
+       defines a range of <code>Object</code> types that are common to
+       many social Web applications. This specification stops short of
+       defining semantically specific properties for most of these objects.
+       External vocabularies can be used to express additional detail not
+       covered by the Activity Vocabulary.
+     </p>
+
+     <p>
+      Furthermore, while implementations are free to introduce new types of
+      Objects beyond those defined by the Activity Vocabulary, interoperability
+      issues can arise when applications rely too much on extension types that
+      are not recognized by other implementations. Care should be taken to not
+      unduly overlap with or duplicate the existing Object types.
+    </p>
+    <p>
+      When an implementation uses an extension type that overlaps with a core
+      vocabulary type, the implementation MUST also specify the core vocabulary
+      type. For instance, some vocabularies (e.g. The Good Relations
+      Vocabulary) define their own types for describing locations. An
+      implementation that wishes, for example, to use a
+      <code><a href="http://www.heppnetz.de/ontologies/goodrelations/v1.html#Location">http://purl.org/goodrelations/v1#Location</a></code>
+      as an object type MUST also identify the object as being a
+      <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-place">Place</a></code>
+      as illustrated in the following:
+     </p>
+
+     <figure><figcaption>An Object that is both a <code>Place</code> and a <code>gr:Location</code>:</figcaption>
+<div id="ex6-jsonld" style="display: block;">
+<pre class="example highlight json">{
+  "@context": [
+    "https://www.w3.org/ns/activitystreams",
+    {
+      "gr": "http://purl.org/goodrelations/v1#"
+    }
+  ],
+  "type": ["Place", "gr:Location"],
+  "name": "Sally's Restaurant",
+  "longitude": 12.34,
+  "latitude": 56.78,
+  "gr:category": "restaurants/french_restaurants"
+}</pre>
+  </div>
+</figure>
+
+     <p>
+       Certain properties defined by some External Vocabularies can overlap or
+       duplicate those defined by the Activity Vocabulary. Where such overlap
+       exists, for the sake of consistent interoperability, implementations
+       MUST favor the use of properties defined by the Activity Vocabulary.
+     </p>
+
+     <section id="text-representations">
+       <h3>Text representations of Object types</h3>
+
+       <p>
+         Activity Streams consumers often need a text representation of an
+         Activity Streams object, e.g. for display in a Web browser or console
+         interface.
+       </p>
+
+       <p>
+         The <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-name">name</a></code>
+         property SHOULD be derived from input by the creator or another user.
+       </p>
+
+       <p>
+         The <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-summary">summary</a></code>
+         property SHOULD be used as a fallback text representation, possibly
+         automatically generated by the publisher. If there is no <code>name</code> property,
+         the <code>summary</code> property SHOULD NOT include markup, and SHOULD be short
+         enough to be used as a reasonable text representation of the object.
+       </p>
+
+       <figure>
+         <figcaption>
+           A note with a name defined by the author
+        </figcaption>
+         <div id="ex11e-jsonld" style="display: block;">
+<pre class="example highlight json">{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "type": "Note",
+  "id": "http://example.org/note/123",
+  "name": "Our Weather Is Fine",
+  "content": "I feel that the weather is appropriate to our season and location."
+}</pre>
+         </div>
+         </figure>
+
+         <figure>
+           <figcaption>
+             A note with an automatically-generated summary
+          </figcaption>
+           <div id="ex11f-jsonld" style="display: block;">
+<pre class="example highlight json">{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "type": "Note",
+  "id": "http://example.org/note/124",
+  "summary": "A note by Sally",
+  "content": "Everything is OK here."
+}</pre>
+           </div>
+           </figure>
+
+       <p>
+         The <code>name</code> and <code>summary</code> MAY be absent,
+         MAY lack explicit values in the end user&apos;s current language,
+         and MAY be longer than appropriate for use as a text representation of
+         the Object in the current language context. Consumer implementations
+         SHOULD have fallback strategies for text representation of Objects in
+         these cases.
+       </p>
+
+     </section>
+
+   </section>
+
+    <section id="link">
+      <h2><dfn>Link</dfn></h2>
+
+      <p>
+        A <code>Link</code> describes a qualified, indirect reference to another
+        resource that is closely related to the conceptual model of Links as
+        established in [[!RFC5988]]. The properties of the Link object are not
+        the properties of the referenced resource, but are provided as hints
+        for rendering agents to understand how to make use of the resource. For
+        example, <code>height</code> and <code>width</code> might represent the
+        desired rendered size of a referenced image, rather than the actual
+        pixel dimensions of the referenced image.
+      </p>
+
+      <p>
+        The target URI of the Link is expressed using the required
+        <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-href">href</a></code>
+        property. In addition, all <code>Link</code> instances share the
+        following common set of optional properties as normatively defined by
+        the <a href="https://www.w3.org/TR/activitystreams-vocabulary/">Activity Vocabulary</a>:
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-id">id</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-name">name</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-hreflang">hreflang</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-mediatype">mediaType</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-rel">rel</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-height">height</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-width">width</a></code>
+      </p>
+
+      <p>
+        For example, all <a data-lt="Object">Objects</a> can contain an
+        <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-image-term">image</a></code>
+        property whose value describes a graphical representation of the
+        containing object.  This property will typically be used to provide the
+        URL to an image (e.g. JPEG, GIF or PNG) resource that can be displayed
+        to the user.  Any given object might have multiple such visual
+        representations -- multiple screenshots, for instance, or the same
+        image at different resolutions. In Activity Streams 2.0, there are
+        essentially three ways of describing such references.
+      </p>
+
+      <figure><figcaption>To reference a single image without any additional
+      metadata, a direct association can be expressed as a JSON string
+      containing an absolute IRI.</figcaption>
+<div id="ex12-jsonld" style="display: block;">
+<pre class="example highlight json">{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "type": "Application",
+  "id": "http://example.org/application/123",
+  "name": "Exampletron 3000",
+  <b>"image": "http://example.org/application/123.png"</b>
+}</pre>
+</div>
+</figure>
+
+      <figure><figcaption>
+        Alternatively, if additional metadata is required (such as the MIME
+        content type of the referenced resource) a <a>Link</a> can be used:
+      </figcaption>
+<div id="ex13-jsonld" style="display: block;">
+<pre class="example highlight json">{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "type": "Application",
+  "id": "http://example.org/application/123",
+  "name": "Exampletron 3000",
+  <b>"image": {
+    "type": "Link",
+    "href": "http://example.org/application/123.png",
+    "mediaType": "image/png"
+  }</b>
+}</pre>
+</div>
+</figure>
+
+      <p>
+        Formally, the former example establishes an unqualified
+        direct relationship with the image resource while the
+        latter creates a <a href="http://patterns.dataincubator.org/book/qualified-relation.html">qualified,
+        indirect relationship</a> that allows additional properties about the
+        relationship to be specified.
+      </p>
+
+      <figure><figcaption>
+        If more than one value is to be expressed, A JSON Array with a
+        mix of strings and <a>Link</a>s can be used:
+      </figcaption>
+<div id="ex14-jsonld" style="display: block;">
+<pre class="example highlight json">{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "type": "Application",
+  "id": "http://example.org/application/123",
+  "name": "Exampletron 3000",
+  <b>"image": [
+    "http://example.org/application/abc.gif",
+    {
+      "type": "Link",
+      "href": "http://example.org/application/123.png",
+      "mediaType": "image/png"
+    }
+  ]</b>
+}</pre>
+</div>
+</figure>
+
+      <p>
+        Individual items contained in such an array are independent of one
+        another and no significance is given to the ordering.
+      </p>
+
+      <p>
+        RFC 5988 defines that all Links have a "link relation" that describes
+        the contextual purpose of the link.  Within a <a>Link</a>,
+        the <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-rel">rel</a></code> property
+        provides the link relation value. If no <code>rel</code> property is
+        specified, the link relation is considered to be unspecified. Any given
+        Link can have multiple link relation values. In the JSON
+        serialization, a single link relation is expressed as a single JSON
+        string. Multiple link relations are expressed as an array of JSON
+        strings.
+      </p>
+
+      <p>
+        The scope of the link relation is the object in which the <a>Link</a>
+        is an immediate child.
+      </p>
+
+      <p>
+        In the following example, two separate references are provided.  The
+        link relation of the first is unspecified, while the link relation of
+        the second is "<code>thumbnail</code>".
+      </p>
+
+      <figure><figcaption></figcaption>
+<div id="ex15-jsonld" style="display: block;">
+<pre class="example highlight json">{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "type": "Application",
+  "id": "http://example.org/application/123",
+  "name": "Exampletron 3000",
+  "image": [
+    "http://example.org/application/abc.gif",
+    {
+      "type": "Link",
+      "href": "http://example.org/application/123.png",
+      "mediaType": "image/png",
+      "rel": "thumbnail"
+    }
+  ]
+}</pre>
+</div>
+</figure>
+
+      <p>
+        It ought to be noted that the [[!HTML5]] specification provides its
+        own alternative definition of a "link relation" that differs slightly
+        from the [[RFC5988]] definition. In the HTML5 definition, any string
+        that does not contain the "space" U+0020, "tab" (U+0009), "LF" (U+000A),
+        "FF" (U+000C), "CR" (U+000D) or "," (U+002C) characters can be used as a
+        valid link relation. To promote interoperability, Activity Streams 2.0
+        implementations MUST only use link relations that are syntactically
+        valid in terms of both the [[RFC5988]] and [[HTML5]] definitions.
+        Implementations MAY use link relation values that are not registered.
+      </p>
+
+      <p>
+        Note that the <a>Link</a> and <a>Object</a> types are disjoint from
+        one another. That is, any given <a>Object</a> cannot also be a
+        <a>Link</a>.
+      </p>
+
+    </section>
+
+    <section id="actors">
+      <h2><dfn id="actor">Actor</dfn></h2>
+
+      <p>
+        Actor objects are specializations of the base <a>Object</a>
+        type that represent entities capable of carrying out an
+        Activity. The <a href="https://www.w3.org/TR/activitystreams-vocabulary/">Activity
+        Vocabulary</a> provides the normative definition of five specific
+        types of Actors:
+        <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-application">Application</a>
+        </code> |
+        <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-group">Group</a></code> |
+        <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-organization">Organization</a></code> |
+        <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-person">Person</a></code> |
+        <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-service">Service</a></code>.
+      </p>
+
+      <p>
+        This specification intentionally defines Actors in only the most
+        generalized way, stopping short of defining semantically specific
+        properties for each. All Actor objects are specializations of
+        <code><a>Object</a></code> and inherit all of the core properties
+        common to all Objects. External vocabularies can be used to express
+        additional detail not covered by the Activity Vocabulary. VCard
+        [[vcard-rdf]] SHOULD be used to provide additional metadata for
+        <a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-person">Person</a>,
+        <a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-group">Group</a>,
+        and <a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-organization">Organization</a> instances.
+      </p>
+
+      <figure><figcaption>An Activity with a Person actor extended with VCard properties:</figcaption>
+<div id="ex17-jsonld" style="display: block;">
+<pre class="example highlight json">{
+  "@context": [
+    "https://www.w3.org/ns/activitystreams",
+    {"vcard": "http://www.w3.org/2006/vcard/ns#"}
+  ],
+  "summary": "Sally created a note",
+  "type": "Create",
+  "actor": {
+    "type": ["Person", "vcard:Individual"],
+    "id": "http://sally.example.org",
+    "name": "Sally Smith",
+    "vcard:given-name": "Sally",
+    "vcard:family-name": "Smith"
+  },
+  "object": {
+    "type": "Note",
+    "content": "This is a simple note"
+  }
+}</pre>
+</div>
+</figure>
+
+      <p>
+        While implementations are free to introduce new types of Actors beyond
+        those defined by the Activity Vocabulary, interoperability issues can
+        arise when applications rely too much on extension types that are not
+        recognized by other implementations. Care should be taken to not unduly
+        overlap with or duplicate the existing Actor types.
+      </p>
+      <p>
+        When an implementation uses an extension type that overlaps with a core
+        vocabulary type, the implementation MUST also specify the core
+        vocabulary type. For instance, some vocabularies (e.g. VCard) define
+        their own types for describing people. An implementation that wishes,
+        for example, to use a <code>vcard:Individual</code> as an Actor MUST
+        also identify that Actor as a <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-person">Person</a></code>
+        as illustrated in the previous example.
+      </p>
+
+    </section>
+
+    <section id="activities">
+      <h2><dfn id="activity">Activity</dfn></h2>
+
+      <p>
+        Activity objects are specializations of the base <a>Object</a>
+        type that provide information about actions that have either
+        already occurred, are in the process of occurring, or may occur
+        in the future.
+      </p>
+
+      <p>
+        In addition to common properties supported by all <a>Object</a>
+        instances, <code>Activity</code> objects support the following
+        additional properties defined by the
+        <a href="https://www.w3.org/TR/activitystreams-vocabulary/">Vocabulary</a>:
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-actor">actor</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-object-term">object</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-target">target</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-origin">origin</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-result">result</a></code> |
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-instrument">instrument</a></code>
+      </p>
+
+      <p>
+        The <code>type</code> property is used to identify the type
+        of action the Activity Statement represents.
+      </p>
+
+      <figure><figcaption>The following example illustrates a simple Activity:</figcaption>
+<div id="ex19-jsonld" style="display: block;">
+<pre class="example highlight json"><code>{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "summary": "Joe liked a note",
+  "type": "Like",
+  "id": "http://www.test.example/activity/1",
+  "actor": "http://example.org/profiles/joe",
+  "object": "http://example.com/notes/1",
+  "published": "2014-09-30T12:34:56Z"
+}
+</code></pre>
+</div>
+</figure>
+
+      <p>
+        The <a href="https://www.w3.org/TR/activitystreams-vocabulary/">Activity Vocabulary</a>
+        defines a small number of <code>Activity</code> types that are common
+        to many social Web applications. This specification stops short of
+        defining semantically specific properties for most of these activities.
+        External vocabularies can be used to express additional detail not
+        covered by the Activity Vocabulary.
+      </p>
+
+      <p>
+        While implementations are free to introduce new types of Activites
+        beyond those defined by the Activity Vocabulary, interoperability
+        issues can arise when applications rely too much on extension types
+        that are not recognized by other implementations. Care should be taken
+        to not unduly overlap with or duplicate the existing Activity types.
+      </p>
+      <p>
+        When an implementation uses an extension type that overlaps with a core
+        vocabulary type, the implementation MUST also specify the core
+        vocabulary type. For instance, some vocabularies (e.g. Schema.org)
+        define their own types for describing actions. An implementation that
+        wishes, for example, to use <code><a href="http://schema.org/LikeAction">http://schema.org/LikeAction</a></code>
+        as an Activity MUST also identify that Object as being a
+        <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-like">Like</a></code>
+        as illustrated in the following:
+      </p>
+
+       <figure><figcaption>An Activity that is both a
+       <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-like">Like</a></code>
+       and a <code>http://schema.org/LikeAction</code>:</figcaption>
+<div id="ex20-jsonld" style="display: block;">
+<pre class="example highlight json"><code>{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "summary": "Joe liked a note",
+  "type": ["Like", "http://schema.org/LikeAction"],
+  "id": "http://www.test.example/activity/1",
+  "actor": "http://example.org/profiles/joe",
+  "object": "http://example.com/notes/1",
+  "published": "2014-09-30T12:34:56Z"
+}</code></pre>
+</div>
+</figure>
+
+      <p>
+        Implementations are free to use Activity objects in both passive and
+        imperative operations. In the passive sense, the Activity is used
+        to record that an activity has or is occurring. In the imperative
+        sense, the Activity can be used as a form of command, instructing
+        an application to modify state in some manner consistent with the
+        action being described. However, because this specification does not
+        define a normative processing model that constrains how applications
+        make use of the format, the distinction about whether an Activity
+        statement is to be interpreted as a passive notification or as
+        an imperative command can vary across implementations.
+      </p>
+
+    </section>
+
+    <section id="intransitiveactivities">
+      <h2><dfn id="intransitiveactivity">IntransitiveActivity</dfn></h2>
+
+      <p>
+        IntransitiveActivity objects are specializations of the <a>Activity</a>
+        type that represent intransitive actions. IntransitiveActivity objects
+        do not have an <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-object-term">object</a></code> property.
+      </p>
+    </section>
+
+    <section id="collections">
+      <h2><dfn id="collection">Collection</dfn></h2>
+
+      <p>
+        <code>Collection</code> objects are a specialization of the
+        base <code><a>Object</a></code> that serve as a container for other
+        <a data-lt="Object">Objects</a> or <a data-lt="Link">Links</a>.
+      </p>
+
+      <p>
+        In addition to the base properties inherited by all
+        <code><a data-lt="Object">Objects</a></code>, all
+        <code><a>Collection</a></code> types contain the additional properties:
+        <code>
+          <a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-items">items</a> |
+          <a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-totalitems">totalItems</a> |
+          <a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-first">first</a> |
+          <a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-last">last</a> |
+          <a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-current">current</a>
+        </code>
+      </p>
+
+      <p>
+        The items within a <code><a>Collection</a></code> can be ordered or
+        unordered. The <code><dfn>OrderedCollection</dfn></code> type MAY be
+        used to identify a Collection whose items are always ordered. In the
+        JSON serialization, the unordered items of a Collection are
+        represented using the <code>items</code> property while ordered items
+        are represented using the <code>orderedItems</code> property.
+      </p>
+
+      <figure>
+        <figcaption>
+          The following is a simple unordered collection:
+        </figcaption>
+<div id="ex21-jsonld" style="display: block;">
+<pre class="example highlight json">{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "summary": "Object history",
+  "type": "Collection",
+  "totalItems": 2,
+  "items": [
+    {
+      "type": "Create",
+      "actor": "http://www.test.example/sally",
+      "object": "http://example.org/foo"
+    },
+    {
+      "type": "Like",
+      "actor": "http://www.test.example/joe",
+      "object": "http://example.org/foo"
+    }
+  ]
+}</pre>
+</div>
+</figure>
+
+      <figure>
+        <figcaption>
+          The following is a simple ordered collection:
+        </figcaption>
+<div id="ex22-jsonld" style="display: block;">
+<pre class="example highlight json">
+{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "summary": "Object history",
+  "type": "OrderedCollection",
+  "totalItems": 2,
+  "orderedItems": [
+    {
+      "type": "Create",
+      "actor": "http://www.test.example/sally",
+      "object": "http://example.org/foo"
+    },
+    {
+      "type": "Like",
+      "actor": "http://www.test.example/joe",
+      "object": "http://example.org/foo"
+    }
+  ]
+}
+</pre>
+</div>
+</figure>
+
+      <section id="paging">
+        <h2>Collection Paging</h2>
+
+        <p>
+          A Collection can contain a large number of items. Often, it becomes
+          impractical for an implementation to serialize every item contained
+          by a Collection using the <code>items</code> (or
+          <code>orderedItems</code>) property alone. In such cases, the items
+          within a Collection can be divided into distinct subsets or "pages".
+          A page is identified using the <code><dfn>CollectionPage</dfn></code>
+          type.
+        </p>
+
+        <p>
+          The <code><a>CollectionPage</a></code> type extends from the base
+          <code><a>Collection</a></code> type and inherits all of it's
+          properties. The following additional properties can also be
+          specified:
+          <code>
+            <a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-partof">partOf</a> |
+            <a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-next">next</a> |
+            <a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-prev">prev</a> |
+          </code>
+        </p>
+
+        <p>
+          The <code>partOf</code> property identifies the
+          <code><a>Collection</a></code> to which the items contained by the
+          <code>CollectionPage</code> belong.
+        </p>
+
+        <p>
+          The <code>first</code>, <code>next</code>, <code>prev</code>,
+          <code>last</code>, and <code>current</code> properties are used
+          to reference other <code><a>CollectionPage</a></code> instances
+          that contain additional subsets of items from the parent collection.
+        </p>
+
+        <p>
+          As with <code>Collection</code> objects, the items within a
+          <code>CollectionPage</code> might be ordered or unordered.
+          The <code><dfn>OrderedCollectionPage</dfn></code> type MAY be used
+          to identify a page whose items are strictly ordered.
+        </p>
+
+        <p>
+          The <code><a>OrderedCollectionPage</a></code> type extends from
+          both <code><a>CollectionPage</a></code> and
+          <code><a>OrderedCollection</a></code>. In addition to the properties
+          inherited from each of those, the <code>OrderedCollectionPage</code>
+          may contain an additional
+          <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-startindex">startIndex</a></code> property whose value indicates the relative index position
+          of the first item contained by the page within the
+          <code>OrderedCollection</code> to which the page belongs.
+        </p>
+
+        <figure>
+          <figcaption>
+            An illustration of the relationship between <code>Collection</code>,
+            <code>OrderedCollection</code>, <code>CollectionPage</code>, and
+            <code>OrderedCollectionPage</code>:
+          </figcaption>
+          <img src="paging2.png" alt="Collection type Model">
+        </figure>
+
+        <p>
+          Whether ordered or not, the pages of a <code>Collection</code> are
+          typically arranged in a sequence (either a singly or doubly-linked
+          list). The <code>first</code> property is used to identify the first
+          page in this sequence, while the <code>last</code> property is used
+          to identify the final page in the sequence. The <code>prev</code> and
+          <code>next</code> properties identify the pages immediately before
+          and immediately following, respectively.
+        </p>
+
+        <figure>
+          <figcaption>
+            A visualization of the Collection paging model:
+          </figcaption>
+          <img src="paging.png" alt="The Paging Model">
+        </figure>
+
+        <p>
+          The <code>current</code> property identifies a page
+          containing the subset of items in the <code>Collection</code> that
+          have been created or updated most recently.
+        </p>
+
+        <p>
+          The values for the <code>first</code>, <code>last</code>,
+          <code>next</code>, <code>prev</code>, and <code>current</code>
+          properties can be either a single <code><a>CollectionPage</a></code>
+          or a <code><a>Link</a></code> referencing a separate resource
+          containing a <code><a>CollectionPage</a></code>.
+        </p>
+
+      <figure>
+        <figcaption>
+          The following is a simple unordered collection with paging:
+        </figcaption>
+<div id="ex21b-jsonld" style="display: block;">
+<pre class="example highlight json">{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "summary": "Sally's recent activities",
+  "type": "Collection",
+  "id": "http://example.org/foo",
+  "totalItems": 10,
+  "first": {
+    "type": "CollectionPage",
+    "id": "http://example.org/foo?page=1",
+    "partOf": "http://example.org/foo",
+    "next": "http://example.org/foo?page=2",
+    "items": [
+      {
+        "type": "Create",
+        "actor": "http://www.test.example/sally",
+        "object": "http://example.org/foo"
+      }
+    ]
+  }
+}</pre>
+</div>
+</figure>
+
+      <p>
+        Using paging with an <code>OrderedCollection</code> can be tricky
+        because there are no guarantees that implementations will process the
+        sequence of pages in any predictable order. Implementations that wish
+        to reconstruct the appropriate complete ordering of member items in
+        the logical collection should navigate to the first (or last)
+        page in the sequence then recursively follow the <code>next</code>
+        (or <code>prev</code>) link until all pages have been processed.
+        The pages of an <code>OrderedCollection</code> SHOULD be instances
+        of <code>OrderedCollectionPage</code>. If the pages of an
+        <code>OrderedCollection</code> are not instances
+        of <code>OrderedCollectionPage</code>, a consumer will have
+        no reliable means of reconstructing the appropriate ordering of items.
+      </p>
+
+      </section>
+
+    </section>
+
+    <section id="naturalLanguageValues">
+
+      <h2>Natural Language Values</h2>
+
+      <p>
+        Several properties defined by the
+        <a href="https://www.w3.org/TR/activitystreams-vocabulary/">Vocabulary</a> are defined
+        as having natural language values. These are human-readable strings using one or more languages. Within the JSON serialization, they are
+        expressed as either (1) a single JSON string or (2) a JSON object
+        mapping well-formed [[!BCP47]] Language-Tags to localized, equivalent
+        translations of the same string value. In the serialized JSON, these
+        two forms are differentiated using a simple property naming convention,
+        for instance: "<code>name</code>" identifies the JSON string
+        form for the <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-name">name</a></code>
+        property while "<code>nameMap</code>" represents the object form.
+      </p>
+
+      <figure>
+        <figcaption>A single name String value without language information:</figcaption>
+<div id="ex7-jsonld" style="display: block;">
+<pre class="example highlight json">{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "type": "Object",
+  <b>"name": "This is the title"</b>
+}</pre>
+</div>
+</figure>
+
+      <figure>
+        <figcaption>Multiple, language-specific values:</figcaption>
+<div id="ex8-jsonld" style="display: block;">
+<pre class="example highlight json">{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "type": "Object",
+  <b>"nameMap": {
+    "en": "This is the title",
+    "fr": "C'est le titre",
+    "es": "Este es el título"
+  }</b>
+}</pre>
+</div>
+</figure>
+
+      <p>
+        Every key in the object form MUST be a well-formed [[!BCP47]]
+        Language-Tag. The associated values MUST be strings.
+      </p>
+
+      <p>
+        The <a href="https://www.w3.org/TR/activitystreams-vocabulary/">Activity Vocabulary</a>
+        defines three properties that use natural language values:
+        <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-name">name</a></code>,
+        <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-summary">summary</a></code>, and
+        <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-content">content</a></code>.
+        Accordingly, in the JSON serialization, the terms
+        "<code>name</code>", "<code>summary</code>", and "<code>content</code>"
+        represent the JSON string forms; and the terms
+        "<code>nameMap</code>", "<code>summaryMap</code>", and
+        "<code>contentMap</code>" for represent the object forms.
+      </p>
+
+      <p>
+        The special language tag <code>"und"</code> can be used within the
+        object form to explicitly identify a value whose
+        language is unknown or undetermined.
+      </p>
+
+      <figure>
+        <figcaption>Using the <code>"und"</code> language tag:</figcaption>
+<div id="ex11b-jsonld" style="display: block;">
+<pre class="example highlight json">
+{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "type": "Object",
+  "nameMap": {
+    "und": "This is the title"
+  }
+}
+</pre>
+</div>
+    </figure>
+
+      <section id="defaultlangcontext">
+        <h3>Default Language Context</h3>
+
+        <p>
+          When using [[JSON-LD]] mechanisms to produce or consume Activity
+          Streams 2.0 documents, the <code>@language</code> property MAY be used
+          within a <code>@context</code> to identify the default language. This
+          mechanism may not be understood by implementations that do not choose
+          to process Activity Streams 2.0 documents using JSON-LD.
+        </p>
+
+        <figure>
+          <figcaption>
+            Specifying the default <code>"@language"</code> within the JSON-LD
+            <code>@context</code>:
+          </figcaption>
+        <div id="ex11c-jsonld" style="display: block;">
+        <pre class="example highlight json">{
+  "@context": [
+    "https://www.w3.org/ns/activitystreams",
+    {
+      "@language": "en"
+    }],
+  "type": "Object",
+  "name": "This is the title"
+}</pre>
+        </div>
+      </figure>
+
+    </section>
+
+    <section id="biditext">
+      <h3>Bidirectional Text</h3>
+
+      <p>
+        Natural language values within an Activity Streams 2.0 document MAY
+        contain bidirectional text. The default base direction of an Activity
+        Streams 2.0 document is Left-to-Right. The base direction of individual
+        natural language values MAY be modified as described below.
+      </p>
+
+      <p>
+        When specifying bidirectional text for a natural language value,
+        and the base direction of the text cannot be correctly identified by
+        the first strong directional character of that text, publishers SHOULD
+        explicitly identify the default direction either by prefixing the value
+        with an appropriate Unicode bidirectional control character, or by using
+        HTML directional markup where permitted.
+      </p>
+
+      <p>
+        Consumers of Activity Streams 2.0 documents that contain bidirectional
+        text SHOULD identify the base direction of any given natural language
+        value by either scanning the text for the first strong directional
+        character not contained within a markup tag; or by utilizing
+        directional markup where provided. Once the base direction has been
+        identified, consumers MUST determine the appropriate rendering and
+        display of natural language values, according to the Unicode
+        Bidirectional Algorithm [[!BIDI]]. This may necessitate wrapping
+        additional control characters or markup around the string prior to
+        display, in order to apply the base direction.
+      </p>
+
+      <table>
+        <tr>
+          <th>Property</th>
+          <th>Value</th>
+          <th>Direction</th>
+          <th>Method</th>
+        </tr>
+        <tr>
+          <td><code>name</code></td>
+          <td><code>"פעילות הבינאום, W3C"</code></td>
+          <td>Right-to-Left</td>
+          <td>First strong directional character</td>
+        </tr>
+        <tr>
+          <td><code>name</code></td>
+          <td>
+            <code>
+              "The document was titled, '\u2067פעילות הבינאום, W3C\u2069'"
+            </code>
+          </td>
+          <td>Left-to-Right</td>
+          <td>First strong directional character</td>
+        </tr>
+        <tr>
+          <td><code>name</code></td>
+          <td><code>"\u200FHTML היא שפת סימון"</code></td>
+          <td>Right-to-Left</td>
+          <td>Bidi Control Character</td>
+        </tr>
+        <tr>
+          <td><code>name</code></td>
+          <td><code>"\u200E'سلام' is hello in Persian."</code></td>
+          <td>Left-to-Right</td>
+          <td>Bidi Control Character</td>
+        </tr>
+        <tr>
+          <td><code>summary</code></td>
+          <td>
+            <code>&lt;p dir=\"rtl\"&gt;HTML היא שפת סימון&gt;/p&gt;</code>
+          </td>
+          <td>Right-to-Left</td>
+          <td>HTML Markup</td>
+        </tr>
+        <tr>
+          <td><code>summary</code></td>
+          <td><code>&lt;p&gt;פעילות הבינאום, W3C&lt;/p&gt;</code></td>
+          <td>Right-to-Left</td>
+          <td>First strong directional character (ignoring markup)</td>
+        </tr>
+        <tr>
+          <td><code>summary</code></td>
+          <td>
+            <code>&lt;p title="سلام"&gt;Hello&lt;/p&gt;</code>
+          </td>
+          <td>Left-to-Right</td>
+          <td>First strong directional character (ignoring markup)</td>
+        </tr>
+      </table>
+
+    </section>
+
+    </section>
+
+    <section>
+      <h3>Marking up language</h3>
+      <p>
+        Activity Streams 2.0 publishers SHOULD explicitly mark the language of
+        natural language properties if they are known, using either map properties
+        or a default language tag.
+      </p>
+      <p class="note" title="Examples">
+        Not all examples in this specification explicitly mark the language of
+        natural language properties. This is intentional. The authors and the
+        working group wished to avoid having implementers cut-and-paste examples
+        from the document with explicit language markup as a template for new
+        documents, which would consequently have inaccurate language markup.
+      </p>
+    </section>
+  </section>
+
+  <section id="extensibility">
+
+    <h2>Extensibility</h2>
+
+      <p>
+        In Activity Streams 2.0, an "extension" is any property, activity,
+        actor or object type not defined by the
+        <a href="https://www.w3.org/TR/activitystreams-vocabulary/">Activity Vocabulary</a>.
+        Consuming implementations that encounter unfamiliar
+        extensions MUST NOT stop processing or signal an error and MUST
+        continue processing the items as if those properties were not
+        present. Note that support for extensions can vary across
+        implementations and no normative processing model for extensions is
+        defined. Accordingly, implementations that rely too heavily on
+        the use of extensions may experience reduced interoperability with
+        other implementations.
+      </p>
+
+      <p>
+        For extensions, [[JSON-LD]] is used as the primary mechanism for
+        defining and disambiguating extensions. Implementations that wish to
+        fully support extensions SHOULD use [[JSON-LD]] mechanisms.
+      </p>
+
+      <p>
+        Some popular extensions are included in the Activity Streams 2.0 namespace
+        document, and can be reviewed at <a href="https://www.w3.org/ns/activitystreams#extensions">https://www.w3.org/ns/activitystreams#extensions</a>.
+        The <a href="https://www.w3.org/community/swicg/">Social Web Incubator Community Group</a> maintains a
+        wiki page on <a href="https://www.w3.org/wiki/Activity_Streams_extensions">Activity Streams extensions</a>.
+      </p>
+
+      <p>
+        It is important to note that the JSON-LD Processing Algorithms
+        [[JSON-LD-API]], as currently defined, will silently ignore any
+        property not defined in a JSON-LD @context. Implementations that
+        publish Activity Streams 2.0 documents containing extension
+        properties SHOULD provide a @context definition for all extensions.
+      </p>
+
+      <p>
+        It is also important to note that there are valid JSON constructs which
+        cannot be used within a JSON-LD document. For instance, JSON-LD forbids
+        "arrays of arrays" as used, for example, by the popular
+        <a href="http://geojson.org/">GeoJSON</a> specification. While
+        implementations are free to use such constructs as extensions within an
+        Activity Streams 2.0 document, consumers that use the standard JSON-LD
+        Processing Algorithms will be required to either ignore such extensions
+        or map those to alternative compatible constructs prior to applying the
+        JSON-LD algorithms. Simple GeoJSON Points, for instance, can be mapped
+        to <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-place">Place</a></code>
+        objects, while more complex geometries can be converted to
+        <a href="http://www.opengeospatial.org/standards/geosparql">GeoSparql</a>
+        "Well-Known Text" representations as illustrated in the non-normative
+        examples below:
+      </p>
+
+        <figure><figcaption>GeoJSON Point Coordinates:</figcaption>
+<pre class="example highlight json">{
+  "type": "Point",
+  "coordinates": [36.74, -119.77]
+}</pre></figure>
+
+        <figure><figcaption>The Equivalent <code>Place</code> alternative:</figcaption>
+<div id="ex23-jsonld" style="display: block;">
+<pre class="example highlight json">{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "name": "Fresno, California",
+  "type": "Place",
+  "latitude": 36.74,
+  "longitude": -119.77
+}</pre>
+</div>
+</figure>
+
+<figure><figcaption>GeoJSON Polygon Coordinates:</figcaption>
+<pre class="example highlight json">{
+  "type": "Polygon",
+  "coordinates": [
+    [
+      [100.0, 0.0],
+      [101.0, 0.0],
+      [101.0, 1.0],
+      [100.0, 1.0],
+      [100.0, 0.0]
+    ]
+  ]
+}</pre></figure>
+
+        <figure><figcaption>The Equivalent GeoSparql Well-Known-Text alternative:</figcaption>
+<div id="ex24-jsonld" style="display: block;">
+<pre class="example highlight json">{
+  "@context": [
+    "https://www.w3.org/ns/activitystreams",
+    {"gsp": "http://www.opengis.net/ont/geosparql"}
+  ],
+  "summary": "A polygon",
+  "type": "gsp:Geometry",
+  "gsp:asWKT": "Polygon((100.0, 0.0, 101.0, 0.0, 101.0, 1.0, 100.0, 1.0, 100.0, 0.0))"
+}</pre>
+</div>
+</figure>
+
+<section id="compact-uris">
+  <h2>Support for Compact URIs</h2>
+
+  <p>
+    The JSON-LD syntax supports the use of "Compact URIs". A "Compact URI" is an
+    alternative encoding of a URI that uses
+    a defined prefix to simplify serialization. For instance, the URI
+    <code>http://example.org/term</code> can be
+    represented as <code>ex:term</code> by assigning the <code>ex:</code>
+    prefix the value of <code>http://example.org/</code>
+  </p>
+
+  <p>
+    Within JSON-LD, Compact URI prefixes are defined within the JSON-LD
+    <code>@context</code> definition. For example:
+  </p>
+
+  <figure><figcaption>A JSON-LD Compact URI definition</figcaption>
+<pre class="example highlight json">{
+  "@context": {
+    "ex": "http://example.org/",
+    "term": {
+      "@type": "id",
+      "@id": "ex:term"
+    }
+  },
+  "term": "ex:Foo"
+}</pre></figure>
+
+  <p>
+    In this example, both the property name <code>term</code> and the value
+    <code>ex:Foo</code> are Compact URIs. The property name <code>term</code>
+    expands to <code>http://example.org/term</code> and the value
+    <code>ex:Foo</code> expands to <code>http://example.org/Foo</code>
+  </p>
+
+  <p>
+    In JSON-LD, Compact URI expansion of <em>values</em> applies to
+    properties explicitly defined as <code>"type": "id"</code> in the
+    <code>@context</code> definition. Specifically, Compact URIs can be used
+    anywhere an IRI (or URI) value is expected.
+  </p>
+
+  <p>
+    Activity Streams 2.0 implementations that wish to fully support extensions
+    MUST support Compact URI expansion as defined by the JSON-LD specification.
+    Such expansion applies to all property names as well as all property values
+    explicitly defined as type <code>@id</code> in the JSON-LD @context.
+  </p>
+
+  <p>
+    Over reliance on the Compact URI form can lead to ambiguity and
+    interoperability issues between implementations. Therefore, Compact URI use
+    SHOULD be avoided in all cases other than property names and the value(s)
+    of the <code>type</code> property.
+  </p>
+
+</section>
+
+    <section id="extension-round-trip">
+
+      <h2>Re-serialization of Extensions</h2>
+
+      <p>
+        Implementations that use JSON-LD mechanisms to parse and then
+        reserialize Activity Streams 2.0 documents that contain extension
+        properties SHOULD take sufficient care to ensure that extension
+        properties used within the original document are preserved and
+        serialized appropriately.
+      </p>
+
+      <p>
+        For instance, consider the following simple Activity Stream object
+        containing hypothetical <code>foo</code> and <code>bar</code> extension
+        properties. The <code>foo</code> extension is defined within the
+        JSON-LD <code>@context</code> while the <code>bar</code> extension
+        property is not.
+      </p>
+
+      <figure><figcaption>A simple extended Object</figcaption>
+<pre class="example highlight json">{
+  "@context": [
+    "https://www.w3.org/ns/activitystreams",
+    {"foo": "http://example.org/foo"}
+  ],
+  "type": "Note",
+  "content": "This is a simple note",
+  "foo": 123,
+  "bar": 321
+}</pre></figure>
+
+      <p>
+        An implementation that receives this Note object can choose to parse
+        the object as an ordinary JSON object or it can use the standard
+        JSON-LD Expansion algorithm.
+      </p>
+
+      <p>
+        If the implementation chooses to parse the object as ordinary JSON
+        and then reserializes the object (e.g. for storage or redistribution),
+        then it would simply preserve the values of the <code>@context</code>,
+        <code>foo</code> and <code>bar</code> properties as they are and
+        include those in the reserialized output.
+      </p>
+
+      <p>
+        However, if the implementation chooses to use the JSON-LD expansion
+        algorithm, the <code>@context</code> will be removed from the expanded
+        result and the <code>bar</code> property will be mapped to the
+        "blank node" <code>_:bar</code>. If this document is then reserialized
+        using the normative Activity Streams 2.0 context, the JSON-LD
+        compacted form would be:
+      </p>
+
+      <figure><figcaption>The reserialized compacted form:</figcaption>
+<pre class="example highlight json">{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "type": "Note",
+  "content": "This is a simple note",
+  "http://example.org/foo": 123,
+  "bar": 321
+}</pre></figure>
+
+      <p>
+        While this is close to the original, the use of fully expanded URI
+        label for the <code>foo</code> property is not ideal. To ensure that
+        the reserialized object is serialized correctly, implementations that
+        perform JSON-LD expansion of received documents SHOULD preserve the
+        original <code>@context</code> used when performing the JSON-LD
+        expansion, then reuse that when reserializing the object into the
+        JSON-LD compacted form.
+      </p>
+
+    </section>
+
+  </section>
+
+  <section id="privacy">
+    <h2>Privacy Considerations</h2>
+
+    <p>
+      Activity Streams 2.0 documents can (and likely will) contain potentially
+      sensitive personal information such as identity, contact information,
+      physical location, physical characteristics, and so forth. Furthermore,
+      Activity data, in general, can be analyzed to generate profiles of the
+      behavior of individual or groups of Actors.
+    </p>
+
+    <p>
+      Implementations that produce or consume Activity Streams 2.0 documents
+      MUST take steps to openly and publicly document and communicate to all
+      potential users: (a) the kinds of potentially sensitive personal
+      information published, consumed or collected by the implementation, (b)
+      the reasons for publishing, consuming and collecting that information,
+      (c) the manner in which that information is being used, (d) the
+      identity of any other party with whom that information is being shared,
+      and (e) the reason the information is being shared with other parties.
+    </p>
+
+    <p>
+      Implementations that publish Activity Streams 2.0 documents SHOULD
+      assume a default position of limiting both the kind and amount of
+      sensitive personal information included in the document unless users have
+      "opted in" to sharing additional detail.
+    </p>
+
+    <p>
+      Implementations that consume Activity Streams 2.0 documents SHOULD NOT,
+      by default, store or share sensitive personal information included within
+      consumed documents unless users have "opted in" to allowing that
+      information to be stored or shared.
+    </p>
+
+    <p>
+      In this context, "opting in" does not necessarily require explicit
+      action on the part of the user. If, for instance, the use of certain
+      sensitive personal information is clearly implicit in the use of an
+      implementation (a location tracking service, for example), then any
+      use of that implementation can be considered an implicit acknowledgement
+      that the sensitive personal information will be used and shared so long
+      as the documentation guidelines listed above are followed.
+    </p>
+
+  </section>
+
+  <section id="security-considerations">
+
+  <h2>Security Considerations</h2>
+
+  <p>
+    Publishers or Consumers implementing Activity Streams as a stream of
+    public data may also want to consider the potential for unsolicited
+    commercial or malicious content and should take preventative measures
+    to recognize such content and either identify it or not include it in
+    their implementations.
+  </p>
+
+  <p>
+    Publishers should take reasonable measures to ensure potentially
+    malicious user input such as cross-site scripting attacks are not
+    included in the Activity Streams data they publish.
+  </p>
+
+  <p>
+    Consumers that re-emit ingested content to end-users MUST take
+    reasonable measures if emitting ingested content to make sure
+    potentially malicious ingested input is not re-emitted.
+  </p>
+
+  <p>
+    Consumers that re-emit ingested content for crawling by search
+    engines should take reasonable measures to limit any use of their
+    site as a Search Engine Optimization loophole.  This may include
+    converting untrusted hyperlinks to text or including a
+    rel="nofollow" attribute.
+  </p>
+
+  <p>
+    Consumers should be aware of the potential for spoofing attacks where
+    the attacker publishes activities or objects with falsified property
+    values with the intent of injecting malicious content, hiding or
+    corrupting legitimate content, or misleading users.
+  </p>
+
+  <p>
+    Activity Streams are JSON Documents and are subject to the same
+    security considerations described in [[!RFC7159]].
+  </p>
+
+  <p>
+    Activity Streams implementations handle URIs.  See Section 7 of
+    [[!RFC3986]].
+  </p>
+
+  <p>
+    Activity Streams implementations handle IRIs.  See Section 8 of
+    [[!RFC3987]].
+  </p>
+
+  </section>
+
+  <section id="iana">
+
+    <h2>IANA Considerations</h2>
+
+    <section id="media-type">
+      <h2>The <code>application/activity+json</code> Media Type</h2>
+
+      <p>
+        This specification registers the <code><dfn>application/activity+json</dfn></code> MIME Media Type specifically for identifying documents
+        conforming to the Activity Streams 2.0 format.
+      </p>
+
+      <table>
+        <tr>
+          <td>Type name: </td>
+          <td>application</td>
+        </tr>
+        <tr>
+          <td>Subtype name: </td>
+          <td>activity+json</td>
+        </tr>
+        <tr>
+          <td>Required parameters: </td>
+          <td>None</td>
+        </tr>
+        <tr>
+          <td>Optional parameters: </td>
+          <td>
+            profile: The profile parameter for the application/activity+json
+            media type allows one or more profile URIs to be specified.  These
+            profile URIs have the identifier semantics defined in [[!RFC6906]].
+            The "profile" media type parameter MUST be quoted. It contains a
+            non-empty list of space-separated URIs (the profile URIs).
+   <pre>profile-param = "profile=" profile-value
+profile-value = <"> profile-URI 0*( 1*SP profile-URI ) <">
+profile-URI   = URI</"></"></pre>
+            The "URI" in the above grammar refers to the "URI" as defined in
+            Section 3 of [[!RFC3986]].
+          </td>
+        </tr>
+        <tr>
+          <td>Encoding considerations: </td>
+          <td>
+            Resources that use the "<code>application/activity+json</code>"
+            Media Type are required to conform to all of the requirements
+            for the "<code>application/json</code>" Media Type and are
+            therefore subject to the same encoding considerations specified
+            in Section 11 of [[!RFC7159]].
+          </td>
+        </tr>
+        <tr>
+          <td>Security considerations: </td>
+          <td>As defined in this specification.</td>
+        </tr>
+        <tr>
+          <td>Contact: </td>
+          <td>
+            James M Snell &lt;<a href="mailto:jasnell@gmail.com">jasnell@gmail.com</a>&gt;
+          </td>
+        </tr>
+        </table>
+
+        <p>
+          Note that while the Activity Streams 2.0 format uses JSON-LD
+          conventions, there are a number of constraints and additional
+          requirements for Activity Streams 2.0 implementations that justify
+          the use of a specific media type.
+        </p>
+
+        <p>
+          Because Activity Streams 2.0 can be considered a restricted profile
+          of JSON-LD, Implementations SHOULD consider the
+          `application/ld+json; profile="https://www.w3.org/ns/activitystreams"`
+          media type as being equivalent to `application/activity+json`.
+        </p>
+
+    </section>
+
+  </section>
+
+  <section>
+
+    <h2>Conformance</h2>
+
+    <p>
+      All diagrams, examples, and notes in this specification are
+      non-normative, as are all sections explicitly marked non-normative.
+      Everything else in this specification is normative.
+    </p>
+
+    <section>
+
+      <h3>Documents</h3>
+
+      <p>
+        Conforming documents are those that comply with all the conformance
+        criteria for documents. For readability, some of these conformance
+        requirements are phrased as conformance requirements on publishers;
+        such requirements are implicitly requirements on documents: by
+        definition, all documents are assumed to have a publisher.
+      </p>
+
+      <p>
+        Conforming documents must not include deprecated or obsolete syntax
+        from Activity Streams 1.0. Conforming documents must include properties
+        and types from the Activity Vocabulary. Conforming documents that use
+        other vocabularies must also include equivalent Activity Vocabulary
+        properties and types as illustrated in Section C. Conforming documents
+        must not use features of JSON-LD or other serialization features
+        disallowed in this specification, as in Section 2. Conforming
+        documents that include types or properties beyond those defined in the
+        Activity Streams 2.0 Vocabulary must use the extensibility features
+        defined in section 5.
+      </p>
+
+      <p>
+        A non-exhaustive list of examples of documents includes:
+
+        <ul>
+          <li>
+            A document representing an actor
+          </li>
+          <li>
+            A document representing an object
+          </li>
+          <li>
+            A document representing an activity
+          </li>
+          <li>
+            A document representing a collection of the activities done by an
+            actor
+          </li>
+          <li>
+            A document representing a collection of the activities done to an
+            object
+          </li>
+          <li>
+            A document representing a collection of the activities addressed
+            to an actor or object
+          </li>
+
+        </ul>
+
+      </p>
+
+    </section>
+
+    <section>
+
+      <h3>Implementations</h3>
+
+      <p>
+        Conforming implementations are software that publish, store, analyze,
+        consume or otherwise process conforming documents. The two main kinds
+        of implementations are publishers and consumers.
+      </p>
+
+      <section>
+
+        <h4>Publishers</h4>
+
+        <p>
+          Conforming publishers are implementations that create and publish
+          conforming documents. Conforming publishers must make conforming
+          documents available according to the serialization requirements of
+          section 2. Conforming publishers must consider privacy as described
+          in section 6. Conforming publishers must consider security as
+          described in section 7.
+        </p>
+
+        <p>
+          A non-exhaustive list of example publishers includes:
+
+          <ul>
+            <li>
+              A social network
+            </li>
+            <li>
+              A personal web site
+            </li>
+            <li>
+              A document publishing system
+            </li>
+            <li>
+              A bridge from a non-conforming social network
+            </li>
+            <li>
+              A document converter from similar document types such as RSS or
+              Atom
+            </li>
+          </ul>
+        </p>
+
+      </section>
+
+      <section>
+
+        <h4>Consumers</h4>
+
+        <p>
+          Conforming consumers are implementations that read and analyze
+          conforming documents. Conforming consumers must tolerate deprecated or
+          obsolete properties or types from Activity Streams 1.0. Conforming
+          consumers must ignore properties or types that are not applicable to
+          their application domain.
+        </p>
+
+        <p>
+          Conforming consumers may re-publish conforming documents in other
+          other data formats. Conforming consumers may present conforming
+          documents to a user on screen, in print, in audio format, or using
+          other presentation mechanisms. Conforming consumers must faithfully
+          translate the information represented in conforming documents into
+          these other formats or media. Conforming consumers that re-publish
+          conforming documents must consider privacy as described in section 6
+          and security as described in section 7.
+        </p>
+
+        <p>A non-exhaustive list of example consumers includes:
+
+          <ul>
+            <li>
+              A social network
+            </li>
+            <li>
+              A search engine
+            </li>
+            <li>
+              A feed reader
+            </li>
+            <li>
+              A document validator
+            </li>
+            <li>
+              A feed aggregator
+            </li>
+            <li>
+              A statistical analyzer
+            </li>
+          </ul>
+
+        </p>
+
+      </section>
+
+  </section>
+
+  </section>
+
+  <section class="appendix">
+
+    <h2>Acknowledgements</h2>
+
+    <p>
+      The Activity Streams 2.0 specification is a product of the W3C
+      Social Web Working Group. The editors thank all of the Working
+      Group members who contributed to the conversations, issues and
+      testing that helped shape the current specification.
+    </p>
+
+    <p>
+     The editor's also wish to thank all of those who contributed to
+     Activity Streams prior to the specification being picked up as a
+     contribution to the W3C Social Web Working Group. Activity Streams 1.0
+     was a community driven effort and the specification would not be where it
+     is today without the earlier contributions from the community, including,
+     but not limited to: Abdul Qabiz, Adina Levin, Adrian Chan,
+     Adriana Javier, Alan Hoffman, Alex Kessinger, Alexander Ovchinnikov,
+     Alexander Zhuravlev, Alexandre Loureiro Solleiro, Amy Walgenbach,
+     Andres Vidal, Angel Robert Marquez, Ari Steinberg, Arjan
+     Scherpenisse, Arne Roomann-Kurrik, Beau Lebens, Ben Hedrington, Ben
+     Metcalfe, Ben Werdmuller, Benjamin Goering, Bill de hOra, Bo Xing,
+     Bob Aman, Bob Wyman, Brett Slatkin, Brian Walsh, Brynn Evans, Charlie
+     Cauthen, Chris Chabot, Chris Messina, Chris Toomey, Christian
+     Crumlish, Dan Brickley, Dan Scott, Daniel Chapman, Danny Ayers, Dare
+     Obasanjo, Darren Bounds, David Cramer, David Nelson, David Recordon,
+     DeWitt Clinton, Douglas Pearce, Ed Summers, Elias Bizannes, Elisabeth
+     Norris, Eric Marcoullier, Eric Woods, Evan Prodromou, Gee-Hsien
+     Chuang, Greg Biggers, Gregory Foster, Henry Saputra, Hillary Madsen,
+     Howard Liptzin, Hung Tran, Ian Kennedy, Ian Mulvany, Ivan Pulleyn,
+     Jacob Kim, James Falkner, James Pike, James Walker, Jason Kahn, Jason
+     Kantz, Jeff Kunins, Jeff Martin, Jian Lin, Johannes Ernst, John
+     Panzer, Jon Lebkowsky, Jon Paul Davies, Jonathan Coffman, Jonathan
+     Dugan, Joseph Boyle, Joseph Holsten, Joseph Smarr, Josh Brewer, Jud
+     Valeski, Julien Chaumond, Julien Genestoux, Jyri Engestroem, Kaliya
+     Hamlin, Kevin Marks, Laurent Eschenauer, Laurie Voss, Leah Culver,
+     Libby Miller, Manu Mukerji, Mark Weitzel, Marko Degenkolb, Marshall
+     Kirkpatrick, Martin Atkins, Martin Svensson, Marty Alchin, Mary
+     Hoder, Matt Leventi, Matt Wilkinson, Matthias Mueller-Prove, Max
+     Engel, Max Wegmueller, Melvin Carvalho, Michael Buckbee, Michael
+     Chan, Michael Richardson, Michael Sullivan, Mike Macgirvin, Mislav
+     Marohni&#x107;, Mo Jangda, Monica Wilkinson, Nate Benes, NeilFred
+     Picciotto, Nick Howard, Nick Lothian, Nissan Dookeran, Nitya
+     Narasimhan, Pablo Martin, Padraic Brady, Pat Cappelaere, Patrick
+     Aljord, Peter Ferne, Peter Reiser, Peter Saint-Andre, Phil Wolff,
+     Philip (flip) Kromer, Richard Cunningham, Richard Zhao, Rick
+     Severson, Robert Hall, Robert Langbert, Robert Dolin, Robin Cover,
+     Ryan Boyd, Sam Sethi, Scott Raymond, Scott Seely, Simon Grant, Simon
+     Wistow, Stephen Garcia, Stephen Sisk, Stephen Paul Weber, Steve Ivy,
+     Steve Midgley, Steven Livingstone-Perez, Sylvain Carle, Sylvain
+     Hellegouarch, Tantek &#xC7;elik, Tatu Saloranta, Tim Moore, Timothy Young,
+     Todd Barnard, Tosh Meston, Tyler Gillies, Will Norris, Zach Copley,
+     Laurent-Walter Goix, Matthew Marum, Andy Smith, and Zach Shepherd.
+   </p>
+
+  </section>
+
+  <section id="activitystreams-1.0a" class="appendix informative">
+
+    <h2>Deprecated Activity Streams 1.0 Syntax</h2>
+
+    <p>
+      Note: While this appendix sections is non-normative, it uses normative
+      terms such as MUST. Where used, the meaning is to indicate what would
+      be required to properly implement the Activity Streams 1.0 backwards
+      compatibility model described in this appendix if an implementer chose
+      to do so.
+    </p><p>
+
+    </p><p>
+      While the syntax defined by this specification diverges from
+      that defined by JSON Activity Streams 1.0, the fundamental model
+      defined by that original specification remains intact. Specific
+      processing rules are defined by
+      this specification that allow existing Activity Streams 1.0
+      documents to be mapped to and processed as an Activity Streams 2.0
+      document.
+    </p>
+
+    <p>
+      The JSON syntax defined by this specification differs somewhat from
+      that defined in the original JSON Activity Streams 1.0
+      [[AS1]] specification in ways that are not backwards
+      compatible.  Implementations can choose to continue supporting the
+      JSON Activity Streams 1.0 syntax but ought consider it to be
+      deprecated.  This means that while implementations can continue to
+      consume the 1.0 syntax, they should not output the 1.0 syntax unless
+      specifically interacting with older non-2.0 compliant
+      implementations.
+    </p>
+
+    <p>
+      Specifically:
+    </p>
+
+    <ol>
+    <li>
+      Implementations can use the "<code>application/stream+json</code>" MIME
+      media type when producing a JSON serialization using the Activity
+      Streams 1.0 syntax, and "<code>application/activity+json</code>"
+      when producing a serialization conforming to the 2.0 syntax.
+    </li>
+    <li>
+      Implementations that process serializations identified using either
+      the "<code>application/stream+json</code>" or the more
+      generic "<code>application/json</code>" MIME media type MUST follow
+      the syntax and processing rules set by [[AS1]].  The 2.0
+      syntax and processing rules apply only when handling
+      serializations using the "<code>application/activity+json</code>" media
+      type.
+    </li>
+    <li>
+      When processing Activity Streams 1.0 documents using a JSON-LD
+      processing model, implementations can use the special AS 1.0 to AS 2.0
+      expansion @context definition provided
+      <a href="https://www.w3.org/ns/activitystreams1-context.jsonld">here</a> to produce
+      the JSON-LD expanded representation. Refer to the
+      <a href="http://www.w3.org/TR/json-ld-api/#expansion-algorithms">JSON-LD
+      Processing Algorithms and API</a> for details.
+    </li>
+    <li>
+      When processing Activity Streams 1.0 documents and converting those to
+      2.0, implementations ought to treat <code>id</code> as an alias for the
+      JSON-LD <code>@id</code> key word; and the <code>objectType</code> and
+      <code>verb</code> properties as aliases for the JSON-LD
+      <code>@type</code> keyword.
+    </li>
+    <li>
+      Activity Streams 1.0 uses the <code>displayName</code> property which
+      has been renamed to <code>name</code> in Activity Streams 2.0.
+      Implementations ought to treat <code>displayName</code> as an alias
+      for <code>name</code>.
+    </li>
+    <li>
+      Activity Streams 1.0 uses the <code>title</code> property which has
+      been dropped from Activity Streams 2.0. Implementations processing
+      Activity Streams 1.0 documents as Activity Streams 2.0 ought to treat
+      instances of the <code>title</code> property as an extension.
+    </li>
+    <li>
+      This document redefines the
+      <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-content">content</a></code> and
+      <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-summary">summary</a></code>
+      properties as natural language values which means their values can be expressed
+      as either a string or an object mapping language tags to string values.
+      In the 1.0 syntax, these are expressed solely as String values.  Because
+      the 1.0 values are a valid subset allowed by this specification,
+      implementations are not required to take any specific action to continue
+      supporting those values.
+    </li>
+    <li>
+      This document redefines a large number of common properties
+      defined originally as Objects in 1.0 as either
+      <a data-lt="Object">Objects</a> or <a data-lt="Link">Links</a>. The JSON-LD
+      serialization allows such property values to be expressed as either an
+      IRI String, an JSON object, or an Array of IRI Strings and JSON objects.
+      Because the 1.0 values are a valid subset allowed by this specification,
+      existing implementations are not required to take any specific action to
+      continue supporting those values.
+    </li>
+    <li>
+      This specification deprecates the <code>upstreamDuplicates</code> and
+      <code>downstreamDuplicates</code> properties defined by Activity Streams
+      1.0 and does not provide a replacement. This is due largely to lack of any
+      reasonable implementation evidence. While the
+      <code>upstreamDuplicates</code> and <code>downstreamDuplicates</code>
+      properties MAY continue to be used, implementations SHOULD avoid them.
+    </li>
+    <li>
+      In Activity Streams 1.0, the "<code>post</code>" verb was defined to
+      describe the action of both creating an object and "posting" or uploading
+      it to a service. This specification replaces the "<code>post</code>" verb
+      with separate
+      <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-create">Create</a></code> and
+      <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-add">Add</a></code>
+      Activity types. When processing Activity Streams 1.0 documents and
+      converting those into 2.0, implementations SHOULD treat instances of the
+      "<code>post</code>" verb as equivalent to
+      <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-create">Create</a></code>
+      <i>if there is no <code>target</code> property specified</i>; and
+      equivalent to
+      <code><a href="https://www.w3.org/TR/activitystreams-vocabulary/#dfn-add">Add</a></code>
+      <i>if there is a <code>target</code> property specified</i>.
+    </li>
+    </ol>
+
+    <p>
+      By following these guidelines, all JSON Activity Streams 1.0
+      serializations can be processed successfully by 2.0 implementations.
+    </p>
+
+  </section>
+
+  <section class="appendix informative">
+    <h2>Example using Multiple Vocabularies</h2>
+
+    <p>
+        It is possible use multiple vocabularies to cover particular
+        characteristics of the activities like data provenance and annotations,
+        which can compliment the Activity Vocabulary. For example: Eric writes a
+        short note to be shared with his followers. After posting the note, he
+        notices a spelling error. He edits the note and re-posts it. Later, Eric
+        decides that the information in the note is incorrect. He deletes the
+        note.
+    </p>
+
+     <figure><figcaption>A series of activities; creating, editing, and deleting a note.</figcaption>
+<div id="ex27-jsonld" style="display: block;">
+  <pre class="example highlight json">{
+  "@context": [
+    "https://www.w3.org/ns/activitystreams",
+    {
+      "oa": "http://www.w3.org/ns/oa#",
+      "prov": "http://www.w3.org/ns/prov#",
+      "dcterms": "http://purl.org/dc/terms/",
+      "dcterms:created": {
+        "@id": "dcterms:created",
+        "@type": "xsd:dateTime"
+      }
+    }
+  ],
+  "summary": "Editing history of a note",
+  "type": "Collection",
+  "items": [
+    {
+      "id": "http://example.org/activity/20150101000000",
+      "type": [ "Create", "prov:Activity" ],
+      "actor": {
+        "id": "http://example.org/#eric",
+        "name": "Eric"
+      },
+      "summary": "Eric wrote a note.",
+      "object": {
+        "id": "http://example.org/entry/20150101000000",
+        "type": [ "Note", "prov:Entity" ],
+        "attributedTo": "http://example.org/#eric",
+        "content": "Remember... all I'm offering is the trooth. Nothing more."
+      },
+      "published": "2015-01-01T00:00:00Z"
+    },
+    {
+      "id": "http://example.org/activity/20150101000059",
+      "type": [ "Update", "prov:Activity", "oa:Annotation" ],
+      "summary": "Eric edited a note.",
+      "dcterms:created": "2015-01-01T00:00:59Z",
+      "dcterms:creator": { "@id": "http://example.org/#eric" },
+      "oa:hasBody": {
+        "id": "http://example.org/entry/20150101000059",
+        "type": [ "Note", "prov:Entity" ],
+        "content": "Remember... all I'm offering is the truth. Nothing more.",
+        "prov:wasAttributedTo": { "@id": "http://example.org/#eric" },
+        "prov:wasRevisionOf": { "@id": "http://example.org/entry/20150101000000" }
+      },
+      "oa:hasTarget": { "@id": "http://example.org/entry/20150101000000" },
+      "oa:motivatedBy": { "@id": "oa:editing" },
+      "prov:generated": { "@id": "http://example.org/entry/20150101000059" },
+      "prov:wasInformedBy": { "@id": "http://example.org/activity/20150101000000" }
+    },
+    {
+      "id": "http://example.org/activity/20150101010101",
+      "type": [ "Delete", "prov:Activity" ],
+      "actor": "http://example.org/#eric",
+      "summary": "Eric deleted a note.",
+      "object": "http://example.org/entry/20150101000059",
+      "published": "2015-01-01T01:01:01Z"
+    }
+  ]
+}</pre>
+  </div>
+</figure>
+  </section>
+
+  <section class="appendix informative" id="changelog">
+
+    <h2>Changelog</h2>
+
+    <p>
+      The following notable changes have been made to this document since the
+      previous candidate recommendation of <a href="https://www.w3.org/TR/2016/CR-activitystreams-core-20161215/#changelog">2016-12-15</a>.
+    </p>
+
+    <ul>
+      <li>
+        Removed process sections, especially those noting exit criteria and
+        at-risk features.
+      </li>
+      <li>
+        Updated Collection Paging to clarify additional
+        <code><a>CollectionPage</a></code> properties.
+      </li>
+      <li>
+        Used better wording for summary as text representation.
+      </li>
+      <li>
+        Updated context examples to include more realistic complex contexts.
+      </li>
+    </ul>
+
+  </section>
+
+  <section id="tof"></section>
+
+<script type="text/javascript" src="http://www.w3.org/scripts/nanotabs/0.9/nanotabs.js">
+</script>
+<script type="text/javascript">
+  nanotabs({c:"cell",e:"click",d:-1,f:function(){ return false; }});
+  nanotabs({c:"cell",e:"mouseover",s:"active"});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,89 @@
+    <script type="text/template" id="job-template">
+        <dl>
+        @JobView.definitions.map { definition =>
+        <dt>@Messages(s"jobs.${definition.name}")</dt>
+        <dd class="@{definition.name}">
+            @definition.name match {
+
+            case "name" => {
+            <a href="<%= reportUrl %>" title="@Messages("report.job.link")"><%= name %></a>}
+
+            case "entrypoint" => {
+            <a href="<%= entrypoint %>" class="external" target="_blank" title="@Messages("resource.external.link")">
+                <% print(Util.shortenUrl(entrypoint, 100)) %>
+            </a>}
+
+            case "status" => {
+            <span class="<%= status.status %>"><%= view.getStatusString() %></span>
+            <% if(isIdle) { %>
+            <form method="post">
+                <input type="hidden" name="action" value="run">
+                <button class="run" type="submit" data-reveal-id="choiceModal" title="@Messages("job.button.run.title")">@Messages("job.button.run")</button>
+            </form>
+            <% } else { %>
+            <button class="stop">@Messages("job.button.stop")</button>
+            <% } %>}
+
+            case "completedOn" => {
+            <% if (isCompleted) { %>
+            <time datetime="<%= completedOn.timestamp %>"><%= completedOn.legend1 %></time>
+            <span class="legend"><%= completedOn.legend2 %></span>
+            <% } else { %>
+            <span class="never">Never</span>
+            <% } %>}
+
+            case "warnings" => {
+            <span><%= warnings %></span>}
+
+            case "errors" => {
+            <span><%= errors %></span>}
+
+            case "resources" => {
+            <span><%= resources %><span class="onMax">/<%= maxResources %></span></span>}
+
+            case "maxResources" => {
+            <span><%= maxResources %></span>}
+
+            case "health" => {
+            <progress max="100" value="<%= health %>" title="<%= health %>%">
+                <%= health %>%
+            </progress>}
+
+            case "actions" => {
+            <ul class="reportTypes">
+                <% if(hasResources()) { %>
+                <li><span class="selected" title="View the report grouped by URL (current)">By URL</span></li>
+                <li><a href="./messages" title="View the report grouped by message">By Message</a></li>
+                <% } else { %>
+                <li><a href="./resources"  title="View the report grouped by URL">By URL</a></li>
+                <li><span class="selected"  title="View the report grouped by message (current)">By Message</span></li>
+                <% } %>
+            </ul>
+            <form method="get" class="jobAction searchForm">
+                <% if (model.collection.options.assertions || model.collection.options.resources) { %>
+                    <input name="search" class="search cleared" type="text" placeholder="Filter results" title="Filter results" required value=""/>
+                    @**<button type="submit">@Messages("job.button.search")</button>**@
+                    <a class="button print">Print</a>
+                <% } %>
+                <% if (model.collection.options.assertions) { %><a class="button foldAllToggle">Expand all</a><% } %>
+            </form>
+            <form method="post" class="jobAction">
+                <% if(model.isIdle()) { %>
+                <button class="run" name="action" value="run" data-reveal-id="choiceModal" title="@Messages("job.button.run.title")">@Messages("job.button.run")</button>
+                <% } else { %>
+                <button class="stop">@Messages("job.button.stop")</button>
+                <% } %>
+                <button class="delete" title="@Messages("job.button.delete.title")" data-reveal-id="choiceModal">@Messages("job.button.delete")</button>
+            </form>}
+            }
+        </dd>}
+
+        @**collection match {
+        case Some(Left(assertions)) => {}
+        case Some(Right(resources)) => {}
+        case _ => {}
+        }**@
+
+        </dl>
+        <hr/>
+    </script>

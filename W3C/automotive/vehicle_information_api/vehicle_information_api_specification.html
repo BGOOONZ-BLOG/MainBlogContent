@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Vehicle Information API Specification</title>
+    <meta http-equiv="Content-Type"
+	  content="text/html;charset=utf-8"/>
+
+    <script src='https://www.w3.org/Tools/respec/respec-w3c-common' class='remove'></script>
+    <script class="remove">
+      var respecConfig = {
+          specStatus: "WG-NOTE",
+          shortName: "vehicle-information-api",
+          editors: [{
+            name: "Powell Kinney (until 2017, while at Vinli)", company: "Vinli",
+            companyURL: "https://www.vin.li/",
+            w3cid: 83094
+          },
+          {
+            name: "Shinjiro Urata", company: "ACCESS",
+            url: "mailto:shinjiro.urata@access-company.com",
+      companyURL: "https://www.access-company.com/",
+      w3cid: 58809
+          },
+          {
+            name: "Mike Aro", company: "IBM Corporation",
+            url: "mailto:arom@us.ibm.com",
+      companyURL: "https://www.ibm.com/",
+      w3cid: 95654
+          }],
+          edDraftURI: "https://w3c.github.io/automotive/vehicle_information_api/vehicle_information_api_specification.html",
+          wg: "Automotive Working Group",
+          otherLinks: [{
+            key: 'Repository and Participation',
+            data: [
+                {
+                  value: 'We are on github.',
+                  href: 'https://github.com/w3c/automotive/'
+                }, {
+                  value: 'File a bug/issue.',
+                  href: 'https://github.com/w3c/automotive/issues'
+                }, {
+                  value: 'Commit history.',
+                  href: 'https://github.com/w3c/automotive/commits'
+                }, {
+                  value: 'Mailing list archive.',
+                  href: 'https://lists.w3.org/Archives/Public/public-automotive/'
+                }
+             ]
+          }],
+
+          wgURI: "https://www.w3.org/auto/wg/",
+          wgPublicList: "public-automotive",
+          wgPatentURI: "https://www.w3.org/2004/01/pp-impl/76043/status",
+        
+          localBiblio: {
+            "VSS": {
+              title: "Vehicle Signal Specification",
+              href: "https://github.com/GENIVI/vehicle_signal_specification",
+              status: "1.0",
+              "date": "March 2017",
+              publisher: "GENIVI Alliance",
+            }
+          },
+        
+      };
+    </script>
+    <style>
+        table.parameters, table.exceptions {
+            border-spacing: 0;
+            border-collapse:    collapse;
+            margin: 0.5em 0;
+            width: 100%;
+        }
+        table.parameters { border-bottom:  1px solid #90b8de; }
+        table.exceptions { border-bottom:  1px solid #deb890; }
+
+        .parameters th, .exceptions th {
+            color: inherit;
+            padding: 3px 5px;
+            text-align: left;
+            font-weight: normal;
+        }
+        .parameters th { color: #fff; background: #005a9c; }
+        .exceptions th { background: #deb890; }
+
+        .parameters td, .exceptions td {
+            padding:    3px 10px;
+            border-top: 1px solid #ddd;
+            vertical-align: top;
+        }
+
+        .parameters tr:first-child td, .exceptions tr:first-child td {
+            border-top: none;
+        }
+
+        .parameters td.prmName, .exceptions td.excName, .exceptions td.excCodeName {
+            width:  100px;
+        }
+
+        .parameters td.prmType {
+            width:  120px;
+        }
+
+        table.exceptions table {
+            border-spacing: 0;
+            border-collapse:    collapse;
+            width:  100%;
+        }
+    </style>
+  </head>
+  <body>
+    <!-- Abstract -->
+    <section id="abstract">
+      <p>This specification defines a high level API for accessing to vehicle signals and data attributes.</p>
+      <p>The purpose of the specification is to promote a client implementation with a standard API that enables application development in a consistent manner across participating automotive manufacturers.</p>
+    </section>
+
+    <!-- Status of this document -->
+    <section id="sotd">
+      <p data-deliverer="76043">The W3C Automotive Working Group resolved to cease work on
+      VIAS and not continue towards REC. Javascript and other
+      implementations of VIAS meant to facilitate application
+      development accessing underlying <a href="https://www.w3.org/TR/vehicle-information-service/">VISS</a> is encouraged.</p>
+
+      <p>We do not anticipate further changes to this specification. This
+      snapshot should generally be considered frozen.
+        The Working Group may continue to make modifications.
+        Implementers and interested parties should monitor <a
+	href="https://www.w3.org/auto/wg/wiki/VIAS">VIAS wiki</a> for
+      any resulting changes, corrections, clarifications or shared code.</p>
+
+    <p> This document was produced by a group operating under the
+    <a href="https://www.w3.org/Consortium/Patent-Policy/">W3C Patent Policy</a>.
+      
+    </section>
+
+    <!-- Introduction -->
+    <section id="introduction" class="informative">
+      <h2>Introduction</h2>
+      <p>The following documents the specification required for a high level API designed to interface with vehicle signals. This specification is responsible for the following:</p>
+      <ul>
+        <li>Connection lifecycle (open, reconnect, failover, closure)</li>
+        <li>Authorization token transmission (not retrieval)</li>
+        <li>Request lifecycle</li>
+        <li>Subscription lifecycle</li>
+        <li>Metadata object tree discovery and traversal. An example is a VSS tree of Vehicle Signal Specification[[!VSS]]</li>
+      </ul>
+
+      <p>In general, the client should strive for the following goals:</p>
+
+      <ul>
+        <li>Provide a level abstraction exposing all functionality of the underlying server.</li>
+        <li>Provide an API that would be familiar to JavaScript developers including following best-practices when dealing with asynchronous operations.</li>
+        <li>Exhibit good behavior with regard to socket allocation.</li>
+        <li>Provide clear feedback on errors, especially those related to security credentials.</li>
+      </ul>
+      <p>
+      This API specification is designed assuming to communicate with in-vehicle data servers which provide vehicle signals and data attributes.
+      A server conforms to definition in Vehicle Information Service Specification (hereafter VISS) is a typical example of in-vehicle data server,
+      however servers of other types which have appropriate functions should also be applicable.
+      </p>
+    </section>
+
+    <!-- Conformance -->
+    <section id="conformance">
+    </section>
+
+    <!-- Terminology -->
+    <section id="terminology">
+      <h2>Terminology</h2>
+      <p> The term 'VISS' is used to refer to 'W3C Vehicle Information Service Specification'[[vehicle-information-service]]  which is in the process of development in W3C Automotive Working Group along with this document.
+      The term 'VIS Server' is used to refer to a server which conforms to the 'VISS' specification.
+      </p>
+      <p> The term 'VIAS' is used to refer to 'W3C Vehicle Information API Specification' which is this document.</p>
+      <p> The term 'VSS' is used to refer to the 'Vehicle Signal Specification'[[!VSS]] which is defined in GENIVI Alliance activity.
+      </p>
+      <p>The term 'WebSocket' is used to refer to W3C WebSocket API [[websockets]] and the IETF's WebSocket Protocol [[rfc6455]].</p>
+    </section>
+
+    <!-- Table of Figures -->
+    <!-- <section id="tof"></section> -->
+
+    <!-- Architecture -->
+    <!-- <section id="architecture" class="informative"></section> -->
+
+    <!-- Security and privacy -->
+    <section id="security">
+      <h2>Security and Privacy Considerations</h2>
+      <p>
+      This specification defines an interface to the underling server and does not expose any platform capabilities by itself.
+      The underling server is responsible for managing privileges of each client connection
+       and the VIAS implementation is responsible for passing requests and responses securely between clients and the server.
+      </p>
+      <p>
+      One of possible implementation methods of VIAS would be as a form of JavaScript library.<br>
+      In that case, as a necessary security consideration, the JavaScript library SHOULD be provided from a trusted origin.
+      Otherwise a malicious library could be loaded instead and any data goes through the library could be eavesdropped or tampered.
+      Authorization tokens may goes through the library as well and if token leaking happens, security of the underlying server could be damaged.
+      The underlying server itself should be considered as one of trusted origins from the VIAS JavaScript library implementation.
+      </p>
+      <p>
+      Some part of vehicle data is considered as privacy sensitive and client programs SHOULD treat these data with respect to the user's right.
+      As a privacy protection enforcer, the VIAS implementation MUST obtain user's permission for exposing vehicle data to a client program.
+      If the implementation have an exceptional behavior to treat private information in emergent cases, the behavior also SHOULD be covered by the permission.
+      </p>
+    </section>
+
+    <!-- JavaScript Interface -->
+    <section id="visclient-interface" data-dfn-for="VISClient" data-link-for="VISClient">
+      <h2><dfn><code>VISClient</code></dfn> Interface</h2>
+
+      <pre class="idl">
+      [Constructor,
+       Constructor(VISClientOptions options)]
+      interface VISClient
+      {
+        readonly attribute DOMString? host;
+        readonly attribute DOMString? protocol;
+        readonly attribute unsigned short? port;
+
+        [NewObject] Promise &lt void &gt connect();
+        [NewObject] Promise &lt unsigned long &gt authorize(object tokens);
+        [NewObject] Promise &lt Metadata &gt getMetadata(DOMString path);
+        [NewObject] Promise &lt VISValue &gt get(DOMString path);
+        [NewObject] Promise &lt void &gt set(DOMString path, any value);
+        VISSubscription subscribe(DOMString path, SubscriptionCallback subscriptionCallback, ErrorCallback errorCallback, optional VISSubscribeFilters filters);
+        [NewObject] Promise &lt void &gt unsubscribe(VISSubscription subscription);
+        [NewObject] Promise &lt void &gt unsubscribeAll();
+        [NewObject] Promise &lt void &gt disconnect();
+      };
+
+      dictionary VISClientOptions
+      {
+        DOMString? host;
+        DOMString? protocol;
+        unsigned short? port;
+      };
+
+      dictionary VISValue
+      {
+        any value;
+        DOMTimeStamp timestamp;
+      };
+
+      dictionary VISError
+      {
+        unsigned short number;
+        DOMString? reason;
+        DOMString? message;
+        DOMTimeStamp timestamp;
+      };
+      </pre>
+
+      <section id="visclient-constructor">
+        <h3>Constructor</h3>
+        <p>The <code>VISClient</code> interface has two kinds of constructor.
+        One of constructor takes <code>VISClientOptions</code> object as a parameter.
+        In this case (Secure)WebSocket or HTTP(S) protocol is primarily assumed as underlying communication method
+         and to specify in-vehicle data server's host, port and protocol to communicate, the parameter<code>VISClient</code> is used.
+        </p>
+        <p>
+        In addition, since this specification does not define underlying communication method, other protocols could be employed (e.g. MQTT, COAP, IPC, etc.)
+        Some other protocol may require information not included in VISClientOptions definition.
+        To support such case, VISClientOptions may be extended according to necessities in the future update.
+        </p>
+        <p>
+        The other constructor does not take a parameter and this assumes a case that a VIAS implementation does not expose communication detail to API users as an abstraction purpose.
+        For this case, scenarios such as "VIAS implementation already has connection information to in-vehicle data server"
+         or "VIAS implementation is integrated with vehicel data souce", could be included.
+        </p>
+
+        <pre class="example">
+        /* Case that no parameter is required. */
+        const client = new VISClient();
+
+        /* Case that VISClientOptions paramter is required. */
+        const client = new VISClient({'host':'wwwivi', 'protocol':'wss', 'port':443});
+        </pre>
+      </section>
+
+      <section id="visclient-attributes">
+        <h3>Attributes</h3>
+
+        <table class="parameters">
+          <tr>
+            <th>Attribute</th>
+            <th>Type</th>
+            <th>Description</th>
+          </tr>
+          <tr>
+            <td><dfn>host</dfn></td>
+            <td>DOMString</td>
+            <td>
+              Readonly, nullable.<br>
+              The 'host' value configured by constructor argument <code>VISClientOptions</code>.
+            </td>
+          </tr>
+          <tr>
+            <td><dfn>protocol</dfn></td>
+            <td>DOMString</td>
+            <td>
+              Readonly, nullable.<br>
+              The 'protocol' value configured by constructor argument <code>VISClientOptions</code>.
+            </td>
+          </tr>
+          <tr>
+            <td><dfn>port</dfn></td>
+            <td>unsigned short</td>
+            <td>
+              Readonly, nullable.<br>
+              The 'port' value configured by constructor argument <code>VISClientOptions</code>.
+            </td>
+          </tr>
+        </table>
+      </section>
+
+      <section id="visclient-methods">
+        <h3>Methods</h3>
+        <p>Once created, a VISClient object provides methods shown below for interacting with the server.</p>
+        <p>
+        Most of the methods listed below require a `path` string to be passed that identifies the target vehicle data items defined in GENIVI VSS.
+        See <a>Metadata</a> interface below for how to generate this string based on traversing the GENIVI VSS data tree.
+        </p>
+
+        <table class="parameters">
+          <tr>
+            <th>Method</th>
+            <th>Description</th>
+            <th>Parameters</th>
+          </tr>
+          <tr>
+            <td><dfn>connect</dfn> ()</td>
+            <td>
+            Initializes the connection with the server.<br>
+            When a VIAS implementation assumes underlying network as `connectionless` type(e.g. http), establishing connection with this method is not necessary.<br>
+            In such case, this method can be implemented as an empty function which returns `501 not implemented` error when executed.<br>
+            This method returns Promise.<br>
+            </td>
+            <td>
+              <ul>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><dfn>authorize</dfn> (tokens)</td>
+            <td>
+            Request access to signals and data attributes that are under access control.<br>
+            This method returns Promise.<br>
+            </td>
+            <td>
+              <ul>
+                <li>tokens
+                (object) - Tokens provided by authorization authority. Structure of tokens depend on underlying server's specification.
+                </li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><dfn>getMetadata</dfn> (path)</td>
+            <td>
+            Requests a metadata object which matches with specified path.<br>
+            This method returns Promise.<br>
+            </td>
+            <td>
+              <ul>
+                <li>path (DOMString)- a String representing a location within the metadata object tree</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><dfn>get</dfn> (path)</td>
+            <td>
+            Receives a single value from the server.<br>
+            This method returns Promise.<br>
+            </td>
+            <td>
+              <ul>
+                <li>path (DOMString)- a String representing a location within the metadata object tree</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><dfn>set</dfn> (path, value)</td>
+            <td>
+            Sends a single value to the server.<br>
+            This method returns Promise.<br>
+            </td>
+            <td>
+              <ul>
+                <li>path (DOMString) - a String representing a location within the metadata object tree</li>
+                <li>value (any) - the value to pass to the server.  This must match the type as specified in the VSS.</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><dfn>subscribe</dfn> (path, subscriptionCallback, errorCallback, filters)</td>
+            <td>subscribes to the given path with the filters provided and returns a <code><a>VISSubscription</a></code> as the return value.<br>
+            After that, continuously returns the value of signals specified by 'path' with timing condition specified in 'filters'.<br>
+            </td>
+            <td>
+              <ul>
+                <li>path (DOMString) - a String representing a location within the metadata object tree</li>
+                <li>
+                  subscriptionCallback (<code><a>SubscriptionCallback</a></code>) - A function called each time subscribed value is notified from the server.<br>This function will be passed:
+                </li>
+                </li>
+                <li>
+                  errorCallback (<code><a>ErrorCallback</a></code>) - A function called when an error relevant to this method has been occurred.
+                </li>
+                <li>
+                  filters (<code><a>VISSubscribeFilters</a></code>) - applies a server-side filter to data sent. The structure of this option depends on underlying server's specification.
+                </li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><dfn>unsubscribe</dfn> (subscription)</td>
+            <td>
+            Unsubscribe from the subscription passed.<br>
+            This method returns Promise.<br>
+            </td>
+            <td>
+              <ul>
+                <li>subscription (<code><a>VISSubscription</a></code>) - the subscription object is obtained from callback function for `subscribe()` method
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><dfn>unsubscribeAll</dfn> ()</td>
+            <td>
+            Unsubscribe all the subscriptions.<br>
+            This method returns Promise.<br>
+            </td>
+            <td>
+              <ul>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><dfn>disconnect</dfn> ()</td>
+            <td>
+            Closes the connection.<br>
+            The same <code><a>VISClient</a></code> object can be used again by calling the `connect()` method, but subscriptions, authorization, and other state will not persist after a disconnection.<br>
+            When underlying network is `connectionless` type(e.g. http(s)), use of this method is not necessary.<br>
+            In such case, this method could be implemented as empty function which returns '501 not implemented' error when executed.<br>
+            This method returns Promise.<br>
+            </td>
+            <td>
+              <ul>
+              </ul>
+            </td>
+          </tr>
+        </table>
+      </section>
+
+      <section id="visclient-callbacks">
+        <h3>Callbacks</h3>
+        <p>
+        The following callback functions are defined to be used with methods of <code><a>VISClient</a></code>.
+        </p>
+        <pre class="idl">
+        callback SubscriptionCallback = void (VISValue value);
+        callback ErrorCallback = void (VISError error);
+        </pre>
+
+        <table class="parameters">
+          <tr>
+            <th>Callback</th>
+            <th>Description</th>
+            <th>Parameter</th>
+            <th>Type</th>
+          </tr>
+
+          <tr>
+            <td><dfn>SubscriptionCallback</dfn></td>
+            <td>
+            A function called each time the data value of subscribed path is notified from the server.<br>
+            The data value is passed by <code>value</code> parameter.
+            </td>
+            <td>value</td>
+            <td><code><a>VISValue</a></code></td>
+          </tr>
+
+          <tr>
+            <td><dfn>ErrorCallback</dfn></td>
+            <td>A function called when a error occurred in the associated method.<br>
+            Error information is passed by <code>error</code> parameter.
+            </td>
+            <td>error</td>
+            <td><code><a>VISError</a></code></td>
+          </tr>
+        </table>
+      </section>
+
+      <section id="visclientoptions-dictionary" data-dfn-for="VISClientOptions" data-link-for="VISClientOptions">
+        <h3><dfn><code>VISClientOptions</code></dfn> Dictionary</h3>
+        <p>
+        VISClientOptions dictionary is designed assuming a connection to a vehicle signal server which is specifiable by protocol, host and port.
+        In case the underlying connection requires other parameters, implementer can add parameters according to the requirement.
+        </p>
+        <table class="parameters">
+          <tr>
+            <th>Member</th>
+            <th>Type</th>
+            <th>Default</th>
+            <th>Description</th>
+          </tr>
+          <tr>
+            <td><dfn>host</dfn></td>
+            <td>String</td>
+            <td>wwwivi</td>
+            <td>hostname of the server</td>
+          </tr>
+          <tr>
+            <td><dfn>protocol</dfn></td>
+            <td>String</td>
+            <td>wss</td>
+            <td>
+            protocol for the connection to a vehicle signal server. All the communications between the client and server MUST be appropriately encrypted.
+            Therefore, in case of WebSocket, <code>'wss'</code> is required and in case of http, <code>'https'</code> is required. Non encrypted communication is not supported.
+            </td>
+          </tr>
+          <tr>
+            <td><dfn>port</dfn></td>
+            <td>Integer</td>
+            <td>443</td>
+            <td>TCP port for the connection to a vehicle signal server.</td>
+          </tr>
+        </table>
+      </section>
+
+      <section id="visvalue-dictionary" data-dfn-for="VISValue" data-link-for="VISValue">
+        <h3><dfn><code>VISValue</code></dfn> Dictionary</h3>
+
+        <p>VISValue conveys a vehicle signal or attribute value.</p>
+        <table class="parameters">
+          <tr>
+            <th>Member</th>
+            <th>Type</th>
+            <th>Description</th>
+          </tr>
+          <tr>
+            <td><dfn>value</dfn></td>
+            <td>any</td>
+            <td>
+              The type of 'value' varies according to the target signal or attribute. For detail, refer VSS spec.
+            </td>
+          </tr>
+          <tr>
+            <td><dfn>timestamp</dfn></td>
+            <td>DOMTimeStamp</td>
+            <td>
+              The Coordinated Universal Time (UTC) time that the server returned the response (expressed as number of milliseconds.)
+            </td>
+          </tr>
+        </table>
+      </section>
+
+      <section id="viserror-dictionary" data-dfn-for="VISError" data-link-for="VISError">
+        <h3><dfn><code>VISError</code></dfn> Dictionary</h3>
+        <p>
+        Error number, reason, message represents both of client-side and server-side error. Server-side error definition depends on underlying server.
+        Client-side error definition is implementation dependent and not defined in this document.
+        </p>
+        <table class="parameters">
+          <tr>
+            <th>Member</th>
+            <th>Type</th>
+            <th>Description</th>
+          </tr>
+          <tr>
+            <td><dfn>number</dfn></td>
+            <td>unsigned short</td>
+            <td>
+              Error number (error code).
+            </td>
+          </tr>
+          <tr>
+            <td><dfn>reason</dfn></td>
+            <td>DOMString</td>
+            <td>
+              Nullable.
+              Error reason.
+            </td>
+          </tr>
+          <tr>
+            <td><dfn>message</dfn></td>
+            <td>DOMString</td>
+            <td>
+              Nullable.
+              Error message.
+            </td>
+          </tr>
+          <tr>
+            <td><dfn>timestamp</dfn></td>
+            <td>DOMTimeStamp</td>
+            <td>
+              The Coordinated Universal Time (UTC) time that the server returned the response (expressed as number of milliseconds.)
+            </td>
+          </tr>
+        </table>
+      </section>
+
+      <h3>Example</h3>
+      <pre class="example">
+        const client = new VISClient({
+          host: 'wwwivi',
+          protocol: 'wss',
+          port: 443,
+        });
+
+        client.connect().then( () => {
+          console.log(`Connected to ${client.protocol}://${client.host}:${client.port}`);
+          return client.authorize(/* TOKEN */);
+        }).then( (ttl) => {
+          console.log(`Authorize succeeded. TTL: ${ttl}`);
+        }).catch( (err) => {
+          console.error(`Error : ${error.number}`);
+        });
+      </pre>
+
+    </section>
+
+    <section id="vissubscription-interface" data-dfn-for="VISSubscription" data-link-for="VISSubscription">
+      <h2><dfn><code>VISSubscription</code></dfn> Interface</h2>
+      <pre class="idl">
+      interface VISSubscription {
+        readonly attribute DOMString path;
+        readonly attribute VISSubscribeFilters? filters;
+      };
+
+      dictionary VISSubscribeFilters {
+        unsigned long? interval;
+        VISSubscribeRange? range;
+        unsigned long? minChange;
+      };
+
+      dictionary VISSubscribeRange {
+        long? below;
+        long? above;
+      };
+      </pre>
+
+      <p>The VISSubscription object is obtained as return value of the <code>subscribe()</code> method.
+      Once created the object can be used to access to the subscribe settings.
+      And also for unsubscribe the subscription, VISSubscription object should be passed to the <code>unsubscribe()</code> method.
+      The Subscription object does not has methods, but just contains the following attributes:</p>
+      <p>VISSubscriptions are immutable once created.</p>
+
+      <table class="parameters">
+        <tr>
+          <th>Attribute</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+        <tr>
+          <td><dfn>path</dfn></td>
+          <td>DOMString</td>
+          <td>The path String used when creating the Subscription</td>
+        </tr>
+
+        <tr>
+          <td><dfn>filters</dfn></td>
+          <td><code><a>VISSubscribeFilters</a></code></td>
+          <td>
+            Nullable<br>
+            Object containing the filter conditions passed to the <code>subscribe()</code> method. Structure of this object depends on underlying server's specification.<br>
+            The following attributes are defined for the case of connecting to VIS Server and not mandatory.
+            <ul>
+              <li><dfn><code>interval</code></dfn></li>
+              <li><dfn><code>range</code></dfn></li>
+              <li><dfn><code>minChange</code></dfn></li>
+            </ul>
+          </td>
+        </tr>
+      </table>
+
+      <section id="vissubscribefilters-dictionary" data-dfn-for="VISSubscribeFilters" data-link-for="VISSubscribeFilters">
+        <h3><dfn><code>VISSubscribeFilters</code></dfn> Dictionary</h3>
+        <p>
+        Parameters in VISSubscribeFilters are originally defined in 'VISS' and this specifiation refers to those definitions.
+        </p>
+        <table class="parameters">
+          <tr>
+            <th>Member</th>
+            <th>Type</th>
+            <th>Description</th>
+          </tr>
+          <tr>
+            <td><dfn>interval</dfn></td>
+            <td>unsigned long</td>
+            <td>
+              Nullable.<br>
+              Request to provide data notifications by 'n' milliseconds interval.<br>
+              This can reduce the server side load if client does not require notifications
+              more frequent than specified interval.
+            </td>
+          </tr>
+          <tr>
+            <td><dfn>range</dfn></td>
+            <td><code><a>VISSubscribeRange</a></code></td>
+            <td>
+              Nullable.<br>
+              Request to provide data notifications only when a value satisfies the given conditions.
+            </td>
+          </tr>
+          <tr>
+            <td><dfn>minChange</dfn></td>
+            <td>unsigned long</td>
+            <td>
+              Nullable.<br>
+              Request to provide data notification when a value has changed by specified minimum change amount.
+            </td>
+          </tr>
+        </table>
+      </section>
+
+      <section id="vissubscriberange-dictionary" data-dfn-for="VISSubscribeRange" data-link-for="VISSubscribeRange">
+        <h3><dfn><code>VISSubscribeRange</code></dfn> Dictionary</h3>
+        <p>
+        Parameters in VISSubscribeRange are originally defined in 'VISS' and this specification refers to those definitions.<br>
+        </p>
+        <table class="parameters">
+          <tr>
+            <th>Member</th>
+            <th>Type</th>
+            <th>Description</th>
+          </tr>
+          <tr>
+            <td><dfn>below</dfn></td>
+            <td>long</td>
+            <td>Nullable.<br>
+            Request to provide data notification when a value is below <code>below</code> value.</td>
+          </tr>
+
+          <tr>
+            <td><dfn>above</dfn></td>
+            <td>long</td>
+            <td>Nullable.<br>
+            Request to provide data notification when a value is above <code>above</code> value.</td>
+          </tr>
+        </table>
+
+      </section>
+
+      <h3>Example</h3>
+      <pre class="example">
+        const client = new VISClient({ host: 'wwwivi' });
+
+        client.connect().then( () => {
+          const filters = {
+            interval: 100,
+            range: { above: 100, below: 200 },
+            minChange: 50
+          };
+
+          let subscription = client.subscribe('body.mirrors.left', (val) => {
+            if (val) {
+              console.log(`Value received: ${val}`);
+            }
+
+            /* ... after some time or some event, unsubscribe from the subscription: */
+            client.unsubscribe(subscription).then( () => {
+              console.log(`Unsubscribe succeeded`);
+            }).catch( (err) => {
+              console.error(`Error while unsubscribing: ${err.number}`);
+            });
+          }, (err) => {
+              console.error(`Error while subscribing: ${err.number}`);
+          }, filters);
+        });
+      </pre>
+
+    </section>
+
+    <section id="metadata-interface" data-dfn-for="Metadata" data-link-for="Metadata">
+      <h2><dfn><code>Metadata</code></dfn> Interface</h2>
+      <pre class="idl">
+      interface Metadata {
+        sequence&lt;DOMString&gt; pathsByCSS(DOMString cssSelector);
+        boolean pathExistsByCSS(DOMString cssSelector);
+        boolean canGet(DOMString path);
+        boolean canSet(DOMString path);
+        object at(DOMString? path);
+      };
+      </pre>
+
+      <p>The Metadata object returned by the <code>getMetadata()</code> method above should provide APIs sufficient to fully traverse the metadata object tree
+      and determine what signals are available at the current permission level.<br>
+      Although traversing the object tree can be accomplished using any of a number of query languages (i.e. CSS path selectors, XPath, etc.),
+      CSS-based querying API is defined at this time and additional query languages may be added in the future.<br>
+      It is out of scope here to define the exact traversal methods and feature set and they are left as implementation dependent matter,
+      but these methods SHOULD follow standards protocols such as CSS or XPATH.
+      </p>
+      <table class="parameters">
+        <tr>
+          <th>Method</th>
+          <th>Description</th>
+        </tr>
+        <tr>
+          <td><dfn>pathsByCSS</dfn> (cssSelector)</td>
+          <td>Returns array of paths that match the given selector.</td>
+        </tr>
+        <tr>
+          <td><dfn>pathExistsByCSS</dfn> (cssSelector)</td>
+          <td>Returns a boolean as to whether or not there exist any path that matches the given selector.</td>
+        </tr>
+        <tr>
+          <td><dfn>canGet</dfn> (path)</td>
+          <td>Returns a boolean as to whether or not the current socket (given the tokens provided up to this point) has permission to read the given path.</td>
+        </tr>
+        <tr>
+          <td><dfn>canSet</dfn> (path)</td>
+          <td>Returns a boolean as to whether or not the current socket (given the tokens provided up to this point) has permission to set the given path.</td>
+        </tr>
+        <tr>
+          <td><dfn>at</dfn> ([path])</td>
+          <td>Returns the raw metadata tree object rooted at path (if provided), otherwise returns the entire tree. Regarding raw metadata object definition, refer VSS spec document.</td>
+        </tr>
+      </table>
+
+      <h3>Example</h3>
+      <pre class="example">
+        const client = new VISClient({
+          host: 'wwwivi',
+        });
+
+        client.connect().then( () => {
+          return client.getMetadata('Signal.Cabin');
+        }).then( (metadata) => {
+          const paths = metadata.pathsByCSS('Row1 Left Window > Position');
+          if (paths.length > 1 && metadata.canSet(paths[0])) {
+            return client.set(paths[0], 100); // '100' means window full open
+          }
+        }).then( () => {
+          console.log(`Set window ${paths[0]} to open succeeded`);
+        }).catch( (err) => {
+          console.error(`Set window ${paths[0]} to open failed: ${err.number}`);
+        });
+
+      </pre>
+    </section>
+  </body>
+</html>

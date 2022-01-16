@@ -1,0 +1,449 @@
+<script type="text/template" id="test-details-template">
+    <h1><span class="id"><%= Utils.stripTestID(t.testUnitId) %></span>: <%= t.title %></h1>
+    <div class="column-second">
+        <div class="roleExpertsOnly admin">
+            <a class="btn" href="#test-submit.html/<%= t.testUnitId %>"><span class="icon-pencil"></span> Edit Test</a>
+            <a class="btn" href="#test-delete.html/<%= t.testUnitId %>"><span class="icon-minus-sign-alt"></span> Delete Test</a>
+        </div>
+        <p><strong>Related Technique:</strong> <%= t.technique.nameId %>: <%= t.technique.title %></p>
+        <h2>Test Content</h2>
+        <h3>Test Procedure:</h3>
+        <ol>
+            <% _.each(t.testProcedure.steps, function(s) { %>
+            <li><%= s.step %></li>
+            <% }); %>
+        </ol>
+        <h3>Test File(s):</h3>
+        <p><a class="btn" target="thetest" href="<%= t.testFile %>">Open test page <span class="icon-new-window"><span class="visuallyhidden">in a new window</span></span></a></p>
+        <h3>Test Question:</h3>
+        <p><%= t.testProcedure.yesNoQuestion %></p>
+        <h3>Expected Result:</h3>
+        <p><%= t.testProcedure.expectedResult %></p>
+        <h2>More Information</h2>
+        <p><strong>Status:</strong> <%= t.status %></p>
+        <p><strong>Date:</strong> <%= t.date %></p>
+        <p><strong>Description:</strong> <%= t.description %></p>
+        <p><strong>Comment:</strong> <%= t.comment %></p>
+    </div>
+</script>
+<script type="text/template" id="test-selected-list-template">
+    <li>
+        <button class="btn-icon">
+            <span class="icon icon-remove">
+                <span class="visuallyhidden" aria-described-by="<%= test.testUnitId %>">
+                    Remove
+                </span>
+            </span>
+        </button>
+        <span id="<%= test.testUnitId %>"><%= test.title %> (<%= Utils.stripTestID(test.testUnitId) %>)</span>
+    </li>
+</script>
+<script type="text/template" id="user-profile-template">
+    <tr>
+        <td><input name="testprofilesin" id="testprofile-<%= id %>" value="<%= id %>" type="radio" required></td>
+        <td>
+            <label for="testprofile-<%= id %>">
+                <strong>
+                    <% if(p.userAgent.name) { %>
+                        Browser: <%= p.userAgent.name %> <%= p.userAgent.version.text %><br>
+                    <% } %>
+                    <% if(p.assistiveTechnology.name) { %>
+                        Assistive Technology: <%= p.assistiveTechnology.name %> <%= p.assistiveTechnology.version.text %><br>
+                    <% } %>
+                </strong>
+                <% if(p.plugin.name) { %>
+                    Plugin: <%= p.plugin.name %> <%= p.plugin.version.text %> <br>
+                <% } %>
+                <% if(p.platform.name) { %>
+                    Operating System: <%= p.platform.name %> <%= p.platform.version.text %>
+                <% } %>
+            </label>
+        </td>
+    </tr>
+</script>
+<script type="text/template" id="test-run-finish-resultsList">
+    <header>
+        <h2>Test Results</h2>
+    </header>
+    <ul>
+        <% _.each(results, function(r) { %>
+            <li><%= r.testUnitDescription %> [Outcome: <%= r.resultValue %> with Profile:
+                 <%= r.testingProfile.platform.name %> <%= r.testingProfile.assistiveTechnology.version.text %> ,
+                 <%= r.testingProfile.userAgent.name %> <%= r.testingProfile.userAgent.version.text %> ,
+                 <%= r.testingProfile.assistiveTechnology.name %> <%= r.testingProfile.assistiveTechnology.version.text %> ,
+                 <%= r.testingProfile.plugin.name %> <%= r.testingProfile.plugin.version.text %>]
+                <span class="btn-pills">
+                    <button value="<%= r.testUnitDescription %>" class="btn removeTestingResult"><span class="icon-minus-sign-alt"></span>	Delete</button>
+                    <!-- <button value="<%= r.testUnitId %>" class="btn testRetest"><span class="icon-repeat"></span>	Put selected for retesting</button> -->
+                </span>
+            </li>
+        <% }); %>
+    </ul>
+    <header>
+        <h2>Submit test results</h2>
+    </header>
+    <form action="#">
+        <div class="form-block">
+            <div class="form-row">
+                <label for="name">Name/E-Mail (optional):</label>
+									<span>
+										<input type="text" id="name">
+									</span>
+            </div>
+        </div>
+        <p>You have carried out <strong><%= results.length %> tests that can be published</strong>. Please confirm this contribution.</p>
+        <div class="form-submit">
+            <a role="button" href="#/tests-run-submit.html" id="testResultsPersist" class="btn-primary btn-next" type="submit"><span class="icon-ok-sign"></span> Submit Test Results</a>
+        </div>
+    </form>
+</script>
+<script type="text/template" id="test-run-template">
+        <header>
+            <h2><strong>Test: <%= Utils.stripTestID(test.testUnitId) %></strong> – <%= test.title %></h2>
+        </header>
+        <section class="testsection">
+            <h3>Test Description</h3>
+            <p><%= test.description %></p>
+        </section>
+
+        <section class="testsection">
+            <h3>Test Procedure</h3>
+            <ol>
+                <% _.each(test.testProcedure.steps, function(s) { %>
+                <li><%= s.step %></li>
+                <% }); %>
+            </ol>
+        </section>
+
+        <section class="testsection">
+            <h3>Test File(s)</h3>
+            <p><a href="<%= test.testFile %>" class="btn" role="button" target="_blank">Open test file <span class="icon-new-window"><span class="visuallyhidden">in a new window</span></span></a></p>
+        </section>
+        <form id="testingForm" action="#">
+            <section  class="testsection">
+                <h3>Test Results</h3>
+                <fieldset>
+                    <legend><%= test.testProcedure.yesNoQuestion %></legend>
+                    <div class="form-block">
+                        <div class="form-row radio">
+				<span>
+					<input type="radio" id="res" value="true" name="result">
+				</span>
+                            <label for="res">Yes/True</label>
+                        </div>
+                        <div class="form-row radio">
+											<span>
+												<input type="radio" id="res2" value="false" name="result">
+											</span>
+                            <label for="res2">No/False</label>
+                        </div>
+                    </div>
+                </fieldset>
+                <div class="form-block">
+                    <div class="form-row">
+                        <label for="cmnt">Comment:</label>
+										<span>
+											<textarea name="comment" id="cmnt" cols="30" rows="10"></textarea>
+										</span>
+                    </div>
+                </div>
+                <div class="form-submit">
+                    <button class="btn skipme" type="button"><span class="icon-skip-sign"></span> Skip Test and Load Next</button>
+                    <a role="button" href="#/test-run.html" class="btn-primary btn-next do_next" type="submit"><span class="icon-ok-sign"></span> Save Test and Load Next</a>
+                    <!--
+                        <button class="btn-primary btn-next" type="submit"><span class="icon-ok-sign"></span> Save Test and Load Next</button>
+                    -->
+                </div>
+            </section>
+        </form>
+</script>
+<script type="text/template" id="admin-technique-sync-response-prepare-template">
+    <table>
+        <caption>GitHub/DB sync status results</caption>
+         <thead>
+             <th scope="col">Technique</th>
+             <th scope="col">Status</th>
+             <th scope="col">Date</th>
+             <th scope="col">URL</th>
+             <th scope="col">Sha</th>
+         </thead>
+        <tbody>
+        <% _.each(results, function(r) { %>
+            <tr class="admin-import-li-<%= r.statusCode %>">
+                <td>
+                    <label>
+                        <input type="checkbox" name="admin-technique-sync" value="<%= r.entity.technique %>"  <% if(r.statusCode==101) { %>checked="checked"<% } %> />
+                        <%= r.entity.technique %>
+                    </label>
+                </td>
+                <td><%= r.statusCode %></td>
+                <td><%= r.entity.date %></td>
+                <td>
+                    <% if(r.statusCode!=100) { %>
+                    <a target="new" href="<%= r.entity.diffUrl %>">Differences in GitHub (new window)</a></td>
+                <% } else { %>
+                    No diff
+                <% } %>
+                <td><%= r.entity.sha %></td>
+            </tr>
+        <% }); %>
+        </tbody>
+    </table>
+</script>
+<script type="text/template" id="admin-technique-sync-response-synced-template">
+    <table>
+        <caption>Sync Results</caption>
+        <thead>
+        <th scope="col">Technique ID</th>
+        <th scope="col">Technique Title</th>
+        <th scope="col">Sync Status</th>
+        </thead>
+        <tbody>
+        <% _.each(results, function(r) { %>
+        <tr class="admin-import-li-<%= r.statusCode %>">
+            <td><%= r.entity.nameId %></td>
+            <td><%= r.entity.title %></td>
+            <td><%= r.statusCode %></td>
+        </tr>
+        <% }); %>
+        </tbody>
+    </table>
+</script>
+<script type="text/template" id="test-submit-code-template"><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title><%= title %></title>
+</head>
+<body>
+</body>
+</html></script>
+
+<script type="text/template" id="TestResultsDataOverview_template">
+    <table class="results">
+        <colgroup>
+            <col class="col1">
+            <col class="col2">
+            <col class="col3">
+            <col class="col4">
+        </colgroup>
+        <thead>
+            <tr>
+                <td class="liketh"></td>
+                <th colspan="2" scope="colgroup">Title</th>
+                <th>Passed</th>
+            </tr>
+        </thead>
+        <% _.each(results, function(r) {
+            if(r.noOfAll>0)
+            {
+        %>
+        <tbody class="collapsed">
+           <tr>
+                <td class="liketh">
+                    <button value="<%= r.technique %>" class="results-technique-button" >
+                        <span class="icon icon-expand"><span class="visuallyhidden">Expand</span></span>
+                    </button>
+                </td>
+                <th scope="row" colspan="2">
+                    <%= r.technique %>: <a href="http://www.w3.org/TR/WCAG20-TECHS/<%= r.technique %>">  <%= r.techniqueTitle %>&nbsp;<span class="icon-external-link"><span class="visuallyhidden">Link to external page.</span></span></a>
+                </th>
+                <td class="result">
+                    <a href="#/results-technique.html/<%= r.technique %>" class="btn btn-small">
+                        <span class="chart" style="display:none"><%= r.noOfPass %>/<%= r.noOfAll %></span>
+                        <%= r.noOfPass %>/<%= r.noOfAll %>
+                        <span class="icon-arrow-right2">
+                            <span class="visuallyhidden">Show results</span>
+                        </span>
+                    </a>
+                </td>
+            </tr>
+        </tbody>
+        <tbody class="testcases"></tbody>
+    <%
+        }
+        }); %>
+</table>
+</script>
+<script type="text/template" id="TestResultsDataOverviewTestCases_template">
+        <% lresults = results.length %>
+        <% first = true %>
+        <% _.each(results, function(r) {        %>
+           <tr>
+                <% if (first) { %>
+                <td class="empty" rowspan="<%=lresults%>"></td>
+                <th scope="rowgroup" rowspan="<%=lresults%>">
+                    Test Cases
+                </th>
+                <% first = false %>
+                <% } %>
+                <th scope="row">
+                    <%= Utils.stripTestID(r.testUnitId) %>: <a href="#/test.html/<%= r.testUnitId %>"><%= r.testTitle %></a> <!-- Link to test case -->
+                </th>
+                <td class="result">
+                    <a href="#/results-test.html/<%= r.testUnitId %>" class="btn btn-small">
+                        <span class="chart" style="display:none"><%= r.noOfPass %>/<%= r.noOfAll %></span>
+                        <%= r.noOfPass %>/<%= r.noOfAll %>
+                        <span class="icon-arrow-right2">
+                            <span class="visuallyhidden">Show results</span>
+                        </span>
+                    </a>
+                </td>
+            </tr>
+        <% }); %>
+</script>
+<script type="text/template" id="RelatedTestCases_template">
+    <ul id="RelatedTestCases">
+    <% _.each(results, function(r) { %>
+        <li>
+            <strong><%= Utils.stripTestID(r.testUnitId) %>:</strong> <a role="button" href="#/results-test.html/<%= r.testUnitId %>">  <%= r.testTitle %></a>
+            <a href="#/results-test.html/<%= r.testUnitId %>" class="btn btn-small">
+                <span class="chart" style="display:none"><%= r.noOfPass %>/<%= r.noOfAll %></span>
+                <%= r.noOfPass %>/<%= r.noOfAll %>
+                <span class="icon-arrow-right2">
+                    <span class="visuallyhidden">Show results</span>
+                </span>
+            </a>
+        </li>
+    <% }); %>
+    </ul>
+</script>
+<script type="text/template" id="Results_template">
+    <%
+    var str = "";
+    if(params.type==="Test")
+    {
+    str = str +  Utils.stripTestID(params.typeValue);
+    } else {
+    str = str +  params.typeValue;
+    }
+    $("#ResultsHeading").html("Test Results for" + params.type + str + params.ua+ +params.uaVer+ " with " +params.at + params.atVer );
+    %>
+    <div class="">
+        <div class="column-second">
+            <div id="Results"><!-- Template: Results_template --></div>
+        </div>
+    </div>
+    <% _.each(results, function(r) { %>
+        <table class="testcase-details">
+            <caption><strong>Testcase:</strong> <a href="#/results-test.html/<%= r.testUnitId %>"><%= Utils.stripTestID(r.testUnitId) %></a>: <%=r.testTitle%></caption>
+            <col class="col1"> <col class="col2"> <col class="col3"> <col class="col4"> <col class="col5"> <col class="col6 admin roleAdminOnly">
+            <thead>
+                <tr>
+                    <th>Result</th>
+                    <th>Operating System</th>
+                    <th>Plugin</th>
+                    <th>Contributor</th>
+                    <th>Comment</th>
+                    <% if(accessdb.session.isUserAdmin()) { %>
+                    <th class="roleAdminOnly">Admin</th>
+                    <% } %>
+                </tr>
+            </thead>
+            <tbody>
+                <% _.each(r.testResults, function(t) { %>
+                <tr>
+                    <td class="<%=t.result%>"><%=t.result%></td>
+                    <td><%=t.os%></td>
+                    <td><%=t.plugin%></td>
+                    <td><%=t.contributor%></td>
+                    <td><%=t.comment%></td>
+                    <% if(accessdb.session.isUserAdmin())
+                        console.log(t);
+                    { %>
+                    <td class="roleAdminOnly">
+                        <button class="btn editTestResult" value="<%= t.resultId %>"><span class="icon-pencil"></span> Edit</button>
+                        <button class="btn deleteTestResult" value="<%= t.resultId %>"><span class="icon-minus-sign-alt"></span> Delete</button>
+                    </td>
+                    <% } %>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    <% }); %>
+</script>
+
+<script type="text/template" id="TestResultsFullViewByTechnique_template">
+    <table class="result-details" id="TestResultsFullViewByTechnique_table">
+        <caption>In the columns, you can find browser versions. The rows show assistive technologies.</caption>
+        <% lresults = results.length
+        accessdb.p = {
+            ua : undefined,
+            uaVer : undefined,
+            at: undefined,
+            atVer : undefined,
+            toUrl : function(){
+                    var url = "type/" + params.type + "/typevalue/" + params.typeValue;
+                    url = url + "/ua/" + (this.ua || "null");
+                    url = url + "/uaver/" + (this.uaVer || "null");
+                    url = url + "/at/" + (this.at || "null");
+                    url = url + "/atver/" + (this.atVer || "null");
+                   // url = url + "/filter/" + encodeURI(JSON.stringify(params.filter));
+                    return url;
+                }
+            };
+
+        function dataToUrl(resData,params){
+            var url = "type/" + params.type + "/typevalue/" + params.typeValue;
+            url = url + "/ua/" + (resData.uaProduct.name || "null");
+            url = url + "/uaver/" + (resData.uaProduct.version || "null");
+            url = url + "/at/" + (resData.atProduct.name || "null");
+            url = url + "/atver/" + (resData.atProduct.version || "null");
+            // url = url + "/filter/" + encodeURI(JSON.stringify(params.filter));
+            return url;
+        }
+        %>
+        <% firstrow = true %>
+        <% _.each(results.rows, function(row) {
+            if (firstrow) { %>
+                <thead>
+            <% } %>
+            <tr>
+            <% firstcol = true;
+
+            %>
+            <% _.each(row, function(col) {
+                if (firstrow) {
+                    if (col.product) {
+                        accessdb.p.ua = col.product.name;
+                        accessdb.p.uaVer = col.product.version.text;
+                    %>
+                        <th scope="col" data-accessdbproductver="<%= col.product.version.text %>" data-accessdbproductname="<%= col.product.name %>"><span class="visuallyhiddenFIXME"><%= col.product.name %></span> <%= col.product.version.text %></th>
+                    <% }
+                    else { %>
+                        <th scope="col">&nbsp;</th>
+                    <% }
+                }
+                else{
+                    if (firstcol ) {
+                        if (col.product && col.product.name ) {
+                            accessdb.p.at = col.product.name;
+                            accessdb.p.atVer = col.product.version.text;
+                        %>
+                            <th data-accessdbproductver="<%= col.product.version.text %>" data-accessdbproductname="<%= col.product.name %>" colspan="1" scope="row"><%=col.product.name %> <%= col.product.version.text %></th>
+                        <% } else { %>
+                            <th data-accessdbproductver="" data-accessdbproductname="" colspan="1" scope="row">None</th>
+                        <% }
+                     }
+                     else {
+                        if(parseInt(col.noOfAll)>0){
+
+                        %>
+                            <td><span class="chart"><%=col.noOfPass %>/<%=col.noOfAll %></span>
+                                <a title="show test results of this combination <%=col.resData.uaProduct.name %>" href="#/results-details.html/<%=dataToUrl(col.resData,params) %>" class="TestResultFullViewTechniqueAnchor"><%=col.noOfPass %>/<%=col.noOfAll %></a>
+                            </td>
+                        <%
+                        } else { %>
+                            <td class="untested">Not tested</td>
+                        <% }
+                    }
+                }
+                if (firstcol) { firstcol = false }
+             }); %>
+            </tr>
+            <% if (firstrow) { %>
+            </thead>
+            <% if (firstrow) { firstrow = false} } %>
+        <% }); %>
+    </table>
+</script>

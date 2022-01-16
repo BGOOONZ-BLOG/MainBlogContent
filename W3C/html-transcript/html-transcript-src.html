@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>A transcript extension for HTML</title>
+    <script src="https://www.w3.org/Tools/respec/respec-w3c-common" async="" class="remove"></script>
+    <script class="remove">
+      var respecConfig = {
+          specStatus: "ED",
+	  edDraftURI: "http://w3c.github.io/html-transcript/html-transcript-src.html",
+//          shortName:  "html-transcript",
+          editors: [
+                {   name:       "Chaals McCathie Nevile",
+//                  //  url:        "http://berjon.com/",
+                    company:    "Yandex",
+                    companyURL: "http://yandex.com/" }
+          ],
+//          previousMaturity: "FPWD",
+          previousPublishDate:  "2015-06-10",
+          wg:           "HTML Working Group's Accessibility Task Force",
+          wgURI:        "http://www.w3.org/WAI/PF/html-accessibility-tf",
+          wgPublicList: "public-html-a11y",
+          wgPatentURI:  "http://www.w3.org/2004/01/pp-impl/40318/status",
+      };
+    </script>
+    <style>
+      .element {border-left: solid #99f 0.25em;
+      padding: .5em 1em; background-color: #f4f4fa;}</style>
+  </head>
+  <body>
+    <section id="abstract">
+      <p> This document describes an extension to HTML which explicitly identifies a transcript linked to a media object such as audio or
+        video. </p>
+    </section>
+    <section id="sotd">
+      <p>This is the 3 July editors' draft. The editor plans to request consensus to publish this as a First Public Working Draft.</p>
+<p>While Github pull requests are welcome for specific proposed changes, the HTML Accessibility Task Force uses <a href="https://www.w3.org/WAI/PF/HTML/track/products/7">a publicly available tracker installation</a> to track issues on this specification. Please <em>do not</em> use the github issues associated with the repository, as issues there may not be tracked in a timely manner.</p> 
+    </section>
+    <section class="informative">
+      <h2>Introduction</h2>
+      <p>[[HTML5]] allows the use of audio or video, and includes mechanisms for associating multiple timed tracks. But in the case where
+        there is a transcript, which <em class="rfc2119">may not</em> include timing information, there is no way to provide an explicit
+        association between it and its associated media element.</p>
+    </section>
+    <section id="conformance">
+      <p>Throughout this document the terms <em class="rfc2119">must</em> and <em class="rfc2119">may</em> <em class="rfc2119">must</em>
+        be interpreted in accordance with [[RFC2119]].</p>
+    </section>
+    <section>
+      <h2>Use cases and requirements</h2>
+      <section class="informative">
+        <p>Over a number of years <a href="https://www.w3.org/WAI/PF/HTML/wiki/Full_Transcript#The_use_cases">use cases</a> and <a href="https://www.w3.org/WAI/PF/HTML/wiki/Full_Transcript#The_Requirements">requirements</a>
+          have been extensively discussed by the HTML Working Group, in particular by its accessibility and media task forces. The following
+          section is intended to provide a brief summary of the key information.</p>
+      </section>
+      <section class="informative">
+        <h3>Use cases</h3>
+        <dl>
+          <dt>Saving bandwidth - inline transcript</dt>
+          <dd>A user chooses to read a transcript included in the same page as a media resource, because their connection will not support
+            downloading the full media resource. Requires:
+            <dl>
+              <dt><a href="#req-explicit-relation">Explicit relation</a></dt>
+              <dd>Users who cannot determine from the default page formatting that part of the page is the transcript need a mechanism that
+                allows an assistive technology to do so</dd>
+              <dt><a href="#req-delineation">Delineation</a></dt>
+              <dd>Assistive technology needs a way to determine the extent of the transcript - i.e. where it begins and ends</dd>
+              <dt><a href="#req-optional">Optional Consumption</a></dt>
+              <dd>For assistive technology users, the ability to skip over the transcript e.g. when navigating through the page is important</dd>
+              <dt><a href="#req-inline">Inline transcript</a></dt>
+              <dd>This is assumed by this use case. For many users who are not relying on assistive technologies, seeing the transcript in
+                the page is sufficient to enable this use case.</dd>
+            </dl>
+          </dd>
+          <dt>Using the transcript for accessibility</dt>
+          <dd>A user reads a linked transcript because the media resource in its original format is inaccessible to them due to a
+            disability. Requires:
+            <dl>
+              <dt><a href="#req-explicit-relation">Explicit relation</a></dt>
+              <dd>The user needs a way to know that there is a transcript available. In certain cases such as where they have to make a
+                choice based on what kind of resource will be <em>more</em> accessible to them, they need a way for their assistive
+                technology to determine that there is a transcript.</dd>
+              <dt><a href="#req-optional">Optional consumption</a></dt>
+              <dd>It is important that the user not be forced to read the transcript every time they navigate the page - just as users are
+                not forced to re-watch a full video every time they scroll past it.</dd>
+            </dl>
+          </dd>
+          <dt>Interactive transcript as controller</dt>
+          <dd>A user agent renders a transcript which includes timing information alongside the media resource. Navigating to a particular
+            point in the transcript scrubs through the media resource to that point. Requires:
+            <dl>
+              <dt><a href="#req-explicit-relation">Explicit relation</a></dt>
+              <dd>The user agent needs to determine that a particular resource is a transcript</dd>
+              <dt><a href="#req-delineation">Delineation</a></dt>
+              <dd>The user agent needs to identify exactly the content that is part of the transcript</dd>
+              <dt><a href="#req-format-agnostic">Format agnostic</a></dt>
+              <dd>Publishers need to be able to provide transcripts in a format the user agent can use as a controller</dd>
+            </dl>
+          </dd>
+          <dt>Using a transcript to improve video/audio search</dt>
+          <dd>A search engine uses the explicit association of a transcript to collect textual information that can be reliably associated
+            with an audio or video resource, to improve discoverability of the resource through text-based search. Requires:
+            <dl>
+              <dt><a href="#req-explicit-relation">Explicit relation</a></dt>
+              <dd>The search engine needs to determine that a particular resource is a transcript</dd>
+            </dl>
+          </dd>
+          <dt>Increasing multilingual discovery of resources</dt>
+          <dd>A publisher produces multiple translated transcripts of a media resource in order to improve discoverability of and access to
+            the media resource. Requires:
+            <dl>
+              <dt><a href="#req-multiple">Multiple transcripts</a></dt>
+              <dd>The publisher needs to link multiple transcripts to the same media resource.</dd>
+              <dt><a href="#req-linked">Linked transcript</a></dt>
+              <dd>Many publishers do not want to include multiple transcripts in different languages inline in a page.</dd>
+            </dl>
+          </dd>
+          <dt>Use what is there</dt>
+          <dd>A publisher links a script which is available as PDF or Word document to provide a basic workable transcript for a media
+            resource that would otherwise be inaccessible to some users. Requires:
+            <dl>
+              <dt><a href="#req-format-agnostic">Format-agnostic</a></dt>
+              <dd>The publisher needs to be able to associate whatever resource is available</dd>
+              <dt><a href="#req-linked">Linked transcript</a></dt>
+              <dd>The publisher needs to be able to link resources which are not HTML. Content management workflows need to allow for
+                resources kept and published separately.</dd>
+            </dl>
+          </dd>
+        </dl>
+      </section>
+      <section>
+        <h3>Requirements</h3>
+        <dl>
+          <dt id="req-delineation">Delineation</dt>
+          <dd>It <em class="rfc2119">must</em> be possible to determine which part of a larger resource such as an HTML page is the
+            transcript included within that resource.</dd>
+          <dt id="req-explicit-relation">Explicit relation</dt>
+          <dd>It <em class="rfc2119">must</em> be possible to unambiguously determine that a resource is a transcript for a given media
+            resource</dd>
+          <dt id="req-format-agnostic">Format agnostic</dt>
+          <dd>It <em class="rfc2119">must</em> be possible to use an arbitrary format for a transcript</dd>
+          <dt id="req-inline">Inline transcript</dt>
+          <dd>It <em class="rfc2119">must</em> be possible to include the content transcript in the same page as a media resource</dd>
+          <dt id="req-linked">Linked transcript</dt>
+          <dd>It <em class="rfc2119">must</em> be possible to link a media resource to an external transcript</dd>
+          <dt id="req-multiple">Multiple transcripts</dt>
+          <dd>It <em class="rfc2119">must</em> be possible to include more than one transcript for a media resource. It <em class="rfc2119">should</em>
+            be possible to differentiate transcripts for a given media resource to allow easy selection of the appropriate transcript for a
+            given use case</dd>
+          <dt id="req-optional">Optional Consumption</dt>
+          <dd>It <em class="rfc2119">should</em> be possible for a user to choose whether or not to read the transcript. Note that this is
+            particularly important for users interacting with their system through speech output, or for whom large amounts of text make
+            content substantially more difficult to use.</dd>
+        </dl>
+      </section>
+    </section>
+    <section>
+      <h2>Denoting a transcript</h2>
+      <p>To meet the <a href="#req-delineation">delineation requirement</a> this specification defines a new <code>transcript</code>
+        element as follows:</p>
+      <section id="the-transcript-element" class="element">
+        <h4>The <dfn><code>transcript</code></dfn> element</h4>
+        <dl>
+          <dt><a data-anolis-xref="element-dfn-categories" href="http://www.w3.org/TR/html5/dom.html#element-dfn-categories">Categories</a>:</dt>
+          <dd><a href="http://www.w3.org/TR/html5/dom.html#flow-content-1">Flow content</a>.</dd>
+          <dd><a href="http://www.w3.org/TR/html5/dom.html#palpable-content-0">Palpable content</a>.</dd>
+          <dt><a data-anolis-xref="element-dfn-contexts" href="http://www.w3.org/TR/html5/dom.html#element-dfn-contexts">Contexts in which
+              this element can be used</a>:</dt>
+          <dd>Where <a href="http://www.w3.org/TR/html5/dom.html#flow-content-1">flow content</a> is expected.</dd>
+          <dt><a data-anolis-xref="element-dfn-content-model" href="http://www.w3.org/TR/html5/dom.html#element-dfn-content-model">Content
+              model</a>:</dt>
+          <dd><a href="http://www.w3.org/TR/html5/dom.html#flow-content-1">Flow content</a>.</dd>
+          <dt><a data-anolis-xref="element-dfn-attributes" href="http://www.w3.org/TR/html5/dom.html#element-dfn-attributes">Content
+              attributes</a>:</dt>
+          <dd><a href="http://www.w3.org/TR/html5/dom.html#global-attributes">Global attributes</a></dd>
+          <dt><a data-anolis-xref="element-dfn-tag-omission" href="http://www.w3.org/TR/html5/dom.html#element-dfn-tag-omission">Tag
+              omission in text/html</a>:</dt>
+          <dd>Neither tag is omissible</dd>
+          <dt>Allowed <a href="http://www.w3.org/TR/html5/dom.html#aria-role-attribute">ARIA role attribute</a> values:</dt>
+          <dd><a href="http://www.w3.org/TR/html5/dom.html#allowed-aria-roles,-states-and-properties" style="color: rgb(102, 0, 153); background: transparent;">Any
+              role value</a>.</dd>
+          <dt>Allowed <a href="http://www.w3.org/TR/html5/dom.html#state-and-property-attributes">ARIA state and property attributes</a>:</dt>
+          <dd><a href="http://www.w3.org/TR/html5/dom.html#index-aria-global">Global aria-* attributes</a></dd>
+          <dd>Any <code title="">aria-*</code> attributes <a href="http://www.w3.org/TR/html5/dom.html#allowed-aria-roles,-states-and-properties">applicable
+              to the allowed roles</a>.</dd>
+          <dt><a data-anolis-xref="element-dfn-dom" href="http://www.w3.org/TR/html5/dom.html#element-dfn-dom">DOM interface</a>:</dt>
+          <dd>
+            <pre class="idl">interface <dfn id="htmltranscriptelement">HTMLTranscriptElement</dfn> : <a href="http://www.w3.org/TR/html5/dom.html#htmlelement">HTMLElement</a> {};</pre>
+          </dd>
+        </dl>
+      </section>
+      <p>The <code>transcript</code> element can contain any content. It represents a transcript for a media resource.</p>
+    </section>
+    <section>
+      <h2>Linking transcripts</h2>
+      <p>A <dfn>transcript</dfn> <em class="rfc2119">may</em> include timing information, machine-readable or otherwise. The preferred
+        solution includes the link to the transcript within the media element for which it is a transcript, and adds a transcript element as
+        a container for a transcript. This can be included on the page in which the media object is embedded, which is a common use in
+        practice, or can serve to separate multiple transcripts collected in a single page.</p>
+      <section>
+        <h3>Extending <code>track</code> to allow <code>kind="<var>transcript</var>"</code></h3>
+        <p>This proposal adds <code>transcript</code> to the set of values defined for the <code>kind</code> attribute of the <code>track</code>
+          element. This requires adding an entry to the <a href="http://www.w3.org/TR/html5/embedded-content-0.html#attr-track-kind">table
+            of values defined for the attribute</a> in [[!HTML5]], as follows:</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Keyword</th>
+              <th>State</th>
+              <th>Brief description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><dfn data-anolis-xref="attr-track-kind-keyword-metadata" id="attr-track-kind-keyword-metadata"><code>transcript</code></dfn></td>
+              <td><dfn data-anolis-xref="attr-track-kind-metadata" id="attr-track-kind-metadata">transcript</dfn></td>
+              <td>Tracks intended to permit use independent of media source. May be displayed by the user agent instead of, or supplementary
+                to, the media resource.</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="issue">An objection that has been raised to this method is that it requires a potential change to the <a href="http://www.w3.org/TR/html5/embedded-content-0.html#the-track-element">current
+            definition of the <code>track</code> element in HTML5</a>, which says that it <q cite="http://www.w3.org/TR/html5/embedded-content-0.html#the-track-element">allows
+            authors to specify explicit external timed <a data-anolis-xref="text track" href="http://www.w3.org/TR/html5/embedded-content-0.html#text-track">
+              text tracks</a> for <a data-anolis-xref="media element" href="http://www.w3.org/TR/html5/embedded-content-0.html#media-element">media
+              elements</a></q> unless a transcript with no timing information included can be considered a "timed text track". However, this
+          definition also appears to conflict with the allowed <code>metadata</code> state for tracks, so will probably be changed anyway.</p>
+        <section>
+          <h4>Example 1. Extending allowable <code>track</code> <code>kind</code>s</h4>
+          <pre class="highlight example"><code>&lt;video controls&gt;
+  &lt;source src="video.rm"&gt;
+  &lt;!-- A link to a transcript within the same document --&gt;
+    &lt;track</code><code> kind="transcript" </code><code>title="English transcript" href="#theText"&gt;
+  &lt;!-- A link to an external transcript in french uses hreflang --&gt;
+    &lt;track kind="transcript" hreflang="fr"
+       href="http://transcripts.example.fr/qqchose#laTexte"
+       lang="fr" title="Transcription en français"&gt;
+  &lt;track kind="captions" src="#YouGetTheIdea,Right?" lang="ru"&gt;
+&lt;/video&gt;
+<br>&lt;<strong>transcript</strong> id="theText"&gt;This is the english language
+  transcript...
+&lt;/<strong>transcript</strong>&gt;</code></pre>
+        </section>
+      </section>
+    </section>
+    <section class="informative">
+      <h2>Acknowledgements</h2>
+      <p>The editor would like to acknowledge the awe-filled <a href="http://w3.org/respec">respec</a>, <a href="http://github.com">github</a>,
+        and <a href="http://bluegriffon.org">BlueGriffon</a>, as well as direct contributions to this document by:</p>
+      <p>Paul Cotton, Daniel Davis, Joan-Marie Diggs, Steve Faulkner, John Foliot, Edward O'Connor, Silvia Pfeiffer, Janina Sajka, Richard Schwerdtfeger, Cynthia Shelly,
+        Léonie Watson, and W3C's HTML Media Task Force</p>
+      <p>The editor would like to apologise to anybody whose name was left out of this list, and invites corrections.</p>
+    </section>
+    <section class="informative">
+      <h2>Appendix: Alternative approaches</h2>
+      <p>Several other approaches have been considered to meeting the requirements. They are included here in outline, with some notes, for completeness. This appendix is expected to be removed before requesting advancement to Candidate Recommendation.</p>
+      <section style="width:80%; padding:2em 10%; background-color: #fffdfd">
+        <h3>Alternative approach: create a new element</h3>
+        <p>Add a new element to HTML representing a link to a transcript for the parent media resource. This requires choosing a name - in
+          the following we have used <code>relateTranscript</code> as a placeholder name, to avoid conflicting with the proposed <code>transcript</code>
+          container element - and defining a new element definition as follows:</p>
+        <section id="the-relateTranscript-element" class="element">
+          <h4>The <dfn><code>relateTranscript</code></dfn> element</h4>
+          <dl>
+            <dt><a data-anolis-xref="element-dfn-categories" href="http://www.w3.org/TR/html5/dom.html#element-dfn-categories">Categories</a>:</dt>
+            <dd>None.</dd>
+            <dt><a data-anolis-xref="element-dfn-contexts" href="http://www.w3.org/TR/html5/dom.html#element-dfn-contexts">Contexts in which
+                this element can be used</a>:</dt>
+            <dd>As a child of a <a href="http://www.w3.org/TR/html5/embedded-content-0.html#media-element">media element</a>.</dd>
+            <dt><a data-anolis-xref="element-dfn-content-model" href="http://www.w3.org/TR/html5/dom.html#element-dfn-content-model">Content
+                model</a>:</dt>
+            <dd>Empty.</dd>
+            <dt><a data-anolis-xref="element-dfn-attributes" href="http://www.w3.org/TR/html5/dom.html#element-dfn-attributes">Content
+                attributes</a>:</dt>
+            <dd><a href="http://www.w3.org/TR/html5/dom.html#global-attributes">Global attributes</a></dd>
+            <dd><code>src</code> - URL of the transcript</dd>
+            <dd><code>type</code> - the MIME type of the transcript</dd>
+            <dt><a data-anolis-xref="element-dfn-tag-omission" href="http://www.w3.org/TR/html5/dom.html#element-dfn-tag-omission">Tag
+                omission in text/html</a>:</dt>
+            <dd>No <a href="http://www.w3.org/TR/html5/syntax.html#syntax-end-tag">end tag</a></dd>
+            <dt>Allowed <a href="http://www.w3.org/TR/html5/dom.html#aria-role-attribute">ARIA role attribute</a> values:</dt>
+            <dd class="issue">This could be rendered as a <code>liveregion</code> controlled by the media resource, or a control for the
+              media resource.</dd>
+            <dt>Allowed <a href="http://www.w3.org/TR/html5/dom.html#state-and-property-attributes">ARIA state and property attributes</a>:</dt>
+            <dd class="issue">rendering, interactive states?</dd>
+            <dd>Any <code title="">aria-*</code> attributes <a href="http://www.w3.org/TR/html5/dom.html#allowed-aria-roles,-states-and-properties">applicable
+                to the allowed roles</a>.</dd>
+            <dt><a data-anolis-xref="element-dfn-dom" href="http://www.w3.org/TR/html5/dom.html#element-dfn-dom">DOM interface</a>:</dt>
+            <dd>
+              <pre class="idl">interface <dfn id="htmlrelateTranscriptelement">HTMLRelateTranscriptElement</dfn> : <a href="http://www.w3.org/TR/html5/dom.html#htmlelement">HTMLElement</a> {
+           attribute DOMString <a data-anolis-xref="dom-source-src" href="http://www.w3.org/TR/html5/embedded-content-0.html#dom-source-src">src</a>;
+           attribute DOMString <a data-anolis-xref="dom-source-type" href="http://www.w3.org/TR/html5/embedded-content-0.html#dom-source-type">type</a>;
+           attribute DOMString <a data-anolis-xref="dom-source-media" href="http://www.w3.org/TR/html5/embedded-content-0.html#dom-source-media">media</a>;
+};</pre>
+            </dd>
+          </dl>
+        </section>
+        <section>
+          <h4>Example 2: Using a <code>relateTranscript</code> element</h4>
+          <pre class="highlight example"><code>&lt;video controls&gt;
+  &lt;source src="video.rm"&gt;
+  &lt;!-- A link to a transcript within the same document --&gt;
+    &lt;<strong>relateTranscript</strong> title="English transcript" href="#theText"&gt;
+  &lt;!-- A link to an external transcript in french uses hreflang --&gt;
+    &lt;<strong>relateTranscript</strong> hreflang="fr"
+       href="http://transcripts.example.fr/qqchose#laTexte"
+       lang="fr" title="Transcription en francais"&gt;
+  &lt;track kind="captions" src="YouGetTheIdea?Right" lang="ru"&gt;
+&lt;/video&gt;
+<br>&lt;<strong>transcript</strong> id="theText"&gt;This is the english language
+  transcript...
+&lt;/<strong>transcript</strong>&gt;</code></pre>
+        </section>
+      </section>
+      <section style="width:80%; padding:2em 10%; background-color: #fffdfd">
+        <h3>Alternative approach: Use the <code>source</code>
+          <!--Luke--> element</h3>
+        <p>The <code>source</code> element represents a version of the media resource that can be presented as an alternative to others.
+          This is what a transcript is.</p>
+        <p>This approach is not preferred as it will involve complex changes. </p>
+        <p class="issue">The element currently allows a MIME <code>type</code> attribute and a <code>media</code> query that can be used
+          to determine when to render a given version. However, although transcripts are likely to have MIME types that are different from
+          those used for audio or video resources, relying on this difference as a heuristic seems a weak approach to identifying a
+          transcript.</p>
+      </section>
+      <section style="width:80%; padding:2em 10%; background-color: #fffdfd">
+        <h3>Alternative approach: Use the <code>a</code> element with <code>rel</code> and <code>for</code> attributes</h3>
+        <p>This meets the requirements, but requires defining a new value of <code>rel</code>, and changes to the <code>for</code>
+          attribute. </p>
+        <p class="issue">Separating the link from the video code requires developers to include it in the visible content of the page, which
+          leads many developers to try and hide it in the default presentation. A common result is that it is not available to people who
+          need it, such as users with low vision, or is invisible but can be activated, confusing users.</p>
+        <p class="issue">Separating the link from the block of code can lead to it being lost when the source is copied to be used
+          elsewhere.</p>
+        <section>
+          <h4>Example 4: Using the <code>a</code> element with <code>rel</code> and <code>for</code> attribute</h4>
+          <!-- No, there is no example 3, but it should be possible to heuristically determine why-->
+          <pre class="highlight example"><code><code>&lt;p&gt;<br>  &lt;!-- A link to a transcript within the same document --&gt;
+    &lt;<strong>a rel="transcript" for="theVideo"</strong> title="English transcript" href="#theText"&gt;Transcript below&lt;/a&gt;,
+  &lt;!-- A link to an external transcript in french uses hreflang --&gt;
+    &lt;a rel="transcript" for="theVideo" hreflang="fr"
+       href="http://transcripts.example.fr/qqchose#laTexte"
+       lang="fr" title="Transcription en francais"&gt;transcription aussi disponible en français&lt;/a&gt;.<br>&lt;/p&gt;<br><br></code>&lt;video controls <strong>id="theVideo"</strong>&gt;
+  &lt;source src="video.rm"&gt;
+  &lt;track kind="captions" src="YouGetTheIdea?Right" lang="ru"&gt;
+&lt;/video&gt;<br><br>&lt;<strong>transcript</strong> id="theText"&gt;This is the english language
+  transcript...
+&lt;/<strong>transcript</strong>&gt;</code></pre>
+        </section>
+      </section>
+      <section style="width:80%; padding:2em 10%; background-color: #fffdfd">
+        <h3>Alternative approach: Use an attribute</h3>
+        <p>An attribute could be defined, analogous to the <code>longdesc</code> attribute for images. </p>
+        <p>This approach is not preferred as it makes it very difficult to meet all of the <a href="#req-multiple">multiple transcripts
+            requirement</a>. </p>
+        <p class="issue">Allowing a space-separated list of URLs does not provide any information to help choose which transcript to link
+          to, or use.</p>
+        <section>
+          <h4>Example 5: Using a <code>relateTranscript</code> attribute</h4>
+          <pre class="highlight example"><code>&lt;video controls <strong>relateTranscript="#theText </strong></code><code><strong><code>http://transcripts.example.fr/qqchose#laTexte</code>"</strong>&gt;
+  &lt;source src="video.rm"&gt;
+  &lt;track kind="captions" src="YouGetTheIdea?Right" lang="ru"&gt;
+&lt;/video&gt;<br><br>&lt;<strong>transcript</strong> id="theText"&gt;This is the english language
+  transcript...
+&lt;/<strong>transcript</strong>&gt;</code></pre>
+        </section>
+      </section>
+    </section>   
+  </body>
+</html>

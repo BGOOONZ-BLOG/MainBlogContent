@@ -1,0 +1,161 @@
+# 
+# Makefile for davlib
+# Manuele Kirsch, Apr/2002
+#
+
+@VPATHOPT@= @srcdir@
+THOTDIR= @top_srcdir@
+#DAVLIB= $(THOTDIR)/davlib
+DAVLIB= @srcdir@
+AMAYA_DAV_OPTIONS=-DDAV -DHT_DAV
+
+include ../Options
+
+INCLUDES =-DHAVE_CONFIG_H -I.. \
+	  -I../amaya -I@srcdir@/f -I@top_srcdir@/amaya \
+	  -I@top_srcdir@/amaya/f \
+	  @LIBWWW_CFLAGS@ \
+	  -I@top_srcdir@/thotlib/include \
+	  -I$(DAVLIB)/tree/h -I$(DAVLIB)/h \
+	  $(GUI_INCLUDES)
+
+OPTIONS	= @AMAYA_OPTIONS@ $(AMAYA_DAV_OPTIONS)
+
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+libdir = @libdir@
+
+############################################
+
+all : tree awparser.o AHTLockBase.o dav_obj davlib.a
+
+dav_obj : $(AMAYA_DAV_OBJ)
+
+tree : list.o awstring.o awpair.o awnode.o awtree.o
+
+HTHome :
+	@(cd ../$(LIBWWW)/Library/src ; $(MAKE) HTHome.o)
+
+clean :
+	$(RM) *.a
+	$(RM) *.o 
+
+install :
+
+uninstall :
+
+include .depends
+
+../tools/mkdep/mkdep : 
+	@(cd ../tools/mkdep ; $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)")
+
+.depends depend : ../tools/mkdep/mkdep
+	../tools/mkdep/mkdep -relative -vpath $(VPATH) $(INCLUDES) $(VPATH)/*.c  > .depends
+
+###################################################
+# Template rules to build objects
+###################################################
+
+.SUFFIXES: .c .o 
+
+#
+# C files
+#
+#.c.o :  
+#	$(CC) $(CFLAGS) $(AMAYA_ANNOT_OPTIONS) $(INCLUDES) $(OPTIONS) -c $< -o $@
+
+
+
+#########################################################################
+#									#
+#		Rules to build the library				#
+#									#
+#########################################################################
+
+AMAYA_DAV_OBJ= \
+	davlibCommon.o \
+	davlibUI.o \
+	davlibRequests.o \
+	davlib.o \
+	AHTLockBase.o \
+	awparser.o \
+	awtree.o \
+	awnode.o \
+	awstring.o \
+	awpair.o \
+	list.o
+
+#
+# dependencies
+#
+
+list.o :
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(OPTIONS) -c $(DAVLIB)/tree/list.c -o list.o
+
+awstring.o :
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(OPTIONS) -c $(DAVLIB)/tree/awstring.c -o awstring.o
+
+awpair.o :
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(OPTIONS) -c $(DAVLIB)/tree/awpair.c -o awpair.o
+
+awnode.o :
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(OPTIONS) -c $(DAVLIB)/tree/awnode.c -o awnode.o
+
+awtree.o :
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(OPTIONS) -c $(DAVLIB)/tree/awtree.c -o awtree.o
+
+awparser.o :
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(OPTIONS) -c $(DAVLIB)/awparser.c -o awparser.o
+
+AHTLockBase.o :
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(OPTIONS) -c $(DAVLIB)/AHTLockBase.c -o AHTLockBase.o
+
+davlib.o :
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(OPTIONS) -c $(DAVLIB)/davlib.c -o davlib.o
+
+davlibCommon.o :
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(OPTIONS) -c $(DAVLIB)/davlibCommon.c -o davlibCommon.o
+
+davlibUI.o :
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(OPTIONS) -c $(DAVLIB)/davlibUI.c -o davlibUI.o
+
+davlibRequests.o :
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(OPTIONS) -c $(DAVLIB)/davlibRequests.c -o davlibRequests.o
+
+davlib.a : $(AMAYA_DAV_OBJ)
+	$(AR) davlib.a $(AMAYA_DAV_OBJ) 
+	$(RANLIB) davlib.a
+
+
+##################################################
+# Other common compilation stuff
+##################################################
+
+CEXTRACT= ../bin/cextract
+
+$(CEXTRACT) :
+	@(cd ../tools/cextract-$(CEXTRACT_VER) ; $(MAKE) )
+
+proto : ../bin/cextract
+	@(for i in @srcdir@/*.c ; \
+	  do \
+	  dir=`dirname $$i`;base=`basename $$i .c`; \
+	  if [ ! -d $$dir/f ] ; then $(MKDIR) $$dir/f ;fi;\
+	  $(CEXTRACT) $(CEXTRACT_FLAGS) -o /tmp/cextract.$$base.$$$$ $$i 2> /dev/null ; \
+	  if [ -f $$dir/f/"$$base"_f.h ] ; \
+	  then \
+	      delta=`$(DIFF) /tmp/cextract.$$base.$$$$ $$dir/f/"$$base"_f.h` ; \
+	      if [ "$$delta" != "" ] ; \
+	      then \
+	          echo "  $$i proto changed" ; \
+		  $(MV) /tmp/cextract.$$base.$$$$ $$dir/f/"$$base"_f.h ; \
+              else \
+	          $(RM) /tmp/cextract.$$base.$$$$ ; \
+	      fi ; \
+	  else \
+	      echo "  $$i proto added" ; \
+	      $(MV) /tmp/cextract.$$base.$$$$ $$dir/f/"$$base"_f.h ; \
+	  fi ; \
+	  done; )
+

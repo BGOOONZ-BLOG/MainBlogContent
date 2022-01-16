@@ -1,0 +1,1355 @@
+diff -r 1258a2c3712c relaxng/applications.rnc
+--- a/relaxng/applications.rnc	Fri Oct 05 23:34:14 2012 +0900
++++ b/relaxng/applications.rnc	Sat Oct 06 01:23:05 2012 +0900
+@@ -4,19 +4,6 @@
+ ##  RELAX NG Schema for HTML 5: Web Application Features              #
+ # #####################################################################
+ 
+-## Additions to Common Attributes
+-
+-	common.attrs.interact &=
+-		(	common.attrs.contextmenu?
+-		&	common.attrs.contenteditable?
+-		&	common.attrs.draggable?
+-		&	common.attrs.dropzone?
+-		&	common.attrs.hidden?
+-		&	common.attrs.spellcheck?
+-		)
+-		
+-	common.attrs.other &= common.attrs.interact
+-
+ ## Context Menu: contextmenu
+ 
+ 	common.attrs.contextmenu =
+@@ -42,20 +29,7 @@
+ 
+ 	common.attrs.dropzone =
+ 		attribute dropzone {
+-			list {
+-				(	xsd:string { pattern = "[sS][tT][rR][iI][nN][gG]:.+" }
+-				|	xsd:string { pattern = "[fF][iI][lL][eE]:.+" }
+-				)*
+-				,
+-				(	w:string "copy"
+-				|	w:string "move"
+-				|	w:string "link"
+-				)?
+-				,
+-				(	xsd:string { pattern = "[sS][tT][rR][iI][nN][gG]:.+" }
+-				|	xsd:string { pattern = "[fF][iI][lL][eE]:.+" }
+-				)*
+-			}
++			common.data.dropzonevalue
+ 		}
+ 
+ ## Hidden Element: hidden
+@@ -110,12 +84,26 @@
+ 	command.command.attrs =
+ 		(	common.attrs
+ 		&	command.command.attrs.type?
+-		&	common-command.attrs
++		&	command.command.attrs.label?
++		&	command.command.attrs.icon?
++		&	command.command.attrs.disabled?
+ 		)
+ 		command.command.attrs.type =
+ 			attribute type {
+ 				w:string "command"
+ 			}
++		command.command.attrs.label =
++			attribute label {
++				string
++			}
++		command.command.attrs.icon =
++			attribute icon {
++				common.data.uri
++			}
++		command.command.attrs.disabled =
++			attribute disabled {
++				w:string "disabled" | w:string ""
++			}
+ 	command.elem = command.command.elem
+ 
+ ## Selection of one item from a list of items: <command type='radio'>
+@@ -127,8 +115,10 @@
+ 			&	(	command.radio.attrs.type
+ 				&	command.radio.attrs.radiogroup #REVISIT taking liberties here
+ 				&	command.radio.attrs.checked?
++			&	command.radio.attrs.label?
++			&	command.radio.attrs.icon?
++			&	command.radio.attrs.disabled?
+ 				)
+-			&	common-command.attrs
+ 		)
+ 		command.radio.attrs.type =
+ 			attribute type {
+@@ -142,6 +132,18 @@
+ 			attribute checked {
+ 				w:string "checked" | w:string ""
+ 			}
++		command.radio.attrs.label =
++			attribute label {
++				string
++			}
++		command.radio.attrs.icon =
++			attribute icon {
++				common.data.uri
++			}
++		command.radio.attrs.disabled =
++			attribute disabled {
++				w:string "disabled" | w:string ""
++			}
+ 	command.elem |= command.radio.elem
+ 
+ ## State or option that can be toggled: <command type='checkbox'>
+@@ -153,7 +155,9 @@
+ 			&	(	command.checkbox.attrs.type
+ 				&	command.checkbox.attrs.checked?
+ 				)
+-			&	common-command.attrs
++			&	command.checkbox.attrs.label?
++			&	command.checkbox.attrs.icon?
++			&	command.checkbox.attrs.disabled?
+ 			)
+ 		command.checkbox.attrs.type =
+ 			attribute type {
+@@ -163,30 +167,25 @@
+ 			attribute checked {
+ 				w:string "checked" | w:string ""
+ 			}
+-	command.elem |= command.checkbox.elem
+-
+-	common-command.attrs =
+-		(	command.attrs.label?
+-		&	command.attrs.icon?
+-		&	command.attrs.disabled?
+-		)
+-		command.attrs.label =
++		command.checkbox.attrs.label =
+ 			attribute label {
+ 				string
+ 			}
+-		command.attrs.icon =
++		command.checkbox.attrs.icon =
+ 			attribute icon {
+ 				common.data.uri.non-empty
+ 			}
+-		command.attrs.disabled =
++		command.checkbox.attrs.disabled =
+ 			attribute disabled {
+ 				w:string "disabled" | w:string ""
+ 			}
++	command.elem |= command.checkbox.elem
++
+ 	command.inner =
+ 		( empty )
+ 	
+ 	common.elem.metadata |=
+-		( command.elem & nonHTMLizable )
++		command.elem
+ 	common.elem.phrasing |= command.elem
+ 
+ ## Menu: <menu>
+diff -r 1258a2c3712c relaxng/block.rnc
+--- a/relaxng/block.rnc	Fri Oct 05 23:34:14 2012 +0900
++++ b/relaxng/block.rnc	Sat Oct 06 01:23:05 2012 +0900
+@@ -114,12 +114,12 @@
+ 		element li { oli.inner & oli.attrs }
+ 	oli.attrs =
+ 		(	common.attrs
+-		&	oli.attrs.value?
++		&	li.attrs.value?
+ 		&	(	common.attrs.aria
+ 			|	common.attrs.aria.implicit.listitem
+ 			)?
+ 		)
+-		oli.attrs.value =
++		li.attrs.value =
+ 			attribute value {
+ 				common.data.integer
+ 			}
+diff -r 1258a2c3712c relaxng/common.rnc
+--- a/relaxng/common.rnc	Fri Oct 05 23:34:14 2012 +0900
++++ b/relaxng/common.rnc	Sat Oct 06 01:23:05 2012 +0900
+@@ -41,16 +41,16 @@
+ 	common.attr.anything =
+ 		attribute * { text }*
+ 
+-## Any element from any namespace
++	replaceable-character-data =
++		(	xsd:string {
++				pattern = ".*"
++			}
++		)
+ 
+-	common.elem.anything =
+-		element * { common.inner.anything & common.attr.anything }
+-
+-## Any content from any namespace
+-
+-	common.inner.anything =
+-		(	text
+-		&	common.elem.anything*
++	non-replaceable-character-data =
++		(	xsd:string {
++				pattern = ".*"
++			}
+ 		)
+ 
+ # #####################################################################
+@@ -99,29 +99,32 @@
+ # When updating, check <bdo> definition too
+ 
+ common.attrs =
+-	(	common.attrs.basic
+-	&	common.attrs.i18n
+-	&	common.attrs.present
+-	&	common.attrs.other
++	(	common.attrs.core
++	&	common.attrs.event-handler
++	&	common.attrs.xml
+ 	)
+ 
+-common.attrs.basic =
+-	(	(	common.attrs.id
+-		|	common.attrs.xml-id
+-		)? # REVISIT assuming only either one is allowed
++common.attrs.core =
++	(	common.attrs.accesskey?
+ 	&	common.attrs.class?
++	&	common.attrs.contenteditable?
++	&	common.attrs.contextmenu?
++	&	common.attrs.dir?
++	&	common.attrs.draggable?
++	&	common.attrs.dropzone?
++	&	common.attrs.hidden?
++	&	common.attrs.id?
++	&	common.attrs.lang?
++	&	common.attrs.spellcheck?
++	&	common.attrs.style?
++	&	common.attrs.tabindex?
+ 	&	common.attrs.title?
+-	&	common.attrs.base?
+-	&	common.attrs.space?
++	&	common.attrs.translate?
+ 	)
+ 	common.attrs.id =
+ 		attribute id {
+ 			common.data.id
+ 		}
+-	common.attrs.xml-id =
+-		attribute xml:id {
+-			xsd:NCName
+-		} & XMLonly
+ 	common.attrs.class =
+ 		attribute class {
+ 			common.data.tokens
+@@ -144,11 +147,6 @@
+ 			string "preserve" | string "default"
+ 		} & XMLonly
+ 
+-common.attrs.i18n =
+-	(	common.attrs.dir?
+-	&	common.attrs.language?
+-	&	common.attrs.translate?
+-	)
+ 	common.attrs.dir =
+ 		attribute dir {
+ 			w:string "ltr" | w:string "rtl" | w:string "auto"
+@@ -185,11 +183,6 @@
+ 			w:string "yes" | w:string "no"
+ 		}
+ 
+-common.attrs.present =
+-	(	common.attrs.style?
+-	&	common.attrs.tabindex?
+-	&	common.attrs.accesskey?
+-	)
+ 	common.attrs.style =
+ 		attribute style {
+ 			string
+@@ -207,6 +200,13 @@
+ common.attrs.other =
+ 	empty
+ 
++common.attrs.xml =
++	(	common.attrs.xmllang?
++	&	common.attrs.xmlspace?
++	&	common.attrs.xmlbase?
++	)
++
++
+ # #####################################################################
+ ##  Common Datatypes                                                  #
+ # #####################################################################
+@@ -216,10 +216,10 @@
+ 	common.data.tokens =
+ 		list { token* }
+ 
+-	common.data.browsing-context =
++	common.data.browsing-context-name =
+ 		w:browsing-context
+ 
+-	common.data.browsing-context-or-keyword =
++	common.data.browsing-context-name-or-keyword =
+ 		w:browsing-context-or-keyword
+ #		xsd:string {
+ #			pattern = "()|([^_].*)|(_[bB][lL][aA][nN][kK])|(_[sS][eE][lL][fF])|(_[pP][aA][rR][eE][nN][tT])|(_[tT][oO][pP])"
+@@ -303,6 +303,9 @@
+ 	common.data.date =
+ 		w:date
+ 
++	common.data.time-datetime =
++		w:time-datetime
++
+ ## IRIs
+ 
+ 	common.data.uri =
+@@ -377,6 +380,10 @@
+ 	common.data.keylabellist =
+ 		w:keylabellist
+ 
++## dropzone value
++	common.data.dropzonevalue =
++		w:dropzonevalue
++
+ ## Microdata Properties
+   common.data.microdata-properties =
+     list { w:microdata-property+ }
+@@ -389,16 +396,20 @@
+   common.data.functionbody =
+     w:functionbody
+ 
+-# #####################################################################
+-##  WF2 Module Hook                                                   #
+-# #####################################################################
+-		
++## Rectangle
++  common.data.rectangle  =
++    w:rectangle
++
++## Circle
++  common.data.circle =
++    w:circle
++
++## Polygone
++  common.data.polygon =
++    w:polygon
++
+ common-form.attrs.form = ( notAllowed )
+ 
+-# #####################################################################
+-##  ARIA Module Hooks                                                 #
+-# #####################################################################
+-
+ common.attrs.aria = ( notAllowed )
+ common.attrs.aria.implicit.button = ( notAllowed )
+ common.attrs.aria.implicit.input = ( notAllowed )
+diff -r 1258a2c3712c relaxng/core-scripting.rnc
+--- a/relaxng/core-scripting.rnc	Fri Oct 05 23:34:14 2012 +0900
++++ b/relaxng/core-scripting.rnc	Sat Oct 06 01:23:05 2012 +0900
+@@ -52,9 +52,9 @@
+ 				string
+ 			}
+ 	script.inner.embedded =
+-		( common.inner.anything )
++		( non-replaceable-character-data )
+ 	script.inner.imported =
+-		( common.inner.anything )
++		( non-replaceable-character-data )
+ 		
+ 	script.elem = 
+ 		(	script.elem.embedded
+@@ -95,8 +95,8 @@
+ # #####################################################################
+ ## Event Handler Attribute Definitions
+ 
+-	common.attrs.scripting &=
+-		(	scripting.attr.onabort?
++	common.attrs.event-handler =
++			scripting.attr.onabort?
+ 		&	scripting.attr.onblur?
+ 		&	scripting.attr.oncanplay?
+ 		&	scripting.attr.oncanplaythrough?
+@@ -149,9 +149,7 @@
+ 		&	scripting.attr.ontimeupdate?
+ 		&	scripting.attr.onvolumechange?
+ 		&	scripting.attr.onwaiting?
+-		)
+ 		
+-	common.attrs.other &= common.attrs.scripting
+ 
+ 	scripting.attr.onabort =
+ 		attribute onabort { common.data.functionbody }
+diff -r 1258a2c3712c relaxng/data.rnc
+--- a/relaxng/data.rnc	Fri Oct 05 23:34:14 2012 +0900
++++ b/relaxng/data.rnc	Sat Oct 06 01:23:05 2012 +0900
+@@ -10,18 +10,11 @@
+ 		element time { time.inner & time.attrs }
+ 	time.attrs =
+ 		(	common.attrs
+-		&	(	time.attrs.datetime?
+-				|
+-				(
+-					(	time.attrs.datetime.dateonly?
+-					|	time.attrs.datetime.tz?
+-					)
+-				)
+-			)
++		&	time.attrs.datetime?
+ 		)
+ 		time.attrs.datetime =
+ 			attribute datetime {
+-				common.data.date-or-time #REVISIT check format
++				common.data.time-datetime
+ 			}
+ 		time.attrs.datetime.dateonly =
+ 			attribute datetime {
+diff -r 1258a2c3712c relaxng/embed.rnc
+--- a/relaxng/embed.rnc	Fri Oct 05 23:34:14 2012 +0900
++++ b/relaxng/embed.rnc	Sat Oct 06 01:23:05 2012 +0900
+@@ -261,7 +261,7 @@
+ 			}
+ 		object.attrs.name =
+ 			attribute name {
+-				common.data.browsing-context
++				common.data.browsing-context-name
+ 			}
+ 	object.inner.flow =
+ 		(	param.elem*
+@@ -322,7 +322,7 @@
+ 			}
+ 		iframe.attrs.name =
+ 			attribute name {
+-				common.data.browsing-context
++				common.data.browsing-context-name
+ 			}
+ 		iframe.attrs.height =
+ 			attribute height {
+@@ -337,8 +337,11 @@
+ 				w:string "seamless" | w:string ""
+ 			} & v5only
+ 		iframe.attrs.sandbox =
+-			attribute sandbox
+-				{	list 
++			attribute sandbox {
++				common.data.sandbox-allow-list 
++			}
++				common.data.sandbox-allow-list =
++				(	list
+ 					{	( w:string "allow-top-navigation" )?
+ 					,	( w:string "allow-same-origin" )?
+ 					,	( w:string "allow-forms" )?
+@@ -482,7 +485,7 @@
+ 					,	( w:string "allow-same-origin" )?
+ 					,	( w:string "allow-top-navigation" )?
+ 					}
+-				} & v5only
++				)	& v5only
+ 	iframe.inner =
+ 		( text )
+ 
+@@ -518,25 +521,46 @@
+ 	area.elem =
+ 		element area { area.inner & area.attrs }
+ 	area.attrs =
+-		(	common.attrs.basic
+-		&	common.attrs.i18n
+-		&	common.attrs.present
+-		&	common.attrs.other
++		(	common.attrs
+ 		&	(	area.attrs.alt
+-			&	shared-hyperlink.attrs.href
++			&	area.attrs.href
+ 			)?
+-		&	shared-hyperlink.attrs.target?
+-		&	shared-hyperlink.attrs.ping?
+-		&	shared-hyperlink.attrs.rel?
+-		&	shared-hyperlink.attrs.media?
+-		&	shared-hyperlink.attrs.hreflang?
+-		&	shared-hyperlink.attrs.type?
++		&	area.attrs.target?
++		&	area.attrs.rel?
++		&	area.attrs.media?
++		&	area.attrs.hreflang?
++		&	area.attrs.type?
+ 		&	area.attrs.shape?
+ 		)
+ 		area.attrs.alt =
+ 			attribute alt {
+ 				text
+ 			}
++		area.attrs.href =
++		  attribute href {
++		    common.data.uri
++		  }
++		area.attrs.target =
++		  attribute target {
++		    common.data.browsing-context-name-or-keyword
++		  }
++		area.attrs.rel =
++		  attribute rel {
++		    common.data.tokens
++		  }
++		area.attrs.hreflang =
++		  attribute hreflang {
++		    common.data.langcode
++		  }
++		area.attrs.media =
++		  attribute media {
++		    common.data.mediaquery
++		  }
++		area.attrs.type =
++		  attribute type {
++		    common.data.mimetype
++		  }
++
+ 		area.attrs.shape =
+ 			(	( area.attrs.shape.rect?  & area.attrs.coords.rect   )
+ 			|	( area.attrs.shape.circle & area.attrs.coords.circle )
+@@ -549,7 +573,7 @@
+ 			}
+ 		area.attrs.coords.rect =
+ 			attribute coords {
+-				w:rectangle
++				common.data.rectangle
+ #				xsd:token {
+ #					pattern = "-?[0-9]+,-?[0-9]+,-?[0-9]+,-?[0-9]+"
+ #				}
+@@ -560,7 +584,7 @@
+ 			}
+ 		area.attrs.coords.circle =
+ 			attribute coords {
+-				w:circle
++				common.data.circle
+ #				xsd:token {
+ #					pattern = "-?[0-9]+,-?[0-9]+,[0-9]+"
+ #				}
+@@ -571,7 +595,7 @@
+ 			}
+ 		area.attrs.coords.poly =
+ 			attribute coords {
+-				w:polyline
++				common.data.polygon
+ #				xsd:token {
+ #					pattern = "-?[0-9]+,-?[0-9]+,-?[0-9]+,-?[0-9]+,-?[0-9]+,-?[0-9]+(,-?[0-9]+,-?[0-9]+)*"
+ #				}
+diff -r 1258a2c3712c relaxng/media.rnc
+--- a/relaxng/media.rnc	Fri Oct 05 23:34:14 2012 +0900
++++ b/relaxng/media.rnc	Sat Oct 06 01:23:05 2012 +0900
+@@ -4,42 +4,6 @@
+ ##  RELAX NG Schema for HTML 5: Advanced Embedded Content             #
+ # #####################################################################
+ 
+-## Attributes Common to Media Elements
+-
+-	# src not included
+-	media.attrs = 
+-		(	media.attrs.autoplay?
+-		&	media.attrs.preload?
+-		&	media.attrs.controls?
+-		&	media.attrs.loop?
+-		&	media.attrs.mediagroup?
+-		&	media.attrs.muted?
+-		)
+-		media.attrs.autoplay   =
+-			attribute autoplay   {
+-				w:string "autoplay" | w:string ""
+-			}
+-		media.attrs.preload   =
+-			attribute preload   {
+-				w:string "none" | w:string "metadata" | w:string "auto" | w:string ""
+-			}
+-		media.attrs.controls  =
+-			attribute controls  {
+-				w:string "controls" | w:string ""
+-			}
+-		media.attrs.loop =
+-			attribute loop {
+-				w:string "loop" | w:string ""
+-			}
+-		media.attrs.mediagroup =
+-			attribute mediagroup {
+-				string
+-			}
+-		media.attrs.muted =
+-			attribute muted {
+-				w:string "muted" | w:string ""
+-			}
+-		
+ ## Source: <source>
+ 
+ 	source.elem =
+@@ -65,18 +29,6 @@
+ 	source.inner =
+ 		( empty )
+ 
+-## Media Source
+-
+-	media.source = 
+-		(	media.attrs.src
+-		|	source.elem*
+-		)
+-
+-	media.attrs.src =
+-		attribute src {
+-			common.data.uri.non-empty
+-		}
+-
+ ## Video: <video>
+ 
+ 	video.elem.flow =
+@@ -85,11 +37,32 @@
+ 		element video { video.inner.phrasing & video.attrs }
+ 	video.attrs =
+ 		(	common.attrs
+-		&	media.attrs
++		&	video.attrs.autoplay?
++		&	video.attrs.preload?
++		&	video.attrs.controls?
++		&	video.attrs.loop?
+ 		&	video.attrs.poster?
+ 		&	video.attrs.height?
+ 		&	video.attrs.width?
++		&	video.attrs.mediagroup?
++		&	video.attrs.muted?
+ 		)
++		video.attrs.autoplay   =
++			attribute autoplay   {
++				w:string "autoplay" | w:string ""
++			}
++		video.attrs.preload   =
++			attribute preload   {
++				w:string "none" | w:string "metadata" | w:string "auto" | w:string ""
++			}
++		video.attrs.controls  =
++			attribute controls  {
++				w:string "controls" | w:string ""
++			}
++		video.attrs.loop =
++			attribute loop {
++				w:string "loop" | w:string ""
++			}
+ 		video.attrs.poster =
+ 			attribute poster {
+ 				common.data.uri.non-empty
+@@ -102,13 +75,29 @@
+ 			attribute width {
+ 				common.data.integer.non-negative
+ 			}
++		video.attrs.mediagroup =
++			attribute mediagroup {
++				string
++			}
++		video.attrs.muted =
++			attribute muted {
++				w:string "muted" | w:string ""
++			}
++		video.attrs.src =
++			attribute src {
++				common.data.uri.non-empty
++			}
+ 	video.inner.flow =
+-		(	media.source
++		(	(	video.attrs.src
++			|	source.elem*
++			)
+ 		,	track.elem*
+ 		,	common.inner.flow
+ 		)
+ 	video.inner.phrasing =
+-		(	media.source
++		(	(	video.attrs.src
++			|	source.elem*
++			)
+ 		,	track.elem*
+ 		,	common.inner.phrasing
+ 		)
+@@ -124,15 +113,52 @@
+ 		element audio { audio.inner.phrasing & audio.attrs }
+ 	audio.attrs =
+ 		(	common.attrs
+-		&	media.attrs
++		&	audio.attrs.autoplay?
++		&	audio.attrs.preload?
++		&	audio.attrs.controls?
++		&	audio.attrs.loop?
++		&	audio.attrs.mediagroup?
++		&	audio.attrs.muted?
+ 		)
++		audio.attrs.autoplay   =
++			attribute autoplay   {
++				w:string "autoplay" | w:string ""
++			}
++		audio.attrs.preload   =
++			attribute preload   {
++				w:string "none" | w:string "metadata" | w:string "auto" | w:string ""
++			}
++		audio.attrs.controls  =
++			attribute controls  {
++				w:string "controls" | w:string ""
++			}
++		audio.attrs.loop =
++			attribute loop {
++				w:string "loop" | w:string ""
++			}
++		audio.attrs.mediagroup =
++			attribute mediagroup {
++				string
++			}
++		audio.attrs.muted =
++			attribute muted {
++				w:string "muted" | w:string ""
++			}
++		audio.attrs.src =
++			attribute src {
++				common.data.uri.non-empty
++			}
+ 	audio.inner.flow =
+-		(	media.source
++		(	(	audio.attrs.src
++			|	source.elem*
++			)
+ 		,	track.elem*
+ 		,	common.inner.flow
+ 		)
+ 	audio.inner.phrasing =
+-		(	media.source
++		(	(	audio.attrs.src
++			|	source.elem*
++			)
+ 		,	track.elem*
+ 		,	common.inner.phrasing
+ 		)
+diff -r 1258a2c3712c relaxng/meta.rnc
+--- a/relaxng/meta.rnc	Fri Oct 05 23:34:14 2012 +0900
++++ b/relaxng/meta.rnc	Sat Oct 06 01:23:05 2012 +0900
+@@ -53,7 +53,11 @@
+ 		&	body.attrs.onafterprint?
+ 		&	body.attrs.onbeforeprint?
+ 		&	body.attrs.onbeforeunload?
++		&	body.attrs.onblur?
++		&	body.attrs.onerror?
++		&	body.attrs.onfocus?
+ 		&	body.attrs.onhashchange?
++		&	body.attrs.onload?
+ 		&	body.attrs.onmessage?
+ 		&	body.attrs.onoffline?
+ 		&	body.attrs.ononline?
+@@ -73,8 +77,16 @@
+ 		attribute onbeforeprint { common.data.functionbody }
+ 	body.attrs.onbeforeunload =
+ 		attribute onbeforeunload { common.data.functionbody }
++	body.attrs.onblur =
++		attribute onblur { common.data.functionbody }
++	body.attrs.onerror =
++		attribute onerror { common.data.functionbody }
++	body.attrs.onfocus =
++		attribute onfocus { common.data.functionbody }
+ 	body.attrs.onhashchange =
+ 		attribute onhashchange { common.data.functionbody }
++	body.attrs.onload =
++		attribute onload { common.data.functionbody }
+ 	body.attrs.onmessage =
+ 		attribute onmessage { common.data.functionbody }
+ 	body.attrs.onoffline =
+@@ -105,17 +117,14 @@
+ 	title.attrs =
+ 		( common.attrs )
+ 	title.inner =
+-		( text )
++		( replaceable-character-data )
+ 
+ ## Base URI: <base>
+ 
+ 	base.elem =
+ 		element base { base.inner & base.attrs }
+ 	base.attrs =
+-		(	common.attrs.basic
+-		&	common.attrs.i18n
+-		&	common.attrs.present
+-		&	common.attrs.other
++		(	common.attrs
+ 		&	(	(	base.attrs.href
+ 				&	base.attrs.target?
+ 				)
+@@ -128,7 +137,7 @@
+ 		}
+ 	base.attrs.target =
+ 		attribute target {
+-			common.data.browsing-context-or-keyword
++			common.data.browsing-context-name-or-keyword
+ 		}
+ 	base.inner =
+ 		( empty )
+@@ -137,16 +146,13 @@
+ 
+ 	link.elem =
+ 		element link { link.inner & link.attrs }
+-	link.attrs =
+-		(	common.attrs.basic
+-		&	common.attrs.i18n
+-		&	common.attrs.present
+-		&	common.attrs.other
++link.attrs =
++		(	common.attrs
+ 		&	link.attrs.href
+ 		&	link.attrs.rel
+-		&	shared-hyperlink.attrs.hreflang?
+-		&	shared-hyperlink.attrs.media?
+-		&	shared-hyperlink.attrs.type?
++		&	link.attrs.hreflang?
++		&	link.attrs.media?
++		&	link.attrs.type?
+ 		&	link.attrs.sizes?
+ 		#	link.attrs.title included in common.attrs
+ 		)
+@@ -158,6 +164,18 @@
+ 			attribute rel {
+ 				w:link-rel | common.data.uri.absolute
+ 			}
++		link.attrs.hreflang =
++		  attribute hreflang {
++		    common.data.langcode
++		  }
++		link.attrs.media =
++		  attribute media {
++		    common.data.mediaquery
++		  }
++		link.attrs.type =
++		  attribute type {
++		    common.data.mimetype
++		  }
+ 		link.attrs.sizes =
+ 			attribute sizes {
+ 				w:string "any" | common.data.sizes
+@@ -186,7 +204,7 @@
+ 				common.data.mediaquery
+ 			}
+ 	style.inner =
+-		( common.inner.anything )
++		( non-replaceable-character-data )
+ 		
+ 	common.elem.metadata |= style.elem
+ 
+@@ -211,10 +229,7 @@
+ 	meta.name.elem =
+ 		element meta { meta.inner & meta.name.attrs }
+ 	meta.name.attrs =
+-		(	common.attrs.basic
+-		&	common.attrs.i18n
+-		&	common.attrs.present
+-		&	common.attrs.other
++		(	common.attrs
+ 		&	meta.name.attrs.name
+ 		&	meta.name.attrs.content
+ 		)
+@@ -236,10 +251,7 @@
+ 	meta.http-equiv.refresh.elem =
+ 		element meta { meta.inner & meta.http-equiv.refresh.attrs }
+ 	meta.http-equiv.refresh.attrs =
+-		(	common.attrs.basic
+-		&	common.attrs.i18n
+-		&	common.attrs.present
+-		&	common.attrs.other
++		(	common.attrs
+ 		&	meta.http-equiv.attrs.http-equiv.refresh
+ 		&	meta.http-equiv.attrs.content.refresh
+ 		)
+@@ -260,10 +272,7 @@
+ 	meta.http-equiv.default-style.elem =
+ 		element meta { meta.inner & meta.http-equiv.default-style.attrs }
+ 	meta.http-equiv.default-style.attrs =
+-		(	common.attrs.basic
+-		&	common.attrs.i18n
+-		&	common.attrs.present
+-		&	common.attrs.other
++		(	common.attrs
+ 		&	meta.http-equiv.attrs.http-equiv.default-style
+ 		&	meta.http-equiv.attrs.content.default-style
+ 		)
+@@ -285,19 +294,13 @@
+ 	meta.charset.elem =
+ 		element meta { meta.inner & meta.charset.attrs }
+ 	meta.charset.attrs =
+-		(	common.attrs.basic
+-		&	common.attrs.i18n
+-		&	common.attrs.present
+-		&	common.attrs.other
++		(	common.attrs
+ 		&	meta.charset.attrs.charset
+ 		)
+ 		meta.charset.attrs.charset =
+ 			attribute charset {
+-				(common.data.charset & HTMLonly)
+-				| (xsd:string {
+-					pattern = "[uU][tT][fF]-8"
+-				} & XMLonly )
+-			} 
++				common.data.charset
++			}
+ 
+ ## Inline Character Encoding Statement for HTML: <meta http-equiv='content-type'>
+ 
+@@ -305,10 +308,7 @@
+ 		element meta { meta.inner & meta.http-equiv.content-type.attrs }
+ 		& HTMLonly
+ 	meta.http-equiv.content-type.attrs =
+-		(	common.attrs.basic
+-		&	common.attrs.i18n
+-		&	common.attrs.present
+-		&	common.attrs.other
++		(	common.attrs
+ 		&	meta.http-equiv.attrs.http-equiv.content-type
+ 		&	meta.http-equiv.attrs.content.content-type
+ 		)
+@@ -321,4 +321,5 @@
+ 				common.data.meta-charset
+ 			}
+ 
+-	common.elem.metadata |= ( meta.charset.elem | meta.http-equiv.content-type.elem )
++	common.elem.metadata |= meta.charset.elem
++	common.elem.metadata |= meta.http-equiv.content-type.elem
+diff -r 1258a2c3712c relaxng/phrase.rnc
+--- a/relaxng/phrase.rnc	Fri Oct 05 23:34:14 2012 +0900
++++ b/relaxng/phrase.rnc	Sat Oct 06 01:23:05 2012 +0900
+@@ -11,18 +11,13 @@
+ 	a.elem.flow =
+ 		element a { a.inner.flow & a.attrs }
+ 	a.attrs =
+-		(	common.attrs.basic
+-		&	common.attrs.i18n
+-		&	common.attrs.present
+-		&	common.attrs.other
+-		&	a.attrs.name?
+-		&	shared-hyperlink.attrs.href?
+-		&	shared-hyperlink.attrs.target?
+-		&	shared-hyperlink.attrs.rel?
+-		&	shared-hyperlink.attrs.hreflang?
+-		&	shared-hyperlink.attrs.media?
+-		&	shared-hyperlink.attrs.type?
+-		&	shared-hyperlink.attrs.ping?
++		(	common.attrs
++		& a.attrs.href?
++		& a.attrs.target?
++		& a.attrs.rel?
++		& a.attrs.hreflang?
++		& a.attrs.media?
++		& a.attrs.type?
+ 		&	(	common.attrs.aria
+ 			|	common.attrs.aria.implicit.link
+ 			)?
+@@ -31,6 +26,31 @@
+ 		  attribute name {
+ 		    common.data.id # XXX not what the spec says
+ 		  }
++		a.attrs.href =
++		  attribute href {
++		    common.data.uri
++		  }
++		a.attrs.target =
++		  attribute target {
++		    common.data.browsing-context-name-or-keyword
++		  }
++		a.attrs.rel =
++		  attribute rel {
++		    common.data.tokens
++		  }
++		a.attrs.hreflang =
++		  attribute hreflang {
++		    common.data.langcode
++		  }
++		a.attrs.media =
++		  attribute media {
++		    common.data.mediaquery
++		  }
++		a.attrs.type =
++		  attribute type {
++		    common.data.mimetype
++		  }
++
+ 	a.inner.phrasing =
+ 		( common.inner.phrasing )
+ 	a.inner.flow =
+@@ -39,37 +59,6 @@
+ 	common.elem.phrasing |= a.elem.phrasing
+ 	common.elem.flow |= a.elem.flow
+ 
+-## Shared hyperlink attributes
+-
+-  shared-hyperlink.attrs.href =
+-    attribute href {
+-      common.data.uri
+-    }
+-  shared-hyperlink.attrs.target =
+-    attribute target {
+-      common.data.browsing-context-or-keyword
+-    }
+-  shared-hyperlink.attrs.rel =
+-    attribute rel {
+-      w:a-rel | common.data.uri.absolute
+-    }
+-  shared-hyperlink.attrs.hreflang =
+-    attribute hreflang {
+-      common.data.langcode
+-    }
+-  shared-hyperlink.attrs.media =
+-    attribute media {
+-      common.data.mediaquery
+-    }
+-  shared-hyperlink.attrs.type =
+-    attribute type {
+-      common.data.mimetype
+-    }
+-  shared-hyperlink.attrs.ping =
+-    attribute ping {
+-      common.data.uris
+-    } & v5only & nonW3C
+-
+ ## Emphatic Stress: <em>
+ 
+ 	em.elem =
+diff -r 1258a2c3712c relaxng/revision.rnc
+--- a/relaxng/revision.rnc	Fri Oct 05 23:34:14 2012 +0900
++++ b/relaxng/revision.rnc	Sat Oct 06 01:23:05 2012 +0900
+@@ -2,17 +2,6 @@
+ ##  RELAX NG Schema for HTML 5: Revision Annotations                  #
+ # #####################################################################
+ 
+-## Common Attributes
+-
+-	edit.attrs.cite =
+-		attribute cite {
+-			common.data.uri
+-		}
+-	edit.attrs.datetime =
+-		attribute datetime {
+-			common.data.datetime | common.data.date
+-		}
+-
+ ## Inserts: <ins>
+ 
+ 	ins.elem.flow =
+@@ -21,9 +10,17 @@
+ 		element ins { ins.inner.phrasing & ins.attrs }
+ 	ins.attrs =
+ 		(	common.attrs
+-		&	edit.attrs.cite?
+-		&	edit.attrs.datetime?
++		&	ins.attrs.cite?
++		&	ins.attrs.datetime?
+ 		)
++		ins.attrs.cite =
++			attribute cite {
++				common.data.uri
++			}
++		ins.attrs.datetime =
++			attribute datetime {
++				common.data.datetime | common.data.date
++			}
+ 	ins.inner.flow =
+ 		( common.inner.flow )
+ 	ins.inner.phrasing =
+@@ -40,9 +37,17 @@
+ 		element del { del.inner.phrasing & del.attrs }
+ 	del.attrs =
+ 		(	common.attrs
+-		&	edit.attrs.cite?
+-		&	edit.attrs.datetime?
++		&	del.attrs.cite?
++		&	del.attrs.datetime?
+ 		)
++		del.attrs.cite =
++			attribute cite {
++				common.data.uri
++			}
++		del.attrs.datetime =
++			attribute datetime {
++				common.data.datetime | common.data.date
++			}
+ 	del.inner.flow =
+ 		( common.inner.flow )
+ 	del.inner.phrasing =
+diff -r 1258a2c3712c relaxng/tables.rnc
+--- a/relaxng/tables.rnc	Fri Oct 05 23:34:14 2012 +0900
++++ b/relaxng/tables.rnc	Sat Oct 06 01:23:05 2012 +0900
+@@ -157,38 +157,6 @@
+ 	tr.inner =
+ 		( ( td.elem | th.elem )* )
+ 
+-## Common Table Cell Attributes
+-
+-	tables.attrs.cell-structure =
+-		(	tables.attrs.colspan?
+-		&	tables.attrs.rowspan?
+-		)
+-		tables.attrs.colspan =
+-			attribute colspan {
+-				common.data.integer.positive
+-			}
+-		tables.attrs.rowspan =
+-			attribute rowspan {
+-				common.data.integer.non-negative
+-			}
+-
+-	tables.attrs.access-headers =
+-		( tables.attrs.headers? )
+-		tables.attrs.headers =
+-			attribute headers {
+-				common.data.idrefs
+-			}
+-
+-	tables.attrs.define-headers =
+-		( tables.attrs.scope? )
+-		tables.attrs.scope =
+-			attribute scope {
+-				(	w:string "row"
+-				|	w:string "col"
+-				|	w:string "rowgroup"
+-				|	w:string "colgroup"
+-				)
+-			}
+ 		tables.attrs.abbr =
+ 			attribute abbr {
+ 				text
+@@ -200,11 +168,24 @@
+ 		element td { td.inner & td.attrs }
+ 	td.attrs =
+ 		(	common.attrs
+-		&	tables.attrs.cell-structure
+-		&	tables.attrs.headers?
++		&	td.attrs.colspan?
++		&	td.attrs.rowspan?
++		&	td.attrs.headers?
+ #		&	tables.attrs.alignment
+ 		&	common.attrs.aria?
+ 		)
++		td.attrs.colspan =
++			attribute colspan {
++				common.data.integer.positive
++			}
++		td.attrs.rowspan =
++			attribute rowspan {
++				common.data.integer.non-negative
++			}
++		td.attrs.headers =
++			attribute headers {
++				common.data.idrefs
++			}
+ 	td.inner =
+ 		( common.inner.flow )
+ 
+@@ -214,11 +195,32 @@
+ 		element th { th.inner & th.attrs }
+ 	th.attrs =
+ 		(	common.attrs
+-		&	tables.attrs.cell-structure
+-		&	tables.attrs.scope?
+-		&	tables.attrs.headers?
++		&	th.attrs.scope?
++		&	th.attrs.colspan?
++		&	th.attrs.rowspan?
++		&	th.attrs.headers?
+ #		&	tables.attrs.alignment
+ 		&	common.attrs.aria.implicit.th?
+ 		)
++		th.attrs.scope =
++			attribute scope {
++				(	w:string "row"
++				|	w:string "col"
++				|	w:string "rowgroup"
++				|	w:string "colgroup"
++				)
++			}
++		th.attrs.colspan =
++			attribute colspan {
++				common.data.integer.positive
++			}
++		th.attrs.rowspan =
++			attribute rowspan {
++				common.data.integer.non-negative
++			}
++		th.attrs.headers =
++			attribute headers {
++				common.data.idrefs
++			}
+ 	th.inner =
+ 		( common.inner.flow )
+diff -r 1258a2c3712c relaxng/web-forms.rnc
+--- a/relaxng/web-forms.rnc	Fri Oct 05 23:34:14 2012 +0900
++++ b/relaxng/web-forms.rnc	Sat Oct 06 01:23:05 2012 +0900
+@@ -9,6 +9,7 @@
+ 	common-form.attrs =
+ 		(	common-form.attrs.name?
+ 		&	common-form.attrs.disabled?
++		&	common-form.attrs.form?
+ 		)
+ 		
+ 	common-form.attrs.name = 
+@@ -295,17 +296,9 @@
+ 		(	common.attrs
+ 		&	common-form.attrs
+ 		&	shared-form.attrs.readonly?
+-		&	textarea.attrs.rows-and-cols-wf1
+ 		&	common.attrs.aria.implicit.input?
+ 		#FIXME onfocus, onblur, onselect,onchange
+ 		)
+-		# This is ugly. 
+-		textarea.attrs.rows-and-cols-wf1 = 
+-			textarea.attrs.rows-and-cols-wf1.inner	
+-		textarea.attrs.rows-and-cols-wf1.inner =
+-			(	textarea.attrs.cols
+-			&	textarea.attrs.rows
+-			)
+ 		textarea.attrs.cols = 
+ 			attribute cols {
+ 				common.data.integer.positive
+@@ -315,7 +308,7 @@
+ 				common.data.integer.positive
+ 			}
+ 	textarea.inner =
+-		( text )
++		( replaceable-character-data )
+ 
+ 	common.elem.phrasing |= textarea.elem
+ 
+@@ -394,10 +387,6 @@
+ 	
+ ## Shared Definitions for Complex Button
+ 	
+-	button.attrs.value =
+-		attribute value {
+-			string
+-		}
+ 	button.inner = 
+ 		( common.inner.phrasing )
+ 	
+@@ -409,13 +398,17 @@
+ 		(	common.attrs
+ 		&	common-form.attrs
+ 		&	button.submit.attrs.type?
+-		&	button.attrs.value?
++		&	button.submit.attrs.value?
+ 		&	common.attrs.aria.implicit.button?
+ 		)
+ 		button.submit.attrs.type =
+ 			attribute type {
+ 				w:string "submit"
+ 			}
++		button.submit.attrs.value =
++			attribute value {
++				string
++			}
+ 
+ 	button.elem = button.submit.elem
+ 	
+@@ -427,13 +420,17 @@
+ 		(	common.attrs
+ 		&	common-form.attrs
+ 		&	button.reset.attrs.type
+-		&	button.attrs.value? #REVISIT I guess this still affects the DOM
++		&	button.reset.attrs.value? #REVISIT I guess this still affects the DOM
+ 		&	common.attrs.aria.implicit.button?
+ 		)
+ 		button.reset.attrs.type =
+ 			attribute type {
+ 				w:string "reset"
+ 			}
++		button.reset.attrs.value =
++			attribute value {
++				string
++			}
+ 
+ 	button.elem |= button.reset.elem
+ 	
+@@ -445,7 +442,7 @@
+ 		(	common.attrs
+ 		&	common-form.attrs
+ 		&	button.button.attrs.type
+-		&	button.attrs.value? #REVISIT I guess this still affects the DOM
++		&	button.button.attrs.value? #REVISIT I guess this still affects the DOM
+ 		&	(	common.attrs.aria
+ 			|	common.attrs.aria.implicit.button
+ 			)?
+@@ -454,6 +451,10 @@
+ 			attribute type {
+ 				w:string "button"
+ 			}
++		button.button.attrs.value =
++			attribute value {
++				string
++			}
+ 
+ 	button.elem |= button.button.elem
+ 
+@@ -468,7 +469,7 @@
+ 		&	form.attrs.action? #REVISIT Should this be required anyway?
+ 		&	form.attrs.method?
+ 		&	form.attrs.enctype?
+-		&	common-form.attrs.name?
++		&	form.attrs.name?
+ 		&	form.attrs.accept-charset?
+ 		&	(	common.attrs.aria
+ 			|	common.attrs.aria.implicit.region
+@@ -482,6 +483,10 @@
+ 			attribute method {
+ 				form.attrs.method.data
+ 			}
++		form.attrs.name =
++			attribute name {
++				form.data.nonemptystring
++			}
+ 			form.attrs.method.data = 
+ 				( w:string "get" | w:string "post" )
+ 		form.attrs.enctype =
+diff -r 1258a2c3712c relaxng/web-forms2.rnc
+--- a/relaxng/web-forms2.rnc	Fri Oct 05 23:34:14 2012 +0900
++++ b/relaxng/web-forms2.rnc	Sat Oct 06 01:23:05 2012 +0900
+@@ -6,9 +6,6 @@
+ 
+ ## Shared attributes for form controls
+ 
+-	common-form.attrs &=
+-		( common-form.attrs.form? )
+-
+ 	common-form.attrs.form |= 
+ 		attribute form {
+ 			common.data.idref
+@@ -40,7 +37,7 @@
+ 
+ 	shared-form.attrs.formtarget = 
+ 		attribute formtarget {
+-			common.data.browsing-context-or-keyword
++			common.data.browsing-context-name-or-keyword
+ 		}
+ 
+ 	shared-form.attrs.formnovalidate = 
+@@ -559,7 +556,7 @@
+ 			}
+ 		input.url.attrs.value =
+ 			attribute value {
+-				w:string "" | common.data.uri.absolute
++				string "" | common.data.uri.absolute
+ 			}
+ 		
+ 	input.elem |= input.url.elem
+@@ -674,10 +671,6 @@
+ 
+ ## Text Area: <textarea>, extensions
+ 
+-	textarea.attrs.rows-and-cols-wf1.inner &=
+-		notAllowed
+-	textarea.attrs.rows-and-cols-wf1 |= 
+-		empty
+ 	textarea.attrs &=
+ 		(	shared-form.attrs.maxlength?
+ 		&	shared-form.attrs.autofocus? 
+@@ -748,7 +741,7 @@
+ 			}
+ 		form.attrs.target = 
+ 			attribute target {
+-				common.data.browsing-context-or-keyword
++				common.data.browsing-context-name-or-keyword
+ 			}
+ 		form.attrs.autocomplete = 
+ 			attribute autocomplete {

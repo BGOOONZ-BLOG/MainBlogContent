@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>
+      The `csp` member
+    </title>
+    <script src="http://www.w3.org/Tools/respec/respec-w3c-common" class=
+    "remove">
+</script>
+    <script class='remove'>
+/**/
+    var respecConfig = {
+    specStatus: 'unofficial',
+    shortName: 'appmanifest-csp',
+    subtitle: 'Extension to the manifest specification',
+    edDraftURI: 'http://w3c.github.io/manifest-csp/',
+    previousMaturity: 'FPWD',
+    //previousURI: '',
+    editors: [{
+        name: 'Anssi Kostiainen',
+        company: 'Intel Corporation',
+        companyURL: 'http://intel.com'
+    }],
+    wg: 'Web Platform Working Group',
+    wgURI: 'http://www.w3.org/WebPlatform/WG/',
+    license: 'w3c-software-doc',
+    wgPublicList: 'public-webapps',
+    wgPatentURI: 'http://www.w3.org/2004/01/pp-impl/83482/status',
+    noLegacyStyle: true,
+    otherLinks: [
+        {
+        key: 'Repository',
+        data: [{
+            value: 'We are on Github.',
+            href: 'https://github.com/w3c/manifest-csp'
+        }, {
+            value: 'File a bug.',
+            href: 'https://github.com/w3c/manifest-csp/issues'
+        }, {
+            value: 'Commit history.',
+            href: 'https://github.com/w3c/manifest-csp/commits/gh-pages'
+        },
+           {
+            value: 'Mailing list:',
+            href: 'http://lists.w3.org/Archives/Public/public-webapps/'
+        }]
+    }]
+    };
+    </script>
+  </head>
+  <body>
+    <section id='abstract'>
+      <p>
+        This specification defines a [[!CSP11]] extension to the 
+          [[!appmanifest]] specification.
+      </p>
+    </section>
+    <section id="sotd">
+      <p>
+        Implementors need to be aware that this specification is extremely
+        unstable. <strong>Implementors who are not taking part in the
+        discussions will find the specification changing out from under them in
+        incompatible ways.</strong> Vendors interested in implementing this
+        specification before it eventually reaches the Candidate Recommendation
+        phase should join the aforementioned mailing lists, or <a href=
+        "https://github.com/w3c/manifest">subscribe to the repository on
+        GitHub</a>, and take part in the discussions.
+      </p>
+    </section>
+    <section class="informative">
+      <h2>
+        Usage Examples
+      </h2>
+      <p>
+        This section shows how developers can make use of the various features
+        of this specification.
+      </p>
+      <section class="informative">
+        <h3>
+          Example - restrictive CSP policy
+        </h3>
+        <p>
+          The following policy allows fetching images, scripts, and CSS from
+          the same origin. It blocks everything else.
+        </p>
+        <pre class="example highlight json" title="Using CSP in a manifest">
+{
+  "name": "Super Racer 2000",
+  "csp": "default-src 'none'; script-src 'self'; connect-src 'self'; img-src 'self'; style-src 'self'",
+  "start_url": "/start.html",
+  "display": "fullscreen",
+  "orientation": "landscape"
+}
+</pre>
+      </section>
+    </section>
+    <section>
+      <h2>
+        Common conventions and dependencies
+      </h2>
+      <p id="ecmascript-abstractop">
+        The <dfn><a href=
+        "http://people.mozilla.org/~jorendorff/es6-draft.html#sec-ordinary-object-internal-methods-and-internal-slots-getownproperty-p">
+        [[\GetOwnProperty]]</a></dfn> operation, and the <a class="external"
+        href=
+        "http://people.mozilla.org/~jorendorff/es6-draft.html#sec-ecmascript-data-types-and-values">
+        <dfn>Type</dfn>(<var>x</var>)</a> notation are defined in
+        [[!ECMASCRIPT]]. Processing also relies on various algorithms defined
+        in [[!HTML]], [[!FETCH]], and [[!URL]].
+      </p>
+      <p>
+        When instructed to <dfn>Trim</dfn>(<var>x</var>), a user agent MUST
+        behave as if [[!ECMASCRIPT]]'s <a href=
+        "https://people.mozilla.org/~jorendorff/es6-draft.html#sec-string.prototype.trim">
+        String.prototype.trim()</a> function had been called on the string
+        <var>x</var>.
+      </p>
+      <p>
+        As the manifest uses the JSON format, this specification relies on the
+        types defined in [[!ECMA-404]] specification: namely <dfn title=
+        "json-object">object</dfn>, <dfn title="json-array">array</dfn>,
+        <dfn title="json-number">number</dfn>, <dfn title=
+        "json-string">string</dfn>, <code>true</code>, <code>false</code>, and
+        <code>null</code>. Strict type checking is not enforced by this
+        specification. Instead, each member's definition specifies the steps
+        required to process a particular member and what to do when a type does
+        not match what is expected.
+      </p>
+      <p>
+        The concepts <dfn><a href=
+        "http://w3c.github.io/manifest/#dfn-manifest">manifest</a></dfn>,
+        <dfn><a href=
+        "http://w3c.github.io/manifest/#dfn-associated-with-a-manifest">associated
+        with a manifest</a></dfn>, and <dfn><a href=
+        "http://w3c.github.io/manifest/#dfn-issue-a-developer-warning">issue a
+        developer warning</a></dfn> are defined in [[!appmanifest]].
+      </p>
+    </section>
+    <section>
+      <h2>
+        Processing the manifest
+      </h2>
+      <p>
+        At the <a href=
+        "http://w3c.github.io/manifest/#dfn-extension-point">extension
+        point</a>:
+      </p>
+      <ol>
+        <li>Let <var>set of directives</var> be the result of running the
+        <a>steps for processing the <code>csp</code> member</a>.
+        </li>
+        <li>If <var>set of directives</var> is <code>undefined</code>, then
+        skip this substep:
+          <ol>
+            <li>For any subsequent fetch of a resource that is <a>associated
+            with a manifest</a> <var>manifest</var>, append a header named
+            "<code>Content-Security-Policy</code>" with value <var>set of
+            directives</var> to its response headers.
+            </li>
+          </ol>
+        </li>
+      </ol>
+    </section>
+    <section>
+      <h2>
+        <code title="">csp</code> member
+      </h2>
+      <p>
+        The <dfn id="member-csp"><code>csp</code></dfn> member is a <a title=
+        "json-string">string</a> that represents a <dfn>supplemental <a href=
+        "https://w3c.github.io/webappsec/specs/content-security-policy/#security-policy">
+        security policy</a></dfn>. The string is a <dfn>valid supplemental
+        security policy</dfn> if it matches the <a href=
+        "https://w3c.github.io/webappsec/specs/content-security-policy/#policy-token">
+        <code>policy-token</code> production</a> defined in [[!CSP11]].
+      </p>
+      <div class="note">
+        <p>
+          The <code>csp</code> member supplements the <a href=
+          "https://w3c.github.io/webappsec/specs/content-security-policy/#policy-delivery">
+          policy delivery</a> mechanisms defined in [[!CSP11]], and allows the
+          author to indicate that the user agent is to enforce a
+          <a>supplemental security policy</a> (according to the rules of
+          <a href=
+          "https://w3c.github.io/webappsec/specs/content-security-policy/#enforcing-multiple-policies">
+          enforcing multiple policies</a> [[!CSP11]]) for a resource
+          <a>associated with a manifest</a>.
+        </p>
+      </div>
+      <p>
+        The <dfn>steps for processing the csp member</dfn> is given by the
+        following algorithm. The algorithm takes a <a>manifest</a>
+        <var>manifest</var> as an argument, and returns a <a>valid supplemental
+        security policy</a> or <code>undefined</code>.
+      </p>
+      <ol>
+        <li>Let <var>value</var> be the result of calling the
+        <a>[[\GetOwnProperty]]</a> internal method of <var>manifest</var> with
+        argument "csp".
+        </li>
+        <li>Let <var>type</var> be <a>Type</a>(<var>value</var>).
+        </li>
+        <li>If <var>type</var> is not "string", and is not
+        <code>undefined</code>, then <a>issue a developer warning</a> that the
+        type of the policy is invalid, and return <code>undefined</code>.
+        </li>
+        <li>Let <var>set of directives</var> be a set returned by the
+          <a href="https://w3c.github.io/webappsec/specs/content-security-policy/#parse-the-policy">
+          parse the policy</a> [[!CSP11]] algorithm, that takes
+          <var>value</var> as argument.
+        </li>
+        <li>If <var>set of directives</var> matches the <a href=
+        "https://w3c.github.io/webappsec/specs/content-security-policy/#policy-token">
+          <code>policy-token</code> production</a> [[!CSP11]], return <var>set
+          of directives</var>, otherwise, <a>issue a developer warning</a> that
+          the policy is invalid and return <code>undefined</code>.
+        </li>
+      </ol>
+    </section>
+    <section id="conformance" data-status="done">
+      <p>
+        There is only one class of product that can claim conformance to this
+        specification: a <dfn>user agent</dfn>.
+      </p>
+    </section>
+    <section class="informative">
+      <h2>
+        Use cases and requirements
+      </h2>
+      <p class="issue">
+        TBW...
+      </p>
+    </section>
+    <section class="appendix">
+      <h2>
+        Acknowledgments
+      </h2>
+      <p>
+        This document reuses text from the [[!HTML]] specification, edited by
+        Ian Hickson, as permitted by the license of that specification.
+      </p>
+    </section>
+  </body>
+</html>

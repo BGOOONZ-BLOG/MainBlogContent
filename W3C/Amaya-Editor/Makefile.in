@@ -1,0 +1,186 @@
+#
+# Main Makefile for Thot/Amaya source tree
+# Generated from Makefile.in
+# Daniel Veillard, Irene Vatton, 2009
+#
+
+@VPATHOPT@= @srcdir@
+THOTDIR = @top_srcdir@
+THOTINCLUDES = @THOTINCLUDES@
+
+include Options
+
+LIBWWW	   = libwww
+
+#MKP: adding davlib
+SUBDIRS	= @SUBDIRS@ tools thotlib batch annotlib @DAVDIR@ amaya
+EXTRA_SUBDIRS= $(BUILDRAPTOR) @BUILDLIBWWW@ $(WX_BUILDDIR) $(GL_BUILDDIR)
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+libdir = @libdir@
+bindir = @bindir@
+
+srcdir	= $(THOTDIR)
+
+default : tools gl @BUILDWXWIDGETS@ @BUILDLIBWWW@ @BUILDRAPTOR@ thotlib batch amaya_prog print_prog
+
+amaya : tools thotlib amaya_prog print_prog
+
+print : tools thotlib print_prog
+
+Options:
+	@CP@ Options.orig Options
+
+force :
+
+batch: rebuild force
+	@(if test -d batch ; then cd batch ; \
+	  $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" ; fi)
+
+tools: rebuild force
+	@(if test -d tools ; then cd tools ; \
+	  $(MAKE) CC="$(CC)" CFLAGS="-O -x c" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" all ; fi)
+
+thotlib: rebuild force
+	@(if test -d thotlib ; then cd thotlib ; \
+	  $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" all ; fi)
+
+amaya_prog: rebuild force bin/str
+	@(if test -d amaya ; then cd amaya ; \
+	  $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" amaya ; fi)
+
+wxwidgets: rebuild force
+	@(if test -d "$(WX_BUILDDIR)" ; then cd "$(WX_BUILDDIR)" ; \
+	  $(MAKE) ; fi)
+
+gl: rebuild force
+	@(if test -d "$(GL_BUILDDIR)" ; then cd "$(GL_BUILDDIR)" ; \
+	  $(MAKE) ; fi)
+
+print_prog: rebuild force bin/str
+	@(if test -d thotlib ; then cd thotlib ; \
+  $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" print ; fi)
+
+all : rebuild
+	@(for dir in $(EXTRA_SUBDIRS) $(SUBDIRS) ;\
+	  do if test -d $$dir ; then cd $$dir ; \
+	  $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" all ; \
+	  cd .. ; fi ;done )
+
+clean : rebuild
+	$(RM) libpng.a libz.a libjpeg.a
+	@(for dir in $(SUBDIRS) $(EXTRA_SUBDIRS) ;\
+	  do if test -d $$dir ; then cd $$dir ; \
+	  $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" clean ; \
+	  cd .. ; fi ;done )
+
+reallyclean : clean
+	$(RM) config.cache config.h config.log config.status
+
+tempclean : 
+	find ../ -name '.#*' -print0 | xargs -0r rm -f
+	find ../ -name \*~ -exec rm {} \;
+	find ../ \( -name '*~' -o -name '#*#' \) -print0 | xargs --no-run-if-empty --null rm -vf
+
+install : rebuild
+	@(for dir in $(SUBDIRS) ;\
+	  do if test -d $$dir ; then cd $$dir ; \
+	  $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" install ; \
+	  cd .. ; fi ;done )
+
+uninstall : 
+	@(for dir in $(SUBDIRS) ;\
+	  do if test -d $$dir ; then cd $$dir ; \
+	  $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" uninstall ; \
+	  cd .. ; fi ;done )
+
+update :
+	@(cd $(THOTDIR) ; cvs update -dP)
+	@(if [ -d $(THOTDIR)/../$(LIBWWW) ] ; then \
+	  cd $(THOTDIR)/../$(LIBWWW) ; cvs update -dP; fi)
+
+commit :
+	@(cd $(THOTDIR) ; cvs commit)
+
+tools/mkdep/mkdep :
+	@(cd tools/mkdep ; $(MAKE) CC="$(CC)" CFLAGS="-O -x c" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" mkdep)
+
+depend depends : rebuild tools/mkdep/mkdep
+	@(for dir in $(SUBDIRS) ;\
+	  do if test -d $$dir ; then cd $$dir ; \
+	  $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" depend ; \
+	  cd .. ; fi ;done )
+
+bin/cextract :
+	@(cd tools/cextract-$(CEXTRACT_VER) ; $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" cextract)
+
+proto : rebuild bin/cextract
+	@(for dir in $(SUBDIRS) ;\
+	  do if test -d $$dir ; then cd $$dir ; \
+	  $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" proto ; \
+	  cd .. ; fi ;done )
+
+mkid : 
+	@(echo rebuilding $(THOTDIR)/ID reference file)
+	@(cd $(THOTDIR); mkid --lang-map=makes/id-lang.map . classes/org/w3c/*)
+
+#
+# Rules to rebuild the libWWW package
+#
+libwww: force
+	$(MAKE) -C libwww
+		@($(ECHO) "libwww is installed")
+
+#
+# Rules to build the raptor RDF library
+#
+raptor: force
+	$(MAKE) -C raptor
+	@($(ECHO) "raptor is installed")
+
+#
+# This section try to maintain the Makefile(s) up-to-date in
+# case the autoconf sources are modified.
+#
+
+MAKEFILE_IN= \
+@EXTRA_MAKEFILE_IN@ \
+$(THOTDIR)/Options.in \
+$(THOTDIR)/configure.in \
+$(THOTDIR)/Makefile.in \
+$(THOTDIR)/amaya/Makefile.in \
+$(THOTDIR)/batch/Makefile.in \
+$(THOTDIR)/thotlib/Makefile.in \
+$(THOTDIR)/thotlib/include/Makefile.in \
+$(THOTDIR)/tools/Makefile.in \
+$(THOTDIR)/tools/mkdep/Makefile.in \
+$(THOTDIR)/tools/cextract-1.7/Makefile.in
+
+rebuild : tools/mkdep/mkdep Makefile
+
+${srcdir}/config.h.in: stamp-h.in
+
+${srcdir}/stamp-h.in: configure.in config.h.in
+	cd ${srcdir} && autoheader
+	echo timestamp > ${srcdir}/stamp-h.in
+
+stamp.h: config.h.in config.status
+	./config.status
+	cd ./$(WX_BUILDDIR)/ && ./config.status && cd -
+
+Makefile: $(MAKEFILE_IN) config.status
+	./config.status
+	cd ./$(WX_BUILDDIR)/ && ./config.status && cd -
+
+config.status: configure
+	./config.status --recheck
+	cd ./$(WX_BUILDDIR)/ && ./config.status --recheck && cd -
+
+tags:	dummy
+	rm -f ../TAGS
+	find ../ -name "*.[hc]" -print | xargs etags --declarations -a -o ../TAGS
+
+dummy:
+
+

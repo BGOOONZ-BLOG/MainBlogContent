@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Low-level Web NFC API for Trusted Applications</title>
+  <meta charset="UTF-8">
+  <script src='https://www.w3.org/Tools/respec/respec-w3c-common'
+          class='remove'></script>
+  <script class="remove">
+    var respecConfig = {
+          specStatus:           "NOTE",
+          shortName:            "nfc",
+          publishDate:          "2014-10-20",
+          //previousPublishDate:  "",
+          //previousMaturity:     "",
+          edDraftURI:           "http://www.w3.org/2012/nfc/",
+          // lcEnd:                "",
+          crEnd:                "",
+          editors: [
+            { name: "Luc Yriarte", company: "Intel",
+                    companyURL: "http://www.intel.com/" },
+            { name: "Samuel Ortiz", company: "Intel",
+                    companyURL: "http://www.intel.com/" },
+            { name: "Don Coleman", company: "Chariot Solutions",
+                    companyURL: "http://chariotsolutions.com/" }
+          ],
+          inlineCSS:    true,
+          noIDLIn:      true,
+          extraCSS:     ["../ReSpec.js/css/respec.css"],
+          wg:           "NFC working group",
+          wgURI:        "http://www.w3.org/2012/nfc/",
+          wgPublicList: "public-nfc",
+          wgPatentURI:  "http://www.w3.org/Consortium/Patent-Policy-20040205/",
+    };
+  </script>
+</head>
+
+<!--
+Style guide to contributors:
+============================
+- this document uses ReSpec, see
+  http://dev.w3.org/2009/dap/ReSpec.js/documentation.html
+- use 80 characters wide lines, whenever possible (except long links)
+- keep sections 2 empty lines apart
+- put comments in front of sections, for better readability with syntax
+  coloring editors
+- use indentation with care: it may improve readability, but at the expense of
+  line length
+- when descriptions of attributes is short, use the <dd> elements even when
+  the text also contains conformance statements (e.g. MUST, SHOULD, MAY).
+  No use repeating the same information in a separate paragraph.
+-->
+
+<body>
+
+<!-- Abstract -->
+<section id="abstract">
+Near Field Communication (NFC) is an international standard (ISO/IEC 18092) 
+that specifies an interface and protocol for simple wireless interconnection of
+closely coupled devices operating at 13.56 MHz. 
+(see <a href="http://www.nfc-forum.org/specs/spec_list/">
+http://www.nfc-forum.org/specs/spec_list/</a>). 
+There are three groups of application scenarios for NFC: 
+<ul>
+<li>The first one is to hold a device close to a wireless tag to exchange some
+  digital information or data.</li>
+<li>The second is to hold two devices close to each other in order to exchange
+  some information or data between them.</li>
+<li>The third one is to make payments by holding mobile phones close to point
+  of sales terminals instead of swiping smart cards.</li>
+</ul>
+NFC enables wireless communication between two devices at close proximity,
+usually less than a few centimeters.
+</section>
+
+
+<!-- Status of this document -->
+<section id="sotd">
+  <p>
+    The <a href="http://www.w3.org/2012/nfc/">NFC Working Group</a> was
+    <a href=
+    "http://www.w3.org/2012/09/nfc-wg-charter.html#scope">chartered</a> to
+    produce a specification that "will be designed to permit execution in
+    the Web browser context, and otherwise to conform to the execution and
+    security model defined by the System Applications Working Group."
+    Specifically, the API that was worked on in the NFC Working Group did
+    not adhere to the Web's security model.
+    This Note contains the final Editor's Draft reflecting this direction,
+    the 20 October 2014 Editor's Draft. The NFC Working Group Charter expired
+    shortly after on 1 November 2014. To more clearly communicate the scope of
+    this specification, it is herein referred to as the "Low-level Web NFC API
+    for Trusted Applications".
+  </p>
+</section>
+
+
+<!-- Introduction -->
+<section class="informative">
+  <h2>Introduction</h2>
+The NFC API supports the following features:
+<ul>
+<li>Reading and writing <a>NDEF message</a>s on <a>NFC tag</a>s</li>
+<li>Sending and receiving <a>NDEF message</a>s on peer targets</li>
+<li>Bluetooth or WiFi pairing (or "handover") with a peer target</li>
+</ul>
+
+<p>
+Here are some possible use cases:
+<ul>
+<li><b>Tap to Play</b>: tap your device to another to play a peer-to-peer game,
+using the <a>NFCPeer</a> interface to exchange <a>NDEF message</a>s.</li>
+<li><b>Tap to Share</b>: tap to share some data, e.g. coupons, contacts,
+using the <a>NFCPeer</a> interface to exchange <a>NDEF message</a>s.</li>
+<li><b>Tap to Control</b>: tap to control another device, like a TV remote,
+using the "handover" capability of the <a>NFCPeer</a> interface.</li>
+<li><b>Tap to Connect</b>: tap to connect via WiFi or Bluetooth,
+using the "handover" capability of the <a>NFCPeer</a> interface.</li>
+<li><b>Tap to Read</b>: tap to read NFC tags,
+using the <a>NFCTag</a> interface.</li>
+<li><b>Tap to Write</b>: tap to write NFC tags,
+using the <a>NFCTag</a> interface.</li>
+</ul>
+
+  <p>An example of use is provided below:
+  <pre class="example highlight">
+    var hello = new NDEFRecordText("hello world", "en-US", "UTF-8");
+    
+    navigator.nfc.ontagfound = function(e) {
+        window.console.log('NFC Tag found!');
+        var tag = e.tag;
+        tag.writeNDEF(new NDEFMessage([hello]));
+    }
+    
+    navigator.nfc.startPoll().catch(
+      function(e) {
+        window.console.error(e);
+      });
+  </pre>
+
+</section>
+
+
+<!-- Conformance -->
+<section id="conformance">
+  <p>This specification defines conformance criteria that apply to a single
+  product: the <dfn id="ua">user agent</dfn> that implements the interfaces
+  that it contains.
+  </p>
+  <p>Implementations that use ECMAScript to implement the APIs defined in
+  this specification MUST implement them in a manner consistent with the
+  ECMAScript Bindings defined in the Web IDL specification [[!WEBIDL]], as
+  this specification uses that specification and terminology.</p>
+</section>
+
+
+<!-- Terminology -->
+<section>
+  <h2>Terminology</h2>
+  <p>The <dfn>
+  <a href="http://dev.w3.org/html5/spec/webappapis.html#eventhandler"><code>
+  EventHandler</code></a></dfn> interface represents a callback used for event
+  handlers as defined in [[!HTML5]].</p>
+
+  <p>The concepts <dfn>
+  <a href="http://dev.w3.org/html5/spec/webappapis.html#queue-a-task">
+       queue a task</a></dfn> and <dfn>
+  <a href="http://dev.w3.org/html5/spec/webappapis.html#fire-a-simple-event">
+  fire a simple event</a></dfn> are defined in [[!HTML5]].</p>
+
+  <p>The terms <dfn>
+  <a href="http://dev.w3.org/html5/spec/webappapis.html#event-handlers">
+  event handler</a></dfn>  and <dfn>
+<a href="http://dev.w3.org/html5/spec/webappapis.html#event-handler-event-type">
+  event handler event types</a></dfn> are defined in [[!HTML5]].</p>
+  
+  <p>The <dfn><a href="http://dom.spec.whatwg.org/#event"><code>Event</code>
+  </a></dfn> interface and the <dfn>
+  <a href="http://dom.spec.whatwg.org/#promise"><code>Promise</code></a></dfn>
+  interface as well as the concept of a 
+  <a href="http://dom.spec.whatwg.org/#concept-resolver"><dfn>resolver</dfn>
+  </a>are defined in [[!DOM4]].</p>
+
+  <p>A <dfn title="NFC tag">NFC tag</dfn> is a passive, unpowered NFC device.
+  The <a>NFC tag</a> is powered by magnetic induction when an active NFC device is 
+  in close vicinity. A <a>NFC tag</a> contains a single <a>NDEF message</a>.</p>
+  
+  <p>A <dfn title="NDEF message">NDEF message</dfn> encapsulates one or more
+  application-defined <a>NDEF record</a>s. NDEF stands for 
+  NFC Forum Data Exchange Format, a lightweight binary message format. NDEF
+  messages can be stored on a <a>NFC tag</a> or exchanged between NFC-enabled
+  devices.</p>
+  
+  <p>A <dfn title="NDEF record">NDEF record</dfn> has a maximum payload of
+  2^32-1 bytes. The record also contains information about the payload size,
+  type, and an optional identifier.</p>
+  
+</section>
+
+
+<!-- Extended interface Navigator -->
+<section>
+  <h2>Extensions to <code>Navigator</code> object</h2>
+  <p>The <a>NFCManager</a> interface is exposed on [[!HTML]]'s
+  <a href="http://www.whatwg.org/specs/web-apps/current-work/#dom-navigator">
+  <code>Navigator</code></a> object.
+  </p>
+  <dl title="partial interface Navigator" class="idl">
+    <dt>readonly attribute NFCManager nfc</dt>
+    <dd>The object that exposes the default NFC manager on the device.</dd>
+  </dl>
+</section>
+
+
+<!-- Interface NFCManager -->
+<section>
+  <h2><a>NFCManager</a> Interface</h2>
+  <p>The <a>NFCManager</a> interface defines access to NFC functionality and
+    offers methods to control local NFC behavior like polling for targets.
+  </p>
+  
+  <dl title="[NoInterfaceObject]
+             interface NFCManager : EventTarget"
+          class="idl">
+
+    <dt>Promise startPoll()</dt>
+    <dd>Start polling for <a>NFC tag</a>s or peer devices, and power on the NFC
+    hardware if needed. This method returns a new <code>Promise</code> to notify
+    the caller that the NFC hardware is now polling. The resulting promise is 
+    fulfilled even if the device was already polling, as state changes are tracked
+    with the <code>onpollstart</code> and <code>onpollstop</code> handlers.</dd>
+    
+    <dt>Promise stopPoll()</dt>
+    <dd>Stop polling for <a>NFC tag</a>s or peer devices. This method returns 
+    a new <code>Promise</code> to notify the caller that the NFC hardware 
+    stopped polling. This method may power off the NFC hardware, depending on
+    the underlying implementation.</dd>
+    
+    <dt class="no-docs"> attribute EventHandler onpollstart</dt>
+    <dd>Event handler called when the <code>pollstart</code>
+    event is dispatched.</dd>
+    
+    <dt class="no-docs"> attribute EventHandler onpollstop</dt>
+    <dd>Event handler called when the <code>pollstop</code>
+    event is dispatched.</dd>
+    
+    <dt class="no-docs"> attribute EventHandler ontagfound</dt>
+    <dd>The <code>tagfound</code> event of type <code><a>NFCTagEvent</a></code> MUST
+    be fired whenever a new <a>NFCTag</a> is detected by the NFC manager.
+    The <code><a>tag</a></code> property of the event MUST contain the 
+    corresponding <a>NFCTag</a> object.</dd>
+    
+    <dt class="no-docs"> attribute EventHandler ontaglost</dt>
+    <dd>Event handler called when the <code>taglost</code>
+    event is dispatched.</dd>
+    
+    <dt class="no-docs"> attribute EventHandler onpeerfound</dt>
+    <dd>The <code>peerfound</code> event of type <code><a>NFCPeerEvent</a></code> MUST
+    be fired whenever a new <a>NFCPeer</a> is detected by the NFC manager.
+    The <code><a>peer</a></code> property of the event MUST contain the 
+    corresponding <a>NFCPeer</a> object.</dd>
+    
+    <dt class="no-docs"> attribute EventHandler onpeerlost</dt>
+    <dd>Event handler called when the <code>peerlost</code>
+    event is dispatched.</dd>
+  </dl>
+
+  <section>
+  <h3>Event handlers</h3>
+  <p>The following are the <a>event handlers</a> (and their corresponding
+  <a>event handler types</a>) that MUST be supported as attributes by the
+  <a>NFC</a> object.
+  <table class="simple">
+    <thead>
+      <tr>
+        <th>event handler</th>
+        <th>event name</th>
+        <th>event type</th>
+        <th>short description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong><code>onpollstart</code></strong></td>
+        <td><code><dfn>pollstart</dfn></code></td>
+        <td><a>simple event</a></td>
+        <td>fired when the <code>polling</code> state changes to 
+          <code>true</code></td>
+      </tr>
+      <tr>
+        <td><strong><code>onpollstop</code></strong></td>
+        <td><code><dfn>pollstop</dfn></code></td>
+        <td><a>simple event</a></td>
+        <td>fired when the <code>polling</code> state changes to 
+          <code>false</code></td>
+      </tr>
+      <tr>
+        <td><strong><code>ontagfound</code></strong></td>
+        <td><code><dfn>tagfound</dfn></code></td>
+        <td><code><a>NFCTagEvent</a></code> with <a>tag</a> property set to
+          the new <a>NFCTag</a> object.</td>
+        <td>detect a new <code>NFCTag</code></td>
+      </tr>
+      <tr>
+        <td><strong><code>ontaglost</code></strong></td>
+        <td><code><dfn>taglost</dfn></code></td>
+        <td><a>simple event</a></td>
+        <td>fired when the <code>NFCTag</code> detected by the 
+          adaptor moves out of range.</td>
+      </tr>
+      <tr>
+        <td><strong><code>onpeerfound</code></strong></td>
+        <td><code><dfn>peerfound</dfn></code></td>
+        <td><code><a>NFCPeerEvent</a></code> with <a>peer</a> property set to
+          the new <a>NFCPeer</a> object.</td>
+        <td>detect a new <code>NFCPeer</code></td>
+      </tr>
+      <tr>
+        <td><strong><code>onpeerlost</code></strong></td>
+        <td><code><dfn>peerlost</dfn></code></td>
+        <td><a>simple event</a></td>
+        <td>fired when the <code>NFCPeer</code> detected by the 
+          adaptor moves out of range.</td>
+      </tr>
+    </tbody>
+  </table>
+  </section> <!-- Event handlers -->
+</section> <!-- NFCManager -->      
+
+
+<!-- Interface NFCTagEvent -->
+<section>
+  <h2><a>NFCTagEvent</a> Interface</h2>
+
+  <dl title="interface NFCTagEvent : Event" class="idl">
+
+    <dt>readonly attribute NFCTag tag</dt>
+    <dd>When getting, the user agent MUST return the <a>NFCTag</a>
+    that triggered the event.</dd>
+  </dl>
+
+</section><!-- NFCTagEvent -->
+
+
+<!-- Interface NFCPeerEvent -->
+<section>
+  <h2><a>NFCPeerEvent</a> Interface</h2>
+
+  <dl title="interface NFCPeerEvent : Event" class="idl">
+
+    <dt>readonly attribute NFCPeer peer</dt>
+    <dd>When getting, the user agent MUST return the <a>NFCPeer</a>
+    that triggered the event.</dd>
+  </dl>
+
+</section><!-- NFCPeerEvent -->
+
+
+<!-- Interface NDEFMessageEvent -->
+<section>
+  <h2><a>NDEFMessageEvent</a> Interface</h2>
+
+  <dl title="interface NDEFMessageEvent : Event" class="idl">
+
+    <dt>readonly attribute NDEFMessage message</dt>
+    <dd>When getting, the user agent MUST return the <a>NDEFMessage</a>
+    that triggered the event.</dd>
+  </dl>
+
+</section><!-- NDEFMessageEvent -->
+
+
+<!-- Interface NFCTag -->
+<section>
+  <h2><a>NFCTag</a> Interface</h2>
+  
+  <dl title="[NoInterfaceObject]
+             interface NFCTag"
+          class="idl">
+
+    <dt><a>Promise</a> readNDEF()</dt>
+    <dd>Read NDEF data from the <a>NFC tag</a>. This method returns 
+    a new <code>Promise</code> that will notify the caller with the result of
+    the operation, which is a <a>NDEFMessage</a>.</dd>
+    
+    <dt><a>Promise</a> writeNDEF(in NDEFMessage message)</dt>
+    <dd>Write a <a>NDEF message</a> on the <a>NFC tag</a>. This method returns 
+    a new <code>Promise</code> to notify the caller about the operation 
+    success or failure.
+      <dl class='parameters'>
+        <dt>NDEFMessage message</dt>
+        <dd>The <a>NDEF message</a> to write on the <a>NFC Tag</a></dd>
+      </dl>
+    </dd>
+    
+  </dl>
+
+</section> <!-- NFCTag -->
+
+
+<!-- Interface NFCPeer -->
+<section>
+  <h2><a>NFCPeer</a> Interface</h2>
+  
+  <dl title="[NoInterfaceObject]
+             interface NFCPeer : EventTarget"
+          class="idl">
+    
+    <dt><a>Promise</a> sendNDEF(in NDEFMessage message)</dt>
+    <dd>Send a <a>NDEF message</a> to the NFC peer device. This method returns 
+    a new <code>Promise</code> to notify the caller about the operation 
+    success or failure.
+      <dl class='parameters'>
+        <dt>NDEFMessage message</dt>
+        <dd>The <a>NDEF message</a> to send to the NFC peer device.</dd>
+      </dl>
+    </dd>
+    
+    <dt><a>Promise</a> startHandover(in HandoverType handoverType)</dt>
+    <dd>Initiates WiFi or Bluetooth pairing with the NFC peer-to-peer target.
+    This method returns a new <code>Promise</code> to notify the caller about
+    the operation success or failure.
+      <dl class='parameters'>
+        <dt>HandoverType handoverType</dt>
+        <dd>Select <code>"wifi"</code> or <code>"bluetooth"</code> pairing.</dd>
+      </dl>
+    </dd>
+    
+    <dt class="no-docs"> attribute EventHandler onmessageread</dt>
+    <dd>The <code>messageread</code> event of type <code><a>NDEFMessageEvent</a></code> MUST
+    be fired whenever a new <a>NDEFMessage</a> is sent by the peer device.
+    The <code><a>message</a></code> property of the event MUST contain the 
+    corresponding <a>NDEFMessage</a> object.</dd>
+  </dl>
+
+  <section>
+  <h3>Event handlers</h3>
+  <p>The following are the <a>event handlers</a> (and their corresponding
+  <a>event handler types</a>) that MUST be supported as attributes by the
+  <a>NFCPeer</a> object.
+  <table class="simple">
+    <thead>
+      <tr>
+        <th>event handler</th>
+        <th>event name</th>
+        <th>event type</th>
+        <th>short description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong><code>onmessageread</code></strong></td>
+        <td><code><dfn>messageread</dfn></code></td>
+        <td><code><a>NDEFMessageEvent</a></code> with <a>message</a> property set to
+          the new <a>NDEFMessage</a> object.</td>
+        <td>fired when a <code>NDEFMessage</code> is sent by the peer device.
+          </td>
+      </tr>
+    </tbody>
+  </table>
+  </section> <!-- Event handlers -->
+</section> <!-- NFCPeer -->
+
+
+<!-- Interface NDEFMessage -->
+<section>
+  <h2><a>NDEFMessage</a> Interface</h2>
+  
+  <p>A NDEFMessage contains one or more NDEFRecords.</p>
+  
+  <dl title="[
+Constructor(byte［］bytes),
+Constructor(NDEFRecord［］records)
+]
+             interface NDEFMessage"
+          class="idl">
+          
+    <dt>readonly attribute NDEFRecord[] records</dt>
+    <dd>MUST return an array of all <code>NDEFRecord</code> objects part of 
+    the <a>NDEF message</a>.</dd>
+
+    <dt><a>Promise</a> getBytes()</dt>
+    <dd>Get the binary representation of the <a>NDEF message</a>. This method  
+    returns a new <code>Promise</code> to notify the caller with the result of
+    the operation, which is of type <code>byte[]</code> i.e. a Javascript 
+    Array of Number objects. </dd>
+  </dl>
+
+</section> <!-- NDEFMessage -->
+
+
+<!-- Interface NDEFRecord -->
+<section>
+  <h2><a>NDEFRecord</a> Interface</h2>
+    
+  <dl title="[
+Constructor(TNF tnf, 
+  optional DOMString type, 
+  optional byte［］payload, 
+  optional DOMString id)
+]
+             interface NDEFRecord"
+          class="idl">
+
+    <dt>readonly attribute TNF tnf</dt>
+    <dd>The record's 3-bit Type Name Format constant.</dd>
+
+    <dt>readonly attribute DOMString? type</dt>
+    <dd>A string identifier describing the type of the payload.</dd>
+
+    <dt>readonly attribute DOMString? id</dt>
+    <dd>An identifier for the record, in the form of a URI reference.</dd>
+
+    <dt><a>Promise</a> getPayload()</dt>
+    <dd>Extract the binary payload of the <a>NDEF record</a>. This method  
+    returns a new <code>Promise</code> to notify the caller with the result of
+    the operation, which is of type <code>byte[]</code> i.e. a Javascript 
+    Array of Number objects. </dd>
+  </dl>
+    
+</section> <!-- NDEFRecord -->
+
+
+<!-- Interface NDEFRecordEmpty -->
+<section>
+  <h2><a>NDEFRecordEmpty</a> Interface</h2>
+  
+  <p>Empty NDEF record with TNF 0x00. Record type and payload must be null.</p>
+  
+  <dl title="[Constructor()]
+             interface NDEFRecordEmpty : NDEFRecord"
+          class="idl">
+  </dl>
+
+</section> <!-- NDEFRecordEmpty -->
+
+
+<section>
+    <h2>Well-known</h2>
+    <p>Well-known record types are defined in the "NFC Record Type Definition (RTD) Specification", NFC Forum, 2006. All well-known records have TNF 0x01.</p>
+
+    <!-- Interface NDEFRecordText -->
+    <section>
+      <h2><a>NDEFRecordText</a> Interface</h2>
+      
+      <p>TNF 0x01, Record type "T", see "NFC Text RTD Specification", NFC Forum, 2006.</p>
+  
+      <dl title="[Constructor(DOMString text, 
+                 optional DOMString languageCode,
+                 optional DOMString encoding)]
+                 interface NDEFRecordText : NDEFRecord"
+              class="idl">
+          
+        <dt>readonly attribute DOMString text</dt>
+        <dd>The encoded text.</dd>
+          
+        <dt>readonly attribute DOMString languageCode</dt>
+        <dd>The language code string value, followed by 
+          <a href="http://www.ietf.org/rfc/rfc3066.txt">IANA[RFC 3066]</a>
+          (ex: en-US, ko-KR).</dd>
+          
+        <dt>readonly attribute DOMString encoding</dt>
+        <dd>The encoding type MUST be either UTF-8 or UTF-16</dd>
+      </dl>
+
+    </section> <!-- NDEFRecordText -->
+
+
+    <!-- Interface NDEFRecordURI -->
+    <section>
+      <h2><a>NDEFRecordURI</a> Interface</h2>
+      
+      <p>TNF 0x01, Record type "U", see "URI RTD Specification", NFC Forum, 2006.</p> <!-- The uri is the full URI http://w3c.org rather than the prefix and the shortened uri 0x3 w3.org -->      
+  
+      <dl title="[Constructor(DOMString uri)]
+                 interface NDEFRecordURI : NDEFRecord"
+              class="idl">
+          
+        <dt>readonly attribute DOMString uri</dt>
+        <dd>The URI string that will be stored in the payload.</dd>
+      </dl>
+      
+      <pre class="example highlight">
+          var record = NDEFRecordURI("http://w3c.org"); 
+          // uri is stored payload as 0x03 + w3c.org          
+          console.log(record.uri); // prints http://w3c.org
+      </pre>
+      
+    </section> <!-- NDEFRecordURI -->
+    
+    
+    <!-- Interface NDEFRecordSmartPoster -->
+    <section>
+      <h2><a>NDEFRecordSmartPoster</a> Interface</h2>
+
+      <p>TNF 0x01, Record type "Sp", see "Smart Poster RTD Specification", NFC Forum, 2006.</p>
+      
+      <dl title="[Constructor(DOMString uri,
+                 optional NDEFRecordText［］titles,
+                 optional DOMString action,
+                 optional NDEFRecordMedia［］icons,
+                 optional unsigned long targetSize,
+                 optional DOMString targetMIME)]
+                 interface NDEFRecordSmartPoster : NDEFRecord"
+              class="idl">
+
+        <dt>readonly attribute DOMString uri</dt>
+        <dd>The URI field of the Smart Poster record, REQUIRED by the 
+          NFC forum specification.</dd>
+
+        <dt>readonly attribute NDEFRecordText[]? titles</dt>
+        <dd>The title in different languages. There MUST NOT be more than
+          one title record with the same language code string value.</dd>
+
+        <dt>readonly attribute SmartPosterAction? action</dt>
+        <dd>The possible actions defined by the NFC forum Smart Poster 
+        Record Type.</dd>
+
+        <dt>readonly attribute NDEFRecordMedia[]? icons</dt>
+        <dd>The Smart Poster Record can contain one or more icons, that can
+          also be animated.</dd>
+
+        <dt>readonly attribute unsigned long? targetSize</dt>
+        <dd>The size of the URI target in bytes.</dd>
+
+        <dt>readonly attribute DOMString? targetMIME</dt>
+        <dd>The MIME type of the URI target.</dd>
+
+      </dl>
+
+    </section> <!-- NDEFRecordSmartPoster -->
+    
+    
+    <section>
+        <h2>Handover</h2>
+        
+        <p><b>TODO:</b> should we use the generic NDEFRecord for Handover records: "ac", "Hc", "Hr", "Hs" or create specific subclasses?</p>
+        <!-- Handover Records are well known too 
+        RTD_ALTERNATIVE_CARRIER: [0x61, 0x63], // "ac"
+        RTD_HANDOVER_CARRIER: [0x48, 0x63], // "Hc"
+        RTD_HANDOVER_REQUEST: [0x48, 0x72], // "Hr"
+        RTD_HANDOVER_SELECT: [0x48, 0x73], // "Hs"
+        -->
+        
+    </section>
+    
+    
+</section> <!-- Well Known Record Types -->
+
+
+<!-- Interface NDEFRecordMedia -->
+<section>
+  <h2><a>NDEFRecordMedia</a> Interface</h2>
+  
+  <p>Media records have TNF 0x02 and use a MIME Type to describe the contents of the payload. The "NFC Data Exchange Format (NDEF)
+    Technical Specification", NFC Forum, 2006, specifies the MIME type should be in the format, as defined in <a href="http://www.ietf.org/rfc/rfc2046.txt">[RFC 2046]</a>. The mimeType in the constructor, is stored in type attribute of the <code>NDEFRecord</code>. The payload may be constructed as a byte[] or DOMString.</p>
+    
+  <dl title="[Constructor(DOMString mimeType, byte［］payload),
+ Constructor(DOMString mimeType, DOMString payload)]
+             interface NDEFRecordMedia : NDEFRecord"
+          class="idl">    
+  </dl>
+
+  <pre class="example highlight">
+      var record = NDEFRecordMedia("application/json", '{"message" : "Hello, world"}');      
+  </pre>
+
+</section> <!-- NDEFRecordMedia -->
+
+
+<!-- Interface NDEFRecordAbsoluteURI -->
+<section>
+  <h2><a>NDEFRecordAbsoluteURI</a> Interface</h2>
+  
+  <p>Absolute URI records have TNF 0x03 and use a URI in the type field to describe the contents of the payload. The "NFC Data Exchange Format (NDEF)
+  Technical Specification", NFC Forum, 2006, specifies the type should be an absolute-URI, as defined in <a href="http://www.ietf.org/rfc/rfc3986.txt">[RFC 3986]</a>.</p>
+  <p>Note that the URI in an <code>NDEFRecordAbsoluteURI</code> describes the payload. Users who want to store a URI in an <code>NDEFRecord</code> should use <a>NDEFRecordURI</a>.</p>
+    
+  <dl title="[Constructor(DOMString type, byte［］payload),
+ Constructor(DOMString type, DOMString payload)]
+             interface NDEFRecordAbsoluteURI : NDEFRecord"
+          class="idl">
+
+  </dl>
+  
+  <pre class="example highlight">
+      // Windows LaunchApp Record
+      
+      // [00] 00 01 0C 57 69 6E 64 6F 77 73 50 68 6F 6E 65 26 |...WindowsPhone&|
+      // [10] 7B 66 35 38 37 34 32 35 32 2D 31 66 30 34 2D 34 |{f5874252-1f04-4|
+      // [20] 63 33 66 2D 61 33 33 35 2D 34 66 61 33 62 37 62 |c3f-a335-4fa3b7b|
+      // [30] 38 35 33 32 39 7D 00 01 20                      |85329}.. |
+
+      var payload = [ 
+        0x00, 0x01, 0x0C, 0x57, 0x69, 0x6E, 0x64, 0x6F, 0x77, 0x73, 0x50, 0x68, 0x6F, 0x6E, 0x65, 0x26,
+        0x7B, 0x66, 0x35, 0x38, 0x37, 0x34, 0x32, 0x35, 0x32, 0x2D, 0x31, 0x66, 0x30, 0x34, 0x2D, 0x34,
+        0x63, 0x33, 0x66, 0x2D, 0x61, 0x33, 0x33, 0x35, 0x2D, 0x34, 0x66, 0x61, 0x33, 0x62, 0x37, 0x62,
+        0x38, 0x35, 0x33, 0x32, 0x39, 0x7D, 0x00, 0x01, 0x20
+      ]
+            
+      var record = new NDEFRecordAbsoluteURI("windows.com/LaunchApp", payload);
+  </pre>
+  
+</section> <!-- NDEFRecordAbsoluteURI -->
+
+
+<!-- Interface NDEFRecordExternal -->
+<section>
+  <h2><a>NDEFRecordExternal</a> Interface</h2>
+  
+  <p>External type records allow custom name spaces to be defined. External records have TNF 0x04. The external type begins with the reverse domain name followed by a colon and the type. The external type should be passed to the constructor without the <code>urn:nfc:ext:</code> prefix. The record type is defined in the "NFC Record Type Definition (RTD) Specification", NFC Forum, 2006, Section 2.2 NFC Forum External Type.</p>
+    
+  <dl title="[Constructor(DOMString type, byte［］payload),
+ Constructor(DOMString type, DOMString payload)]
+             interface NDEFRecordExternal : NDEFRecord"
+          class="idl">
+
+  </dl>
+  
+  <pre class="example highlight">
+      // Android Application Record AAR
+      var record = new NDEFRecordExternal("android.com:pkg", "com.nxp.nfc.tagwriter");
+  </pre>
+
+</section> <!-- NDEFRecordExternal -->
+
+<section>
+    <h2>Record Chunking</h2>
+    
+    <p>When reading chunked content, implementations should combine TNF unchanged (0x06) records with the first chunk creating one logical <code>NDEFRecord</code>. Refer to "NFC Data Exchange Format (NDEF) Technical Specification" NFC Forum, 2006, Section 2.3.3 Record Chunks for more information.</p>
+</section>
+
+<!-- Interface Enumerations -->
+<section>
+  <h2>Enumerations</h2>
+    
+  <p>NFC Type Name Format (TNF) constants are defined in the "NFC Data Exchange Format (NDEF) Technical Specification". The TNF field describes the format of the data in the record type field. The attribute <code>tnf</code> can have the following values:</p>
+  <dl class="idl" title="enum TNF">
+    <dt>Empty</dt>
+    <dd>
+        0x00. Empty.
+    </dd>
+    <dt>Well-known</dt> <!-- WellKnown -->
+    <dd>
+      0x01. NFC Forum well-known type as defined in the NFC RTD specification.
+    </dd>
+    <dt>Media-type</dt>
+    <dd>
+       0x02. Media-type as defined in RFC 2046
+    </dd>
+    <dt>AbsoluteURI</dt>
+    <dd>
+       0x03. Absolute URI as defined in RFC 3986
+    </dd>
+    <dt>External</dt>
+    <dd>
+       0x04. NFC Forum External type as defined in the NFC RTD specification.
+    </dd>
+    <dt>Unknown</dt>
+    <dd>
+       0x05. Unknown.
+    </dd>    
+    <dt>Unchanged</dt>
+    <dd>
+       0x06. Unchanged.
+    </dd>
+    <dt>Reserved</dt>
+    <dd>
+       0x07. Reserved.
+    </dd>
+    
+  </dl>
+  
+    
+  <p>The attribute <code>action</code> can have the following values:
+  <dl class="idl" title="enum SmartPosterAction">
+    <dt>do</dt>
+    <dd>
+      Do the action. For instance, send a SMS, dial a phone number, or open
+      a URI.
+    </dd>
+    <dt>save</dt>
+    <dd>
+      Store a SMS, bookmark a URI, save a phone number in the address book.
+    </dd>
+    <dt>open</dt>
+    <dd>
+      Open for edition.
+    </dd>
+  </dl>
+  
+  <p>The attribute <code>handoverType</code> can have the following values:
+  <dl class="idl" title="enum HandoverType">
+    <dt>wifi</dt>
+    <dd>
+      Initiate WiFi handover.
+    </dd>
+    <dt>bluetooth</dt>
+    <dd>
+      Initiate bluetooth pairing.
+    </dd>
+  </dl>
+</section> <!-- Enumerations -->
+
+
+<section>
+<h2>Acknowledgements</h2>
+<p>The editors would like to thank Jaehyun Park and Taehee Lee of Samsung for
+their work on the initial API design. We would also like to thank the members
+of the W3C SysApps group for their help on the API specification process, and
+the members of the W3C NFC group for their feedback on this API.</p>
+</section>
+
+</body>
+</html>

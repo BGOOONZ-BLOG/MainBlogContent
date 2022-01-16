@@ -1,0 +1,235 @@
+#
+# Makefile for batch directory, the schemas compilers' directory
+# Generated from batch/Makefile.in
+# Daniel Veillard, 1997
+#
+
+.SUFFIXES: .LAN .GRM .c .o
+
+@VPATHOPT@= @srcdir@
+THOTDIR = @top_srcdir@
+
+include ../Options
+
+LIBS	= -L../thotlib/ -lThotKernel -lz @LIBS@ $(WX_LIBRARIES)
+INCLUDES= -DHAVE_CONFIG_H -I.. -I@srcdir@/f @THOTINCLUDES@ $(GUI_INCLUDES)
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+
+COMPILERS=../bin/grm ../bin/str ../bin/prs ../bin/tra ../bin/app
+
+GRMS     = APP.GRM PRESEN.GRM STRUCT.GRM TRANS.GRM
+
+LANGUAGES=*.GRM *.LAN *.LST
+
+.c.o :
+	$(CXX) '-DCPP="'"$(CPP)"'"' $(CXXFLAGS) $(THOT_OPTIONS) -DNODISPLAY $(INCLUDES) -c $< -o $@
+
+all : ../bin $(GRMS) $(COMPILERS) \
+          ../bin/printstr ../bin/rescandialogue
+
+APP.GRM : APP.LAN ../bin/grm
+	(DIR=`pwd` ; THOTDIR=$$DIR/$(THOTDIR) ; export THOTDIR ; \
+        cd @srcdir@ ; $$DIR/../bin/grm APP)
+
+PRESEN.GRM : PRESEN.LAN ../bin/grm
+	(DIR=`pwd` ; THOTDIR=$$DIR/$(THOTDIR) ; export THOTDIR ; \
+        cd @srcdir@ ; $$DIR/../bin/grm PRESEN)
+
+STRUCT.GRM : STRUCT.LAN ../bin/grm
+	(DIR=`pwd` ; THOTDIR=$$DIR/$(THOTDIR) ; export THOTDIR ; \
+        cd @srcdir@ ; $$DIR/../bin/grm STRUCT)
+
+TRANS.GRM : TRANS.LAN ../bin/grm
+	(DIR=`pwd` ; THOTDIR=$$DIR/$(THOTDIR) ; export THOTDIR ; \
+         cd @srcdir@ ; $$DIR/../bin/grm TRANS)
+
+TYP.GRM : TYP.LAN ../bin/grm
+	(DIR=`pwd` ; THOTDIR=$$DIR/$(THOTDIR) ; export THOTDIR ; \
+        cd @srcdir@ ; $$DIR/../bin/grm TYP)
+
+force :
+
+../thotlib/libThotKernel.a : force
+	@(cd ../thotlib ; $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" libThotKernel)
+
+../bin :
+	$(MKDIR) ../bin
+
+#
+# grm : compiler
+#
+GRM_OBJ= \
+	../thotlib/base/compilmsg.o \
+	parser.o \
+	grammar.o 
+
+grm : ../thotlib/libThotKernel.a ../bin ../bin/grm
+	 
+
+../bin/grm : $(GRM_OBJ) ../thotlib/libThotKernel.a
+	$(CXX) $(LDFLAGS) -o $@ $(GRM_OBJ) $(LIBS)
+	@$(ECHO) "====>" grm is done
+
+#
+# str : compiler
+#
+STR_OBJ = \
+        ../thotlib/base/compilmsg.o \
+	parser.o \
+	str.o
+
+str : STRUCT.GRM ../thotlib/libThotKernel.a ../bin ../bin/str
+	 
+
+../bin/str : $(STR_OBJ) $(GRMS) ../thotlib/libThotKernel.a
+	$(CXX) $(LDFLAGS) -o $@ $(STR_OBJ) $(LIBS)
+	@$(ECHO) "====>" str is done
+
+#
+# prs : compiler
+#
+PRS_OBJ = \
+	../thotlib/base/compilmsg.o \
+	parser.o \
+	prs.o
+
+prs : PRESEN.GRM ../thotlib/libThotKernel.a ../bin ../bin/prs
+	 
+
+../bin/prs : $(PRS_OBJ) ../thotlib/libThotKernel.a
+	$(CXX) $(LDFLAGS) -o $@ $(PRS_OBJ) $(LIBS)
+	@$(ECHO) "====>" prs is done
+
+#
+# typ : compiler
+#
+TYP_OBJ = \
+	../thotlib/base/compilmsg.o \
+	parser.o \
+	writetyp.o \
+	typ.o
+
+typ : TYP.GRM ../thotlib/libThotKernel.a ../bin ../bin/typ
+	 
+
+../bin/typ : $(TYP_OBJ) ../thotlib/libThotKernel.a
+	$(CXX) $(LDFLAGS) -o $@ $(TYP_OBJ) $(LIBS)
+	@$(ECHO) "====>" typ is done
+
+#
+# tra : compiler
+#
+TRA_OBJ = \
+	../thotlib/base/compilmsg.o \
+	parser.o \
+	writetra.o \
+	tra.o
+
+tra : TRANS.GRM ../thotlib/libThotKernel.a ../bin ../bin/tra
+	 
+
+../bin/tra : $(TRA_OBJ) ../thotlib/libThotKernel.a
+	$(CXX) $(LDFLAGS) -o $@ $(TRA_OBJ) $(LIBS)
+	@$(ECHO) "====>" tra is done
+
+#
+# app : compiler
+#
+APP_OBJ = \
+	../thotlib/base/compilmsg.o \
+	../thotlib/dialogue/callbackinit.o \
+	parser.o \
+	writeapp.o \
+	app.o
+
+app : APP.GRM ../thotlib/libThotKernel.a ../bin ../bin/app
+	 
+
+../bin/app : $(APP_OBJ) ../thotlib/libThotKernel.a
+	$(CXX) $(LDFLAGS) -o $@ $(APP_OBJ) $(LIBS)
+	@$(ECHO) "====>" app is done
+
+#
+# rescandialogue : renumbering of message list
+#
+RESCAN_OBJ = \
+	rescandialogue.o
+
+rescandialogue : ../bin ../bin/rescandialogue
+	 
+
+../bin/rescandialogue : $(RESCAN_OBJ)
+	$(CXX) -o $@ $(RESCAN_OBJ)
+	@$(ECHO) "====>" rescandialogue is done
+
+#
+# printstr : decompiler
+#
+PRINTSTR_OBJ = \
+	printstr.o
+
+printstr : ../thotlib/libThotKernel.a ../bin ../bin/printstr
+	 
+
+../bin/printstr : $(PRINTSTR_OBJ) ../thotlib/libThotKernel.a
+	$(CXX) $(LDFLAGS) -o $@ $(PRINTSTR_OBJ) $(LIBS)
+	@$(ECHO) "====>" printstr is done
+
+#
+# printprs : decompiler
+#
+PRINTPRS_OBJ = \
+	printprs.o
+
+printprs : ../thotlib/libThotKernel.a ../bin ../bin/printprs
+	 
+
+../bin/printprs : $(PRINTPRS_OBJ) ../thotlib/libThotKernel.a
+	$(CXX) $(LDFLAGS) -o $@ $(INCLUDES) $(PRINTPRS_OBJ) $(LIBS)
+	@$(ECHO) "====>" printprs is done
+
+clean :
+	$(RM) -f *.o dns_daemon
+
+install :
+
+uninstall :
+
+include .depends
+
+../tools/mkdep/mkdep : 
+	@(cd ../tools/mkdep ; $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)")
+
+.depends depend : ../tools/mkdep/mkdep
+	../tools/mkdep/mkdep -relative -vpath $(VPATH) $(INCLUDES) $(VPATH)/*.c  > .depends
+
+CEXTRACT= ../bin/cextract
+
+$(CEXTRACT) :
+	@(cd ../tools/cextract-$(CEXTRACT_VER) ; $(MAKE) )
+
+proto : ../bin/cextract
+	@(for i in @srcdir@/*.c ; \
+	  do \
+	  dir=`dirname $$i`;base=`basename $$i .c`; \
+	  if [ ! -d $$dir/f ] ; then $(MKDIR) $$dir/f ;fi;\
+	  $(CEXTRACT) $(CEXTRACT_FLAGS) -o /tmp/cextract.$$base.$$$$ $$i 2> /dev/null ; \
+	  if [ -f $$dir/f/"$$base"_f.h ] ; \
+	  then \
+	      delta=`$(DIFF) /tmp/cextract.$$base.$$$$ $$dir/f/"$$base"_f.h` ; \
+	      if [ "$$delta" != "" ] ; \
+	      then \
+	          echo "  $$i proto changed" ; \
+		  $(MV) /tmp/cextract.$$base.$$$$ $$dir/f/"$$base"_f.h ; \
+              else \
+	          $(RM) /tmp/cextract.$$base.$$$$ ; \
+	      fi ; \
+	  else \
+	      echo "  $$i proto added" ; \
+	      $(MV) /tmp/cextract.$$base.$$$$ $$dir/f/"$$base"_f.h ; \
+	  fi ; \
+	 done)
+

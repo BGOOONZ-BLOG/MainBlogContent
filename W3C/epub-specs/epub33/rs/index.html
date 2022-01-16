@@ -1,0 +1,2378 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+	<head>
+		<meta charset="utf-8" />
+		<title>EPUB Reading Systems 3.3</title>
+		<script src="https://www.w3.org/Tools/respec/respec-w3c" class="remove"></script>
+		<script src="../common/js/dfn-crossref.js" class="remove"></script>
+		<script src="../common/js/css-inline.js" class="remove"></script>
+		<script src="../common/js/data-test-display.js" class="remove"></script>
+		<script class="remove">
+			//<![CDATA[
+			var respecConfig = {
+				group: "epub",
+				wgPublicList: "public-epub-wg",
+				specStatus: "ED",
+				shortName: "epub-rs-33",
+				edDraftURI: "https://w3c.github.io/epub-specs/epub33/rs/",
+                previousPublishDate: "2021-07-12",
+                previousMaturity: "WD",
+				copyrightStart: "1999",
+				editors: [ 
+				{
+					name: "Matt Garrish",
+					company: "DAISY Consortium",
+					companyURL: "https://www.daisy.org",
+					w3cid: 51655
+				},
+				{
+					name: "Ivan Herman",
+					url: "https://www.w3.org/People/Ivan/",
+					company: "W3C",
+					w3cid: 7382,
+					orcid: "0000-0003-0782-2704",
+					companyURL: "https://www.w3.org",
+				},
+				{
+					name: "Dave Cramer",
+					company: "Invited Expert",
+					w3cid: 65283
+				}],
+				formerEditors: [
+				{
+					name: "Garth Conboy",
+					company: "Google",
+					companyURL: "https://www.google.com",
+					w3cid: 92141
+				},
+				{
+					name: "Marisa DeMeglio",
+					company: "DAISY Consortium",
+					companyURL: "https://www.daisy.org",
+					w3cid: 35713
+				},
+				{
+					name: "Daniel Weck",
+					company: "DAISY Consortium",
+					companyURL: "https://www.daisy.org",
+					w3cid: 45653
+				}],
+				includePermalinks: true,
+				permalinkEdge: true,
+				permalinkHide: false,
+				diffTool: "http://www.aptest.com/standards/htmldiff/htmldiff.pl",
+				github: {
+					repoURL: "https://github.com/w3c/epub-specs",
+					branch: "main"
+				},
+				localBiblio: {
+					"CSSSnapshot": {
+						"title": "CSS Snapshot",
+						"href": "https://www.w3.org/TR/CSS/"
+					},
+					"EPUBContentDocs-301": {
+						"authors":[
+						"Markus Gylling",
+						"William McCoy",
+						"Elika J. Etimad",
+						"Matt Garrish"],
+						"title": "EPUB Content Documents 3.0.1",
+						"href": "http://idpf.org/epub/301/spec/epub-contentdocs-20140626.html",
+						"date": "26 June 2014",
+						"publisher": "IDPF"
+					},
+					"EPUBPackages-32": {
+						"authors":[
+						"Matt Garrish",
+						"Dave Cramer"],
+						"title": "EPUB Packages 3.2",
+						"href": "https://www.w3.org/publishing/epub32/epub-packages.html",
+						"date": "08 May 2019",
+						"publisher": "EPUB 3 Community Group"
+					},
+					"H264": {
+						"title": "H.264 : Advanced video coding for generic audiovisual services",
+						"href": "https://www.itu.int/ITU-T/recommendations/rec.aspx?rec=13189",
+						"date": "2017-04-13"
+					},
+					"SVG": {
+						"title": "SVG",
+						"href": "https://www.w3.org/TR/SVG/",
+						"publisher": "W3C"
+					},
+					"W3CProcess": {
+						"title": "W3C Process Document",
+						"href": "https://www.w3.org/Consortium/Process/"
+					},
+				},
+				preProcess:[inlineCustomCSS, fixDefinitionCrossrefs],
+				postProcess: [data_test_display],
+				testSuiteURI: "https://w3c.github.io/epub-tests/index.html",
+				lint: {
+					"wpt-tests-exist": true,
+				}
+			};//]]></script>
+	</head>
+	<body>
+		<section id="abstract">
+			<p>EPUB® 3 defines a distribution and interchange format for digital publications and documents. The EPUB
+				format provides a means of representing, packaging, and encoding structured and semantically enhanced
+				Web content — including HTML, CSS, SVG and other resources — for distribution in a single-file
+				container.</p>
+			<p>This specification defines the conformance requirements for EPUB 3 Reading Systems — the user agents that
+				render EPUB Publications.</p>
+		</section>
+		<section id="sotd"></section>
+		<section id="sec-introduction">
+			<h2>Introduction</h2>
+
+			<section id="sec-intro-overview" class="informative">
+				<h3>Overview</h3>
+
+				<p>The EPUB 3 standard is separated into two distinct concerns: the authoring of <a>EPUB
+						Publications</a> is defined in the <a data-cite="epub-33#">core specification</a> [[EPUB-33]],
+					while this specification details the rendering requirements for them in EPUB Reading Systems.</p>
+
+				<p>An EPUB Reading System can take many forms. It might have a visual display area for rendering the
+					content to users, for example, or it might only provide audio playback of the content. As a result,
+					there is no single set of rules that all Reading Systems must follow. Rather, this specification
+					breaks down the rendering requirements based on a Reading System's capabilities and the features its
+					supports.</p>
+
+				<p>Moreover, this specification provides a great deal of flexibility to developers to create unique user
+					interfaces, such as in their bookshelves. As a result, metadata processing requirements are often
+					quite minimal, for example.</p>
+
+				<p>So, although this specification identifies the formal requirements for Reading Systems, it is not
+					possible to read this document in isolation. Developers should also familiarize themselves with the
+					full content structure of an EPUB Publication to understand the complete range of information that
+					is available.</p>
+
+				<div class="note">
+					<p>A conforming Reading System is not necessarily a single dedicated program or device but might
+						exist as a distributed system.</p>
+				</div>
+			</section>
+
+			<section id="sec-terminology">
+				<h3>Terminology</h3>
+
+				<p>This specification uses <a href="https://www.w3.org/TR/epub-33/#sec-terminology">terminology defined
+						in EPUB 3.3</a> [[EPUB-33]] as well as the terms defined in this section. Terms appear
+					capitalized wherever used.</p>
+
+				<p>Only the first instance of a term in a section links to its definition.</p>
+
+				<dl>
+					<dt>
+						<dfn id="dfn-content-display-area">Content Display Area</dfn>
+					</dt>
+					<dd>
+						<p>The area within the <a>Viewport</a> dedicated to the display of <a>EPUB Content
+							Documents</a>. The Content Display Area excludes any borders, margins, headers, footers, or
+							other decoration a <a>EPUB Reading System</a> might inject into the Viewport.</p>
+						<p>In the case of <a>synthetic spreads</a>, the Viewport contains two Content Display Areas.</p>
+					</dd>
+				</dl>
+			</section>
+
+			<section id="conformance"></section>
+
+			<section id="sec-intro-relations" class="informative">
+				<h3>Relationship to Other Specifications</h3>
+
+				<section id="rel">
+					<h4>Relationship to HTML</h4>
+
+					<p>The [[HTML]] standard is continuously evolving &#8212; there are no longer versioned releases of
+						it. That standard, in turn, references various technologies that continue to evolve, such as
+						MathML, SVG, CSS, and JavaScript.</p>
+
+					<p>Reading System developers must keep track of the changes to HTML, and the technologies it
+						references, to ensure they keep their systems up to date.</p>
+
+					<p>This specification does not require EPUB Reading Systems to support scripting, HTML forms or the
+						HTML DOM. Reading Systems conformant with this specification are only expected to be able to
+						process a conforming <a>EPUB Content Document</a>. As <a href="#sec-scripted-content">support
+							for scripting and HTML forms</a> is not compulsory, a conformant Reading System may not be a
+						fully-conformant HTML user agent.</p>
+				</section>
+
+
+				<section id="sec-overview-relations-svg">
+					<h4>Relationship to SVG</h4>
+
+					<p>This specification does not reference a specific version of [[SVG]], but instead uses an undated
+						reference. Whenever there is any ambiguity in this reference, the latest recommended
+						specification is the authoritative reference.</p>
+
+					<p>This approach ensures that EPUB will always keep pace with changes to the SVG standard. Reading
+						System developers must keep track of changes to the SVG standard to ensure they keep their
+						systems up to date.</p>
+				</section>
+			</section>
+		</section>
+		<section id="sec-pub-resources">
+			<h3>Publication Resource Processing</h3>
+
+			<p id="confreq-rs-epub-pub-res" class="support" data-tests="#cnt-xhtml-support">Reading Systems MUST process
+					<a data-cite="epub-33#sec-publication-resources">Publication Resources</a> [[EPUB-33]].</p>
+
+			<section id="sec-epub-rs-conf-foreign-res">
+				<h4>Foreign Resources</h4>
+
+				<p id="confreq-rs-foreign"
+					data-tests="#pub-foreign_image,#pub-foreign_xml-spine,#pub-foreign_xml-suffix-spine,#pub-foreign_bad-fallback,#pub-foreign_json-spine"
+					>Reading Systems MAY support an arbitrary set of <a>Foreign Resource</a> types, and MUST process
+					fallbacks for unsupported Foreign Resources as defined in <a
+						data-cite="epub-33#sec-foreign-restrictions">Foreign Resources</a> [[EPUB-33]] if not.</p>
+			</section>
+
+			<section id="sec-epub-rs-conf-remote-res">
+				<h4>Remote Resources</h4>
+
+				<p id="confreq-rs-remote">Reading Systems SHOULD support <a>remote resources</a>, as defined in <a
+						data-cite="epub-33#sec-resource-locations">Resource Locations</a> [[EPUB-33]].</p>
+			</section>
+
+			<section id="sec-epub-rs-conf-data-urls">
+				<h4>Data URLs</h4>
+
+				<p id="confreq-rs-data-urls" data-tests="#pub-data-urls_browsing-context,#pub-data-urls_top-level-content">Reading Systems MUST prevent data URLs
+					[[RFC2397]] from opening in <a data-cite="html#top-level-browsing-context">top-level browsing
+						contexts</a> [[HTML]], except when initiated through a Reading System affordance such as a
+					context menu. If a Reading System does not use a top-level browsing context for <a>Top-level Content
+						Documents</a>, for example if the <a>Top-level Content Document</a> is an SVG, it MUST also
+					prevent data URLs from opening as though they are Top-level Content Documents.</p>
+			</section>
+
+			<section id="sec-epub-rs-conf-cmt">
+				<h4>Core Media Types</h4>
+
+				<p id="confreq-rs-epub3-images"
+					data-tests="#pub-cmt-gif,#pub-cmt-jpg,#pub-cmt-png,#pub-cmt-svg,#pub-cmt-webp">If a Reading System
+					has a <a>Viewport</a>, it MUST support the <a data-cite="epub-33#cmt-grp-image">image Core Media
+						Type Resources</a> [[EPUB-33]].</p>
+
+				<p id="confreq-rs-epub3-mp3-aac" data-tests="#pub-cmt-mp3,#pub-cmt-mp4,#pub-cmt-opus">If it has the
+					capability to render pre-recorded audio, it MUST support the <a data-cite="epub-33#cmt-grp-audio"
+						>audio Core Media Type Resources</a> [[EPUB-33]] and SHOULD support Media Overlays
+					[[EPUB-33]].</p>
+
+				<p class="note" id="note-video-codecs">It is recommended that Reading Systems support at least one of
+					the H.264 [[H264]] and VP8 [[RFC6386]] video codecs, but this is not a conformance requirement
+					&#8212; a Reading System may support other video codecs, or none at all. Reading System developers
+					should take into consideration factors such as breadth of adoption, video playback quality, and
+					technology usage royalty requirements when making the choice to implement video in either format, or
+					both.</p>
+			</section>
+
+			<section id="sec-epub-rs-conf-xml">
+				<h4>XML Processing</h4>
+
+				<p>A Reading System MUST be all of the following:</p>
+
+				<ul class="conformance-list">
+					<li>
+						<p id="confreq-rs-xml-nval"
+							data-tests="#pub-xml-non-validating_invalid,#pub-xml-non-validating_unclosed">a <a
+								data-cite="xml#proc-types">conformant non-validating processor</a> [[XML]].</p>
+					</li>
+					<li>
+						<p id="confreq-rs-xml-ns" data-tests="#pub-xml-names">a <a href="xml-names#ProcessorConformance"
+								>conformant processor</a> as defined in [[XML-NAMES]].</p>
+					</li>
+				</ul>
+
+				<p id="confreq-rs-xml-extid" data-tests="#pub-xml-external-id">In addition, when processing XML
+					documents, it MUST NOT resolve <a data-cite="xml#NT-ExternalID">external identifiers</a> in DOCTYPE,
+					ENTITY and NOTATION declarations [[XML]].</p>
+			</section>
+
+			<section id="sec-epub-rs-i18n">
+				<h2>Internationalization</h2>
+				<p>A Reading System MUST process, for all <a data-cite="epub-33#dfn-publication-resource">Publication
+						Resources</a>, the attributes that set the language for the documents' contents, when
+					applicable. This includes:</p>
+				<ul>
+					<li>the <code>xml:lang</code> attribute for all XML documents like the <a
+							data-cite="epub-33#attrdef-xml-lang">Package Document</a> or the <a
+							data-cite="epub-33#sec-overlay-docs">Media Overlay Document</a> [[EPUB-33]].</li>
+
+					<li>the <code>xml:lang</code> and <code>lang</code> attributes for <a
+							data-cite="html#the-lang-and-xml:lang-attributes">XHTML</a> [[HTML]] or <a
+							href="https://www.w3.org/TR/SVG/struct.html#LangSpaceAttrs">SVG</a> [[SVG]].</li>
+				</ul>
+
+				<p>Similarly, a Reading System MUST process, for all <a data-cite="epub-33#dfn-publication-resource"
+						>Publication Resources</a>, the attributes that set the base direction for the documents'
+					contents, when applicable. This includes:</p>
+
+				<ul>
+					<li>the <code>dir</code> attribute for the <a data-cite="epub-33#attrdef-dir">Package
+						Document</a> [[EPUB-33]]. (See also <a href="#sec-pkg-doc-base-dir"></a> for further
+						details.)</li>
+					<li>the <code>dir</code> attribute for <a data-cite="html#the-dir-attribute"
+						>XHTML</a> [[HTML]].</li>
+					<li>the <code>direction</code> attribute for <a
+							href="https://www.w3.org/TR/SVG/text.html#DirectionProperty">SVG</a> [[SVG]].</li>
+				</ul>
+
+				<p>In the absence of this information in a <a>Publication Resource</a>, Reading Systems MUST NOT assume
+					either the language or the base direction of that resource from information expressed in the Package
+					Document (i.e., in <code>xml:lang</code> and <code>dir</code> attributes, in <code>hreflang</code>
+					attributes on link elements, or from <code>dc:language</code> elements). Refer to a resource's
+					formal specification for more information about to handle the absence of explicit language or
+					direction information.</p>
+			</section>
+		</section>
+		<section id="sec-package-doc">
+			<h2>Package Document Processing</h2>
+
+			<p id="confreq-rs-epub-pub" class="support" data-tests="#pkg-manifest-url,#pkg-relative-url">Reading Systems
+				MUST process the <a data-cite="epub-33#sec-package-doc">Package Document</a> [[EPUB-33]].</p>
+
+			<section id="sec-pkg-doc-base-dir">
+				<h4>Base Direction</h4>
+
+				<p id="confreq-rs-pkg-dir"
+					data-tests="#pkg-dir_creator-rtl,#pkg-dir_rtl-root-ltr,#pkg-dir_rtl-root-unset,#pkg-dir_unset-root-rtl,#pkg-dir_unset-root-unset,#pkg-dir-auto_root-rtl"
+					> If the <code>dir</code> attribute is set and indicates a base direction of <code>ltr</code> or
+						<code>rtl</code>, Reading Systems MUST override the bidi algorithm per <a
+						data-cite="bidi#Higher-Level_Protocols">the higher-level protocols</a> defined in [[BIDI]],
+					setting the paragraph embedding level to 0 if the base direction is <code>ltr</code>, or 1 if the
+					base direction is <code>rtl</code>.</p>
+
+				<p id="confreq-rs-pkg-dir-auto" data-tests="#pkg-dir-auto_root-rtl,#pkg-dir-auto_root-unset">Otherwise
+					the base direction is <code>auto</code>, in which case Reading Systems MUST determine the text's
+					direction by applying the Unicode Bidi Algorithm, beginning with <a data-cite="bidi#P2">Rule P2</a>
+					of [[BIDI]].</p>
+			</section>
+
+			<section id="sec-pkg-doc-pub-identifiers">
+				<h3>Unique Identifier</h3>
+
+				<p id="confreq-rs-pkg-unique-id" data-tests="#pkg-unique-id">Reading Systems SHOULD NOT depend on the <a
+						data-cite="epub-33#dfn-unique-identifier">Unique Identifier</a> being unique to one and only one
+					EPUB Publication. Determining whether two EPUB Publications with the same Unique Identifier
+					represent different versions of the same publication, or different publications, may require
+					inspecting other metadata, such as the last modification date, titles, and authors.</p>
+			</section>
+
+			<section id="sec-pkg-doc-metadata">
+				<h4>Metadata</h4>
+
+				<dl class="conformance-list">
+					<dt id="conf-meta-ws">White Space</dt>
+					<dd>
+						<p id="confreq-rs-pkg-whitespace" data-tests="#pkg-meta-whitespace">Reading Systems MUST <a
+								data-cite="infra#strip-and-collapse-ascii-whitespace">strip and collapse ASCII
+								whitespace</a> [[Infra]] from Dublin Core [[DC11]] and <a
+								data-cite="epub-33#sec-meta-elem"><code>meta</code></a> element <a
+								data-cite="epub-33#dfn-value">values</a> [[EPUB-33]] before processing.</p>
+					</dd>
+
+					<dt id="dc-identifier">The <code>identifier</code> element</dt>
+					<dd>
+						<p>To determine whether an <code>identifier</code> conforms to an established system or has been
+							granted by an issuing authority, Reading Systems SHOULD check for an <a
+								data-cite="epub-33#identifier-type"><code>identifier-type</code> property</a>
+							[[EPUB-33]].</p>
+					</dd>
+
+					<dt id="dc-title">The <code>title</code> element</dt>
+					<dd>
+						<p id="title-order" data-tests="#pkg-title-order">Reading Systems MUST recognize the first
+								<code>title</code> element in document order as the main title of the EPUB Publication
+							and present it to users before other title elements.</p>
+						<p>This specification does not define how to process additional <code>title</code> elements.</p>
+					</dd>
+
+					<dt id="sec-opf-dclanguage">The <code>language</code> element</dt>
+					<dd>
+						<p> The language(s) of the <a>EPUB Publication</a> specified in <code>language</code> elements
+							are informational. Some uses of this information include: </p>
+						<ul>
+							<li>exposing it to the user through the Reading System user interface</li>
+							<li>using it to enhance functionality in a bookshelf (e.g., sorting by language)</li>
+							<li>using it to optimize the reading interface (e.g., to preload text-to-speech
+								languages)</li>
+						</ul>
+						<p>See <a href="#sec-epub-rs-i18n"></a> for more details on how to determine the language of a
+								<a>Publication Resource</a>.</p>
+					</dd>
+
+					<dt id="dc-creator">The <code>creator</code> element</dt>
+					<dd>
+						<p id="confreq-rs-pkg-creator-order" data-tests="#pkg-creator-order">When determining display
+							priority, Reading Systems MUST use the document order of <code>creator</code> elements in
+							the <code>metadata</code> section, where the first <code>creator</code> element encountered
+							is the primary creator. If a Reading System exposes creator metadata to the user, it SHOULD
+							include all the creators listed in the <code>metadata</code> section whenever possible
+							(e.g., when not constrained by display considerations).</p>
+					</dd>
+
+					<dt id="meta">The <code>meta</code> element</dt>
+					<dd>
+						<p>If a Reading System does not recognize the <code>scheme</code> attribute value, it SHOULD
+							treat the value of the element as a string.</p>
+						<p>Reading Systems SHOULD ignore all <code>meta</code> elements whose <code>property</code>
+							attributes define expressions they do not recognize. <span id="confreq-rs-pkg-meta-unknown"
+								data-tests="#pkg-meta-unknown">A Reading System MUST NOT fail when encountering unknown
+								expressions.</span></p>
+						<p>If the <code>property</code> attribute's value does not include a prefix, Reading Systems
+							MUST use the prefix URL "<code>http://idpf.org/epub/vocab/package/meta/#</code>" to <a
+								href="#sec-property-datatype">expand the value</a>.</p>
+					</dd>
+
+					<dt id="conf-metadata-link">The <code>link</code> element</dt>
+					<dd>
+						<p>Retrieval and support of linked resources is OPTIONAL.</p>
+						<!-- <p>Reading System may use support linked resources, even if they recognize the
+							relationship defined in the <code>rel</code> attribute.
+						</p> -->
+						<p> The language identified in an <code>hreflang</code> is purely advisory. Upon fetching the
+							resource, a Reading System must only use the language information associated with the
+							resource to determine its language, not the metadata included in the link to the resource. </p>
+						<p id="sec-linked-records" data-tests="#pkg-linked-records"> In the case of a <a
+								data-cite="epub-33#record">linked metadata record</a> [[EPUB-33]], Reading Systems MUST
+							NOT skip processing the metadata expressed in the Package Document and only use the
+							information expressed in the record. Reading Systems MAY compile metadata from multiple
+							linked records.</p>
+						<p>When it comes to resolving discrepancies and conflicts between metadata expressed in the
+							Package Document and in linked metadata records, Reading Systems MUST use the document order
+							of <code>link</code> elements in the Package Document to establish precedence (i.e.,
+							metadata in the first linked record encountered has the highest precedence and metadata in
+							the Package Document the lowest, regardless of whether the <code>link</code> elements occur
+							before, within or after the package metadata elements).</p>
+						<p>Reading Systems MUST ignore any instructions contained in linked resources related to the
+							layout and rendering of the EPUB Publication.</p>
+						<p>If any of the <code>rel</code> or <code>properties</code> attributes' values do not include a
+							prefix, Reading Systems MUST use the prefix URL
+								"<code>http://idpf.org/epub/vocab/package/link/#</code>" to <a
+								href="#sec-property-datatype">expand the values</a>.</p>
+					</dd>
+
+					<dt>Proprietary Metadata</dt>
+					<dd>
+						<p id="confreq-rs-epub3-fxl-conflicts">It MUST ignore proprietary metadata properties that
+							pertain to layout expressions if they conflict behaviorally with the property semantics
+							defined in <a href="#sec-fxl-props"></a>.</p>
+					</dd>
+				</dl>
+			</section>
+
+			<section id="sec-pkg-doc-manifest">
+				<h3>Manifest</h3>
+
+
+				<p>Reading Systems MAY optimize the rendering depending on the properties set in the
+						<code>properties</code> attribute (e.g., disable a rendering process or use a fallback). <span
+						id="confreq-rs-pkg-manifest-unknown" data-tests="#pkg-manifest-unknown">Reading Systems MUST
+						ignore values of the <code>properties</code> attribute they do not recognize.</span></p>
+
+				<p id="confreq-rendition-rs-manifest" data-tests="#pkg-manifest-unlisted-resource">Reading Systems
+					SHOULD NOT use non-<a>Publication Resources</a> in the rendering of an EPUB Publication due to the
+					inherent limitations and risks involved (e.g., lack of information about the resource and how to
+					process it, security risks from remotely-hosted sources, lack of fallbacks, etc.).</p>
+
+				<p>A Reading System that does not support the Media Type of a given Publication Resource MUST traverse
+					the fallback chain until it has identified at least one supported Publication Resource to use in
+					place of the unsupported resource. If the Reading System supports multiple Publication Resources in
+					the fallback chain, it MAY select the resource to use based on specific <a
+						data-cite="epub-33#attrdef-item-properties">properties</a> [[EPUB-33]] of that resource,
+					otherwise it SHOULD honor the EPUB Creator's preferred fallback order. If a Reading System does not
+					support any resource in the fallback chain, it MUST alert the reader that it could not display the
+					content.</p>
+
+				<p>When <a data-cite="epub-33#sec-foreign-restrictions-manifest">manifest fallbacks</a> [[EPUB-33]] are
+					provided for <a>Top-level Content Documents</a>, Reading Systems MAY choose from the available
+					options in order to find the optimal version to render in a given context (e.g., by inspecting the
+					properties attribute for each).</p>
+
+				<p>Reading Systems MUST terminate the fallback chain at the first reference to a manifest item it has
+					already encountered.</p>
+
+				<p>If any of the <code>properties</code> attribute's values do not include a prefix, Reading Systems
+					MUST use the prefix URL "<code>http://idpf.org/epub/vocab/package/item/#</code>" to <a
+						href="#sec-property-datatype">expand the values</a>.</p>
+			</section>
+
+			<section id="sec-pkg-doc-spine">
+				<h3>Spine</h3>
+
+				<p id="confreq-rs-spine-order" data-tests="#pkg-spine-order">Reading Systems MUST provide a means of
+					rendering the EPUB Publication in the order defined in the <code>spine</code>, which includes: 1)
+					recognizing the first primary <code>itemref</code> as the beginning of the default reading order;
+					and, 2) rendering successive primary items in the order given in the <code>spine</code>.</p>
+
+				<p id="confreq-rendition-rs-spine-nonlinear">When a user traverses the default reading order defined in
+					the <a data-cite="epub-33#sec-spine-elem">spine</a> [[EPUB-33]], a Reading System MAY automatically
+					skip <code>itemref</code> elements marked as non-linear. <span
+						id="confreq-rs-spine-nonlinear-activation" data-tests="#pkg-spine-nonlinear-activation">When a
+						user activates a hyperlink to a non-linear resource, however, Reading Systems MUST render the
+						referenced resource or a designated fallback.</span> Reading Systems MAY also provide the option
+					for users to select whether to skip non-linear content by default or not.</p>
+
+				<p id="confreq-rs-spine-progression-default" data-tests="#pkg-spine-progression-default">If the EPUB
+					Creator has not specified the <code>page-progression-direction</code>, the Reading System MUST
+					assume the value of <code>default</code>. When the EPUB Creator has set the value of the
+						<code>page-progression-direction</code> to <code>default</code>, either explicitly or
+					implicitly, the Reading System can choose rendering direction.</p>
+
+				<p id="confreq-rs-spine-progression-pre-paginated" data-tests="#pkg-spine-progression-pre-paginated"
+					>Reading Systems MUST ignore the page progression direction defined in <a href="#layout"
+							><code>pre-paginated</code></a> XHTML Content Documents. The
+						<code>page-progression-direction</code> attribute defines the flow direction from one
+					fixed-layout page to the next.</p>
+
+				<p>If any of the <code>properties</code> attribute's values do not include a prefix, Reading Systems
+					MUST use the prefix URL "<code>http://idpf.org/epub/vocab/package/itemref/#</code>" to <a
+						href="#sec-property-datatype">expand the values</a>.</p>
+
+				<p id="confreq-rs-pkg-spine-unknown" data-tests="#pkg-spine-unknown">Reading Systems MUST ignore all
+					values expressed in spine <code>itemref</code>
+					<code>properties</code> attributes that they do not recognize.</p>
+
+				<p>
+					<span id="confreq-rs-pkg-duplicate-item-rendering" data-tests="#pkg-spine-duplicate-item-rendering">
+						Reading Systems MUST NOT skip spine references to duplicate manifest items when rendering the
+						linear reading order.</span>
+					<span id="confreq-rs-pkg-duplicate-item-ui" data-tests="#pkg-spine-duplicate-item-ui">The Reading
+						System MUST treat these as distinct items for UI purposes (for example, each occurrence could be
+						independently bookmarked or annotated).</span>
+					<span id="confreq-rs-pkg-duplicate-item-hyperlink" data-tests="#pkg-spine-duplicate-item-hyperlink"
+						>When a Reading System follows a hyperlink to a resource referenced multiple times in the spine,
+						the Reading System MUST move to the position of the first occurrence of the document in the
+						linear reading order.</span>
+				</p>
+			</section>
+
+			<section id="sec-pkg-doc-collections">
+				<h3>Collections</h3>
+
+				<p>In the context of this specification, support for collections in Reading Systems is OPTIONAL. <span
+						id="confreq-rs-pkg-collections-unknown" data-tests="#pkg-collections-unknown">Reading Systems
+						MUST ignore <code>collection</code> elements that define unrecognized roles.</span></p>
+			</section>
+		</section>
+		<section id="sec-contentdocs">
+			<h2>Content Document Processing</h2>
+
+			<p>The definition of <a data-cite="epub-33#sec-contentdocs">EPUB Content Documents</a> [[EPUB-33]] includes
+				various authoring restrictions to optimize the cross-compatibility of content (e.g., <a
+					data-cite="epub-33#sec-css-req">prohibiting CSS for setting language and direction</a>
+				[[?EPUB-33]]). Unless stated otherwise in this specification, Reading Systems MAY support these
+				restricted features.</p>
+
+			<section id="sec-xhtml">
+				<h3>XHTML Content Documents</h3>
+
+				<p id="confreq-rs-epub3-xhtml" class="support" data-tests="#cnt-xhtml-support">Reading Systems MUST
+					process <a data-cite="epub-33#sec-xhtml">XHTML Content Documents</a> [[EPUB-33]].</p>
+
+				<p id="confreq-html-rs-behavior">Unless explicitly defined in this section as overridden, Reading
+					Systems MUST process XHTML Content Documents using semantics defined by the [[HTML]] specification
+					and honor any applicable user agent conformance constraints expressed therein.</p>
+
+				<section id="sec-xhtml-extensions">
+					<h4>HTML Extensions</h4>
+
+					<section id="sec-xhtml-aria">
+						<h5>ARIA</h5>
+
+						<p id="confreq-html-rs-a11y">Reading Systems SHOULD recognize embedded ARIA markup and support
+							exposure of any given ARIA roles, states and properties to platform accessibility APIs
+							[[WAI-ARIA]].</p>
+					</section>
+
+					<section id="sec-xhtml-structural-semantics">
+						<h5>Structural Semantics</h5>
+
+						<p id="confreq-rs-epubtype-head">In addition to the requirements in <a
+								href="#sec-structural-semantics"></a>, a Reading System MUST ignore semantics expressed
+							on the [[HTML]] <a data-cite="html#the-head-element"><code>head</code></a> element or its
+							descendants.</p>
+					</section>
+
+					<section id="sec-xhtml-rdfa">
+						<h5>RDFa</h5>
+
+						<p>Reading System support for the <a data-cite="rdfa-core#s_model">attribute processing
+								model</a> [[RDFA-CORE]] is OPTIONAL.</p>
+					</section>
+
+					<section id="sec-xhtml-microdata">
+						<h5>Microdata</h5>
+
+						<p>Reading System support for the <a data-cite="microdata#encoding-microdata">attribute
+								processing model</a> is OPTIONAL, as is the <a data-cite="microdata#json">conversion to
+								JSON</a> [[Microdata]].</p>
+					</section>
+
+					<section id="sec-xhtml-content-switch">
+						<h5>Content Switching (Deprecated)</h5>
+
+						<p>Use of the <code>switch</code> element is <a data-cite="epub-33#deprecated">deprecated</a>
+							[[EPUB-33]]. Refer to its definition in [[EPUBContentDocs-301]] for implementation
+							information.</p>
+					</section>
+
+					<section id="sec-xhtml-epub-trigger">
+						<h5>The <code>epub:trigger</code> Element (Deprecated)</h5>
+
+						<p>Use of the <code>trigger</code> element is <a data-cite="epub-33#deprecated">deprecated</a>
+							[[EPUB-33]]. Refer to its definition in [[EPUBContentDocs-301]] for implementation
+							information.</p>
+					</section>
+
+					<section id="sec-xhtml-custom-attributes">
+						<h5>Custom Attributes</h5>
+
+						<p>Vendors MAY introduce functionality not defined in this specification to enhance the
+							rendering of <a>EPUB Publications</a>.</p>
+
+						<p>To facilitate this experimentation, vendors MAY define custom attributes for use in <a>XHTML
+								Content Documents</a> provided they are from a foreign namespace, which is defined as a
+							namespace [[XML-NAMES]] that does not incorporate either of the following strings in its <a
+								data-cite="url#concept-domain">domain</a> [[URL]]:</p>
+
+						<ul>
+							<li><code>w3.org</code></li>
+							<li><code>idpf.org</code></li>
+						</ul>
+
+						<p class="note"> Note that this restriction also disallows the usage of custom attributes
+							without a namespace prefix (e.g., <code>&lt;p foo=""&gt;…&lt;/p&gt;</code>). Indeed, such
+							attributes are considered to be part of the default namespace, i.e., either the XHTML or SVG
+							namespaces, which are both in the <code>w3.org</code> domain. </p>
+
+						<p>Custom attributes, and the behaviors associated with them, MUST NOT alter the integrity of an
+							EPUB Publication.</p>
+
+						<div class="note">
+							<p>Custom attributes are usually defined in a Reading System-specific manner and are not
+								intended for use by Reading Systems other than the one that they have been defined for.
+								For generic extensions that are to be used by multiple independent Reading Systems,
+								future versions of this specification should be extended to provide the feature
+								explicitly.</p>
+						</div>
+					</section>
+				</section>
+
+				<section id="sec-xhtml-deviations">
+					<h4>HTML Deviations and Constraints</h4>
+
+					<section id="sec-xhtml-mathml">
+						<h3>MathML</h3>
+
+						<p>To support MathML embedded in XHTML Content Documents, a Reading System:</p>
+
+						<ul class="conformance-list">
+							<li>
+								<p id="confreq-mathml-rs-behavior" data-tests="#cnt-mathml-support">MUST be an <a
+										data-cite="mathml3/chapter2.html#fund.mathmlconf">input-compliant processor</a>
+									for <a data-cite="mathml3/chapter3.html#">Presentation MathML</a>, as defined in the
+									[[MATHML3]] specification.</p>
+							</li>
+							<li>
+								<p id="confreq-mathml-rs-render" data-tests="#cnt-mathml-support">MUST, if it has a
+										<a>Viewport</a>, support visual rendering of Presentation MathML.</p>
+							</li>
+							<li>
+								<p id="confreq-mathml-rs-anno">MAY support rendering of <a
+										data-cite="mathml3/chapter4.html#">Content MathML</a> found in
+										<code>annotation-xml</code> elements.</p>
+							</li>
+						</ul>
+
+						<p class="note">Reading Systems may choose to use third-party libraries such as MathJax to
+							provide MathML rendering. </p>
+					</section>
+
+					<section id="sec-xhtml-svg">
+						<h5>Embedded SVG</h5>
+
+						<p id="confreq-svg-rs-embed" data-tests="#cnt-svg-embedded">Reading Systems MUST process SVG
+							embedded in XHTML Content Documents as defined in <a href="#sec-svg"></a>.</p>
+
+						<section id="sec-xhtml-svg-css">
+							<h6>Embedded SVG and CSS</h6>
+
+							<p id="confreq-svg-rs-css-embed-ref" data-tests="#cnt-svg-css-reference">For the purposes of
+								styling SVG embedded in XHTML Content Documents <em>by reference</em>, Reading Systems
+								MUST NOT apply CSS style rules of the containing document to the referenced SVG
+								document.</p>
+
+							<p id="confreq-svg-rs-css-embed-inc" data-tests="#cnt-svg-css-inclusion">For the purposes of
+								styling SVG embedded in XHTML Content Documents <em>by inclusion</em>, Reading Systems
+								MUST apply applicable CSS rules of the containing document to the included SVG
+								elements.</p>
+
+							<div class="note">
+								<p>SVG included <em>by reference</em> is processed as a separate document, and can
+									include its own CSS style rules just like an <a>SVG Content Document</a> would. Note
+									that this is consistent with situations where an [[HTML]] <a
+										data-cite="html#the-object-element"><code>object</code></a> element references
+									an external [[HTML]] element.</p>
+							</div>
+						</section>
+					</section>
+
+					<section id="sec-xhtml-forms">
+						<h5>Form Submission</h5>
+
+						<p>Reading System support for the submission of [[HTML]] forms is OPTIONAL. A Reading System
+							might, for example, prevent form submissions by limiting access to networking.</p>
+					</section>
+				</section>
+			</section>
+
+			<section id="sec-svg">
+				<h3>SVG Content Documents</h3>
+
+				<p id="confreq-rs-epub3-svg" class="support" data-tests="#cnt-svg-support">Reading Systems MUST process
+						<a data-cite="epub-33#sec-svg">SVG Content Documents</a> [[EPUB-33]].</p>
+
+				<p>To process SVG Content Documents and <a href="#sec-xhtml-svg">SVG embedded in XHTML Content
+						Documents</a>, a Reading System:</p>
+
+				<ul class="conformance-list">
+					<li>
+						<p id="confreq-svg-rs-behavior">MUST process SVG Content Documents using semantics defined by
+							the [[SVG]] specification, and honor any applicable user agent conformance constraints
+							expressed therein, unless explicitly defined by this specification as overridden.</p>
+					</li>
+					<li>
+						<p id="confreq-svg-rs-scrpt">MUST meet the conformance criteria defined in <a
+								href="#sec-scripted-content"></a>.</p>
+					</li>
+					<li>
+						<p id="confreq-svg-rs-css">MUST, if it has a <a>Viewport</a>, support the visual rendering of
+							SVG using CSS as defined in <a href="https://www.w3.org/TR/SVG/styling.html#">Styling</a>
+							[[SVG]] and it SHOULD support all properties defined in the <a
+								href="https://www.w3.org/TR/SVG/propidx.html#">Property Index</a> [[SVG]]. In the case
+							of embedded SVG, a Reading System MUST also conform to the constraints defined in <a
+								href="#sec-xhtml-svg-css"></a>.</p>
+					</li>
+				</ul>
+			</section>
+
+			<section id="sec-css">
+				<h3>Cascading Style Sheets (CSS)</h3>
+
+				<p id="confreq-rs-epub3-css" class="support">If a Reading System has a <a>Viewport</a>, it MUST support
+					the <a data-cite="epub-33#sec-css">visual rendering of XHTML Content Documents via CSS</a>
+					[[EPUB-33]].</p>
+
+				<p>To support CSS, a Reading System:</p>
+
+				<ul class="conformance-list">
+					<li>
+						<p id="confreq-css-rs-support" data-tests="#cnt-css-support">MUST support the official
+							definition of CSS as described in the [[CSSSnapshot]].</p>
+					</li>
+					<li>
+						<p id="confreq-css-rs-modules">SHOULD support all applicable modules in [[CSSSnapshot]] that
+							have reached at least <a href="https://www.w3.org/Consortium/Process/#RecsCR">Candidate
+								Recommendation</a> status [[W3CProcess]] (and are widely implemented).</p>
+					</li>
+					<li>
+						<p id="confreq-css-rs-fonts">MUST support [[TrueType]], [[OpenType]], [[WOFF]] and [[WOFF2]]
+							font resources referenced from <code>@font-face</code> rules.</p>
+					</li>
+					<li>
+						<p id="confreq-css-rs-prefixed">MUST support all prefixed properties defined in <a
+								data-cite="epub-33#sec-css-prefixed">CSS Style Sheets — Prefixed Properties</a>
+							[[EPUB-33]].</p>
+					</li>
+					<li>
+						<p id="confreq-css-creator-styles">SHOULD apply <a>EPUB Creator</a> style sheets as written to
+								<a>EPUB Content Documents</a>.</p>
+					</li>
+					<li>
+						<p id="confreq-css-overrides">SHOULD NOT override the EPUB Creator's style sheets, but SHOULD do
+							so in a way that preserves the Cascade when necessary: through a user agent style sheet, the
+								<a href="DOM-Level-2-Style/css.html#CSS-OverrideAndComputed"
+									><code>getOverrideStyle</code> method</a> [[DOM-Level-2-Style]], or [[HTML]] <a
+								data-cite="html#the-style-attribute"><code>style</code> attributes</a>.</p>
+					</li>
+					<li>
+						<p id="confreq-css-user-styles">It MAY override parts of the EPUB Creator's style sheet because
+							of user interaction.</p>
+					</li>
+				</ul>
+
+				<p id="confreq-css-rs-html-default">In addition to supporting CSS properties as defined above, a Reading
+					System's user agent style sheet SHOULD support the [[HTML]] <a data-cite="html#rendering">suggested
+						default rendering</a>.</p>
+
+				<p>Reading System developers should implement CSS support at the level of major browsers and publicly
+					document their user agent style sheets and how they interact with EPUB Creator's style sheets.</p>
+			</section>
+
+			<section id="sec-scripted-content">
+				<h3>Scripting</h3>
+
+				<p id="confreq-rs-scripted" class="support" data-test="#scr-support,#scr-support_iframe,#scr-support_svg">Reading Systems SHOULD support <a
+						data-cite="epub-33#sec-scripted-content">scripting</a> [[EPUB-33]].</p>
+
+				<p>Reading System support for scripting depends on its usage context:</p>
+
+				<ul class="conformance-list">
+					<li>
+						<p id="confreq-rs-scripted-reflow-support">Reading Systems SHOULD support <a
+								data-cite="epub-33#sec-scripted-container-constrained">container-constrained
+								scripting</a> [[EPUB-33]] in reflowable EPUB Content Documents.</p>
+					</li>
+					<li>
+						<p id="confreq-rs-scripted-fxl-support">Reading Systems SHOULD support <a
+								data-cite="epub-33#sec-scripted-spine">spine-level scripting</a> [[EPUB-33]] in <a
+								data-cite="epub-33#sec-fixed-layouts">fixed-layout documents</a> [[EPUB-33]].</p>
+					</li>
+					<li>
+						<p id="confreq-rs-scripted-scrolled">Reading Systems SHOULD support spine-level scripting in
+							reflowable EPUB Content Documents that use the <a data-cite="epub-33#flow-scrolled-doc"
+									>"<code>scrolled-doc</code>"</a> or <a data-cite="epub-33#flow-scrolled-continuous"
+									>"<code>scrolled-continuous</code>"</a> [[EPUB-33]] presentation modes defined by <a
+								href="#flow">the <code>rendition:flow</code> property</a>. Similarly, if it supports
+							spine-level scripting in reflowable EPUB Content Documents, it MUST implement the
+								"<code>scrolled-doc</code>" presentation mode and SHOULD implement the
+								"<code>scrolled-continuous</code>" presentation mode.</p>
+					</li>
+					<li>
+						<p id="confreq-rs-scripted-optional-support">Reading Systems MAY support scripting in other
+							contexts, but this specification does not address such scripting. As a result, the use of
+							scripting in these contexts may not be consistent across Reading Systems.</p>
+					</li>
+				</ul>
+
+				<p>If a Reading System supports scripting:</p>
+
+				<ul class="conformance-list">
+					<li>
+						<p id="confreq-rs-scripted-ua">It MAY render <a>Scripted Content Documents</a> as an
+							interactive, scripted user agent according to [[HTML]].</p>
+					</li>
+
+					<li>
+						<p id="confreq-rs-scripted-origin"> It MUST assign a unique <a data-cite="url#origin"
+							>origin</a> [[URL]], shared by all <a data-cite="epub-33#sec-scripted-spine">spine-level
+								scripts</a> of the EPUB Publication. That <a data-cite="url#origin">origin</a> [[URL]]
+							MUST be <em>unique</em> for each user-specific instance of an EPUB Publication in a Reading
+							System. </p>
+					</li>
+
+					<li>
+						<p id="confreq-rs-scripted-container">It MUST NOT allow a container-constrained script to modify
+							the DOM of the parent Content Document or other contents in the EPUB Publication and MUST
+							NOT allow it to manipulate the size of its containing rectangle. (Note: Even if a script is
+							not container-constrained, the Reading System MAY impose restrictions on modifications (see
+							also the <a href="#feature-dom-manipulation">dom-manipulation feature</a>).)</p>
+					</li>
+					<li>
+						<p id="confreq-rs-scripted-limit">It MAY place additional limitations on the capabilities
+							provided to scripts during execution (e.g., limiting networking).</p>
+					</li>
+					<li>
+						<p id="confreq-rs-scripted-readingsystem-object" data-tests="#scr-readingsystem-features,#scr-readingsystem-support,#scr-readingsystem-support_svg">It MUST extend the <a
+								data-cite="html#the-navigator-object">navigator object</a> [[!HTML]] with the
+								<code>epubReadingSystem</code> interface defined in <a href="#app-epubReadingSystem"
+							></a>. It also MUST support the <code>dom-manipulation</code> and <code>layout-change</code>
+							features defined in <a href="#app-ers-hasFeature-features"></a> in container-constrained
+							scripting contexts.</p>
+					</li>
+				</ul>
+
+				<p class="ednote">Note that the definition of <code>epubReadingSystem</code> is currently marked as "at
+					risk". If, in the final version of this document, the object becomes non-normative, then each "MUST"
+					statement in the last bullet item would become a "MAY".</p>
+
+				<p id="confreq-rs-scripted-flbk">If a Reading System does not support scripting, it MUST process
+					fallbacks for scripted content as defined in <a data-cite="epub-33#confreq-cd-scripted-flbk"
+						>Fallbacks for Scripted Content Documents</a> [[EPUB-33]].</p>
+			</section>
+		</section>
+		<section id="sec-nav">
+			<h3>Navigation Document Processing</h3>
+
+			<p id="sec-nav-rs-conf" class="support" data-tests="#nav-spine_in-spine">Reading Systems MUST process <a
+					data-cite="epub-33#sec-nav">EPUB Navigation Documents</a> [[EPUB-33]].</p>
+
+			<p>To process the EPUB Navigation Document, a Reading System:</p>
+
+			<ul class="conformance-list">
+				<li>
+					<p id="confreq-nav-toc-access" data-tests="#nav-access">MUST provide users access to the <a
+							data-cite="epub-33#confreq-nav-a">links and headings</a> in the <a
+							data-cite="epub-33#sec-nav-toc"><code>toc nav</code> element</a> [[EPUB-33]].</p>
+				</li>
+				<li>
+					<p id="confreq-nav-pagelist-access">SHOULD provide a method to navigate to the listed page breaks
+						when a <a data-cite="epub-33#sec-nav-pagelist"><code>page-list nav</code> element</a>
+						[[EPUB-33]] is present.</p>
+				</li>
+				<li>
+					<p id="confreq-nav-landmarks-access">MAY provide users access to the links in the <a
+							data-cite="epub-33#sec-nav-landmarks"><code>landmarks nav</code> element</a> [[EPUB-33]] and
+						MAY use the links to enable functionality in the application.</p>
+				</li>
+				<li>
+					<p id="confreq-nav-other-access">MAY provide access to <code>nav</code> elements that do not specify
+						an <code>epub:type</code> attribute or that <a data-cite="epub-33#sec-nav-def-types-other"
+							>declare an unknown value</a> [[EPUB-33]].</p>
+				</li>
+				<li>
+					<p id="confreq-nav-activation" data-tests="#nav-activation">MUST relocate the current reading
+						position to the destination identified by an activated link when the link is to a <a>Publication
+							Resource</a>.</p>
+				</li>
+				<li>
+					<p id="confreq-nav-ol-style">MUST NOT show list item numbering on <code>nav</code> elements when
+						presenting them outside of the spine, regardless of support for CSS, as the default display
+						style of list items is equivalent to the <a
+							href="https://www.w3.org/TR/CSS2/generate.html#propdef-list-style"><code>list-style:
+								none</code> property</a> [[CSSSnapshot]].).</p>
+				</li>
+			</ul>
+
+			<p id="confreq-nav-spine" data-tests="#nav-spine_in-spine,#nav-spine_not-in-spine">Reading Systems MUST
+				honor the above requirements irrespective of whether the EPUB Navigation Document is part of the <a
+					data-cite="epub-33#sec-spine-elem">spine</a> [[EPUB-33]].</p>
+
+		</section>
+		<section id="sec-fixed-layouts">
+			<h2>Fixed-Layout Documents Processing</h2>
+
+			<p id="confreq-rs-epub3-fxl" class="support">Reading Systems MUST support the rendering of <a
+					data-cite="epub-33#sec-fixed-layouts">Fixed-Layout Documents</a> [[EPUB-33]].</p>
+
+			<section id="sec-fxl-props">
+				<h3>Fixed-Layout Properties</h3>
+
+				<section id="layout">
+					<h4>The <code>rendition:layout</code> Property</h4>
+					<p> The default value <code>reflowable</code> MUST be assumed by EPUB Reading Systems as the global
+						value if no meta element carrying this property occurs in the <a
+							data-cite="epub-33#elemdef-opf-metadata"><code>metadata</code> section</a> section
+						[[EPUB-33]]. </p>
+
+					<p id="layout-pre-paginated" data-tests="#fxl-layout-pre-paginated-spreads">When the
+							<code>rendition:layout</code> property is set to <code>pre-paginated</code>, Reading Systems
+						MUST NOT include space between the adjacent content slots when rendering <a>Synthetic
+							Spreads</a>.</p>
+
+					<p>The <code>rendition:layout</code> property values have the following processing requirements:</p>
+
+					<dl class="variablelist">
+						<dt id="def-layout-reflowable">reflowable</dt>
+						<dd>
+							<p>Reading Systems MAY apply dynamic pagination when rendering.</p>
+						</dd>
+						<dt id="def-layout-pre-paginated" data-tests="#fxl-layout-pre-paginated">pre-paginated</dt>
+						<dd>
+							<p>Reading Systems MUST produce exactly one page per spine <a
+									data-cite="epub-33#elemdef-spine-itemref"><code>itemref</code></a> [[EPUB-33]] when
+								rendering.</p>
+						</dd>
+					</dl>
+				</section>
+
+				<section id="orientation">
+					<h4>The <code>rendition:orientation</code> Property</h4>
+
+					<p id="fxl-orientation-default" data-tests="#fxl-orientation-default">The default global value is
+							<code>auto</code> if no <code>meta</code> element carrying this property occurs in the
+							<code>metadata</code> section.</p>
+
+					<p id="fxl-orientation-landscape" data-tests="#fxl-orientation-landscape">Reading Systems that
+						support multiple orientations SHOULD convey the intended orientation to the user unless the
+						given value is <code>auto</code>. The means by which they convey the intent is implementation
+						specific.</p>
+				</section>
+
+				<section id="spread">
+					<h4>The <code>rendition:spread</code> Property</h4>
+
+					<p id="fxl-spread-default" data-tests="#fxl-spread-default">The default global value is
+							<code>auto</code> if no <code>meta</code> element carrying this property occurs in the
+							<code>metadata</code> section.</p>
+
+					<p>The <code>rendition:spread</code> property values have the following processing requirements:</p>
+
+					<dl class="variablelist">
+						<dt id="def-spread-none" data-tests="#fxl-spread-none">none</dt>
+						<dd>
+							<p>Reading Systems MUST NOT incorporate spine items in a Synthetic Spread.</p>
+						</dd>
+						<dt id="def-spread-landscape" data-tests="#fxl-spread-landscape">landscape</dt>
+						<dd>
+							<p>Reading Systems SHOULD render a Synthetic Spread for spine items only when the device is
+								in landscape orientation.</p>
+						</dd>
+						<dt id="def-spread-portrait">portrait (deprecated)</dt>
+						<dd>
+							<p>Reading Systems SHOULD treat the value "<code>portrait</code>" as a synonym of
+									"<code>both</code>" and create spreads regardless of orientation.</p>
+						</dd>
+						<dt id="def-spread-both" data-tests="#fxl-spread-both">both</dt>
+						<dd>
+							<p>Reading Systems SHOULD render a Synthetic Spread regardless of device orientation.</p>
+						</dd>
+						<dt id="def-spread-auto" data-tests="#fxl-spread-auto">auto</dt>
+						<dd>
+							<p>Reading Systems MAY use Synthetic Spreads in specific or all device orientations as part
+								of a <a>Content Display Area</a> utilization optimization process.</p>
+						</dd>
+					</dl>
+				</section>
+
+				<section id="page-spread">
+					<h4>The <code>rendition:page-spread-*</code> Properties</h4>
+
+					<p>The <span id="page-spread-left" data-tests="#fxl-page-spread-left"
+								><code>rendition:page-spread-left</code></span> property indicates that the given spine
+						item SHOULD be rendered in the left-hand slot in the spread, and <span id="page-spread-right"
+							data-tests="#fxl-page-spread-right"><code>rendition:page-spread-right</code></span> that it
+						SHOULD be rendered in the right-hand slot. The <span id="page-spread-center"
+							data-tests="#fxl-page-spread-center"><code>rendition:page-spread-center</code></span>
+						property indicates that the synthetic spread mode SHOULD be overridden and a single viewport
+						rendered and positioned at the center of the screen.</p>
+
+					<p>The <code>rendition:page-spread-left</code>, <code>rendition:page-spread-right</code>, and
+							<code>rendition:page-spread-center</code> properties apply to both pre-paginated and
+						reflowable content, and they only apply when the Reading System is creating Synthetic
+						Spreads.</p>
+
+					<p>The <code id="page-break-precedence">rendition:page-spread-*</code> properties MUST take
+						precedence over whatever value of the <a
+							href="https://www.w3.org/TR/CSS2/page.html#propdef-page-break-before"
+								><code>page-break-before</code> property</a> [[CSSSnapshot]] has been set for an
+							<a>XHTML Content Document</a>.</p>
+
+					<div class="note">
+						<p>The presence of <code>rendition:page-spread-center</code> does not change the viewport
+							dimensions. It does not indicate that a Reading System must create a viewport with the size
+							of the whole spread. This is important so that the scale factor stays consistent between
+							regular and center-spread pages.</p>
+					</div>
+
+					<p id="page-layout-both" data-tests="#page-layout-both">When a <a href="#def-layout-reflowable"
+							>reflowable</a> spine item follows a <a href="#def-layout-pre-paginated">pre-paginated</a>
+						one, the reflowable one SHOULD start on the next page &#8212; as defined by the <a
+							data-cite="epub-33#attrdef-spine-page-progression-direction"
+								><code>page-progression-direction</code></a> [[EPUB-33]] &#8212; when it lacks a
+							<code>rendition:page-spread-*</code> property value.</p>
+
+					<p id="page-spread-flow" data-tests="#page-layout-both-flow">If the reflowable spine item has a
+							<code>rendition:page-spread-*</code> specification, it MUST be honored (e.g., by inserting a
+						blank page).</p>
+
+					<p>Similarly, when a pre-paginated spine item follows a reflowable one, the pre-paginated one SHOULD
+						start on the next page (as defined by the <code>page-progression-direction</code>) when it lacks
+						a <code>rendition:page-spread-*</code> property value. If the pre-paginated spine item has a
+							<code>rendition:page-spread-*</code> specification, it MUST be honored (e.g., by inserting a
+						blank page).</p>
+
+					<p id="fxl-page-spread-combined" data-tests="#fxl-page-spread-combined">When a Reading System
+						encounters two spine items that represent a true spread (i.e., two adjacent spine items with the
+							<code>rendition:page-spread-left</code> and <code>rendition:page-spread-right</code>
+						properties), it SHOULD create the spread with no space between the adjacent pages.</p>
+				</section>
+			</section>
+
+			<section id="sec-fxl-dimensions">
+				<h3>Initial Containing Block Dimensions</h3>
+
+				<dl>
+					<dt>XHTML</dt>
+					<dd>
+						<p>Reading Systems MUST use the width and height expressions as defined in <a
+								data-cite="epub-33#sec-fxl-icb-html">Expressing in HTML</a> [[EPUB-33]] to render
+								<a>XHTML Content Documents</a>.</p>
+						<p id="confreq-fxl-rs-xhtml-icb" data-tests="#fxl-xhtml-icb">Reading Systems MUST clip XHTML
+							content to the initial containing block (ICB) dimensions declared in the
+								<code>viewport</code>
+							<code>meta</code> tag — content positioned outside of the initial containing block will not
+							be visible. When the ICB aspect ratio does not match the aspect ratio of the Reading System
+								<a>Content Display Area</a>, Reading Systems MAY position the ICB inside the area to
+							accommodate the user interface; in other words, added letter-boxing space MAY appear on
+							either side (or both) of the content.</p>
+					</dd>
+
+					<dt>SVG</dt>
+					<dd>
+						<p id="confreq-fxl-rs-svg">Reading Systems MUST use the dimensions as defined in <a
+								data-cite="epub-33#sec-fxl-icb-svg">Expressing the ICB in SVG</a> [[EPUB-33]] to render
+								<a>SVG Content Documents</a>.</p>
+					</dd>
+				</dl>
+			</section>
+
+			<section id="sec-fxl-viewport">
+				<h3>Viewport Rendering</h3>
+
+				<p>When rendering <a>Fixed-Layout Documents</a>, the default intent is that the <a>Content Display
+						Area</a> SHOULD occupy as much of the available <a>Viewport</a> area as possible. Reading
+					Systems SHOULD NOT inject additional content such as border, margins, headers, or footers into the
+					Viewport.</p>
+
+				<div class="note">
+					<p>This specification does not define how the <a
+							href="https://www.w3.org/TR/CSS2/visudet.html#containing-block-details">initial containing
+							block</a> [[CSS2]] is placed within the Reading System <a>Content Display Area</a>.</p>
+				</div>
+
+				<div class="note">
+					<p>The exposure of Reading System control widgets to the user is implementation-specific and not
+						included in the above behavioral expectations.</p>
+				</div>
+			</section>
+		</section>
+		<section id="sec-ocf">
+			<h2>Open Container Format Processing</h2>
+
+			<p id="confreq-rs-epub3-ocf" class="support" data-tests="#ocf-package_arbitrary">Reading Systems MUST
+				process the <a data-cite="epub-33#sec-ocf">EPUB Container</a> [[EPUB-33]].</p>
+
+			<div class="note">
+				<p>An application that processes OCF Containers does not have to be a full-fledged Reading System (e.g.,
+					an application might only extract the content of a container or check the validity of the packaged
+					content). In these cases, developers of such applications can ignore the rendering requirements for
+					Reading Systems defined in this section.</p>
+			</div>
+
+			<section id="sec-container-abstract">
+				<h3>OCF Abstract Container</h3>
+
+				<section id="sec-container-iri">
+					<h4>URL of the Root Directory</h4>
+
+					<p>Reading Systems MUST assign a URL [[URL]] to the <a>Root Directory</a> of the <a>OCF Abstract
+							Container</a>. This URL is called the <a data-cite="epub-33#dfn-container-root-url"
+							>container root URL</a>. It is implementation specific, but the implementation MUST have the
+						following properties:</p>
+
+					<ul>
+						<li>The result of <a data-cite="url#concept-url-parser">parsing</a> [[URL]] "<code>/</code>"
+							with the <a>container root URL</a> as <a data-cite="url#concept-base-url"
+								><var>base</var></a> is the <a>container root URL</a>.</li>
+						<li>The result of <a data-cite="url#concept-url-parser">parsing</a> [[URL]] "<code>..</code>"
+							with the <a>container root URL</a> as <a data-cite="url#concept-base-url"
+								><var>base</var></a> is the <a>container root URL</a>.</li>
+
+						<li>The <a data-cite="url#origin">origin</a> of the <a>container root URL</a> is unique for each
+							user-specific instance of an EPUB Publication in a Reading System.</li>
+					</ul>
+
+					<p class="note">The unicity of the <a data-cite="url#origin">origin</a> per each user-specific
+						instance of an EPUB Publication in a Reading System means that if two different users acquire a
+						copy of the same EPUB Publication, the origins will be different for the two users on those
+						copies even if the same Reading System is used.</p>
+
+					<div class="note">
+						<p>The required properties of the container root URL are such that it behaves similarly to a URL
+							defined as follows:</p>
+
+						<table class="zebra">
+							<thead>
+								<tr>
+									<td style="font-weight: bold; text-align: center;"> URL component </td>
+									<td style="font-weight: bold; text-align: center;"> Values </td>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>scheme</td>
+									<td><code>http</code> or <code>https</code></td>
+								</tr>
+								<tr>
+									<td>host</td>
+									<td><code>localhost</code></td>
+								</tr>
+								<tr>
+									<td>port</td>
+									<td>a dynamic port uniquely assigned to the EPUB instance</td>
+								</tr>
+							</tbody>
+						</table>
+
+						<p>for example:</p>
+
+						<table class="zebra">
+							<thead>
+								<tr>
+									<td style="font-weight: bold; text-align: center;">Container File</td>
+									<td style="font-weight: bold; text-align: center;">File Path</td>
+									<td style="font-weight: bold; text-align: center;">URL</td>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td> Root Directory </td>
+									<td>
+										<var>empty string</var>
+									</td>
+									<td>
+										<code>http://localhost:49152/</code>
+									</td>
+								</tr>
+								<tr>
+									<td> Package Document </td>
+									<td>
+										<code>OPS/package.opf</code>
+									</td>
+									<td>
+										<code>http://localhost:49152/OPS/package.opf</code>
+									</td>
+								</tr>
+								<tr>
+									<td> Content Document </td>
+									<td>
+										<code>HTML/file name.xhtml</code>
+									</td>
+									<td>
+										<code>http://localhost:49152/HTML/file%20name.xhtml</code>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<div class="note">
+						<p>Some language specifications reference <a href="https://www.ietf.org/standards/rfcs/"
+								>Requests For Comments</a> that preceded [[URL]], in which case the earlier RFC applies
+							for content in that particular language.</p>
+					</div>
+
+					<p class="note">Unlike most language specifications, Reading Systems must use the <a>container root
+							URL</a> as the <a data-cite="url#concept-base-url">base URL</a> [[URL]] for all files within
+						the <code>META-INF</code> directory. See also the section on <a
+							data-cite="epub-33#sec-parsing-urls-metainf">Parsing URLs in the <code>META-INF</code>
+							Directory</a> in [[!EPUB-33]]. </p>
+
+				</section>
+
+				<section id="sec-container-filenames">
+					<h4>File Names</h4>
+
+					<p>Although EPUB Creators are required to follow various <a
+							data-cite="epub-33#sec-container-filenames">File Name and File Path restrictions</a>
+						[[!EPUB-33]] for maximum interoperability, Reading Systems SHOULD attempt to process File Names
+						and Paths that are not valid to these requirements. Invalid File Names and Paths may only be
+						problematic on some operating systems.</p>
+
+					<p>This specification does not specify how a Reading System that is unable to represent OCF File
+						Names and Paths would compensate for this incompatibility.</p>
+
+					<p>If a Reading System cannot preserve the names of files during an unzipping process, it will have
+						to compensate for any name translation that took place in the content (i.e., in any URIs that
+						reference the original name).</p>
+				</section>
+
+				<section id="sec-container-metainf">
+					<h4><code>META-INF</code> Directory</h4>
+
+					<dl class="conformance-list">
+						<dt id="sec-container-metainf-container.xml">Container File (<code>container.xml</code>)</dt>
+						<dd>
+							<p id="container-default-rendition"
+								data-tests="#ocf-package_arbitrary,#ocf-package_multiple">A Reading System MUST, by
+								default, use the Package Document referenced from first <code>rootfile</code> element to
+								render the EPUB Publication. If the Reading System recognizes a means of selecting from
+								the other available options, it MAY choose a more appropriate Package Document.</p>
+						</dd>
+
+						<dt id="sec-container-metainf-metadata.xml">Metadata File (<code>metadata.xml</code>)</dt>
+						<dd>
+							<p>Reading Systems SHOULD ignore <code>metadata.xml</code> files with unrecognized root
+								elements.</p>
+						</dd>
+
+						<dt id="sec-container-metainf-encryption.xml">Encryption File (<code>encryption.xml</code>)</dt>
+						<dd>
+							<p>Reading Systems MUST only decrypt data encrypted after signing before computing the
+								digest used to validate the signature.</p>
+						</dd>
+
+						<dt id="sec-container-metainf-manifest.xml">Manifest File (<code>manifest.xml</code>)</dt>
+						<dd>
+							<p>Reading Systems MUST NOT use ancillary manifest information contained in the ZIP archive
+								or in the <code>manifest.xml</code> file for processing an EPUB Publication.</p>
+						</dd>
+
+						<dt id="sec-container-metainf-inc">Other Files</dt>
+						<dd>
+							<p>Reading Systems MUST NOT fail when encountering configuration files in the <code
+									class="filename">META-INF</code> directory not listed in <a
+									data-cite="epub-33#sec-container-metainf-files">Reserved Files</a> [[EPUB-33]].</p>
+						</dd>
+					</dl>
+				</section>
+			</section>
+
+			<section id="sec-container-zip">
+				<h3>OCF ZIP Container</h3>
+
+				<p>A Reading System that supports the OCF Container:</p>
+
+				<ul class="conformance-list">
+					<li>
+						<p id="confreq-zip-mult">MUST treat any OCF Containers that specify the ZIP file is split across
+							multiple storage media as in error.</p>
+					</li>
+					<li>
+						<p id="confreq-zip-comp">MUST treat any OCF Containers that use compression techniques other
+							than Deflate as in error.</p>
+					</li>
+					<li>
+						<p id="confreq-zip-64">MUST support the ZIP64 extensions defined as "Version 1".</p>
+					</li>
+					<li>
+						<p id="confreq-zip-enc">MUST treat OCF ZIP Containers that use ZIP encryption features as in
+							error.</p>
+					</li>
+					<li>
+						<p id="confreq-zip-rootdir">MAY generate a physical directory for the <a>Root Directory</a> of
+							the OCF Abstract Container if it unzips the contents.</p>
+					</li>
+					<li>
+						<p id="confreq-zip-preserve">does not have to preserve information from an OCF ZIP Container
+							through load and save operations outside the context of the OCF Abstract Container. In
+							particular, a Reading System does not have to preserve CRC values, comment fields or fields
+							that hold file system information corresponding to a particular operating system (e.g., <em
+								class="firstterm">External file attributes</em> and <em class="firstterm">Extra
+								field</em>).</p>
+					</li>
+				</ul>
+
+				<p>With respect to specific fields in the OCF ZIP Container archive, the Reading System:</p>
+
+				<ul class="conformance-list">
+					<li>
+						<p id="confreq-zip-fld-version">MUST treat <code>version needed to extract</code> field values
+							other than <code>10</code>, <code>20</code> or <code>45</code> in the local file header
+							table as being in error.</p>
+					</li>
+					<li>
+						<p id="confreq-zip-fld-comp">MUST treat <code>compression</code> method field values other than
+								<code>0</code> or <code>8</code> in the local file header table as being in error.</p>
+					</li>
+					<li>
+						<p id="confreq-zip-fld-er">MUST treat OCF ZIP Containers with an <code>Archive decryption
+								header</code> or an <code>Archive extra data record</code> as being in error.</p>
+					</li>
+				</ul>
+			</section>
+			<section id="sec-container-fobfus">
+				<h3>Font Obfuscation</h3>
+
+				<p id="confreq-ocf-fobfus">Reading Systems MUST support deobfuscation of fonts as defined in <a
+						data-cite="epub-33#sec-font-obfuscation"><em>Font Obfuscation</em></a> [[EPUB-33]].</p>
+
+				<p>For Reading Systems to get the original obfuscated data back, simply reverse the process: the source
+					file becomes the obfuscated data, and the destination file contains the raw data.</p>
+
+				<div class="note">
+					<p>EPUB 3 allowed the obfuscation of fonts prior to EPUB 3.0.1, but did not specify the order of
+						obfuscation and compression. As a result, Reading Systems might encounter invalid fonts after
+						decompression and de-obfuscation. In such instances, de-obfuscating the data before inflating it
+						may return a valid font. Reading Systems do not have to support this method of retrieval, but
+						developers must consider it when supporting EPUB 3 content generally.</p>
+				</div>
+			</section>
+		</section>
+		<section id="sec-media-overlays">
+			<h2>Media Overlays Processing</h2>
+
+			<p id="confreq-rs-epub3-mo" class="support">Reading Systems MAY support <a
+					data-cite="epub-33#sec-media-overlays">Media Overlays</a> [[EPUB-33]].</p>
+
+			<p>If a Reading System does not support Media Overlays, it MUST ignore both the <code>media-overlay</code>
+				attribute on <a>Manifest</a>
+				<a data-cite="epub-33#elemdef-package-item"><code>item</code> elements</a> [[EPUB-33]] and the manifest
+					<code>item</code> elements where the <code>media-type</code> attribute value equals
+					<code>application/smil+xml</code>.</p>
+
+			<section id="sec-behaviors-loading">
+				<h4>Loading the Media Overlay</h4>
+
+				<p>When a Reading System loads a <a>Package Document</a>, it MUST refer to the <a>Manifest</a>
+					<a data-cite="epub-33#elemdef-package-item"><code>item</code> elements'</a> [[EPUB-33]]
+						<code>media-overlay</code> attributes to discover the corresponding Media Overlays for <a>EPUB
+						Content Documents</a>.</p>
+
+				<p id="confreq-rs-xhtml-svg">Reading Systems MUST support playback for <a>XHTML Content Documents</a>,
+					and MAY support <a>SVG Content Documents</a>.</p>
+
+				<p>Playback MUST start at the Media Overlay element which corresponds to the desired EPUB Content
+					Document starting point. Note that the start of an EPUB Content Document MAY correspond to an
+					element at the start or in the middle of a Media Overlay. When the Media Overlay Document finishes
+					playing, the Reading System SHOULD load the next EPUB Content Document (as specified in the Package
+					Document <a>spine</a>) and also load its corresponding Media Overlay Document, provided that one is
+					given.</p>
+			</section>
+
+			<section id="sec-behaviors-playback">
+				<h4>Basic Playback</h4>
+
+				<section id="sec-rsconf-timing-synch">
+					<h3>Timing and Synchronization</h3>
+
+					<p>Reading Systems MUST render immediate children of the <a data-cite="epub-33#elemdef-smil-body"
+								><code>body</code> element</a> [[EPUB-33]] in a sequence. A <a
+							data-cite="epub-33#elemdef-smil-seq"><code>seq</code> element's</a> [[EPUB-33]] children
+						MUST be rendered in sequence, and playback completes when the last child finishes playing.
+						Reading System MUST render a <a data-cite="epub-33#elemdef-smil-par"><code>par</code>
+							element's</a> [[EPUB-33]] children in parallel (with each starting at the same time), and
+						playback completes when all the children finish playing. Reading System playback of the Media
+						Overlay Document completes when the <code>body</code> element's last child finishes playing.</p>
+				</section>
+
+				<section id="sec-rsconf-rendering-audio">
+					<h5>Rendering Audio</h5>
+
+					<p>When presented with a Media Overlay <a data-cite="epub-33#elemdef-smil-audio"><code>audio</code>
+							element</a> [[EPUB-33]], Reading Systems MUST play the audio resource referenced by the
+							<code>src</code> attribute, starting at the clip offset time given by the <a
+							data-cite="epub-33#attrdef-smil-clipBegin"><code>clipBegin</code> attribute</a> [[EPUB-33]]
+						and ending at the clip offset time given by the <a data-cite="epub-33#attrdef-smil-clipEnd"
+								><code>clipEnd</code> attribute</a> [[EPUB-33]].</p>
+
+					<p>In addition:</p>
+
+					<ul>
+						<li>
+							<p>If the EPUB Creator has not specified a <code>clipBegin</code>, Reading Systems MUST
+								assume the value "<code>0</code>".</p>
+						</li>
+						<li>
+							<p>If the EPUB Creator has not specified a <code>clipEnd</code>, Reading Systems MUST assume
+								the value to be the full duration of the physical media.</p>
+						</li>
+						<li>
+							<p>If <code>clipEnd</code> exceeds the full duration of the physical media, Reading Systems
+								MUST assume its value to be the full duration of the physical media.</p>
+						</li>
+					</ul>
+
+					<p>User-controllable audio playback options SHOULD include timescale modification, in which the user
+						can alter the playback rate without distorting the pitch. The suggested range is half-speed to
+						double-speed.</p>
+
+				</section>
+
+				<section id="sec-rsconf-rendering-text">
+					<h5>Rendering EPUB Content Document Elements</h5>
+
+					<p>When presented with a Media Overlay <a data-cite="epub-33#elemdef-smil-text"><code>text</code>
+							element</a> [[!EPUB-33]] whose <code>src</code> attribute references a <a
+							data-cite="html#target-element">target element</a> [[HTML]] or <a
+							href="https://www.w3.org/TR/SVG/linking.html#SVGFragmentIdentifiers">SVG Fragment
+							Identifier</a> [[SVG]], Reading Systems SHOULD ensure the referenced element is visible in
+						the <a>Viewport</a>. Reading Systems MAY support other fragment identifier schemes.</p>
+
+					<p>During Media Overlays playback, Reading Systems with a Viewport SHOULD add the class names given
+						by the metadata properties <a data-cite="epub-33#active-class"><code>active-class</code></a> and
+							<a data-cite="epub-33#playback-active-class"><code>playback-active-class</code></a>
+						[[EPUB-33]] to the appropriate elements, when specified, in the EPUB Content Document.
+						Conversely, the class names SHOULD be removed when the playback state changes, as described in
+							<a data-cite="epub-33#sec-docs-assoc-style">Associating Style Information</a>
+						[[EPUB-33]].</p>
+
+					<p>The <code>active-class</code> and <code>playback-active-class</code> metadata properties are
+						OPTIONAL, and if omitted, Reading System behavior is implementation-specific.</p>
+
+					<p>Reading System behavior when a <a data-cite="epub-33#sec-media-overlays-fragids">fragment
+							identifier</a> [[EPUB-33]] does not reference an element is also
+						implementation-specific.</p>
+				</section>
+			</section>
+
+			<section id="sec-behaviors-interaction">
+				<h4>Interacting with the EPUB Content Document</h4>
+
+				<section id="sec-rsconf-navigation">
+					<h5>Navigation</h5>
+
+					<p>Because the Media Overlay is closely linked to the <a>EPUB Content Document</a>, it is very easy
+						for Reading Systems to locate a position in the EPUB Content Document based on the current
+						position in the Media Overlay playback. If the user pauses synchronized playback and navigates
+						to a different part of the <a>EPUB Publication</a>, synchronized playback MUST resume at that
+						point. For example, if a specific page number in the EPUB Content Document is the desired
+						location, then this same point is located in the Media Overlay and playback started there.</p>
+
+					<p>This same approach allows for synchronizing the Media Overlay playback with user selection of a
+						navigation point in the <a>EPUB Navigation Document</a>. The Reading System loads the Media
+						Overlay for that file and finds the correct point for starting playback based on the ID [[XML]]
+						of the navigation point target.</p>
+
+					<div class="note">
+						<p>EPUB Creators may associate a Media Overlay Document directly with a Navigation Document in
+							order to provide synchronized playback of its contents, regardless of whether the <a>XHTML
+								Content Document</a> in which it resides is included in the <a>spine</a>. See <a
+								data-cite="epub-33#sec-nav-doc"><em>EPUB Navigation Document</em></a> [[EPUB-33]] for
+							more information.</p>
+					</div>
+
+					<div class="note" id="note-table-reading-mode">
+						<p>EPUB Creators may associate Media Overlay Document elements with EPUB Content Document
+							structures such as tables. Reading Systems should ensure that Media Overlay playback remains
+							synchronized with user navigation of table rows and cells. The Reading System might also
+							play the corresponding table header preceding the contents of the cell.</p>
+					</div>
+				</section>
+
+				<section id="sec-embedded-media">
+					<h5>Embedded Audio and Video</h5>
+
+					<p>An <a>EPUB Content Document</a> with which a Media Overlay is associated MAY itself contain
+						embedded video and audio media. The Media Overlay elements MAY point to these elements. Unlike
+						text and images, video and audio media have an intrinsic duration. Consequently, when a Reading
+						System renders the synchronization described by a Media Overlay, it MUST override the default
+						playback behavior of audio and video media embedded within the associated EPUB Content
+						Document.</p>
+
+					<p>Note that the rules below apply only to <em>referenced</em> [[HTML]] <a
+							data-cite="html#the-video-element"><code>video</code></a> or <a
+							data-cite="html#the-audio-element"><code>audio</code></a> elements within the associated
+						EPUB Content Document. That is to say, the rules apply to only those elements pointed to by <a
+							data-cite="epub-33#elemdef-smil-text"><code>text</code> elements</a> [[EPUB-33]] within the
+						Media Overlay (i.e., via the <code>src</code> attribute). These rules do not apply to embedded
+						media not referenced by Media Overlay elements.</p>
+
+					<ul>
+						<li>
+							<p>Reading Systems MUST deactivate the public playback interface for all referenced audio
+								and video media embedded within an EPUB Content Document (typically: play/pause control,
+								time slider, volume level, etc.). This behavior avoids interference between the
+								scheduled playback sequence defined by the Media Overlay, and the arbitrary playback
+								behavior due to user interaction or script execution. As a result, when the Reading
+								System is in playback mode, it SHOULD:</p>
+							<ul>
+								<li>
+									<p>Hide the individual video/audio UI controls from the page, which overrides the
+										default behavior defined by the [[HTML]] <a data-cite="html#attr-media-controls"
+												><code>controls</code> attribute</a>.</p>
+								</li>
+								<li>
+									<p>Prevent scripts embedded within the EPUB Content Document from invoking the
+										JavaScript audio/video playback API (i.e., authored as part of the default
+										behavior).</p>
+								</li>
+							</ul>
+						</li>
+						<li>
+							<p>Reading Systems MUST initialize all referenced audio and video media embedded within an
+								EPUB Content Document to their "stopped" state, and ready them to play from the
+								zero-position within their content stream (possibly displaying the image specified using
+								the [[HTML]] <a data-cite="html#the-video-element"><code>poster</code></a> attribute).
+								This requirement overrides the default behavior defined by the [[HTML]] <a
+									data-cite="html#the-video-element"><code>autoplay</code></a> attribute.</p>
+						</li>
+						<li>
+							<p>When an EPUB Content Document element becomes active, the CSS Style Sheet visual
+								highlighting rules apply regardless of the content type referred to by that element's
+									<code>src</code> attribute (e.g., the CSS class name defined by the <a
+									data-cite="epub-33#active-class"><code>active-class</code> metadata property</a>
+								[[EPUB-33]] SHOULD be applied to visible video and audio player controls within the host
+								EPUB Content Document).</p>
+						</li>
+						<li>
+							<p>In addition to the default behavior of Media Overlay activation for textual fragments and
+								images, audio and video playback MUST be started and stopped according to the duration
+								implied by the authored Media Overlay synchronization (as per the standard [[SMIL3]]
+								timing model). There are two possible scenarios:</p>
+							<ul>
+								<li>
+									<p>When a Media Overlay <code>text</code> element has no <a
+											data-cite="epub-33#elemdef-smil-audio"><code>audio</code></a> [[EPUB-33]]
+										sibling within its <a data-cite="epub-33#elemdef-smil-par"><code>par</code></a>
+										[[EPUB-33]] parent container, the referenced EPUB Content Document audio or
+										video media MUST play until it ends, at which point the <code>text</code>
+										element's lifespan terminates. In this case, the implicit duration of the
+											<code>text</code> element (and by inference, of the parent <code>par</code>
+										container) is that of the referenced audio or video clip.</p>
+								</li>
+								<li>
+									<p>When a Media Overlay <code>text</code> element has an <code>audio</code> sibling
+										within its <code>par</code> parent container, Reading Systems MUST constrain the
+										playback duration of the referenced EPUB Content Document audio or video media
+										by the duration of the <code>audio</code> sibling. In this case, the actual
+										duration of the parent <code>par</code> container is that of the child audio
+										clip, regardless of the duration of the video or audio media pointed to by the
+											<code>text</code> element. This behavior can result in embedded video or
+										audio media ending playback prematurely (before reaching its full duration), or
+										ending before the playback of the parallel Media Overlay <code>audio</code> is
+										finished (in which case the last-played video frame SHOULD remain visible until
+										the parent <code>par</code> container finally ends). This behavior is equivalent
+										of the Media Overlay <code>audio</code> element implicitly carrying the behavior
+										of the [[SMIL3]] <a data-cite="smil3/smil-timing.html#adef-endsync"
+												><code>endsync</code></a> attribute.</p>
+									<p>Furthermore, Reading Systems SHOULD expose user controls for the volume levels of
+										each independent audio track (i.e., from the <code>audio</code> element of the
+										Media Overlay, and from the embedded audio or video media within the EPUB
+										Content Document), so that users can adjust the audio output to match their
+										requirements. Note that having overlapping audio tracks is typically an
+										authoring-time concern: content producers usually add a layer of audio
+										information over a video track for description purposes. Reading Systems
+										handling of simultaneous volume levels in any specific way is OPTIONAL.</p>
+								</li>
+							</ul>
+						</li>
+						<li>
+							<p>When a <code>text</code> element becomes inactive in the Media Overlay, and when it
+								points to embedded video or audio media, that referenced media MUST be reset to its
+								initial "stopped" state, ready to be played from the zero-position within their content
+								stream (possibly displaying the poster image specified using the [[HTML]] markup).</p>
+						</li>
+					</ul>
+
+				</section>
+
+				<section id="sec-text-to-speech">
+					<h5>Text-to-Speech</h5>
+
+					<p>When a Media Overlay <a data-cite="epub-33#elemdef-smil-text"><code>text</code> element</a>
+						[[EPUB-33]] with no <a data-cite="epub-33#elemdef-smil-audio"><code>audio</code></a> [[EPUB-33]]
+						sibling element references text within the target <a>EPUB Content Document</a>, Reading Systems
+						capable of text-to-speech (TTS) playback SHOULD render the referenced text using TTS.</p>
+
+					<p>Reading Systems SHOULD use the speech-related information provided in the target EPUB Content
+						Document to play the audio stream as part of the Media Overlay rendering.</p>
+
+					<div class="note">
+						<p>See <a data-cite="epub-tts-10#">EPUB 3 Text-to-Speech Support</a> [[EPUB-TTS-10]] for more
+							information about supporting TTS technologies in EPUB Publications.</p>
+					</div>
+
+					<p>The Media Overlay <code>text</code> element's lifespan corresponds to the rendering time of the
+						associated speech synthesis. The implicit duration of the <code>text</code> element (and by
+						inference, of the parent <code>par</code> element) is therefore determined by the execution of
+						the Text-to-Speech engine, and cannot be known at authoring time (factors like speech rate,
+						pauses and other prosody parameters influence the audio output).</p>
+				</section>
+			</section>
+
+			<section id="sec-behaviors-skip-escape">
+				<h4>Skippability and Escapability</h4>
+
+				<section id="sec-skippability">
+					<h5>Skippability</h5>
+
+					<p>Reading Systems SHOULD use the semantic information provided by Media Overlay elements' <a
+							href="#sec-structural-semantics"><code>epub:type</code> attribute</a> to determine when to
+						offer users the option of skippable features.</p>
+				</section>
+
+				<section id="sec-escapability">
+					<h5>Escapability</h5>
+
+					<p>Reading Systems SHOULD allow escaping of nested structures. Reading Systems MUST determine the
+						start of nested structures by the value of the <a href="#sec-structural-semantics"
+								><code>epub:type</code> attribute</a> and SHOULD offer users the option to skip playback
+						of that structure and resume with whatever content comes after it.</p>
+				</section>
+			</section>
+		</section>
+		<section id="sec-structural-semantics">
+			<h2>Processing Structural Semantics</h2>
+
+			<p id="confreq-rs-epub-epub-type" class="support">Reading Systems MAY support <a
+					data-cite="epub-33#app-structural-semantics">structural semantics</a> [[EPUB-33]] in <a>EPUB Content
+					Documents</a>.</p>
+
+			<p>When processing the <code>epub:type</code> attribute, a Reading System:</p>
+
+			<ul class="conformance-list">
+				<li>
+					<p id="confreq-rs-epubtype-beh">MAY associate behaviors with none, some or all of the terms defined
+						in the <a data-cite="epub-33#sec-epub-type-attribute">default vocabulary</a> [[EPUB-33]].</p>
+				</li>
+				<li>
+					<p id="confreq-rs-epubtype-oth">MAY associate behaviors with terms from other vocabularies.</p>
+				</li>
+				<li>
+					<p id="confreq-rs-epubtype-ign">MUST ignore terms that it does not recognize.</p>
+				</li>
+				<li>
+					<p id="confreq-rs-epubtype-conflict">MUST <a href="#confreq-rs-epubtype-prec">ignore structural
+							semantics</a> that conflict with the carrying element.</p>
+				</li>
+			</ul>
+
+			<p id="confreq-rs-epubtype-prec">When the Reading System behavior associated with a given
+					<code>epub:type</code> value conflicts with an element's native behavior, the behavior associated
+				with the element MUST be given precedence.</p>
+		</section>
+		<section id="sec-vocab-assoc">
+			<h2>Vocabulary Association Mechanisms</h2>
+
+			<p id="confreq-res-epub-vocab-assoc" class="support">Reading Systems MUST support <a
+					data-cite="epub-33#sec-vocab-assoc">vocabulary association mechanisms</a> [[EPUB-33]].</p>
+
+			<dl class="conformance-list">
+				<dt id="sec-metadata-reserved-prefixes">Reserved Prefixes</dt>
+				<dd>
+					<p>Reading Systems MUST resolve all reserved prefixes used in Package Documents using their
+						predefined URLs unless the EPUB Creator declares a local <a href="#sec-prefix-attr">prefix</a>.
+						Reading Systems MUST use the URLs defined for locally overridden prefixes (using the
+							<code>prefix</code> attribute) when encountered.</p>
+					<p>As changes to the reserved prefixes and updates to Reading Systems are not always going happen in
+						synchrony, Reading Systems MUST NOT fail when encountering unrecognized prefixes (i.e., not
+						reserved and not declared using the <code>prefix</code> attribute).</p>
+				</dd>
+
+				<dt id="sec-prefix-attr">The <code>prefix</code> attribute</dt>
+				<dd>
+					<p>If the <code>prefix</code> attribute includes a declaration for a <a
+							href="#sec-metadata-reserved-prefixes">predefined prefix</a>, Reading Systems MUST use the
+						URL mapping defined in the <code>prefix</code> attribute, regardless of whether of it maps to
+						the same URL as the predefined prefix.</p>
+				</dd>
+
+				<dt id="sec-property-datatype">Expanding <code>property</code> Data Types</dt>
+				<dd>
+					<p>Reading Systems MUST expand <code>property</code> values as follows:</p>
+					<ul>
+						<li>
+							<p>If the property consists only of a reference, concatenate the prefix URL associated with
+								the <a data-cite="epub-33#sec-default-vocab">default vocabulary</a> [[EPUB-33]] to the
+								reference.</p>
+						</li>
+						<li>
+							<p>If the property consists of a prefix and reference, concatenate the URL defined for the
+								prefix to the reference. If the EPUB Creator has not defined a matching prefix, and it
+								is not a <a data-cite="epub-33#sec-reserved-prefixes">reserved prefix</a> [[EPUB-33]],
+								the property is invalid and Reading Systems MUST ignore it.</p>
+						</li>
+						<li>
+							<p>If the property consists only of a prefix (i.e., there is no reference after the colon),
+								the property is invalid and Reading Systems MUST ignore it.</p>
+						</li>
+					</ul>
+					<p>The result MUST be a <a data-cite="url#valid-url-string">valid URL string</a> [[URL]]. If the
+						process results in an invalid URL, Reading Systems MUST ignore the property.</p>
+					<p>Reading Systems do not have to <a data-cite="url#concept-url-parser">parse the resulting URL</a>
+						[[URL]] or attempt to dereference the resource.</p>
+				</dd>
+			</dl>
+		</section>
+		<section id="sec-package-metadata-rendering">
+			<h3>Package Rendering Metadata Processing</h3>
+
+			<p id="confreq-rs-epub3-presentational-meta" class="support">Reading Systems SHOULD process the <a
+					data-cite="epub-33#sec-rendering-general">general package rendering properties</a> [[EPUB-33]].</p>
+
+			<section id="flow">
+				<h5>The <code>rendition:flow</code> Property</h5>
+
+				<p>If a Reading System supports the specified rendering, it SHOULD use that method to handle overflow
+					content, but MAY provide the option for users to override the requested rendering.</p>
+
+				<p>The default global value is <code>auto</code> if no <code>meta</code> element carrying this property
+					occurs in the <a data-cite="epub-33#elemdef-opf-metadata"><code>metadata</code> section</a>
+					[[EPUB-33]]. Reading Systems MAY support only this default value.</p>
+
+				<p>If a Reading Systems supports the <a href="#layout"><code>rendition:layout</code></a> property, it
+					MUST ignore the <code>rendition:flow</code> property when it has been set on a spine item that also
+					specifies the <a href="#layout"><code>rendition:layout</code></a> value
+					<code>pre-paginated</code>.</p>
+
+				<p>The <code>rendition:flow</code> property values have the following processing requirements:</p>
+
+				<dl class="variablelist">
+					<dt id="paginated">paginated</dt>
+					<dd id="paginated-dd" data-tests="#pkg-flow-paginated">
+						<p>The Reading System SHOULD dynamically paginate all overflow content.</p>
+					</dd>
+					<dt id="scrolled-continuous">scrolled-continuous</dt>
+					<dd id="scrolled-continuous-dd" data-tests="#pkg-flow-scrolled-continuous">
+						<p>The Reading System SHOULD render all Content Documents such that overflow content is
+							scrollable, and SHOULD present the EPUB Publication as one continuous scroll from spine item
+							to spine item (except where <a data-cite="epub-33#layout-property-flow-overrides">locally
+								overridden</a> [[EPUB-33]]).</p>
+					</dd>
+					<dt id="scrolled-doc">scrolled-doc</dt>
+					<dd id="scrolled-doc-dd" data-tests="#pkg-flow-scrolled-doc">
+						<p>The Reading System SHOULD render all Content Documents such that users can scroll overflow
+							content, and SHOULD present each spine item as a separate scrollable document.</p>
+					</dd>
+					<dt id="auto">auto</dt>
+					<dd>
+						<p>The Reading System MAY render overflow content using its default method or a user preference,
+							whichever is applicable.</p>
+					</dd>
+				</dl>
+
+				<p>For the <code>rendition:flow-scrolled-continuous</code> property, the scroll direction MUST be
+					defined relative to the block flow direction of the root element of the XHTML Content Document
+					referenced by the <a data-cite="epub-33#elemdef-spine-itemref"><code>itemref</code> element</a>
+					[[EPUB-33]]. The scroll direction MUST be vertical if the block flow direction is downward
+					(top-to-bottom). It MUST be horizontal if the block flow direction of the root element is rightward
+					(left-to-right) or leftward (right-to-left).</p>
+			</section>
+
+			<section id="align-x-center">
+				<h5>The <code>rendition:align-x-center</code> Property</h5>
+
+				<p>When the <a href="#align-x-center"><code>rendition:align-x-center</code> property</a> is set on a
+					spine item, Reading Systems SHOULD render the content centered horizontally within the
+						<a>Viewport</a> or spread, as applicable. This property does not affect the rendering of the
+					spine item, only the placement of the resulting content box.</p>
+
+				<p>For reflowable content, Reading Systems that support this property MUST center each virtual page.</p>
+
+				<p>This specification does not define a default rendering behavior when Reading Systems do not support
+					this property or EPUB Creators do not specify it. Reading Systems MAY render spine items by their
+					own design.</p>
+			</section>
+		</section>
+		<section id="sec-epub-rs-conf-backward">
+			<h3>Backward Compatibility</h3>
+
+			<p id="confreq-rs-backward-epub" data-tests="#pkg-version-backward">Reading Systems MUST attempt to process
+				an EPUB Publication whose Package Document <code>version</code> attribute is less than
+				"<code>3.0</code>".</p>
+
+			<p id="confreq-rs-backward-conf">EPUB Publications with older version numbers will not always render exactly
+				as intended unless processed according to their respective specifications. Reading Systems SHOULD
+				support such EPUB Publications as defined by those specifications.</p>
+		</section>
+		<section id="sec-epub-rs-conf-forward">
+			<h3>Forward Compatibility</h3>
+
+			<p id="confreq-rs-forward-epubn">Reading Systems SHOULD attempt to process an EPUB Publication whose Package
+				Document <code>version</code> attribute is greater than "<code>3.0</code>".</p>
+		</section>
+		<section id="sec-accessibility" class="informative">
+			<h2>Accessibility</h2>
+
+			<p>The primary focus of this specification is on how to process and render <a>EPUB Publications</a> and
+				Reading Systems generally have little influence over the accessibility of the underlying content that
+				they render (i.e., the accessibility is determined both by the capabilities of the technologies used and
+				how they are taken advantage of by EPUB Creators). So long as Reading Systems fully and accurately
+				support EPUB's required technologies, there should not be issues in the content rendering itself.</p>
+
+			<p>Where accessibility intersects with Reading Systems is in the user interface provided to users. But even
+				here the specification provides a lot of leeway in terms of how to construct such interfaces as Reading
+				Systems may take many forms. EPUB Reading Systems run the gamut from standalone applications to
+				device-integrated programs (e.g., eInk readers) to web-hosted applications. A reading system may or may
+				not even have a visual interface as auditory applications allow users who are blind to easily consume
+				EPUB Publications.</p>
+
+			<p>Due to this flexibility, this specification does not mandate specific user interfaces that all Reading
+				Systems must offer. At the same time, however, it is critically important that Reading Systems be as
+				accessible as possible to ensure the widest number of users can read their content.</p>
+
+			<p>The following list outlines some of the common areas where a lack of accessibility impacts the reading
+				experience for users.</p>
+
+			<ul>
+				<li>Bookshelf &#8212; Ensure that the process for accessing and opening the user's content is
+					accessible. For example, do not rely on a visual-only display like cover images. Exposing text
+					representations of the title(s) and author(s), including the language they are expressed in, allows
+					assistive technologies to properly announce the options.</li>
+				<li>User Interface Controls &#8212; Ensure that all controls (e.g., search boxes, annotation controls,
+					and buttons to load features such as the table of contents) are exposed to assistive technologies
+					and their actions do not rely on specific modalities (e.g., they only operate through touch or a
+					mouse).</li>
+				<li>Search &#8212; Search access to the full text content of all EPUB Content Documents (including
+					alternative text attributes, text in SVG images, etc.) is necessary to ensure users can locate
+					information easily.</li>
+				<li>Display Control &#8212; Provide methods for users to tailor the styling of the content to their
+					preferences (e.g., to change and increase fonts, increase line and word spacing, and apply alternate
+					contrasts).</li>
+				<li>Zoom &#8212; Allow users to zoom the content to better size it to their needs, especially for
+						<a>Fixed-Layout Documents</a>.</li>
+				<li>Reading Control &#8212; Ensure that the ability to read from page-to-page and document-to-document
+					does not depend on physical interaction (i.e., users of assistive technologies can read the content
+					without getting trapped at the end of pages or documents).</li>
+				<li>API Integration &#8212; Ensure that the accessibility tree, including support for roles, states and
+					properties [[WAI-ARIA-11]], is exposed to the underlying operating system's accessibility API so
+					that users can fully interact with the content when using assistive technologies.</li>
+				<li>Document Object Model (DOM) &#8212; Provide access to the [[DOM]] of EPUB Content Documents so that
+					users can investigate the semantics and structure used in the source.</li>
+				<li>Table of Contents &#8212; Ensure that users can access the link text, including <a
+						data-cite="epub-33#confreq-nav-a-title">text alternatives for visual content</a>. Activating the
+					table of contents links should be possible using different inputs.</li>
+			</ul>
+
+			<p>The DAISY Consortium maintains an <a href="http://epubtest.org/test-books">accessibility test suite</a>
+				to aid in evaluating these issues and more.</p>
+
+			<p>In addition, although focused on browser acccessibility, the W3C's <a data-cite="UAAG20#">User Agent
+					Accessibility Guidelines</a> [[UAAG20]] provides many useful practices developers can apply to
+				improve their Reading Systems.</p>
+		</section>
+		<section id="sec-security-privacy" class="informative">
+			<h2>Security and Privacy</h2>
+
+			<div class="ednote">
+				<p>This section currently combines an overview of security and privacy considerations with issues
+					previously cited in the specification.</p>
+				<p>The Working Group intends to develop this section throughout the revision to further expand on the
+					issues and provide it with a more structured narrative.</p>
+			</div>
+
+			<p>The particularity of an <a>EPUB Publication</a> is its structure. The EPUB format provides a means of
+				representing, packaging, and encoding structured and semantically enhanced Web content — including HTML,
+				CSS, SVG, and other resources — for distribution in a single-file container. This specification does not
+					<em>add</em> any new features, complex APIs, etc. This also means that, essentially, the security
+				and privacy issues are reliant on the features of those formats. In particular:</p>
+
+			<ul>
+				<li>EPUB 3 allows references to remotely hosted resources from within <a>EPUB Content Documents</a>, but
+					also from the <a>Package Document</a> (e.g., in a <a data-cite="epub-33#sec-item-elem"
+							><code>item</code></a> element which allows both local and remote references). This is not
+					unlike any external reference from an average Web site that potentially exposes users to malicious
+					content, and the general Web security principles should be taken into account (e.g., cross-origin
+					resource sharing).</li>
+				<li>The <a data-cite="epub-33#sec-package-doc">Package Document</a> allows personally identifiable
+					information about an EPUB Publication's creator(s) (e.g., names, identifying URLs) to be included,
+					so authoring tools could expose unexpected information if explicit author approval of metadata is
+					not required.</li>
+			</ul>
+
+			<p>Additionally, the security considerations that apply to XML [[XML]] and ZIP [[ZIP]] files also apply to
+				the <a data-cite="epub-33#sec-package-doc">Package Document</a> and the <a data-cite="epub-33#sec-ocf"
+					>Open Container Format</a>, respectively. See the "Security Consideration" sections of the Media
+				Type registrations for the <a data-cite="epub-33#app-media-type-app-oebps-package"
+						><code>application/oebps-package+xml</code></a> and the <a
+					data-cite="epub-33#app-media-type-app-oebps-package"><code>application/epub+zip</code></a> formats
+				for further details. </p>
+
+			<section id="sec-scripted-content-security">
+				<h4>Scripting Considerations</h4>
+
+				<p>Reading System developers who also support scripting must be aware of the security issues that arise
+					when Reading Systems execute scripted content. As the underlying scripting model employed by Reading
+					Systems and browsers is the same, developers must take into consideration the same kinds of issues
+					encountered in Web contexts.</p>
+
+				<p>Each Reading System must establish if it can trust the scripts in a particular document. Reading
+					Systems should treat all scripts as untrusted (and potentially malicious), and developers should
+					examine all vectors of attack and protected against them. In particular, developers should consider
+					the following:</p>
+
+				<ul>
+					<li>
+						<p>an attack against the runtime environment (e.g., stealing files from a user's hard
+							drive);</p>
+					</li>
+					<li>
+						<p>an attack against the Reading System itself (e.g., stealing a list of a user's books or
+							causing unexpected behavior);</p>
+					</li>
+					<li>
+						<p>an attack of one Content Document against another (e.g., stealing data that originated in a
+							different document);</p>
+					</li>
+					<li>
+						<p>an attack of an unencrypted script against an encrypted portion of a document (e.g., an
+							injected malicious script extracting protected content);</p>
+					</li>
+					<li>
+						<p>an attack against the local network (e.g., stealing data from a server behind a
+							firewall).</p>
+					</li>
+				</ul>
+
+				<p>To limit the possible damage of untrusted scripts, this specification recommends that Reading Systems
+					establish a unique <a data-cite="url#origin">origin</a> [[URL]] allocated to each <a>EPUB
+						Publication</a> (see <a href="#sec-container-iri"></a>). Adopting this approach isolates
+					publications from each other, thereby limiting access to cookies, DOM storage, etc. Examples of Web
+					APIs that are tied to the concept of "origin" include Web Storage [[WEBSTORAGE]] and
+					IndexedDB [[INDEXEDDB]], which EPUB Content Documents can interact with via scripting. Reading
+					Systems that allow users to add/remove publications from a managed library (a.k.a "bookshelf") may
+					maintain the publication’s unique origin when the publication is removed and subsequently
+					re-imported into the content library. Conversely, Reading Systems may create a new unique origin for
+					every newly-added publication.</p>
+
+				<p>In addition, this specification recommends the following privacy practices:</p>
+
+				<ul>
+					<li>
+						<p>Reading Systems that support scripting and network access should also include methods to
+							notify the user that network activity is occurring and/or that allow them to disable it.</p>
+					</li>
+
+					<li>
+						<p>If a Reading System allows users/scripts to store persistent data, it must treat that data as
+							sensitive. Scripts may save persistent data through cookies and DOM storage but Reading
+							Systems may block such attempts. Reading Systems that allow users to store data must ensure
+							they do not make that data available to other unrelated documents (e.g., ones that could be
+							spoofed). In particular, checking for a matching document identifier (or similar metadata)
+							is not a valid method to control access to persistent data.</p>
+					</li>
+
+					<li>
+						<p>Reading Systems that allow local storage should also provide methods for users to inspect, or
+							delete that data.</p>
+					</li>
+				</ul>
+
+				<p>Note that compliance with these recommendations does not guarantee protection from the possible
+					attacks listed above; developers must examine each potential vulnerability within the context of
+					their Reading System.</p>
+			</section>
+
+			<section id="sec-scripted-content-events">
+				<h4>Event Model Considerations</h4>
+
+				<p>Reading Systems should follow the DOM Event model as per [[HTML]] and pass UI events to the scripting
+					environment before performing any default action associated with these events. Reading System
+					implementers should ensure that scripts cannot disable critical functionality (such as navigation)
+					to constrain the extent to which a <a href="#sec-scripted-content-security">potentially
+						malicious</a> script could impact their Reading Systems. As a result, although the scripting
+					environment should be able to cancel the default action of any event, some events either might not
+					be passed through or might not be cancelable.</p>
+			</section>
+		</section>
+		<section id="app-epubReadingSystem">
+			<h2><dfn>epubReadingSystem</dfn> Object</h2>
+
+			<p class="issue atrisk" title="Are there enough implementations?">Although this section is
+					<em>normative</em>, it is not clear whether implementations of this interface are widespread enough
+				to warrant this status. If it turns out not to be the case, this section will be marked as
+					<em>non-normative</em> in the final version of the specification.</p>
+
+			<p class="note">Reading Systems act as the core rendering engines of EPUB Publications and provide a
+				scripting environment based on the [[DOM]] specification. So, although this interface definition uses
+				the [[WEBIDL]] notation for implementation by Reading Systems, Web browsers generally do not have to
+				implement these objects. </p>
+
+			<section id="app-ers-idl">
+				<h3>Interface Definition</h3>
+
+				<p>This specification extends the the <a data-cite="html#the-navigator-object"><dfn>Navigator</dfn>
+						object</a> [[HTML]] as follows.</p>
+
+				<pre class="idl">[Exposed=(Window)]
+interface EpubReadingSystem {
+    [LegacyUnforgeable] readonly attribute DOMString name;
+    [LegacyUnforgeable] readonly attribute DOMString version;
+    boolean hasFeature(DOMString feature, optional DOMString version);
+};
+
+partial interface Navigator {
+    [LegacyUnforgeable, SameObject] readonly attribute EpubReadingSystem epubReadingSystem;
+};</pre>
+
+				<div class="note">
+					<p>This specification does not define an <code>epubReadingSystem</code> property extension for the
+							<a data-cite="html#the-workernavigator-object"><code>WorkerNavigator</code> object</a>
+						[[HTML]]. Reading Systems therefore do not have to expose the <code>epubReadingSystem</code>
+						object in the scripting context of Workers, and EPUB Creators cannot rely on its presence.</p>
+				</div>
+			</section>
+
+			<section id="app-ers-desc">
+				<h3>Description</h3>
+
+				<p>The <code><dfn>Navigator.epubReadingSystem</dfn></code> object provides an interface through which a
+						<a>Scripted Content Document</a> can query information about a user's Reading System.</p>
+
+				<p>The object exposes <a href="#app-ers-properties">properties</a> of the Reading System (its name and
+					version), and provides the <a href="#app-ers-hasFeature"><code>hasFeature</code> method</a> which
+					can be invoked to determine the features it supports.</p>
+
+				<aside class="example" title="JavaScript function to display the name of the current Reading System">
+					<pre>alert("Reading System name: " + navigator.epubReadingSystem.name);</pre>
+				</aside>
+
+				<p id="scripting-req-readingsystem" data-tests="#scr-readingsystem-support,#scr-readingsystem-support_svg,#scr-readingsystem-support_iframe,#scr-readingsystem-support_iframe_svg">Reading Systems MUST expose the <code>epubReadingSystem</code> object on the <code>navigator</code>
+					object of all loaded Scripted Content Documents, including any nested <a
+						data-cite="epub-33#sec-scripted-container-constrained">container-constrained scripting
+						contexts</a> [[EPUB-33]]. Reading Systems MUST ensure that the <code>epubReadingSystem</code>
+					object is available no later than when the <a data-cite="html#the-end"><code>DOMContentLoaded</code>
+						event is triggered</a> [[HTML]].</p>
+
+				<div class="note">
+					<p>Reading systems implementations may create cloned instances of the <code>epubReadingSystem</code>
+						object in Scripted Content Documents for technical feasibility reasons. In such cases, the
+						Reading System must ensure they consistently maintain the object's state — as reflected by the
+						values of its properties and methods — across all copied instances.</p>
+				</div>
+			</section>
+
+			<section id="app-ers-properties">
+				<h3>Properties</h3>
+
+				<p id="scripting-req-readingsystem-properties" data-tests="#scr-readingsystem-support,#scr-readingsystem-support_svg,#scr-readingsystem-support_iframe,#scr-readingsystem-support_iframe_svg">The Reading System MUST make the following properties available for retrieving information about
+					it.</p>
+
+				<table data-dfn-for="EpubReadingSystem">
+					<thead>
+						<tr>
+							<th>Name</th>
+							<th>Description</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td id="propdef-name">
+								<code>
+									<dfn>name</dfn>
+								</code>
+							</td>
+							<td>Returns a <code>String</code> value representing the name of the Reading System (e.g.,
+									"<code>iBooks</code>", "<code>Kindle</code>").</td>
+						</tr>
+						<tr>
+							<td id="propdef-version">
+								<code>
+									<dfn>version</dfn>
+								</code>
+							</td>
+							<td>Returns a <code>String</code> value representing the version of the Reading System
+								(e.g., "<code>1.0</code>", "<code>2.1.1</code>").</td>
+						</tr>
+					</tbody>
+				</table>
+
+				<p> This specification used to define a <code>layoutStyle</code> property, but it is now <a
+						data-cite="epub-33#deprecated">deprecated</a> [[EPUB-33]]. Refer to its definition in
+					[[EPUBContentDocs-301]] for more information. </p>
+			</section>
+
+			<section id="app-ers-methods">
+				<h3>Methods</h3>
+
+				<section id="app-ers-hasFeature">
+					<h4>hasFeature</h4>
+
+					<section id="app-ers-hasFeature-desc">
+						<h5>Description</h5>
+
+						<p data-dfn-for="EpubReadingSystem">The <code><dfn>hasFeature</dfn></code> method returns a
+							boolean value indicating whether the Reading System supports any version of the specified
+							feature, or <code>undefined</code> if the Reading System does not recognize the specified
+							feature.</p>
+
+						<p>The optional <code>version</code> parameter allows EPUB Creators to query custom features
+							that could change in incompatible ways over time. The return value indicates support only
+							for the specified version of the feature.</p>
+
+						<p><a href="#app-ers-hasFeature-features">Features defined in this specification</a> are
+							versionless. If a Reading System supports a feature defined in this specification, it MUST
+							ignore any supplied <code>version</code> parameter and return a <code>true</code> value.</p>
+
+						<aside class="example"
+							title="JavaScript function to display support for scripted manipulation of the DOM">
+							<pre>var feature = "dom-manipulation";
+
+var conformTest = navigator.epubReadingSystem.hasFeature(feature);
+
+alert("Feature " + feature + " supported?: " + conformTest);</pre>
+						</aside>
+					</section>
+
+					<section id="app-ers-hasFeature-features">
+						<h5>Features</h5>
+
+
+						<p id="scripting-req-readingsystem-features" data-tests="#scr-readingsystem-features">
+							The following table lists the set of features that Reading Systems that support the
+							<code>epubReadingSystem</code> object MUST recognize.
+							When the features are queried from the <code>hasFeature</code> method, 
+							Reading Systems MUST return a boolean value indicating their support.
+						</p>
+
+
+						<table>
+							<thead>
+								<tr>
+									<th>Name</th>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td id="feature-dom-manipulation">
+										<code>dom-manipulation</code>
+									</td>
+									<td>Scripts may make structural changes to the document’s DOM (applies to <a
+											data-cite="epub-33#sec-scripted-spine">spine-level scripting</a> [[EPUB-33]]
+										only).</td>
+								</tr>
+								<tr>
+									<td id="feature-layout-changes">
+										<code>layout-changes</code>
+									</td>
+									<td>Scripts may modify attributes and CSS styles that affect content layout (applies
+										to <a data-cite="epub-33#sec-scripted-spine">spine-level scripting</a>
+										[[EPUB-33]] only).</td>
+								</tr>
+								<tr>
+									<td id="feature-touch-events">
+										<code>touch-events</code>
+									</td>
+									<td>The device supports touch events, and the Reading System passes touch events to
+										the content.</td>
+								</tr>
+								<tr>
+									<td id="feature-mouse-events">
+										<code>mouse-events</code>
+									</td>
+									<td>The device supports mouse events, and the Reading System passes mouse events to
+										the content.</td>
+								</tr>
+								<tr>
+									<td id="feature-keyboard-events">
+										<code>keyboard-events</code>
+									</td>
+									<td>The device supports keyboard events, and the Reading System passes keyboard
+										events to the content.</td>
+								</tr>
+								<tr>
+									<td id="feature-spine-scripting">
+										<code>spine-scripting</code>
+									</td>
+									<td>Indicates whether the Reading System supports <a
+											data-cite="epub-33#sec-scripted-spine">spine-level scripting</a> [[EPUB-33]]
+										(e.g., so a <a data-cite="epub-33#sec-scripted-container-constrained"
+											>container-constrained script</a> [[EPUB-33]] can determine whether any
+										actions that depend on scripting support in a <a>Top-level Content Document</a>
+										have any chance of success before attempting them).</td>
+								</tr>
+							</tbody>
+						</table>
+
+						<p>Reading System developers MAY add additional features, but future versions of this
+							specification could append to this list in ways that might conflict or be incompatible with
+							any such custom additions.</p>
+					</section>
+				</section>
+			</section>
+		</section>
+		<section id="change-log" class="appendix informative">
+			<h2>Change Log</h2>
+
+			<p>Note that this change log only identifies substantive Changes since <a
+					href="https://www.w3.org/publishing/epub/epub-spec.html">EPUB 3.2</a> &#8212; those that affect the
+				conformance of Reading Systems or are similarly noteworthy.</p>
+
+			<p>For a list of all issues addressed during the revision, refer to the <a
+					href="https://github.com/w3c/epub-specs/issues?q=is%3Aissue+is%3Aclosed+label%3AEPUB33+label%3ASpec-RS+"
+					>Working Group's issue tracker</a>.</p>
+
+			<ul>
+				<li>10-Nov-2021: Proper definition of the Content URL and handling of relative URLs. See <a
+						href="https://github.com/w3c/epub-specs/issues/1374">issue 1374</a> and <a
+						href="https://github.com/w3c/epub-specs/issues/1888">issue 1888</a></li>
+				<li>01-Nov-2021: Added a statement on the Reading System behavior when item references are repeated in
+					the spine. See <a href="https://github.com/w3c/epub-specs/issues/1686">issue 1686</a>.</li>
+				<li>25-Oct-2021: Clarify that reading systems must render non-linear resources when they are hyperlinked
+					to by a user. See <a href="https://github.com/w3c/epub-specs/issues/1864">issue 1864</a>.</li>
+				<li>27-Aug-2021: Added accessibility bullet to cover the need for zooming, particularly for fixed-layout
+					documents. See <a href="https://github.com/w3c/epub-specs/issues/1776">issue 1776</a>.</li>
+				<li>27-Aug-2021: Remove the recommendation to support text search and selection in SVGs. Replacing with
+					a more general bullet on search accessibility to avoid defining requirements on reading system UI.
+					See <a href="https://github.com/w3c/epub-specs/issues/1774">issue 1774</a>.</li>
+				<li>09-July-2021: Restored the custom attributes section due to known usage but without reference to the
+					attribute registry. See <a href="https://github.com/w3c/epub-specs/issues/1602">issue 1602</a>.</li>
+				<li>09-July-2021: Removed recommendation to use the first language tag to determine an unspecified page
+					progression direction. See <a href="https://github.com/w3c/epub-specs/issues/1482">issue
+					1482</a>.</li>
+				<li>18-June-2021: Moved requirements for supporting SSML, PLS lexicons and CSS 3 Speech to the <a
+						href="https://www.w3.org/TR/epub-3-tts">EPUB 3 Text-to-Speech Support</a> note. See <a
+						href="https://github.com/w3c/epub-specs/issues/1690">issue 1690</a>.</li>
+				<li>20-May-2021: Providing a shared and unique origin for scripts is a requirements for Reading Systems
+					that support scripting. See <a href="https://github.com/w3c/epub-specs/issues/1659">issue
+					1659</a>.</li>
+				<li>20-May-2021: Removed requirement for reading systems to be conformant xml:base processors. See <a
+						href="https://github.com/w3c/epub-specs/pull/1678">pull request 1678</a>.</li>
+				<li>12-May-2021: Added additional requirement that Reading Systems ignore property values that expand to
+					invalid URL strings and property values with empty references. See <a
+						href="https://github.com/w3c/epub-specs/issues/1673">issue 1673</a>.</li>
+				<li>12-May-2021: Changed all references to URIs/IRIs to URLs and references to RFCs 3986 and 3987 to the
+					URL standard. See <a href="https://github.com/w3c/epub-specs/issues/808">issue 808</a>.</li>
+
+				<li>06-May-2021: Recommend that Reading Systems support references to HTML target elements and SVG
+					fragment identifiers in <code>textref</code> attributes and the <code>text</code> element's
+						<code>src</code> attribute. Support for other fragment identifier schemes is optional. See <a
+						href="https://github.com/w3c/epub-specs/issues/1586">issue 1586</a>.</li>
+				<li>23-Apr-2021: Clarified that Reading Systems should attempt to process invalid file and path names.
+					See <a href="https://github.com/w3c/epub-specs/issues/1629">issue 1629</a></li>
+				<li>16-Apr-2021: Removed the section on custom attributes. See <a
+						href="https://www.w3.org/publishing/groups/epub-wg/Meetings/Minutes/2021-04-15-epub#resolution2"
+						>Working Group Resolution</a>.</li>
+				<li>15-Apr-2021: Remove the reference to "presentation logic". See <a
+						href="https://github.com/w3c/epub-specs/issues/1516">issue 1516</a> and <a
+						href="https://www.w3.org/publishing/groups/epub-wg/Meetings/Minutes/2021-04-15-epub#resolution3"
+						>Working Group Resolution</a>.</li>
+				<li>12-Apr-2021: The section <a href="#app-epubReadingSystem"></a> has been marked as "at-risk". See <a
+						href="https://www.w3.org/publishing/groups/epub-wg/Meetings/Minutes/2021-04-09-epub#resolution1"
+						>Working Group resolution</a>. </li>
+				<li>09-Apr-2021: Added a new section dedicated to accessibility and removed the outdated reference to
+					the defunct appendix in the Accessibility specification. See <a
+						href="https://github.com/w3c/epub-specs/issues/1608">issue 1608</a>.</li>
+				<li>09-Apr-2021: Added section clarifying all the conformance requirements on establishing the primary
+					language and base direction of Publication Resources. See <a
+						href="https://github.com/w3c/epub-specs/pull/1613">pull request 1613</a>. </li>
+				<li>01-Apr-2021: Added section clarifying how absolute URLs are created from relative in the Package
+					Document. See <a href="https://github.com/w3c/epub-specs/pull/1468">pull request 1468</a>.</li>
+				<li>30-Mar-2021: Restructured the document to remove the rendundant conformance sections and
+					requirements that were only used as locators when this specification was combined with the authoring
+					requirements. See <a href="https://github.com/w3c/epub-specs/pull/1597">pull request 1597</a> and <a
+						href="https://github.com/w3c/epub-specs/pull/1609">pull request 1609</a>.</li>
+				<li>23-Mar-2021: Added requirement to prevent top-level navigation to data URLs. See <a
+						href="https://github.com/w3c/epub-specs/issues/1564">issue 1564</a>.</li>
+				<li>23-Mar-2021: Changed "suppressing" of non-linear content to "skipping" when traversing the spine to
+					clarify that the intention is not to remove all access to such content. See <a
+						href="https://github.com/w3c/epub-specs/issues/1480">issue 1480</a>.</li>
+				<li>10-Mar-2021: Changed restriction against using resources not listed in the Package Document to a
+					recommendation not to use. See <a href="https://github.com/w3c/epub-specs/issues/810">issue
+					810</a>.</li>
+				<li>09-March-2021: the statement on unique identifiers has been set to non-normative, following the
+					discussion and <a
+						href="https://www.w3.org/publishing/groups/epub-wg/Meetings/Minutes/2020-12-18-epub#resolution2"
+						>Working Group resolution</a>. See <a href="https://github.com/w3c/epub-specs/issues/1310">issue
+						1310</a>. </li>
+				<li>08-Mar-2021: Remove unnecessary requirement to assume default value for rendering metadata. See <a
+						href="https://github.com/w3c/epub-specs/issues/1313">issue 1313</a>.</li>
+				<li>05-Mar-2021: Added requirement for reading systems to collapse whitespace in DCMES and meta elements
+					per the [[Infra]] specification definition. See <a
+						href="https://github.com/w3c/epub-specs/issues/1295">issue 1295</a>.</li>
+				<li>26-Feb-2021: Clarified the trimming of leading and trailing whitespace is to be done in accordance
+					with the [[Infra]] specification definition, and removed the exception that <code>meta</code>
+					element properties may define their own whitespace handling rules. See <a
+						href="https://github.com/w3c/epub-specs/issues/1295">issue 1295</a>.</li>
+				<li>19-Feb-2021: Updated the <a href="#sec-scripted-content-security">scripting security
+						considerations</a> so that the text recommends assigning a unique origin to each EPUB
+					Publication for security rather than domain isolation at the Content Document level. See <a
+						href="https://github.com/w3c/epub-specs/issues/1156">issue 1156</a>.</li>
+				<li>15-Feb-2021: Clarified the requirements for presenting nav elements in the navigation document. The
+					toc nav is now the only required element, the page-list nav is recommended when present, and all
+					others are optional. See <a href="https://github.com/w3c/epub-specs/issues/975">issue 975</a>.</li>
+				<li>10-Feb-2021: A very first draft for <a href="#sec-security-privacy"></a> has been added.</li>
+				<li>04-Feb-2021: Added explicit requirement that reading systems not use the language in
+						<code>dc:language</code> elements as the language of resources.</li>
+				<li>02-Feb-2021: Added base direction determination rules for the <code>dir</code> attribute accounting
+					for the addition of the new <code>auto</code> value. See <a
+						href="https://github.com/w3c/epub-specs/issues/1491">issue 1491</a>.</li>
+				<li>02-Feb-2021: Noted that language information in the new <code>hreflang</code> attribute on
+						<code>link</code> elements is not authoritative. See <a
+						href="https://github.com/w3c/epub-specs/issues/1488">issue 1488</a>.</li>
+				<li>24-Dec-2020: The creation of a <a
+						href="https://www.w3.org/publishing/epub32/epub-packages.html#sec-metadata-elem-identifiers-pid"
+						>release identifier</a> [[EPUBPackages-32]] is no longer defined. See <a
+						href="https://github.com/w3c/epub-specs/issues/1440">issue 1440</a>.</li>
+				<li>06-Nov-2020: Reading systems are now required to <a href="#confreq-rs-xml-extid">not resolve
+						external identifiers</a> in doctype declarations. See <a
+						href="https://github.com/w3c/epub-specs/issues/1338">issue 1338</a>.</li>
+				<li>05-Nov-2020: Generalized the restriction on custom attribute namespace URIs to exclude all of
+					idpf.org and w3.org. See <a href="https://github.com/w3c/epub-specs/issues/1388">issue
+					1388</a>.</li>
+				<li>30-Sept-2020: The structure of the EPUB core specifications has been simplified to ease
+					understanding and access to information. This specification now consolidates the reading system
+					requirements from the EPUB 3.2 specification together with the Packages, Content Documents, OCF and
+					Media Overlays specifications. The EPUB 3.3 core specification now focuses only on authoring
+					requirements.</li>
+			</ul>
+		</section>
+		<div data-include="../common/acknowledgements-dedication.html" data-oninclude="fixIncludes"
+			data-include-replace="true"></div>
+	</body>
+</html>

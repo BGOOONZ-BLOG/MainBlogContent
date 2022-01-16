@@ -1,0 +1,532 @@
+#
+# Makefile for Amaya WWW Browser/Editor
+# Generated from amaya/Makefile.in
+# Daniel Veillard, Irene Vatton, and Stephane Gully
+#
+
+@VPATHOPT@= @srcdir@
+THOTDIR = @top_srcdir@
+WWWDAV = @WWWDAV@
+LIBWWW_RDF_PARSER = @LIBWWW_RDF_PARSER@
+
+OBJDIRS = wxdialog
+
+include ../Options
+
+INCLUDES= -DHAVE_CONFIG_H $(AMAYA_INCLUDES) $(EXPAT_INCLUDES) $(GUI_INCLUDES) $(EXTRA_INCLUDES) $(GL_INCLUDES) $(GTK_GL_INCLUDES) $(FREETYPE_INCLUDES) $(XFT_INCLUDES)
+LIBS	=  $(AMAYA_ANNOT_LIBS) $(AMAYA_DAV_LIBS) \
+	   $(AMAYA_MATH_LIBS) $(AMAYA_GRAPH_LIBS) \
+           -L../thotlib -L.. -lThotEditor \
+          $(AMAYA_OPTION_EXTRA_LIBS) $(EXPAT_LIBRARIES) \
+	  $(GL_LIBRARIES) $(GTK_GL_LIBRARIES) $(FREETYPE_LIBRARIES) $(XFT_LIBRARIES) \
+	  $(AMAYA_LIBWWW_LIBS) \
+	   @AMAYA_RAPTOR_LIBS@ \
+          $(WX_LIBRARIES)
+
+AMAYA	= @top_srcdir@/amaya
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+libdir = @libdir@
+bindir = @bindir@
+comp_annot: $(amaya_comp_annot)
+
+#
+# specific entry point check the dependancies
+#
+
+amaya : directories ../thotlib/libThotEditor.a amaya_schemas amaya_src ../bin/amaya_bin
+
+#
+# General entry point everything should have compiled correctly
+#
+all : directories amaya_schemas amaya_src ../bin/amaya_bin ../bin/print
+
+clean :
+	$(RM) *.o *.h *.c EDITOR* HTML* TextFile* MathML* SVG* Timeline* XLink* XML* logo.* *.a
+	$(RM) $(AMAYA)/*.{STR,PRS,TRA}
+	(for dir in $(OBJDIRS) ; do $(RM) -r $$dir/*.o ; done)
+
+directories : force
+	@(for dir in $(OBJDIRS) ; \
+	  do if test ! -d $$dir ; then $(MKDIR) $$dir ; fi ; done)
+
+include .depends
+
+force :
+
+../bin/str :
+	@(cd ../batch ; $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" app str prs tra)
+
+../bin/tra :
+	@(cd ../batch ; $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" app str prs tra)
+
+../bin/prs :
+	@(cd ../batch ; $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" app str prs tra)
+
+../bin/app :
+	@(cd ../batch ; $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" app str prs tra)
+
+../bin/printstr: 
+	@(cd ../batch ; $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" printstr)
+
+../thotlib/libThotEditor.a : force
+	@(cd ../thotlib ; $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" libThotEditor)
+
+../tools/mkdep/mkdep : 
+	@(cd ../tools/mkdep ; $(MAKE) CC="$(CC)" CFLAGS="-O -x c")
+
+../redland/librdf/.libs/librdf.a \
+../redland/raptor/.libs/libraptor.a \
+redland:
+	$(MAKE) -C ../redland
+
+.depends depend : ../tools/mkdep/mkdep
+	../tools/mkdep/mkdep -relative -vpath $(VPATH) $(INCLUDES) $(VPATH)/*.c  $(VPATH)/*.cpp > .depends
+
+#########################################################################
+#									#
+#		Optional configuration rules				#
+#									#
+#########################################################################
+
+#include the fragment "amaya/Makefile.libwww" for libwww if configured in
+@www_frag@
+
+#include the fragment "amaya/Makefile.svg" for svg if configured in
+@svg_frag@
+
+#include the fragment "amaya/Makefile.math" for math if configured in
+@math_frag@
+
+#include the fragment "annotlib/Makefile.annot" for annotations if configured in
+@annot_frag@
+
+#include the fragment "davlib/Makefile.dav" for webdav if configured in
+@dav_frag@
+
+#include the fragment "amaya/Makefile.templates" for templates if configured in
+@templates_frag@
+
+
+
+#########################################################################
+#                                                                       #
+#		              General rules                                         #
+#                                                                       #
+#########################################################################
+
+ALL_AMAYA_OPTIONS= $(AMAYA_OPTIONS) \
+	 $(AMAYA_LIBWWW_OPTIONS) \
+	 $(AMAYA_MATH_OPTIONS) $(AMAYA_SVG_OPTIONS)  $(AMAYA_TEMPLATES_OPTIONS) \
+	 $(AMAYA_ANNOT_OPTIONS) $(AMAYA_DAV_OPTIONS) $(EXPAT_OPTIONS)
+
+AMAYA_OPTION_INCLUDES= \
+         $(AMAYA_LIBWWW_INCLUDES) $(AMAYA_MATH_INCLUDES) \
+	 $(AMAYA_SVG_INCLUDES) $(AMAYA_ANNOT_INCLUDES) \
+	 $(AMAYA_DAV_INCLUDES) $(AMAYA_TEMPLATES_INCLUDES)
+
+AMAYA_OPTION_OBJ= \
+         $(AMAYA_LIBWWW_OBJ) $(AMAYA_SVG_OBJ) $(AMAYA_MATH_OBJ) \
+         $(AMAYA_ANNOT_OBJ) $(AMAYA_DAV_OBJ) $(AMAYA_TEMPLATES_OBJ)
+
+AMAYA_SRC= \
+         $(AMAYA_LIBWWW_SRC) \
+	 $(AMAYA_MATH_SRC) $(AMAYA_SVG_SRC) \
+         $(AMAYA_ANNOT_SRC) $(AMAYA_DAV_SRC) $(AMAYA_TEMPLATES_SRC)
+
+
+AMAYA_OPTION_LIBS= \
+         $(AMAYA_LIBWWW_OPTION_LIBS) $(AMAYA_MATH_LIBS) $(AMAYA_GRAPH_LIBS) \
+         $(AMAYA_ANNOT_LIBS) $(AMAYA_DAV_LIBS) @AMAYA_RAPTOR_LIBS@
+
+AMAYA_OPTION_EXTRA_LIBS= \
+         $(AMAYA_LIBWWW_EXTRA_LIBS) $(AMAYA_MATH_EXTRA_LIBS) \
+         $(AMAYA_GRAPH_EXTRA_LIBS) $(AMAYA_ANNOT_EXTRA_LIBS)
+
+AMAYA_OPTION_SCHEMAS= \
+         $(AMAYA_LIBWWW_SCHEMAS) $(MATH_SCHEMAS) $(SVG_SCHEMAS) \
+         $(ANNOT_SCHEMAS) $(TEMPLATES_SCHEMAS)
+
+AMAYA_INCLUDES= -I. -I.. -I@top_srcdir@/thotlib/include -I@srcdir@ \
+		-I@srcdir@/f \
+                $(AMAYA_OPTION_INCLUDES) $(WX_INCLUDES)
+
+AMAYA_LIBS= ../thotlib/libThotEditor.a \
+            libCSS.a $(AMAYA_OPTION_LIBS) \
+             $(WX_LINKDEPS)
+
+HTML2THOT_LIBS= -L../thotlib/ -lThotKernel -L.. -lz
+
+amaya_schemas : compHTML compHTMLP compHTMLT compTextFile  compTextFileP compTextFileT compXLink compXLinkP compXLinkT compXML compXMLP compXMLT compHTMLA compTextFileA compXLinkA compXMLA $(svg_schema) $(math_schema) $(annot_schema) compEDITORA $(template_schema)
+
+amaya_src : amaya_schemas HTML.h $(AMAYA_SRC) $(MATH_SCHEMAS) $(SVG_SCHEMAS) $(TEMPLATES_SCHEMAS)
+
+#
+# Rule to build objects
+#
+.c.o :
+	$(CXX) $(CXXFLAGS) $(ALL_AMAYA_OPTIONS) $(INCLUDES) -c $< -o $@
+#
+# Rule to build c++ objects
+#
+.cpp.o :
+	$(CXX) $(CXXFLAGS) $(ALL_AMAYA_OPTIONS) $(INCLUDES) -c $< -o $@
+
+#########################################################################
+#									#
+#		Rules to build the binary				#
+#									#
+#########################################################################
+
+CSS_OBJ = \
+	css.o \
+	fetchHTMLname.o \
+	fetchXMLname.o \
+	styleparser.o
+
+# Specific schema dependencies
+fetchXMLname.o : $(MATH_SCHEMAS) $(SVG_SCHEMAS)
+
+libCSS : libCSS.a
+
+libCSS.a : $(CSS_OBJ) 
+	$(AR) libCSS.a $(CSS_OBJ)
+	$(RANLIB) libCSS.a
+
+AMAYA_OBJ = \
+	wxdialog/AuthentDlgWX.o \
+	wxdialog/CheckedListDlgWX.o \
+	wxdialog/CreateTableDlgWX.o \
+	wxdialog/DocInfoDlgWX.o \
+	wxdialog/FontDlgWX.o \
+	wxdialog/HRefDlgWX.o \
+	wxdialog/ImageDlgWX.o \
+	wxdialog/InitConfirmDlgWX.o \
+	wxdialog/ListBoxBook.o \
+	wxdialog/ListDlgWX.o \
+	wxdialog/ListEditDlgWX.o \
+	wxdialog/ListNSDlgWX.o \
+	wxdialog/MakeIdDlgWX.o \
+	wxdialog/MetaDlgWX.o \
+	wxdialog/ObjectDlgWX.o \
+	wxdialog/OpenDocDlgWX.o \
+	wxdialog/PreferenceDlgWX.o \
+	wxdialog/PrintDlgWX.o \
+	wxdialog/SaveAsDlgWX.o \
+	wxdialog/SearchDlgWX.o \
+	wxdialog/SelectOperatorDlgWX.o \
+	wxdialog/SelectFenceAttributesDlgWX.o \
+	wxdialog/SelectIntegralDlgWX.o \
+	wxdialog/SpellCheckDlgWX.o \
+	wxdialog/SendByMailDlgWX.o \
+	wxdialog/StyleDlgWX.o \
+	wxdialog/StyleListToolPanel.o \
+	wxdialog/TitleDlgWX.o \
+	wxdialogapi.o \
+	EDITORAPP.o \
+	HTMLAPP.o \
+	TextFileAPP.o \
+	XLinkAPP.o \
+	XMLAPP.o \
+	AHTURLTools.o \
+	EDITORactions.o \
+	EDITimage.o \
+	EDITstyle.o \
+	HTMLactions.o \
+	HTMLbook.o \
+	HTMLedit.o \
+	HTMLform.o \
+	HTMLhistory.o \
+	HTMLimage.o \
+	HTMLpresentation.o \
+	HTMLsave.o \
+	HTMLtable.o \
+	html2thot.o \
+	init.o \
+	insertelem.o \
+	MENUconf.o \
+	XLinkbuilder.o \
+	XLinkedit.o \
+	templates.o \
+	trans.o \
+	transparse.o \
+	UIcss.o \
+	Xml2thot.o \
+	Xmlbuilder.o \
+	XHTMLbuilder.o \
+	XPointer.o \
+	XPointerparse.o 
+
+# Specific schema dependencies
+HTMLtable.o : $(MATH_SCHEMAS)
+
+#
+# HTML structure schema compilation.
+#
+compHTML: $(AMAYA)/HTML.STR
+$(AMAYA)/HTML.STR : $(AMAYA)/HTML.S ../bin/str
+	STR=`pwd`/../bin/str;PRS=`pwd`/../bin/prs;TRA=`pwd`/../bin/tra;\
+	cd $(AMAYA); THOTDIR=`pwd`/.. ;export THOTDIR; \
+	$$STR $(ALL_AMAYA_OPTIONS) HTML ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) HTMLP ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DPAGE HTMLP HTMLPP ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DPAGE -DLANDSCAPE HTMLP HTMLPL ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DUS_PAPER HTMLP HTMLPPUS ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DUS_PAPER -DLANDSCAPE HTMLP HTMLUSL ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DLINK_NUMBER -DPAGE HTMLP HTMLPLP ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DLINK_NUMBER -DPAGE -DLANDSCAPE HTMLP  HTMLPLL ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DLINK_NUMBER -DUS_PAPER HTMLP HTMLPLPUS ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DLINK_NUMBER -DUS_PAPER -DLANDSCAPE HTMLP HTMLUSLL ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DBLACK_WHITE HTMLP HTMLPBW ;\
+	$$TRA $(ALL_AMAYA_OPTIONS) HTMLT ;\
+	$$TRA $(ALL_AMAYA_OPTIONS) -DXML HTMLT HTMLTX;\
+	$$TRA $(ALL_AMAYA_OPTIONS) -DXML -DXHTML11 HTMLT HTMLT11;\
+	$$TRA $(ALL_AMAYA_OPTIONS) HTMLTT
+
+#
+# HTML presentation schemas compilation
+#
+compHTMLP: $(AMAYA)/HTMLP.PRS
+$(AMAYA)/HTMLP.PRS : $(AMAYA)/HTMLP.P ../bin/prs
+	PRS=`pwd`/../bin/prs ; \
+	cd $(AMAYA); THOTDIR=`pwd`/.. ;export THOTDIR; \
+	$$PRS $(ALL_AMAYA_OPTIONS) HTMLP ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DPAGE HTMLP HTMLPP ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DPAGE -DLANDSCAPE HTMLP HTMLPL ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DUS_PAPER HTMLP HTMLPPUS ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DUS_PAPER -DLANDSCAPE HTMLP HTMLUSL ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DLINK_NUMBER -DPAGE HTMLP HTMLPLP ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DLINK_NUMBER -DPAGE -DLANDSCAPE HTMLP  HTMLPLL ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DLINK_NUMBER -DUS_PAPER HTMLP HTMLPLPUS ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DLINK_NUMBER -DUS_PAPER -DLANDSCAPE HTMLP HTMLUSLL ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DBLACK_WHITE HTMLP HTMLPBW 
+#
+# HTML translation schemas compilation
+#
+compHTMLT: $(AMAYA)/HTMLT.TRA
+$(AMAYA)/HTMLT.TRA : $(AMAYA)/HTMLT.T $(AMAYA)/HTMLTT.T ../bin/tra
+	TRA=`pwd`/../bin/tra ; \
+	cd $(AMAYA); THOTDIR=`pwd`/.. ;export THOTDIR ;\
+	$$TRA $(ALL_AMAYA_OPTIONS) HTMLT ;\
+	$$TRA $(ALL_AMAYA_OPTIONS) -DXML HTMLT HTMLTX;\
+	$$TRA $(ALL_AMAYA_OPTIONS) -DXML -DXHTML11 HTMLT HTMLT11;\
+	$$TRA $(ALL_AMAYA_OPTIONS) HTMLTT
+
+#
+# TextFile schemas compilation
+#
+compTextFile: $(AMAYA)/TextFile.STR
+$(AMAYA)/TextFile.STR : $(AMAYA)/TextFile.S ../bin/str
+	STR=`pwd`/../bin/str;PRS=`pwd`/../bin/prs;TRA=`pwd`/../bin/tra;\
+	cd $(AMAYA); THOTDIR=`pwd`/.. ;export THOTDIR; \
+	$$STR $(ALL_AMAYA_OPTIONS) TextFile ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) TextFileP ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DLOG TextFileP TextFilePLOG ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DPAGE TextFileP TextFilePP ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DPAGE -DLANDSCAPE TextFileP TextFilePL ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DUS_PAPER TextFileP TextFilePPUS ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DUS_PAPER -DLANDSCAPE TextFileP TextFileUSL ;\
+	$$TRA $(ALL_AMAYA_OPTIONS) TextFileT
+
+#
+# TextFile presentation schemas compilation
+#
+compTextFileP: $(AMAYA)/TextFileP.PRS
+$(AMAYA)/TextFileP.PRS : $(AMAYA)/TextFileP.P ../bin/prs
+	PRS=`pwd`/../bin/prs ; \
+	cd $(AMAYA); THOTDIR=`pwd`/.. ;export THOTDIR; \
+	$$STR $(ALL_AMAYA_OPTIONS) TextFile ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) TextFileP ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DPAGE TextFileP TextFilePP ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DPAGE -DLANDSCAPE TextFileP TextFilePL ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DUS_PAPER TextFileP TextFilePPUS ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DUS_PAPER -DLANDSCAPE TextFileP TextFileUSL
+
+#
+# TextFile translation schemas compilation
+#
+compTextFileT: $(AMAYA)/TextFileT.TRA
+$(AMAYA)/TextFileT.TRA : $(AMAYA)/TextFileT.T ../bin/tra
+	TRA=`pwd`/../bin/tra ; \
+	cd $(AMAYA); THOTDIR=`pwd`/.. ;export THOTDIR ;\
+	$$TRA $(ALL_AMAYA_OPTIONS) TextFileT
+
+#
+# XLink structure schema compilation
+#
+compXLink: $(AMAYA)/XLink.STR
+$(AMAYA)/XLink.STR : $(AMAYA)/XLink.S ../bin/str
+	STR=`pwd`/../bin/str;PRS=`pwd`/../bin/prs;TRA=`pwd`/../bin/tra;\
+	cd $(AMAYA); THOTDIR=`pwd`/.. ;export THOTDIR; \
+	$$STR $(ALL_AMAYA_OPTIONS) XLink ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) XLinkP ;\
+	$$TRA $(ALL_AMAYA_OPTIONS) XLinkT
+
+#
+# XLink presentation schema compilation
+#
+compXLinkP: $(AMAYA)/XLinkP.PRS
+$(AMAYA)/XLinkP.PRS : $(AMAYA)/XLinkP.P ../bin/prs
+	PRS=`pwd`/../bin/prs ; \
+	cd $(AMAYA); THOTDIR=`pwd`/.. ;export THOTDIR; \
+	$$PRS $(ALL_AMAYA_OPTIONS) XLinkP
+
+#
+# XLink translation schema compilation
+#
+compXLinkT: $(AMAYA)/XLinkT.TRA
+$(AMAYA)/XLinkT.TRA : $(AMAYA)/XLinkT.T ../bin/tra
+	TRA=`pwd`/../bin/tra ; \
+	cd $(AMAYA); THOTDIR=`pwd`/.. ;export THOTDIR ;\
+	$$TRA $(ALL_AMAYA_OPTIONS) XLinkT
+
+#
+# Generic XML structure schema compilation.
+#
+compXML: $(AMAYA)/XML.STR
+$(AMAYA)/XML.STR : $(AMAYA)/XML.S ../bin/str
+	STR=`pwd`/../bin/str;PRS=`pwd`/../bin/prs;TRA=`pwd`/../bin/tra;\
+	cd $(AMAYA); THOTDIR=`pwd`/.. ;export THOTDIR; \
+	$$STR $(ALL_AMAYA_OPTIONS) XML ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) XMLP ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DPAGE XMLP XMLPP ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DPAGE -DLANDSCAPE XMLP XMLPL ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DUS_PAPER XMLP XMLPPUS ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DUS_PAPER -DLANDSCAPE XMLP XMLUSL ;\
+	$$TRA $(ALL_AMAYA_OPTIONS) XMLT
+
+#
+# Generic XML presentation schemas compilation
+#
+compXMLP: $(AMAYA)/XMLP.PRS
+$(AMAYA)/XMLP.PRS : $(AMAYA)/XMLP.P ../bin/prs
+	PRS=`pwd`/../bin/prs ; \
+	cd $(AMAYA); THOTDIR=`pwd`/.. ;export THOTDIR; \
+	$$STR $(ALL_AMAYA_OPTIONS) XML ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) XMLP ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DPAGE XMLP XMLPP ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DPAGE -DLANDSCAPE XMLP XMLPL ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DUS_PAPER XMLP XMLPPUS ;\
+	$$PRS $(ALL_AMAYA_OPTIONS) -DUS_PAPER -DLANDSCAPE XMLP XMLUSL
+
+#
+# Generic XML translation schemas compilation
+#
+compXMLT: $(AMAYA)/XMLT.TRA
+$(AMAYA)/XMLT.TRA : $(AMAYA)/XMLT.T ../bin/tra
+	TRA=`pwd`/../bin/tra ; \
+	cd $(AMAYA); THOTDIR=`pwd`/.. ;export THOTDIR ;\
+	$$TRA $(ALL_AMAYA_OPTIONS) XMLT
+
+#
+# Interface schemas compilation
+#
+HTMLAPP.o : HTMLAPP.c
+	$(CXX) $(CXXFLAGS) $(ALL_AMAYA_OPTIONS) $(INCLUDES) -c HTMLAPP.c -o $@
+
+compHTMLA : HTML.h HTMLAPP.c
+
+HTML.h HTMLAPP.c : @srcdir@/HTML.STR @srcdir@/HTML.A
+	(if test "@srcdir@" != "" -a "@srcdir@" != "." ; then \
+	    $(CP) @srcdir@/HTML.A .  ; \
+	    $(CP) @srcdir@/HTML.STR .  ; \
+	fi)
+	THOTDIR=$(THOTDIR) ; export THOTDIR ; \
+	../bin/app $(ALL_AMAYA_OPTIONS) HTML.A
+
+TextFileAPP.o : TextFileAPP.c
+	$(CXX) $(CXXFLAGS) $(ALL_AMAYA_OPTIONS) $(INCLUDES) -c TextFileAPP.c -o $@
+
+compTextFileA : TextFile.h TextFileAPP.c
+
+TextFile.h TextFileAPP.c : @srcdir@/TextFile.STR @srcdir@/TextFile.A
+	(if test "@srcdir@" != "" -a "@srcdir@" != "." ; then \
+	    $(CP) @srcdir@/TextFile.A .  ; \
+	    $(CP) @srcdir@/TextFile.STR .  ; \
+	fi)
+	THOTDIR=$(THOTDIR) ; export THOTDIR ; \
+	../bin/app $(ALL_AMAYA_OPTIONS) TextFile.A
+
+XLinkAPP.o : XLinkAPP.c
+	$(CXX) $(CXXFLAGS) $(ALL_AMAYA_OPTIONS) $(INCLUDES) -c XLinkAPP.c -o $@
+
+compXLinkA : XLink.h XLinkAPP.c
+
+XLink.h XLinkAPP.c : @srcdir@/XLink.STR @srcdir@/XLink.A
+	(if test "@srcdir@" != "" -a "@srcdir@" != "." ; then \
+	    $(CP) @srcdir@/XLink.A .  ; \
+	    $(CP) @srcdir@/XLink.STR .  ; \
+	fi)
+	THOTDIR=$(THOTDIR) ; export THOTDIR ; \
+	../bin/app $(ALL_AMAYA_OPTIONS) XLink.A
+
+XMLAPP.o : XMLAPP.c
+	$(CXX) $(CXXFLAGS) $(ALL_AMAYA_OPTIONS) $(INCLUDES) -c XMLAPP.c -o $@
+
+compXMLA : XML.h XMLAPP.c
+
+XML.h XMLAPP.c : @srcdir@/XML.STR @srcdir@/XML.A
+	(if test "@srcdir@" != "" -a "@srcdir@" != "." ; then \
+	    $(CP) @srcdir@/XML.A .  ; \
+	    $(CP) @srcdir@/XML.STR .  ; \
+	fi)
+	THOTDIR=$(THOTDIR) ; export THOTDIR ; \
+	../bin/app $(ALL_AMAYA_OPTIONS) XML.A
+
+EDITORAPP.o : EDITORAPP.c
+	$(CXX) $(CXXFLAGS) $(ALL_AMAYA_OPTIONS) $(INCLUDES) -c EDITORAPP.c -o $@
+
+compEDITORA : EDITORAPP.c
+
+EDITORAPP.c : @srcdir@/EDITOR.A
+	(if test "@srcdir@" != "" -a "@srcdir@" != "." -a \
+	         "@srcdir@" != "../amaya" ; then \
+	    $(CP) @srcdir@/EDITOR.A . ; \
+	fi)
+	THOTDIR=$(THOTDIR) ; export THOTDIR ; \
+	../bin/app $(ALL_AMAYA_OPTIONS) EDITOR.A
+
+# amaya application
+../bin/amaya_bin : $(AMAYA_OBJ) $(AMAYA_OPTION_OBJ) $(AMAYA_LIBS)
+	@(if test ! -d ../bin ; then $(MKDIR) ../bin ; fi)
+	$(LD) $(LDFLAGS) -o ../bin/amaya_bin $(AMAYA_OBJ) $(AMAYA_OPTION_OBJ) libCSS.a $(LIBS)
+	@$(ECHO) "====>" amaya is done
+
+../bin/print :
+	@(cd ../thotlib ; $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" print)
+
+install : all ../bin/print
+	../script_install ../bin $(DESTDIR)$(prefix) $(DESTDIR)$(bindir)
+
+uninstall :
+	../script_uninstall $(DESTDIR)$(prefix) $(DESTDIR)$(bindir)
+
+CEXTRACT= ../bin/cextract
+
+$(CEXTRACT) :
+	@(cd ../tools/cextract-$(CEXTRACT_VER) ; $(MAKE))
+
+proto : ../bin/cextract
+	@(for i in @srcdir@/*.c ; \
+	  do \
+	  dir=`dirname $$i`;base=`basename $$i .c`; \
+	  if [ ! -d $$dir/f ] ; then $(MKDIR) $$dir/f ;fi;\
+	  $(CEXTRACT) $(CEXTRACT_FLAGS) -o /tmp/cextract.$$base.$$$$ $$i 2> /dev/null ; \
+	  if [ -f $$dir/f/"$$base"_f.h ] ; \
+	  then \
+	      delta=`$(DIFF) /tmp/cextract.$$base.$$$$ $$dir/f/"$$base"_f.h` ; \
+	      if [ "$$delta" != "" ] ; \
+	      then \
+	          echo "  $$i proto changed" ; \
+		  $(MV) /tmp/cextract.$$base.$$$$ $$dir/f/"$$base"_f.h ; \
+              else \
+	          $(RM) /tmp/cextract.$$base.$$$$ ; \
+	      fi ; \
+	  else \
+	      echo "  $$i proto added" ; \
+	      $(MV) /tmp/cextract.$$base.$$$$ $$dir/f/"$$base"_f.h ; \
+	  fi ; \
+	 done)
+
+

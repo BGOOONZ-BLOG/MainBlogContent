@@ -1,0 +1,125 @@
+@(userForm: Form[Account],
+  passwordForm: Form[Password],
+  couponForm: Form[String],
+  redeemedCoupons: List[Coupon],
+  user: User)(implicit req: RequestHeader)
+
+@creditClass(credits: Int) = {@credits match {
+    case n if n <= 0 => {class="credits critical"}
+    case n if n <= 50 => {class="credits warn"}
+    case _ => {class="credits"}
+}}
+
+<div class="column">
+
+    <h1 class="formHeader" id="MyAccount">My Account</h1>
+
+    <div class="vsForm">
+        <div class="row">
+            <div class="column large-9 large-offset-3">
+                <p class="noMargin">
+                    You have <strong @creditClass(user.credits)>@user.credits</strong> page validation credits left.<br/>
+                    <a href="@routes.Application.pricing">Buy additional credits</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <h1 class="formHeader" id="Coupons">Coupons</h1>
+
+    @helper.form(action = routes.User.redeemCouponAction(), 'class -> "vsForm") {
+        @api.formErrors(couponForm)
+        @api.input(
+            couponForm("coupon"),
+            '_required -> true)
+        @api.requiredFields()
+        @api.submit("Use Coupon")
+
+        @if(redeemedCoupons.size > 0) {
+        <div class="row">
+        <div class="column large-3">
+            <h3 class="couponsTitle">Used Coupons</h3>
+        </div>
+        <div class="column large-9">
+            <table class="coupons">
+                <thead>
+                    <tr>
+                        <td>Use Date</td>
+                        <td>Code</td>
+                        <td>Description</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    @redeemedCoupons.map{case coupon =>
+                    <tr>
+                        <td>@coupon.useDate.map(Helper.formatTime2(_))</td>
+                        <td>@coupon.code</td>
+                        <td>@coupon.credits credits <em>@coupon.description</em></td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        </div>
+        }
+    }
+
+    <h1 class="formHeader" id="UserInformation">User Information</h1>
+
+    @helper.form(action = routes.User.editAction(), 'class -> "vsForm") {
+
+    @api.formErrors(userForm)
+
+    @api.input(
+        userForm("u_userName"),
+        '_required -> true)
+
+    @api.input(
+        userForm("u_email"),
+        '_required -> true,
+        'type -> "email")
+
+    @api.input(
+        userForm("u_optedIn"),
+        'type -> "checkbox",
+        'value -> "true")
+
+    @api.requiredFields()
+
+    @api.submit("Save")
+
+    }
+
+    <h1 class="formHeader" id="ChangePassword">Change password</h1>
+
+    @helper.form(action = routes.User.changePasswordAction(), 'class -> "vsForm") {
+
+    @api.formErrors(passwordForm)
+
+    @api.input(
+        passwordForm("p_current"),
+        '_required -> true,
+        'autocomplete -> "off",
+        'type -> "password")
+
+    @api.input(
+        passwordForm("p_new"),
+        '_required -> true,
+        'autocomplete -> "off",
+        'pattern -> ".{6,}",
+        'type -> "password")
+
+    @api.input(
+        passwordForm("p_new2"),
+        '_required -> true,
+        'autocomplete -> "off",
+        'pattern -> ".{6,}",
+        'type -> "password")
+
+    @api.requiredFields()
+
+    @api.submit("Save")
+
+    }
+
+</div>

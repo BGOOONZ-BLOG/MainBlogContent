@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>
+      Media Capture Depth Stream Extensions
+    </title>
+    <meta charset="utf-8">
+    <script src="https://www.w3.org/Tools/respec/respec-w3c" class=
+    "remove">
+</script>
+    <script class="remove">
+
+      var respecConfig = {
+        specStatus: "ED",
+        shortName: "mediacapture-depth",
+        previousPublishDate: "2015-12-08",
+        previousMaturity: "WD",
+        edDraftURI: "https://w3c.github.io/mediacapture-depth/",
+        editors: [
+            {
+              w3cid:      "41974",
+              name:       "Anssi Kostiainen",
+              company:    "Intel",
+              companyURL: "https://www.intel.com/"
+            },
+            {
+              w3cid:      "68202",
+              name:       "Ningxin Hu",
+              company:    "Intel",
+              companyURL: "https://www.intel.com/"
+            },
+            {
+              w3cid:      "80407",
+              name:       "Rijubrata Bhaumik",
+              company:    "Intel",
+              companyURL: "https://www.intel.com/"
+            },
+            {
+              w3cid:      "76096",
+              name:       "Rob Manson",
+              company:    "Invited Expert"
+            }
+        ],
+        formerEditors: [
+            {
+              w3cid:      "95320",
+              name:       "Aleksandar Stojiljkovic",
+              company:    "Intel",
+              companyURL: "https://www.intel.com/"
+            }
+        ],
+        group: "webrtc",
+        wgPublicList: "public-webrtc",
+        github: "https://github.com/w3c/mediacapture-depth/",
+        otherLinks: [{
+        key: "Participate",
+        data: [
+          {
+            value: "public-webrtc@w3.org",
+            href: "https://lists.w3.org/Archives/Public/public-webrtc/"
+          }
+        ]
+        },
+        {
+          key: "Implementation status",
+            data: [{
+              value: "Blink",
+              href: "https://crbug.com/616098"
+            }]
+        }],
+        localBiblio: {
+          "WEBGL2": {
+            title:     "WebGL 2 Specification",
+            href:      "https://www.khronos.org/registry/webgl/specs/2.0.0/",
+            authors:   [
+                       "Dean Jackson (Apple Inc.)",
+                       "Jeff Gilbert (Mozilla Corp.)"
+            ],
+            "date": "1 December 2016",
+            publisher: "Khronos"
+          },
+          "OpenGL ES 3.0.5": {
+            title:     "OpenGL ES 3.0.5 Specification",
+            href:      "http://www.khronos.org/registry/gles/specs/3.0/es_spec_3.0.5.pdf",
+            authors:   [
+                       "Jon Leech",
+                       "Benj Lipchak"
+            ],
+            "date": "3 November 2016",
+            publisher: "Khronos"
+          }
+        }
+    };
+
+    </script>
+    <script src=
+    "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=AM_CHTML">
+</script>
+    <style>
+/* workaround to hide redundant dfns */
+    p.related { visibility: hidden; height: 0px; }
+    </style>
+  </head>
+  <body>
+    <section id="abstract">
+      <p>
+        This specification <a href=
+        "https://w3c.github.io/mediacapture-main/#extensibility">extends</a>
+        the <em>Media Capture and Streams</em> specification [[GETUSERMEDIA]]
+        to allow a <a>depth-only stream</a> or combined <a>depth+color
+        stream</a> to be requested from the web platform using APIs familiar to
+        web authors.
+      </p>
+    </section>
+    <section id="sotd">
+      <p>
+        This extensions specification defines a new media type and
+        constrainable property per <a href=
+        "https://w3c.github.io/mediacapture-main/#extensibility">Extensibility</a>
+        guidelines of the <em>Media Capture and Streams</em> specification
+        [[GETUSERMEDIA]]. Horizontal reviews and feedback from early
+        implementations of this specification are encouraged.
+      </p>
+    </section>
+    <section>
+      <h2>
+        Introduction
+      </h2>
+      <p>
+        Depth cameras are increasingly being integrated into devices such as
+        phones, tablets, and laptops. Depth cameras provide a <a>depth map</a>,
+        which conveys the distance information between points on an object's
+        surface and the camera. With depth information, web content and
+        applications can be enhanced by, for example, the use of hand gestures
+        as an input mechanism, or by creating 3D models of real-world objects
+        that can interact and integrate with the web platform. Concrete
+        applications of this technology include more immersive gaming
+        experiences, more accessible 3D video conferences, and augmented
+        reality, to name a few.
+      </p>
+      <p>
+        To bring depth capability to the web platform, this specification
+        <a href=
+        "https://w3c.github.io/mediacapture-main/#extensibility">extends</a>
+        the <a>MediaStream</a> interface [[!GETUSERMEDIA]] to enable it to also
+        contain depth-based <a>MediaStreamTrack</a>s. A depth-based
+        <a>MediaStreamTrack</a>, referred to as a <a>depth stream track</a>,
+        represents an abstraction of a stream of frames that can each be
+        converted to objects which contain an array of pixel data, where each
+        pixel represents the distance between the camera and the objects in the
+        scene for that point in the array. A <a>MediaStream</a> object that
+        contains one or more <a>depth stream track</a>s is referred to as a
+        <a>depth-only stream</a> or <a>depth+color stream</a>.
+      </p>
+    </section>
+    <section>
+      <h2>
+        Use cases and requirements
+      </h2>
+      <p>
+        This specification attempts to address the <a href=
+        "https://www.w3.org/wiki/Media_Capture_Depth_Stream_Extension">Use
+        Cases and Requirements</a> for accessing depth stream from a depth
+        camera. See also the <a href=
+        "https://www.w3.org/wiki/Media_Capture_Depth_Stream_Extension#Examples">
+        Examples</a> section for concrete usage examples.
+      </p>
+    </section>
+    <section id="conformance">
+      <p>
+        This specification defines conformance criteria that apply to a single
+        product: the <dfn>user agent</dfn> that implements the interfaces that
+        it contains.
+      </p>
+      <p>
+        Implementations that use ECMAScript to implement the APIs defined in
+        this specification must implement them in a manner consistent with the
+        ECMAScript Bindings defined in the Web IDL specification [[!WEBIDL]],
+        as this specification uses that specification and terminology.
+      </p>
+    </section>
+    <section>
+      <h2>
+        Dependencies
+      </h2>
+      <p>
+        The <dfn data-cite=
+        "!GETUSERMEDIA#idl-def-MediaStreamTrack"><code>MediaStreamTrack</code></dfn>
+        and <dfn data-cite=
+        "!GETUSERMEDIA#idl-def-MediaStream"><code>MediaStream</code></dfn>
+        interfaces this specification extends are defined in [[!GETUSERMEDIA]].
+      </p>
+      <p>
+        The concepts <dfn data-cite=
+        "!GETUSERMEDIA#dfn-constraints"><code>Constraints</code></dfn>,
+        <dfn data-cite=
+        "!GETUSERMEDIA#dfn-capabilities"><code>Capabilities</code></dfn>,
+        <dfn data-cite=
+        "!GETUSERMEDIA#idl-def-ConstraintSet"><code>ConstraintSet</code></dfn>,
+        and <dfn data-cite=
+        "!GETUSERMEDIA#dfn-settings"><code>Settings</code></dfn>, and
+        <dfn data-cite="!GETUSERMEDIA#types-for-constrainable-properties">types
+        of constrainable properties</dfn> are defined in [[!GETUSERMEDIA]].
+      </p>
+      <p>
+        The <dfn data-cite=
+        "!GETUSERMEDIA#idl-def-ConstrainDOMString"><code>ConstrainDOMString</code></dfn>
+        type is defined in [[!GETUSERMEDIA]].
+      </p>
+      <p>
+        <dfn data-cite=
+        "GETUSERMEDIA#idl-def-MediaTrackSettings"><code>MediaTrackSettings</code></dfn>,
+        <dfn data-cite=
+        "!GETUSERMEDIA#idl-def-MediaTrackConstraints"><code>MediaTrackConstraints</code></dfn>,
+        <dfn data-cite=
+        "!GETUSERMEDIA#idl-def-MediaTrackSupportedConstraints"><code>MediaTrackSupportedConstraints</code></dfn>,
+        <dfn data-cite=
+        "!GETUSERMEDIA#idl-def-MediaTrackCapabilities"><code>MediaTrackCapabilities</code></dfn>,
+        and <dfn data-cite=
+        "!GETUSERMEDIA#idl-def-MediaTrackConstraintSet"><code>MediaTrackConstraintSet</code></dfn>
+        dictionaries this specification extends are defined in
+        [[!GETUSERMEDIA]].
+      </p>
+      <p>
+        The <dfn data-cite=
+        "!GETUSERMEDIA#dom-mediadevices-getusermedia"><code>getUserMedia()</code></dfn>
+        is defined in [[!GETUSERMEDIA]].
+      </p>
+      <p>
+        The concepts <dfn data-cite="!GETUSERMEDIA#track-muted">muted</dfn> and
+        <dfn data-cite="!GETUSERMEDIA#track-enabled">disabled</dfn> as applied
+        to <a>MediaStreamTrack</a> are defined in [[!GETUSERMEDIA]].
+      </p>
+      <p>
+        The terms <dfn data-cite="!GETUSERMEDIA#dfn-source">source</dfn> and
+        <dfn data-cite="!GETUSERMEDIA#dfn-consumer">consumer</dfn> are defined
+        in [[!GETUSERMEDIA]].
+      </p>
+      <p>
+        The <dfn data-cite=
+        "!GETUSERMEDIA#idl-def-MediaDeviceKind"><code>MediaDeviceKind</code></dfn>
+        enumeration is defined in [[!GETUSERMEDIA]].
+      </p>
+      <p>
+        The <dfn data-cite="!HTML#the-video-element"><code>video</code></dfn>
+        element and <dfn data-cite="!HTML#canvas-pixel-arraybuffer">Canvas
+        Pixel <code>ArrayBuffer</code></dfn> interfaces are defined in
+        [[!HTML]].
+      </p>
+      <p>
+        The meaning of dictionary member being <dfn data-cite=
+        "!WEBIDL#dfn-present">present</dfn> or <dfn data-cite=
+        "!WEBIDL#dfn-present">not present</dfn> is defined in [[WEBIDL]].
+      </p>
+    </section>
+    <section>
+      <h2>
+        Terminology
+      </h2>
+      <p>
+        The term <dfn>depth+color stream</dfn> means a <a>MediaStream</a>
+        object that contains one or more <a>MediaStreamTrack</a> objects whose
+        <code>videoKind</code> of <code>Settings</code> is "<code>depth</code>"
+        (<a>depth stream track</a>) and one or more <a>MediaStreamTrack</a>
+        objects whose <code>videoKind</code> of <code>Settings</code> is
+        "<code>color</code>" (<a>color stream track</a>).
+      </p>
+      <p>
+        The term <dfn>depth-only stream</dfn> means a <a>MediaStream</a> object
+        that contains one or more <a>MediaStreamTrack</a> objects whose
+        <code>videoKind</code> of <code>Settings</code> is "<code>depth</code>"
+        (<a>depth stream track</a>) only.
+      </p>
+      <p>
+        The term <dfn>color-only stream</dfn> means a <a>MediaStream</a> object
+        that contains one or more <a>MediaStreamTrack</a> objects whose
+        <code>videoKind</code> of <code>Settings</code> is "<code>color</code>"
+        (<a>color stream track</a>) only, and optionally of kind
+        "<code>audio</code>".
+      </p>
+      <p>
+        The term <dfn>depth stream track</dfn> means a <a>MediaStreamTrack</a>
+        object whose <code>videoKind</code> of <code>Settings</code> is
+        "<code>depth</code>". It represents a media stream track whose
+        <a>source</a> is a depth camera.
+      </p>
+      <p>
+        The term <dfn>color stream track</dfn> means a <a>MediaStreamTrack</a>
+        object whose <code>videoKind</code> of <code>Settings</code> is
+        "<code>color</code>". It represents a media stream track whose
+        <a>source</a> is a color camera.
+      </p>
+      <section>
+        <h2>
+          Depth map
+        </h2>
+        <p>
+          A <dfn>depth map</dfn> is an abstract representation of a frame of a
+          <a>depth stream track</a>. A <a>depth map</a> is a two-dimensional
+          array that contains information relating to the perpendicular
+          distance of the surfaces of scene objects to camera's <a>near
+          plane</a>. The numeric values in the <a>depth map</a> are referred to
+          as <dfn data-lt="depth map value">depth map values</dfn> and
+          represent distances to <a>near plane</a> <a>normalized</a> against
+          the distance between <a href="#dfn-far-plane">far</a> and <a href=
+          "#dfn-near-plane">near</a> plane.
+        </p>
+        <p>
+          <dfn>Normalized</dfn> <a>depth map value</a> means that it's range is
+          from 0 to 1, where maximum <a>depth map value</a> of 1 corresponds to
+          distances equal to <a>far plane</a>. <a>Normalized</a> <a>depth map
+          value</a> is represented using <dfn>floating-point</dfn> or
+          <dfn>unsigned fixed-point</dfn> formats <a href=
+          "https://www.khronos.org/registry/gles/specs/3.0/es_spec_3.0.5.pdf#subsection.2.1.6">
+          [OpenGL ES 3.0.5]#subsection.2.1.6</a>.
+        </p>
+        <p>
+          <a>Depth map</a>'s <dfn>near plane</dfn> and <dfn>far plane</dfn> are
+          concepts of 3D graphics that define camera viewing volume (view
+          frustum). Their definition is outside the scope of this
+          specification.
+        </p>
+      </section>
+    </section>
+    <section>
+      <h2>
+        Extensions
+      </h2>
+      <p>
+        If the implementation is unable to report the value represented by any
+        of the dictionary members, they are not <a>present</a> in the
+        dictionary.
+      </p>
+      <section>
+        <h2>
+          <a>MediaTrackSupportedConstraints</a> dictionary
+        </h2>
+        <p>
+          <a>MediaTrackSupportedConstraints</a> dictionary represents the list
+          of <a>Constraints</a> recognized by a <a>user agent</a> for
+          controlling the <a>Capabilities</a> of a <a>MediaStreamTrack</a>
+          object.
+        </p>
+        <p>
+          Partial dictionary <a>MediaTrackSupportedConstraints</a> extends the
+          original dictionary defined in [[!GETUSERMEDIA]]. The dictionary
+          value true represents an <a>applicable constraint</a>.
+        </p>
+        <p>
+          An <dfn>applicable constraint</dfn> is not omitted by the <a>user
+          agent</a> in step 6.2.2 in the <a>getUserMedia()</a> algorithm.
+        </p>
+        <pre class="idl">
+          partial dictionary MediaTrackSupportedConstraints {
+              // Applies to both depth stream track and color stream track:
+              boolean videoKind = true;
+          };
+      
+</pre>
+      </section>
+      <section>
+        <h2>
+          <a>MediaTrackCapabilities</a> dictionary
+        </h2>
+        <p>
+          <a>MediaTrackCapabilities</a> dictionary represents the
+          <a>Capabilities</a> of a <a>MediaStreamTrack</a> object.
+        </p>
+        <p>
+          Partial dictionary <a>MediaTrackCapabilities</a> extends the original
+          <a>MediaTrackCapabilities</a> dictionary defined in
+          [[!GETUSERMEDIA]].
+        </p>
+        <pre class="idl">
+          partial dictionary MediaTrackCapabilities {
+              // Applies to both depth stream track and color stream track:
+              DOMString videoKind;
+          };
+</pre>
+      </section>
+      <section>
+        <h2>
+          <code>MediaTrackConstraintSet</code> dictionary
+        </h2>
+        <p>
+          <a>ConstraintSet</a> dictionary specifies each member's set of
+          <a>allowed values</a>.
+        </p>
+        <p>
+          The <dfn>allowed values</dfn> for <a>ConstrainDOMString</a> type are
+          defined in [[!GETUSERMEDIA]].
+        </p>
+        <pre class="idl">
+          partial dictionary MediaTrackConstraintSet {
+              // Applies to both depth stream track and color stream track:
+              ConstrainDOMString videoKind;
+          };
+</pre>
+      </section>
+      <section>
+        <h2>
+          <code>MediaTrackSettings</code> dictionary
+        </h2>
+        <p>
+          <a>MediaTrackSettings</a> dictionary represents the <a>Settings</a>
+          of a <a>MediaStreamTrack</a> object.
+        </p>
+        <p>
+          Partial dictionary <a>MediaTrackSettings</a> extends the original
+          <a>MediaTrackSettings</a> dictionary.
+        </p>
+        <pre class="idl">
+          partial dictionary MediaTrackSettings {
+              // Applies to both depth stream track and color stream track:
+              DOMString           videoKind;
+          };
+        
+</pre>
+        <section id="def-constraint-videoKind">
+          <h2>
+            Video kind constrainable property
+          </h2>
+          <p>
+            The <code>videoKind</code> constrainable property is defined to
+            apply to both <a>color stream track</a> and <a>depth stream
+            track</a>. The <code>videoKind</code> member specifies the
+            <dfn>video kind</dfn> of the <a>source</a>.
+          </p>
+          <p class="related">
+            Related: <a>MediaTrackSupportedConstraints</a>.<dfn data-dfn-for=
+            "MediaTrackSupportedConstraints">videoKind</dfn>,
+            <a>MediaTrackCapabilities</a>.<dfn data-dfn-for=
+            "MediaTrackCapabilities">videoKind</dfn>,
+            <a>MediaTrackConstraintSet</a>.<dfn data-dfn-for=
+            "MediaTrackConstraintSet">videoKind</dfn>,
+            <a>MediaTrackSettings</a>.<dfn data-dfn-for=
+            "MediaTrackSettings">videoKind</dfn>
+          </p>
+          <pre class="idl">
+        enum VideoKindEnum {
+            "color",
+            "depth"
+        };
+        
+</pre>
+          <p>
+            The <dfn>VideoKindEnum</dfn> enumeration defines the valid <a>video
+            kind</a>s: <dfn data-dfn-for="VideoKindEnum">color</dfn> for
+            <a>color stream track</a> whose <a>source</a> is a color camera,
+            and <dfn data-dfn-for="VideoKindEnum">depth</dfn> for <a>depth
+            stream track</a> whose <a>source</a> is a depth camera.
+          </p>
+          <p>
+            The <a>MediaStream</a> <a>consumer</a> for the <a>depth-only
+            stream</a> and <a>depth+color stream</a> is the <a>video</a>
+            element [[!HTML]].
+          </p>
+          <p>
+            If a <a>MediaStreamTrack</a> whose <code>videoKind</code> is
+            <a data-link-for="VideoKindEnum">depth</a> is <a>muted</a> or
+            <a>disabled</a>, it MUST render frames as if all the pixels would
+            be 0.
+          </p>
+        </section>
+        <section class="informative">
+          <h2>
+            WebGL implementation considerations
+          </h2>
+          <div class="note">
+            This section is currently work in progress, and subject to change.
+          </div>
+          <p>
+            <a>Depth map</a> values that the camera produces are often in
+            16-bit <a>normalized</a> <a>unsigned fixed-point</a> format.
+            Application developer can access the data using <a>canvas pixel
+            arraybuffer</a> red color component, but that would cause a
+            precision loss given that it is in 8-bit <a>normalized</a>
+            <a>unsigned fixed-point</a> format.
+          </p>
+          <p>
+            The same precision loss is related to usage of [[WEBGL]]
+            <code>UNSIGNED_BYTE</code> textures. In order to access the full
+            precision, application developer <a href="#dfn-uploaded">can
+            use</a> [[WEBGL]] <a>floating-point</a> textures.
+          </p>
+          <p>
+            There are several use-cases which are a good fit to be, at least
+            partially, implemented on the GPU, such as motion recognition,
+            pattern recognition, background removal, as well as 3D point cloud.
+          </p>
+          <p>
+            This section explains which APIs can be used for some of these
+            mentioned use-cases; the concrete examples are provided in the
+            <a href="#examples">Examples</a> section.
+          </p>
+          <section>
+            <h3>
+              Upload video frame to WebGL texture
+            </h3>
+            <p>
+              A <a>video</a> element whose source is a <a>MediaStream</a>
+              object containing a <a>depth stream track</a> may be
+              <dfn>uploaded</dfn> to a [[WEBGL]] texture of format
+              <code>RGBA</code> or <code>RED</code> and type
+              <code>FLOAT</code>. See the specification [[WEBGL]] and the
+              <a>upload to float texture</a> example code.
+            </p>
+            <p>
+              For each pixel of this WebGL texture, the R component represents
+              <a>normalized</a> <a>floating-point</a> <a>depth map value</a>.
+            </p>
+          </section>
+          <section>
+            <h3>
+              Read the data from a WebGL texture
+            </h3>
+            <p>
+              Here we list some of the possible approaches.
+            </p>
+            <ul>
+              <li>Synchronous readPixels usage requires the least amount of
+              code and it is available with WebGL 1.0. See the <a>readPixels
+              from float</a> example for further details.
+              </li>
+              <li>Using GetBufferSubData after WebGLSync's status signals that
+              readPixels (read to pixel buffer objects) or transform feedback
+              [[WEBGL2]] is complete, enables asynchronous, non-blocking read
+              of depth data from GPU.
+              </li>
+            </ul>
+          </section>
+        </section>
+      </section>
+      <section class="informative">
+        <h2>
+          Examples
+        </h2>
+        <h3>
+          Playback of depth and color streams from same device group.
+        </h3>
+        <pre class="example">
+navigator.mediaDevices.getUserMedia({
+  video: {videoKind: {exact: "color"}, groupId: {exact: id}}
+}).then(function (stream) {
+    // Wire the media stream into a &lt;video&gt; element for playback.
+    // The RGB video is rendered.
+    var video = document.querySelector('#video');
+    video.srcObject = stream;
+    video.play();
+  }
+);
+
+navigator.mediaDevices.getUserMedia({
+  video: {videoKind: {exact: "depth"}, groupId: {exact: id}}
+}).then(function (stream) {
+    // Wire the depth-only stream into another &lt;video&gt; element for playback.
+    // The depth information is rendered in its grayscale representation.
+    var depthVideo = document.querySelector('#depthVideo');
+    depthVideo.srcObject = stream;
+    depthVideo.play();
+  }
+);
+</pre>
+        <h3>
+          WebGL: <dfn>upload to float texture</dfn>
+        </h3>
+        <p>
+          This code sets up a video element from a depth stream, uploads it to
+          a WebGL 2.0 float texture.
+        </p>
+        <pre class="example">
+navigator.mediaDevices.getUserMedia({
+  video: {videoKind: {exact: "depth"}}
+}).then(function (stream) {
+  // wire the stream into a &lt;video&gt; element for playback
+  var depthVideo = document.querySelector('#depthVideo');
+  depthVideo.srcObject = stream;
+  depthVideo.play();
+}).catch(function (reason) {
+  // handle gUM error here
+});
+
+let gl = canvas.getContext("webgl2");
+// Activate the standard WebGL 2.0 extension for using single component R32F
+// texture format.
+gl.getExtension('EXT_color_buffer_float');
+
+// Later, in the rendering loop ...
+gl.bindTexture(gl.TEXTURE_2D, depthTexture);
+gl.texImage2D(
+   gl.TEXTURE_2D,
+   0,
+   gl.R32F,
+   gl.RED,
+   gl.FLOAT,
+   depthVideo);
+
+</pre>
+        <h3>
+          WebGL: <dfn>readPixels from float</dfn> texture
+        </h3>
+        <p>
+          This example extends <a>upload to float texture</a> example.
+        </p>
+        <p>
+          This code creates the texture to which we will upload the depth video
+          frame. Then, it sets up a named framebuffer, attach the texture as
+          color attachment and, after uploading the depth video to the texture,
+          reads the texture content to Float32Array.
+        </p>
+        <pre class="example">
+// Initialize texture and framebuffer for reading back the texture.
+let depthTexture = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, depthTexture);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+
+let framebuffer = gl.createFramebuffer();
+gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+gl.framebufferTexture2D(
+  gl.FRAMEBUFFER,
+  gl.COLOR_ATTACHMENT0,
+  gl.TEXTURE_2D,
+  depthTexture,
+  0);
+
+let buffer;
+
+// Later, in the rendering loop ...
+gl.bindTexture(gl.TEXTURE_2D, depthTexture);
+gl.texImage2D(
+   gl.TEXTURE_2D,
+   0,
+   gl.R32F,
+   gl.RED,
+   gl.FLOAT,
+   depthVideo);
+
+if (!buffer) {
+  buffer =
+      new Float32Array(depthVideo.videoWidth * depthVideo.videoHeight);
+}
+
+gl.readPixels(
+  0,
+  0,
+  depthVideo.videoWidth,
+  depthVideo.videoHeight,
+  gl.RED,
+  gl.FLOAT,
+  buffer);
+
+</pre>
+        <div class="note">
+          <p>
+            Use
+            <code>gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_FORMAT);</code>
+            to check whether readPixels to gl.RED or gl.RGBA float is
+            supported.
+          </p>
+        </div>
+      </section>
+      <section class="informative">
+        <h2>
+          Privacy and security considerations
+        </h2>
+        <p>
+          The <a href=
+          "https://w3c.github.io/mediacapture-main/#privacy-and-security-considerations">
+          privacy and security considerations</a> discussed in
+          [[!GETUSERMEDIA]] apply to this extension specification.
+        </p>
+      </section>
+      <section class="appendix">
+        <h2>
+          Acknowledgements
+        </h2>
+        <p>
+          Thanks to everyone who contributed to the <a href=
+          "https://www.w3.org/wiki/Media_Capture_Depth_Stream_Extension">Use
+          Cases and Requirements</a>, sent feedback and comments. Special
+          thanks to Ningxin Hu for experimental implementations, as well as to
+          the Project Tango for their experiments.
+        </p>
+      </section><!--section id="idl-index" class="appendix"></section-->
+    </section>
+  </body>
+</html>

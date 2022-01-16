@@ -1,0 +1,28 @@
+language: java
+jdk:
+- openjdk7
+sudo: false
+script:
+- mvn -X test
+- ./bin/rdflint.sh -assume omnlib/ontologies/*.ttl omnlib/import/*.ttl omnlib/ontologies/unchecked/*.ttl -check omnlib/ontologies/*.ttl
+- ./.travis/mvn_deploy.sh
+notifications:
+  email:
+  - alexander.willner@tu-berlin.de
+  - fiteagle.dev@av.tu-berlin.de
+  slack:
+    secure: ADSEKsnBXO6rCoEoHkqZYib+A6s6dTgRtcIVusNPXIhuVYXfnOfJw/lyQ+IaI2l5C3ll9GaAGy9nXVqSjvgXN+0iXlYidVpP3FJlr04+K5lBVB3Z2b4NDtM/n/iXNEVyF4jPlSeuHMNPKEKMQo+Xt1wVas1hf50AUeSDbVMpXiw=
+branches:
+  except:
+    - dbcloud
+cache:
+  directories:
+  - $HOME/eyeball-2.3
+  - $HOME/.m2
+after_success:
+- if [ "${TRAVIS_BRANCH}" = "master" ]; then curl http://demo.fiteagle.org/trigger.php?c=omn ; fi
+- mvn -X clean test jacoco:report coveralls:report
+env:
+  global:
+  - secure: SKS5m4l9ykDqpu9FLesziqQqicOweTyauzNDUBi5nWyaX+KjSngnxshdzhidZQTKO7fmMS52Fa3AeNdCfjTPEvZjRpd/i7KFSiw0A56Y9+mMXNKIHDzfCw8JU7UAGvIKt1AiCMkOkWdGPj1GYL4+RPEW/iNlzBbiFDNWaxZ8s6g=
+  - secure: PqDUkOands604NBFJwyide2xUfb+1WuXVyQivaNa99Zp0d0Rz+Sxf6N1f+UMhnHI7nLDrZsqaR0cMm2EYaFIYTtw6BoZAHXLzPNnSSrWycLwB+Yth5Okr0eozLKKmmdJwtr+o7+k4Uz9so7DR61WIe7VuaFav5x1+7x+UkWwYYU=

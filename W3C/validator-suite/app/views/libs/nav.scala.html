@@ -1,0 +1,48 @@
+@(user: Option[User] = None, loginPage: Boolean)(implicit req: RequestHeader)
+
+@navLink(url: String, attrs: String = "")(name: Html) = {
+    @if(req.uri == url) {
+        <span class="link active" @attrs>@name</span>
+    } else {
+        <a href="@url" class="menu-entry" @attrs>@name</a>
+    }
+}
+
+@creditClass(credits: Int) = {@credits match {
+    case n if n <= 0 => {class="credits critical"}
+    case n if n <= 50 => {class="credits warn"}
+    case _ => {class="credits"}
+}}
+
+@user.map{ user =>
+<div class="hello">
+    <form action="@routes.Application.logoutAction" method="post">
+        (<button type="submit" class="logout">logout</button>)
+    </form>
+    <p>Hello <a href="@routes.User.profile.url" title="My Account">@user.name</a></p>
+    <p>You have <span @creditClass(user.credits)>@user.credits</span> credits left (<a href="@routes.Application.pricing">buy additional credits</a>)</p>
+</div>
+}
+
+<nav class="mainNav" aria-label="Main Navigation">
+    <ul>
+        <li>@navLink(routes.Application.index.url){Home}</li>
+        <li>@navLink(routes.Application.pricing.url){Pricing}</li>
+        <li>@navLink(routes.Application.faq.url){FAQs}</li>
+        @user match {
+        case Some(user) => {
+        <li><a class="support menu-entry" href='mailto:@Helper.config.getString("support.email").getOrElse("")'>Support</a></li>
+        @if(user.isRoot){<li><a href="@routes.Administration.console.url" class="menu-entry">Console</a></li>}
+        <li>@navLink(routes.Jobs.index.url){My Jobs}</li>
+        }
+        case _ => {
+        <li><a href='mailto:@Helper.config.getString("contact.email").getOrElse("")' class="menu-entry">Contact</a></li>
+        <li>
+            @loginPage match{
+                case false => {<a href="@routes.Application.login.url" data-reveal-id="loginModal" class="menu-entry"><strong>Login</strong></a>}
+                case true => {<span class="link active"><strong>Login</strong></span>}
+            }
+        </li>
+        }}
+    </ul>
+</nav>

@@ -1,0 +1,1 @@
+[![Netlify Status](https://api.netlify.com/api/v1/badges/9d78f377-2636-4771-b395-0e77c28401e5/deploy-status)](https://app.netlify.com/sites/wai-quick-start/deploys)

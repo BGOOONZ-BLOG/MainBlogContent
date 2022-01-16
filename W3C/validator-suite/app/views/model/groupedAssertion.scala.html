@@ -1,0 +1,84 @@
+@(assertion: GroupedAssertionView)
+<article class="@assertion.severity" tabindex="1" data-id="@assertion.id">
+        <dl>
+            @GroupedAssertionView.definitions.map { definition =>
+            <dt>@Messages(s"assertions.${definition.name}")</dt>
+            <dd class="@{definition.name}">
+            @definition.name match {
+
+            case "assertor" => {
+            <span data-assertor="">@assertion.assertor</span>}
+
+            case "severity" => {
+            <span data-severity="">@assertion.severity</span>}
+
+            case "occurrences" => {
+            <span data-occurrences="@assertion.occurrences" data-occurrencesLegend="">@assertion.occurrencesLegend</span>}
+
+            case "title" => {
+            <div @if(!assertion.isEmpty){class="fold"} data-title="">@assertion.title</div>}
+
+            case "resources" => {
+            @Messages("assertion.resources.detail")
+
+            @assertion.resources.map { case (url, count) =>
+            <dd class="resource">
+                <span class="count" data-count="" title="@count time(s)">@count</span>
+                <a href="@routes.Assertions.index(assertion.jobId, url)" class="report" title="@Messages("report.link")">
+                    <span>@Messages("resource.report.for")</span>
+                    <span>@url.shorten(80)</span>
+                </a>
+                <br><a href="@url" data-resource="@url" class="external" target="_blank" title="@Messages("resource.external.link")">@url</a>
+            </dd>}
+            @if(assertion.resourcesCount - assertion.resources.size > 0){
+            <dd class="more">
+                <p>And <span data-resourcesCount="">@{assertion.resourcesCount - assertion.resources.size}</span> more</p>
+            </dd>}}
+
+            }}
+        </dl>
+        <hr/>
+    </article>
+
+
+            @**<dt>@Messages("assertion.assertor")</dt>
+            <dd class="assertor">@assertion.assertor</dd>
+            <dt>@Messages("assertion.severity")</dt>
+            <dd class="severity">@assertion.severity</dd>
+            <dt>@Messages("assertion.occurrences")</dt>
+            <dd class="occurrences">@assertion.occurencesLegend</dd>
+            <dt>@Messages("assertion.message")</dt>
+            <dd class="title@if(!assertion.isEmpty){ fold}">@assertion.title</dd>
+            <dt>@Messages("assertion.description")</dt>
+            <dd class="description">@assertion.description</dd>
+            <dt>@Messages("assertion.context")</dt>
+            @assertion.contexts.take(50).map { case context =>
+            <dd class="context">
+                @if(context.line.isDefined){
+                <span class="line">Line <span title="Line @context.line">@context.line</span></span>}
+                @if(context.column.isDefined){
+                <span class="column">Column <span title="Column @context.column">@context.column</span></span>}
+                @if(context.content.isDefined){
+                <code class="code language-">@context.content</code>}
+            </dd>}
+            @if(assertion.contexts.size > 50){
+            <dd class="more">
+                <p>And @{assertion.contexts.size - 50} more</p>
+            </dd>}
+            <dt class="url">@Messages("assertion.resources.detail")</dt>
+            @assertion.resources.take(50).map { case url =>
+            <dd class="url">
+                <a href="@Helper.encode(url)" class="report" title="@Messages("report.link")">
+                    <span>@Messages("resource.report.for")</span>
+                    <span>@Helper.shorten(url, 80)</span>
+                </a>
+                <br>
+                <a href="@url" class="external" target="_blank" title="@Messages("resource.external.link")">@url</a>
+            </dd>}
+            @if(assertion.resources.size > 50){
+            <dd class="more">
+                <p>And @{assertion.resources.size - 50} more</p>
+            </dd>}
+        </dl>
+        <hr/>
+    </article>**@

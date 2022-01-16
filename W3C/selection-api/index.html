@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <title>
+      Selection API
+    </title>
+    <script src='https://www.w3.org/Tools/respec/respec-w3c' async class=
+    'remove'></script>
+    <script class='remove'>
+      var respecConfig = {
+        specStatus: "ED",
+        shortName: "selection-api",
+        editors: [
+          {
+            name: "Ryosuke Niwa",
+            mailto: "rniwa@apple.com",
+            company: "Apple Inc.",
+            companyURL: "https://www.apple.com/",
+            w3cid: "49910",
+          },
+        ],
+        group: "webapps",
+        testSuiteURI: "https://github.com/web-platform-tests/wpt/tree/master/selection",
+        github: "w3c/selection-api",
+        xref: "web-platform",
+        testSuiteURI: "https://wpt.fyi/results/selection/",
+      };
+    </script>
+  </head>
+  <body>
+    <section id='abstract'>
+      <p>
+        This document is a preliminary draft of a specification for the
+        Selection API and selection related functionality. It replaces a couple
+        of old sections of the <a href="https://www.w3.org/TR/html5/">HTML
+        specification</a>, the selection part of the old <a href=
+        "https://www.w3.org/TR/2000/REC-DOM-Level-2-Traversal-Range-20001113/ranges.html">
+        DOM Range specification</a>.
+      </p>
+      <p>
+        This document defines APIs for selection, which allows users and
+        authors to select a portion of a document or specify a point of
+        interest for copy, paste, and other editing operations.
+      </p>
+    </section>
+    <section id='sotd'>
+      <p>
+        This is work in progress.
+      </p>
+    </section>
+    <section class="informative">
+      <h2>
+        Background
+      </h2>
+      <p>
+        IE9 and Firefox 6.0a2 allow arbitrary ranges in the selection, which
+        follows what this spec originally said. However, this leads to
+        unpleasant corner cases that authors, implementers, and spec writers
+        all have to deal with, and they don't make any real sense. Chrome 14
+        dev and Opera 11.11 aggressively normalize selections, like not letting
+        them lie inside empty elements and things like that, but this is also
+        viewed as a bad idea, because it takes flexibility away from authors.
+      </p>
+      <p>
+        So I changed the spec to a made-up compromise that allows some
+        simplification but doesn't constrain authors much. See <a href=
+        "https://lists.w3.org/Archives/Public/public-whatwg-archive/2011Jun/0193.html">
+        discussion</a>. Basically it would throw exceptions in some places to
+        try to stop the selection from containing a range that had a
+        <a>boundary point</a> other than an Element or Text node, or a boundary
+        point that didn't descend from a Document.
+      </p>
+      <p>
+        But this meant getRangeAt() had to start returning a copy, not a
+        reference. Also, it would be prone to things failing weirdly in corner
+        cases. Perhaps most significantly, all sorts of problems might arise
+        when DOM mutations transpire, like if a boundary point's node is
+        removed from its parent and the mutation rules would place the new
+        boundary point inside a non-Text/Element node. And finally, the
+        previously-specified behavior had the advantage of matching two major
+        implementations, while the new behavior matched no one. So I changed it
+        back.
+      </p>
+      <div class="note">
+        <p>
+          See <a href=
+          "https://www.w3.org/Bugs/Public/show_bug.cgi?id=15470">bug 15470</a>.
+          IE9, Firefox 12.0a1, Chrome 17 dev, and Opera Next 12.00 alpha all
+          make the range initially null.
+        </p>
+      </div>
+    </section>
+    <section>
+      <h2>
+        Definition
+      </h2>
+      <p>
+        Every <a>document</a> with a [=Document/browsing context=] has a unique
+        <dfn>selection</dfn> associated with it.
+      </p>
+      <p class="note">
+        This is a requirement of the HTML spec. IE9 and Opera Next 12.00 alpha
+        seem to follow it, while Firefox 12.0a1 and Chrome 17 dev seem not to.
+        See <a href=
+        "https://bugzilla.mozilla.org/show_bug.cgi?id=717339">Mozilla bug</a>,
+        <a href="https://bugs.webkit.org/show_bug.cgi?id=76114">WebKit bug</a>.
+      </p>
+      <p>
+        This one <a>selection</a> must be shared by all the content of the
+        <a>document</a> (though not by nested <a>documents</a>), including any
+        [=editing hosts=] in the document. [=Editing hosts=] that are not
+        inside a <a>document</a> cannot have a <a>selection</a>
+      </p>
+      <p>
+        Each <a>selection</a> can be associated with a single <a>range</a>.
+        When there is no <a>range</a> associated with the <a>selection</a>, the
+        selection is <dfn>empty</dfn>. The selection must be initially
+        <a>empty</a>.
+      </p>
+      <p class="note">
+        A <a>document</a>'s <a>selection</a> is a singleton object associated
+        with that <a>document</a>, so it gets replaced with a new object when
+        <code>Document.open()</code> is called. See <a href=
+        "https://www.w3.org/Bugs/Public/show_bug.cgi?id=15470">bug 15470</a>.
+        IE9 and Opera Next 12.00 alpha allow the user to reset the range to
+        null after the fact by clicking somewhere; Firefox 12.0a1 and Chrome 17
+        dev do not. We follow Gecko/WebKit, because it lessens the chance of
+        getRangeAt(0) throwing.
+      </p>
+      <p>
+        Once a <a>selection</a> is associated with a given <a>range</a>, it
+        must continue to be associated with that same <a>range</a> until this
+        specification requires otherwise.
+      </p>
+      <p class="note" data-link-for="Selection">
+        For instance, if the DOM changes in a way that changes the range's
+        boundary points, or a script modifies the boundary points of the range,
+        the same range object must continue to be associated with the
+        selection. However, if the user changes the selection or a script calls
+        {{addRange()}}, the selection must be associated with a new range
+        object, as required elsewhere in this specification.
+      </p>
+      <p>
+        If the <a>selection</a>'s <a>range</a> is not null and is
+        [=range/collapsed=], then the caret position must be at that
+        <a>range</a>'s <a>boundary point</a>. When the <a>selection</a> is not
+        empty, this specification does not define the caret position; user
+        agents should follow platform conventions in deciding whether the caret
+        is at the start of the <a>selection</a>, the end of the
+        <a>selection</a>, or somewhere else.
+      </p>
+      <p class="note">
+        This short-changes Mac users. See <a href=
+        "https://www.w3.org/Bugs/Public/show_bug.cgi?id=13909">bug 13909</a>.
+      </p>
+      <p>
+        Each <a>selection</a> has a <dfn>direction</dfn>, <dfn>forwards</dfn>,
+        <dfn>backwards</dfn>, or <dfn>directionless</dfn>. If the user creates
+        a <a>selection</a> by indicating first one <a>boundary point</a> of the
+        <a>range</a> and then the other (such as by clicking on one point and
+        dragging to another), and the first indicated <a>boundary point</a> is
+        [=boundary point/after=] the second, then the corresponding
+        <a>selection</a> must initially be <a>backwards</a>. If the first
+        indicated <a>boundary point</a> is [=boundary point/before=] the
+        second, then the corresponding <a>selection</a> must initially be
+        <a>forwards</a>. Otherwise, it must be <a>directionless</a>.
+      </p>
+      <p>
+        Each <a>selection</a>s also have an <dfn>anchor</dfn> and a
+        <dfn>focus</dfn>. If the <a>selection</a>'s <a>range</a> is null, its
+        <a>anchor</a> and <a>focus</a> are both null. If the <a>selection</a>'s
+        <a>range</a> is not null and its <a>direction</a> is <a>forwards</a>,
+        its <a>anchor</a> is the <a>range</a>'s [=range/start=], and its
+        <a>focus</a> is the [=range/end=]. Otherwise, its <a>focus</a> is the
+        [=range/start=] and its <a>anchor</a> is the [=range/end=].
+      </p>
+    </section>
+    <section data-dfn-for="Selection">
+      <h2>
+        Selection interface
+      </h2>
+      <p>
+        <a>Selection</a> interface provides a way to interact with the
+        <a>selection</a> associated with each document.
+      </p>
+      <pre class="idl">
+        [Exposed=Window]
+        interface Selection {
+          readonly attribute Node? anchorNode;
+          readonly attribute unsigned long anchorOffset;
+          readonly attribute Node? focusNode;
+          readonly attribute unsigned long focusOffset;
+          readonly attribute boolean isCollapsed;
+          readonly attribute unsigned long rangeCount;
+          readonly attribute DOMString type;
+          Range getRangeAt(unsigned long index);
+          undefined addRange(Range range);
+          undefined removeRange(Range range);
+          undefined removeAllRanges();
+          undefined empty();
+          undefined collapse(Node? node, optional unsigned long offset = 0);
+          undefined setPosition(Node? node, optional unsigned long offset = 0);
+          undefined collapseToStart();
+          undefined collapseToEnd();
+          undefined extend(Node node, optional unsigned long offset = 0);
+          undefined setBaseAndExtent(Node anchorNode, unsigned long anchorOffset, Node focusNode, unsigned long focusOffset);
+          undefined selectAllChildren(Node node);
+          [CEReactions]
+          undefined deleteFromDocument();
+          boolean containsNode(Node node, optional boolean allowPartialContainment = false);
+          stringifier;
+        };
+      </pre>
+      <dl>
+        <dt>
+          <dfn>anchorNode</dfn>
+        </dt>
+        <dd>
+          <p>
+            The attribute must return the <a>anchor</a> [=boundary point/node=]
+            of [=this=], or `null` if the <a>anchor</a> is null.
+          </p>
+        </dd>
+        <dt>
+          <dfn>anchorOffset</dfn>
+        </dt>
+        <dd>
+          <p>
+            The attribute must return the <a>anchor</a> [=boundary
+            point/offset=] of [=this=], or <code>0</code> if the <a>anchor</a>
+            is null.
+          </p>
+        </dd>
+        <dt>
+          <dfn>focusNode</dfn>
+        </dt>
+        <dd>
+          <p>
+            The attribute must return the <a>focus</a> [=boundary point/node=]
+            of [=this=], or `null` if the <a>focus</a> is null.
+          </p>
+        </dd>
+        <dt>
+          <dfn>focusOffset</dfn>
+        </dt>
+        <dd>
+          <p>
+            The attribute must return the <a>focus</a> [=boundary
+            point/offset=] of [=this=], or <code>0</code> if the <a>focus</a>
+            is null.
+          </p>
+        </dd>
+        <dt>
+          <dfn>isCollapsed</dfn>
+        </dt>
+        <dd>
+          <p>
+            The attribute must return true if and only if the
+            <span>anchor</span> and <span>focus</span> are the same (including
+            if both are null). Otherwise it must return false.
+          </p>
+        </dd>
+        <dt>
+          <dfn>rangeCount</dfn>
+        </dt>
+        <dd>
+          <p>
+            The attribute must return <code>0</code> if [=this=] is
+            <a>empty</a>, and must return <code>1</code> otherwise.
+          </p>
+        </dd>
+        <dt>
+          <dfn>type</dfn>
+        </dt>
+        <dd>
+          <p>
+            The attribute must return `"None"` if [=this=] is <a>empty</a>,
+            `"Caret"` if [=this=]'s <a>range</a> is [=range/collapsed=], and
+            `"Range"` otherwise.
+          </p>
+        </dd>
+        <dt>
+          <dfn>getRangeAt()</dfn> method
+        </dt>
+        <dd>
+          <p data-tests="getRangeAt.html">
+            The method must throw an {{IndexSizeError}} exception if
+            <var>index</var> is not <code>0</code>, or if [=this=] is
+            <a>empty</a>. Otherwise, it must return a reference to (not a copy
+            of) [=this=]'s <a>range</a>.
+          </p>
+          <p class="note">
+            Thus subsequent calls of this method returns the same <a>range</a>
+            object if nothing has removed [=this=]'s range in the meantime. In
+            particular, <code>getSelection().getRangeAt(0) ===
+            getSelection().getRangeAt(0)</code> evaluates to <code>true</code>
+            if the <a>selection</a> is not <a>empty</a>.
+          </p>
+        </dd>
+        <dt>
+          <dfn>addRange()</dfn> method
+        </dt>
+        <dd>
+          <p>
+            The method must follow these steps:
+          </p>
+          <ol>
+            <li>If the [=tree/root=] of the <var>range</var>'s boundary points
+            are not the <a>document</a> associated with [=this=], abort these
+            steps.
+            </li>
+            <li>If <code>rangeCount</code> is not <code>0</code>, abort these
+            steps.
+            </li>
+            <li>Set [=this=]'s range to <var>range</var> by a strong reference
+            (not by making a copy).
+            </li>
+          </ol>
+          <p class="note">
+            Since <a>range</a> is added by reference, subsequent calls to
+            <code>getRangeAt(0)</code> returns the same object, and any changes
+            that a script makes to <a>range</a> after it is added must be
+            reflected in the <a>selection</a>, until something else removes or
+            replaces [=this=]'s <a>range</a>. In particular, the
+            <a>selection</a> will contain <var>b</var> as opposed to
+            <var>a</var> after running the following code: <code>var r =
+            document.createRange(); r.selectNode(a);
+            getSelection().addRange(r); r.selectNode(b);</code>
+          </p>
+          <div class="note">
+            <p>
+              At Step 2, Chrome 58 and Edge 25 do nothing. Firefox 51 gives you
+              a multi-range selection. At least they keep the exisiting
+              <a>range</a>.
+            </p>
+            <p>
+              At Step 3, Chrome 58 and Firefox 51 store a reference, as
+              described here. Edge 25 stores a copy. Firefox 51 changes its
+              selection if the <a>range</a> is modified.
+            </p>
+          </div>
+        </dd>
+        <dt>
+          <dfn>removeRange()</dfn> method
+        </dt>
+        <dd>
+          <p>
+            The method must make [=this=] <a>empty</a> by disassociating its
+            <a>range</a> if [=this=]'s <a>range</a> is <var>range</var>.
+            Otherwise, it must throw a {{NotFoundError}}.
+          </p>
+        </dd>
+        <dt>
+          <dfn>removeAllRanges()</dfn> method
+        </dt>
+        <dd>
+          <p>
+            The method must make [=this=] <a>empty</a> by disassociating its
+            <a>range</a> if [=this=] has an associated <a>range</a>.
+          </p>
+        </dd>
+        <dt>
+          <dfn>empty</dfn>
+        </dt>
+        <dd>
+          <p>
+            The method must be an alias, and behave identically, to
+            <code>removeAllRanges()</code>.
+          </p>
+        </dd>
+        <dt>
+          <dfn>collapse()</dfn> method
+        </dt>
+        <dd>
+          <p>
+            The method must follow these steps:
+          </p>
+          <ol>
+            <li>If <var>node</var> is null, this method must behave identically
+            as <code>removeAllRanges()</code> and abort these steps.
+            </li>
+            <li>The method must throw an {{IndexSizeError}} exception if <var>
+              offset</var> is longer than <var>node</var>'s [=Node/length=] and
+              abort these steps.
+            </li>
+            <li>If <var>node</var>'s [=tree/root=] is not the <a>document</a>
+            associated with [=this=], abort these steps.
+            </li>
+            <li>Otherwise, let <var>newRange</var> be a new <a>range</a>.
+            </li>
+            <li>[=Range/Set the start=] the [=range/start=] and the
+            [=range/end=] of <var>newRange</var> to (<var>node</var>,
+            <var>offset</var>).
+            </li>
+            <li>Set [=this=]'s <a>range</a> to <var>newRange</var>.
+            </li>
+          </ol>
+        </dd>
+        <dt>
+          <dfn>setPosition()</dfn> method
+        </dt>
+        <dd>
+          <p>
+            The method must be an alias, and behave identically, to
+            <code>collapse()</code>.
+          </p>
+        </dd>
+        <dt>
+          <dfn>collapseToStart()</dfn> method
+        </dt>
+        <dd>
+          <p>
+            The method must throw {{InvalidStateError}} exception if the
+            [=this=] is <a>empty</a>. Otherwise, it must create a new
+            <a>range</a>, [=Range/set the start=] both its [=range/start=] and
+            [=range/end=] to the [=range/start=] of [=this=]'s <a>range</a>,
+            and then set [=this=]'s <a>range</a> to the newly-created
+            <a>range</a>.
+          </p>
+          <p class="note">
+            For collapseToStart/End, IE9 mutates the existing range, while
+            Firefox 9.0a2 and Chrome 15 dev replace it with a new one. The spec
+            follows the majority and replaces it with a new one, leaving the
+            old Range object unchanged.
+          </p>
+        </dd>
+        <dt>
+          <dfn>collapseToEnd()</dfn> method
+        </dt>
+        <dd>
+          <p>
+            The method must throw {{InvalidStateError}} exception if the
+            [=this=] is <a>empty</a>. Otherwise, it must create a new
+            <a>range</a>, [=Range/set the start=] both its [=range/start=] and
+            [=range/end=] to the [=range/end=] of [=this=]'s <a>range</a>, and
+            then set [=this=]'s <a>range</a> to the newly-created <a>range</a>.
+          </p>
+        </dd>
+        <dt>
+          <dfn>extend()</dfn> method
+        </dt>
+        <dd>
+          <p>
+            The method must follow these steps:
+          </p>
+          <ol>
+            <li>If <var>node</var>'s [=tree/root=] is not the <a>document</a>
+            associated with [=this=], abort these steps.
+            </li>
+            <li>If [=this=] is <a>empty</a>, throw an {{InvalidStateError}}
+            exception and abort these steps.
+            </li>
+            <li>Let <var>oldAnchor</var> and <var>oldFocus</var> be the
+            [=this=]'s <a>anchor</a> and <a>focus</a>, and let
+            <var>newFocus</var> be the <a>boundary point</a> (<var>node</var>,
+            <var>offset</var>).
+            </li>
+            <li>Let <var>newRange</var> be a new <a>range</a>.
+            </li>
+            <li>If <var>node</var>'s [=tree/root=] is not the same as the
+            [=this=]'s <a>range</a>'s [=tree/root=], [=Range/set the start=]
+            <var>newRange</var>'s [=range/start=] and [=range/end=] to
+            <var>newFocus</var>.
+            </li>
+            <li>Otherwise, if <var>oldAnchor</var> is [=boundary point/before=]
+            or equal to <var>newFocus</var>, [=Range/set the start=]
+            <var>newRange</var>'s [=range/start=] to <var>oldAnchor</var>, then
+            set its [=range/end=] to <var>newFocus</var>.
+            </li>
+            <li>Otherwise, [=Range/set the start=] <var>newRange</var>'s
+            [=range/start=] to <var>newFocus</var>, then set its [=range/end=]
+            to <var>oldAnchor</var>.
+            </li>
+            <li>Set [=this=]'s <a>range</a> to <var>newRange</var>.
+            </li>
+            <li>If <var>newFocus</var> is [=boundary point/before=]
+            <var>oldAnchor</var>, set [=this=]'s <a>direction</a> to
+            <a>backwards</a>. Otherwise, set it to <a>forwards</a>.
+            </li>
+          </ol>
+          <p class="note">
+            Reverse-engineered circa January 2011. IE doesn't support it, so
+            I'm relying on Firefox (implemented extend() sometime before 2000)
+            and WebKit (implemented extend() in 2007). I'm mostly ignoring
+            Opera, because gsnedders tells me its implementation isn't
+            compatible. Firefox 12.0a1 seems to mutate the existing range. IE9
+            doesn't support extend(), and it's impossible to tell whether
+            Chrome 17 dev or Opera Next 12.00 alpha mutate or replace, because
+            getRangeAt() returns a copy anyway. Nevertheless, I go against
+            Gecko here, to be consistent with collapse().
+          </p>
+        </dd>
+        <dt>
+          <dfn>setBaseAndExtent()</dfn> method
+        </dt>
+        <dd>
+          <p>
+            The method must follow these steps:
+          </p>
+          <ol>
+            <li>If <var>anchorOffset</var> is longer than
+            <var>anchorNode</var>'s [=Node/length=] or if
+            <var>focusOffset</var> is longer than <var>focusNode</var>'s
+            [=Node/length=], throw an {{IndexSizeError}} exception and abort
+            these steps.
+            </li>
+            <li>If the [=tree/root=]s of <var>anchorNode</var> or
+            <var>focusNode</var> are not the <a>document</a> associated with
+            [=this=], abort these steps.
+            </li>
+            <li>Let <var>anchor</var> be the <a>boundary point</a>
+            (<var>anchorNode</var>, <var>anchorOffset</var>) and let
+            <var>focus</var> be the <a>boundary point</a>
+            (<var>focusNode</var>, <var>focusOffset</var>).
+            </li>
+            <li>Let <var>newRange</var> be a new <a>range</a>.
+            </li>
+            <li>If <var>anchor</var> is [=boundary point/before=]
+            <var>focus</var>, [=Range/set the start=] the <var>newRange</var>'s
+            [=range/start=] to <var>anchor</var> and its [=range/end=] to <var>
+              focus</var>. Otherwise, [=Range/set the start=] them to
+              <var>focus</var> and <var>anchor</var> respectively.
+            </li>
+            <li>Set [=this=]'s <a>range</a> to <var>newRange</var>.
+            </li>
+            <li>If <var>focus</var> is [=boundary point/before=]
+            <var>anchor</var>, set [=this=]'s <a>direction</a> to
+            <a>backwards</a>. Otherwise, set it to <a>forwards</a>
+            </li>
+          </ol>
+        </dd>
+        <dt>
+          <dfn>selectAllChildren()</dfn> method
+        </dt>
+        <dd>
+          <p>
+            The method must follow these steps:
+          </p>
+          <ol>
+            <li>If <var>node</var>'s [=tree/root=] is not the <a>document</a>
+            associated with [=this=], abort these steps.
+            </li>
+            <li>Let <var>newRange</var> be a new <a>range</a> and
+            <var>childCount</var> be the number of [=tree/children=] of
+            <var>node</var>.
+            </li>
+            <li>Set <var>newRange</var>'s [=range/start=] to (<var>node</var>,
+            <code>0</code>).
+            </li>
+            <li>Set <var>newRange</var>'s [=range/end=] to (<var>node</var>,
+            <var>childCount</var>).
+            </li>
+            <li>Set [=this=]'s <a>range</a> to <var>newRange</var>.
+            </li>
+            <li>Set [=this=]'s <a>direction</a> to <var>forwards</var>.
+            </li>
+          </ol>
+          <div class="note">
+            <p>
+              Based mostly on Firefox 9.0a2. It has a bug that I didn't
+              reproduce, namely that if you pass a Document as the argument,
+              the end offset becomes 1 instead of the number of children it
+              has. It also throws a RangeException instead of DOMException,
+              because its implementation predated their merging.
+            </p>
+            <p>
+              IE9 behaves similarly but with glitches. It throws "Unspecified
+              error." if the node is detached or display:none, and apparently
+              in some random other cases too. It throws "Invalid argument." for
+              detached comments (only!). Finally, if you pass it a comment, it
+              seems to select the whole comment, unlike with text nodes.
+            </p>
+            <p>
+              Chrome 16 dev behaves as you'd expect given its Selection
+              implementation. It refuses to select anything that's not visible,
+              so it's almost always wrong. Opera 11.50 just does nothing in all
+              my tests, as usual.
+            </p>
+            <p>
+              The new range replaces any existing one, doesn't mutate it. This
+              matches IE9 and Firefox 12.0a1. (Chrome 17 dev and Opera Next
+              12.00 alpha can't be tested, because getRangeAt() returns a copy
+              anyway.)
+            </p>
+          </div>
+        </dd>
+        <dt>
+          <dfn>deleteFromDocument()</dfn> method
+        </dt>
+        <dd>
+          <p>
+            The method must invoke {{Range/deleteContents()}} on [=this=]'s
+            <a>range</a> if [=this=] is not <a>empty</a>. Otherwise the method
+            must do nothing.
+          </p>
+          <p class="note">
+            This is the one method that actually mutates the range instead of
+            replacing it. This matches IE9 and Firefox 12.0a1. (Chrome 17 dev
+            and Opera Next 12.00 alpha can't be tested, because getRangeAt()
+            returns a copy anyway.)
+          </p>
+        </dd>
+        <dt>
+          <dfn>containsNode()</dfn> method
+        </dt>
+        <dd>
+          <p>
+            The method must return <code>false</code> if [=this=] is
+            <a>empty</a> or if <var>node</var>'s [=tree/root=] is not the
+            document associated with [=this=].
+          </p>
+          <p>
+            Otherwise, if <var>allowPartialContainment</var> is
+            <code>false</code>, the method must return <code>true</code> if and
+            only if [=range/start=] of its <a>range</a> is [=boundary
+            point/before=] or visually equivalent to the first <a>boundary
+            point</a> in the <var>node</var> <strong>and</strong> [=range/end=]
+            of its <a>range</a> is [=boundary point/after=] or visually
+            equivalent to the last <a>boundary point</a> in the
+            <var>node</var>.
+          </p>
+          <p>
+            If <var>allowPartialContainment</var> is <code>true</code>, the
+            method must return <code>true</code> if and only if [=range/start=]
+            of its <a>range</a> is [=boundary point/before=] or visually
+            equivalent to the first <a>boundary point</a> in the
+            <var>node</var> <strong>or</strong> [=range/end=] of its
+            <a>range</a> is [=boundary point/after=] or visually equivalent to
+            the last <a>boundary point</a> in the <var>node</var>.
+          </p>
+        </dd>
+        <dt>
+          stringifier
+        </dt>
+        <dd>
+          See <a href=
+          "https://www.w3.org/Bugs/Public/show_bug.cgi?id=10583">W3C bug
+          10583</a>.
+        </dd>
+      </dl>
+      <p class="note">
+        See also <a href=
+        "https://mxr.mozilla.org/mozilla/source/content/base/public/nsISelection.idl">
+        nsISelection.idl</a> from Gecko. This spec doesn't have everything from
+        there yet, in particular selectionLanguageChange() and containsNode()
+        are missing. They are missing because I couldn't work out how to define
+        them in terms of Ranges.
+      </p>
+      <div class="note">
+        <p>
+          Originally, the Selection interface was a Netscape feature. The
+          original implementation was carried on into Gecko (Firefox), and the
+          feature was later implemented independently by other browser engines.
+          The Netscape implementation always allowed multiple ranges in a
+          single selection, for instance so the user could select a column of a
+          table However, multi-range selections proved to be an unpleasant
+          corner case that web developers didn't know about and even Gecko
+          developers rarely handled correctly. Other browser engines never
+          implemented the feature, and clamped selections to a single range in
+          various incompatible fashions.
+        </p>
+        <p>
+          This specification follows non-Gecko engines in restricting
+          selections to at most one range, but the API was still originally
+          designed for selections with arbitrary numbers of ranges. This
+          explains oddities like the coexistence of <code>removeRange()</code>
+          and <code>removeAllRanges()</code>, and a <code>getRangeAt()</code>
+          method that takes an integer argument that must always be zero.
+        </p>
+      </div>
+      <p>
+        All of the members of the {{Selection}} interface are defined in terms
+        of operations on the <code><a>range</a></code> object (if any)
+        represented by the object. These operations can raise exceptions, as
+        defined for the {{Range}} interface; this can therefore result in the
+        members of the <a>Selection</a> interface raising exceptions as well,
+        in addition to any explicitly called out below.
+      </p>
+    </section>
+    <section>
+      <h2>
+        Extensions to Other Interfaces
+      </h2>
+      <p>
+        This specification extends several interfaces to provide entry points
+        to the interfaces defined in this specification.
+      </p>
+      <section data-dfn-for="Document">
+        <h3>
+          Extensions to <code>Document</code> interface
+        </h3>
+        <p>
+          The <code><dfn data-cite="dom#document">Document</dfn></code>
+          interface is defined in [[HTML]].
+        </p>
+        <pre class="idl" data-cite="HTML">
+          partial interface Document {
+            Selection? getSelection();
+          };
+        </pre>
+        <dl>
+          <dt>
+            <dfn>getSelection()</dfn> method
+          </dt>
+          <dd>
+            <p>
+              The method must return the <a>selection</a> associated with
+              [=this=] if [=this=] has an associated [=Document/browsing
+              context=], and it must return `null` otherwise.
+            </p>
+          </dd>
+        </dl>
+        <p class="note" data-link-for="Document">
+          If we create a Document object with no browsing context (say via
+          `document.implementation.createHTMLDocument("")` and call
+          {{getSelection()}} on it), IE9 seems to return a different Selection
+          object. Firefox 12.0a1 and Opera Next 12.00 alpha return the same
+          object as for the current window. Chrome 17 dev returns null. See
+          <a href=
+          "https://lists.w3.org/Archives/Public/public-webapps/2012JanMar/0159.html">
+          discussion</a>. There's no meaningful selection associated with such
+          a document, so we follow WebKit and require returning `null`.
+        </p>
+      </section>
+      <section data-dfn-for="Window" data-link-for="Window">
+        <h3>
+          Extensions to `Window` interface
+        </h3>
+        <p>
+          The <code><dfn data-cite=
+          "html/window-object.html#window">Window</dfn></code> interface is
+          defined in [[HTML]].
+        </p>
+        <pre class="idl">
+          partial interface Window {
+            Selection? getSelection();
+          };
+        </pre>
+        <dl>
+          <dt>
+            <dfn>getSelection()</dfn> method
+          </dt>
+          <dd>
+            <p>
+              The method must invoke and return the result of
+              {{getSelection()}} on [=this=]'s {{Window.document}} attribute.
+            </p>
+          </dd>
+        </dl>
+      </section>
+      <section data-dfn-for="GlobalEventHandlers">
+        <h3>
+          Extensions to `GlobalEventHandlers` interface
+        </h3>
+        <p>
+          The <code><dfn data-cite=
+          "html/webappapis.html#globaleventhandlers">GlobalEventHandlers</dfn></code>
+          interface is defined in [[HTML]].
+        </p>
+        <pre class="idl">
+          partial interface mixin GlobalEventHandlers {
+            attribute EventHandler onselectstart;
+            attribute EventHandler onselectionchange;
+          };
+        </pre>
+        <dl>
+          <dt>
+            <dfn>onselectstart</dfn>
+          </dt>
+          <dd>
+            <p>
+              The attribute must be an <a>event handler IDL attribute</a> for
+              the <a>selectstart</a> event supported by all <a>HTML
+              elements</a>, {{Document}} objects, and {{Window}} objects.
+            </p>
+          </dd>
+          <dt>
+            <dfn>onselectionchange</dfn>
+          </dt>
+          <dd>
+            <p>
+              The attribute must be an <a>event handler IDL attribute</a> for
+              the <a>selectionchange</a> event supported by all <a>HTML
+              elements</a>, {{Document}} objects, and {{Window}} objects.
+            </p>
+          </dd>
+        </dl>
+      </section>
+    </section>
+    <section>
+      <h2>
+        User Interactions
+      </h2>
+      <p>
+        The user agent should allow the user to change the <a>selection</a>
+        associated with the <a>active document</a>. If the user makes any
+        modification to a <a>selection</a>, the user agent must create a new
+        <a>range</a> with suitable [=range/start=] and [=range/end=] of the
+        <a>range</a> and associate the <a>selection</a> with this new
+        <a>range</a> (not modify the existing <a>range</a>), and set update
+        <a>selection</a>'s <a>direction</a> to <a>forwards</a> if the
+        [=range/start=] is [=boundary point/before=] or equal to the
+        [=range/end=], <a>backwards</a> if if the [=range/end=] is [=boundary
+        point/before=] the [=range/start=], or <a>directionless</a> if the
+        [=range/start=] and the [=range/end=] cannot be ordered due to the
+        platform convention.
+      </p>
+      <p>
+        The user agent must not make a <a>selection</a> <a>empty</a> if it was
+        not already <a>empty</a> in response to any user actions (e.g. clicking
+        on a non-editable region).
+      </p>
+      <p class="note">
+        See <a href="https://www.w3.org/Bugs/Public/show_bug.cgi?id=15470">bug
+        15470</a>. IE9 and Opera Next 12.00 alpha allow the user to reset the
+        range to null after the fact by clicking somewhere; Firefox 12.0a1 and
+        Chrome 17 dev do not. I follow Gecko/WebKit, because it lessens the
+        chance of getRangeAt(0) throwing.
+      </p>
+      <section>
+        <h3>
+          <code><dfn>selectstart</dfn></code> event
+        </h3>
+        <p>
+          When the user agent is about to associate a new range
+          <var>newRange</var> to the <a>selection</a> in response to a user
+          initiated action, the user agent must <a>fire an event</a> with the
+          name <code>selectstart</code>, which bubbles and is cancelable, at
+          the [=boundary point/node=] associated with the <a>boundary point</a>
+          of <var>newRange</var>'s [=range/start=] prior to changing the
+          selection if the <a>selection</a> was previously <a>empty</a> or the
+          previously associated range was [=range/collapsed=].
+        </p>
+        <p>
+          If the event is canceled, the user agent must not change the
+          <a>selection</a>.
+        </p>
+        <p>
+          The user agent must not <a>fire an event</a> when the user agent sets
+          the <a>selection</a> <a>empty</a>.
+        </p>
+      </section>
+      <section>
+        <h3>
+          <code><dfn>selectionchange</dfn></code> event
+        </h3>
+        <p>
+          When the <a>selection</a> is dissociated with its <a>range</a>,
+          associated with a new <a>range</a> or the associated <a>range</a>'s
+          <a>boundary point</a> is mutated either by the user or the content
+          script, the user agent must <a>queue a task</a> to <a>fire an
+          event</a> with the name <code>selectionchange</code>, which does not
+          bubble and is not cancelable, at the <a>document</a> associated with
+          the <a>selection</a>.
+        </p>
+        <p>
+          When an [^input^] or [^textarea^] element provide a text selection
+          and its selection changes (in either extent or [=direction=]), the
+          user agent must [=queue a task=] to [=fire an event=] with the name
+          <code>selectionchange</code>, which does bubble but is not
+          cancelable, at the element.
+        </p>
+      </section>
+    </section>
+    <section id='conformance'>
+      <p>
+        This specification defines conformance criteria that apply to a single
+        product: the <dfn id="ua">user agent</dfn> that implements the
+        interfaces that it contains.
+      </p>
+    </section>
+    <section class='appendix'>
+      <h2>
+        Acknowledgements
+      </h2>
+      <p>
+        Many thanks to
+      </p>
+      <ul>
+        <li>Aryeh Gregor, who is the original author of this specification as
+        well as <a href=
+        "https://dvcs.w3.org/hg/editing/raw-file/tip/editing.html">HTML Editing
+        API specification</a>
+        </li>
+        <li>Contributors to the <a href=
+        "https://dvcs.w3.org/hg/editing/raw-file/tip/editing.html">HTML Editing
+        API specification</a> - Ehsan Akhgari, Tab Atkins, Mathias Bynens, Tim
+        Down, Markus Ernst, Daniel Glazman, Tali Gregor (née Fuss), Stig
+        Halvorsen, Jeff Harris, Ian Hickson, Cameron Heavon-Jones, Anne van
+        Kesteren, Alfonso Martínez de Lizarrondo, Glenn Maynard, Ms2ger, Robert
+        O'Callahan, Julie Parent, Simon Pieters, Michael A. Puls II, Rich
+        Schwerdtfeger, Jonas Sicking, Henri Sivonen, Smylers, Hallvord R. M.
+        Steen, Roland Steiner, Annie Sullivan, timeless, Ojan Vafai, Brett
+        Zamir, and Boris Zbarsky for their feedback, participation, or other
+        helpful contributions
+        </li>
+      </ul>
+    </section>
+  </body>
+</html>

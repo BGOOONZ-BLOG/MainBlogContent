@@ -1,0 +1,2798 @@
+<!doctype html><html lang="en">
+ <head>
+  <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+  <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport">
+  <title>UI Events KeyboardEvent code Implementation Report</title>
+  <link href="https://www.w3.org/StyleSheets/TR/2016/W3C-ED" rel="stylesheet">
+  <meta content="Bikeshed version e8cbf4ed2, updated Fri Sep 10 10:21:28 2021 -0700" name="generator">
+  <link href="https://w3c.github.io/uievents-code/impl-report.html" rel="canonical">
+  <meta content="deee8f5d3107b6cae0101a1b842112e06ad3cbd5" name="document-revision">
+<style>
+
+/* Used when spelling out words or symbols phonetically. */
+span.phonetic {
+	font-style: italic;
+}
+
+/* KEY
+ * Denotes a key value (the value of the KeyboardEvent.key property).
+ */
+code.key {
+	color: #191970;
+	background-color: #b0e0e6;
+	padding: 0 2px;
+	border: 1px solid #b0d0d6;
+	border-radius: 3px;
+}
+code.key a:link, code.key a:visited {
+	color: #191970;
+    text-decoration: none;
+}
+code.key:hover, code.key a:hover {
+	color: #000000;
+	background-color: #b0d0d6;
+}
+
+/* CODE
+ * Denotes a code value that indicates the physical location of the key on
+ * the keyboard). This is the value of the KeyboardEvent.code property.
+ */
+code.code {
+	color: #191970;
+	background-color: #ffc4ff;
+	padding: 0 2px;
+	border: 1px solid #f0a4f0;
+	border-radius: 3px;
+}
+code.code a:link, code.code a:visited {
+	color: #191970;
+    text-decoration: none;
+}
+code.code:hover, code.code a:hover {
+	color: #000000;
+	background-color: #f0a4f0;
+}
+
+/* Denotes a string displayed on the keycap. */
+code.keycap {
+	padding: 0 2px;
+	border: 1px solid black;
+	border-radius: 3px;
+}
+
+/* Denotes a Unicode code-point for the character. */
+code.unicode {
+	color: #191970;
+	background-color: #98fb98;
+}
+
+/* Denotes an example glyph for the character. */
+code.glyph {
+  color: #191970;
+  background-color: #ffe4b5;
+}
+
+
+/* Formatting for data tables (including the keyboard codes) */
+.data-table {
+	border-collapse:collapse;
+	text-align:left;
+	width: 100%;
+}
+
+.data-table th {
+	background:none repeat scroll 0 0 #B9C9FE;
+	border-bottom:1px solid #FFFFFF;
+	border-top:4px solid #AABCFE;
+	color:#003399;
+	font-weight:normal;
+	padding: 0.4em 1em;
+}
+
+.data-table td {
+	background:none repeat scroll 0 0 #E8EDFF;
+	border-bottom:1px solid #FFFFFF;
+	border-top:1px solid transparent;
+	color:#666699;
+	padding: 0.4em 1em;
+}
+
+.data-table tr:hover td {
+	background:none repeat scroll 0 0 #D0DAFD;
+	color:#333399;
+}
+
+/* The cell in a code table that contains the code value. */
+.code-table-code {
+	vertical-align: top;
+}
+
+.code-impl-data {
+	text-align: center;
+}
+
+.code-impl-data-dark {
+	background:none repeat scroll 0 0 #d8dDeF !important;
+	text-align: center;
+}
+
+.code-impl-yes {
+	color: #0a0;
+	font-weight: bold;
+}
+
+.code-impl-no {
+	color: #f00;
+	font-weight: bold;
+}
+
+</style>
+<style>/* style-autolinks */
+
+.css.css, .property.property, .descriptor.descriptor {
+    color: var(--a-normal-text);
+    font-size: inherit;
+    font-family: inherit;
+}
+.css::before, .property::before, .descriptor::before {
+    content: "‘";
+}
+.css::after, .property::after, .descriptor::after {
+    content: "’";
+}
+.property, .descriptor {
+    /* Don't wrap property and descriptor names */
+    white-space: nowrap;
+}
+.type { /* CSS value <type> */
+    font-style: italic;
+}
+pre .property::before, pre .property::after {
+    content: "";
+}
+[data-link-type="property"]::before,
+[data-link-type="propdesc"]::before,
+[data-link-type="descriptor"]::before,
+[data-link-type="value"]::before,
+[data-link-type="function"]::before,
+[data-link-type="at-rule"]::before,
+[data-link-type="selector"]::before,
+[data-link-type="maybe"]::before {
+    content: "‘";
+}
+[data-link-type="property"]::after,
+[data-link-type="propdesc"]::after,
+[data-link-type="descriptor"]::after,
+[data-link-type="value"]::after,
+[data-link-type="function"]::after,
+[data-link-type="at-rule"]::after,
+[data-link-type="selector"]::after,
+[data-link-type="maybe"]::after {
+    content: "’";
+}
+
+[data-link-type].production::before,
+[data-link-type].production::after,
+.prod [data-link-type]::before,
+.prod [data-link-type]::after {
+    content: "";
+}
+
+[data-link-type=element],
+[data-link-type=element-attr] {
+    font-family: Menlo, Consolas, "DejaVu Sans Mono", monospace;
+    font-size: .9em;
+}
+[data-link-type=element]::before { content: "<" }
+[data-link-type=element]::after  { content: ">" }
+
+[data-link-type=biblio] {
+    white-space: pre;
+}</style>
+<style>/* style-colors */
+
+/* Any --*-text not paired with a --*-bg is assumed to have a transparent bg */
+:root {
+    color-scheme: light dark;
+
+    --text: black;
+    --bg: white;
+
+    --unofficial-watermark: url(https://www.w3.org/StyleSheets/TR/2016/logos/UD-watermark);
+
+    --logo-bg: #1a5e9a;
+    --logo-active-bg: #c00;
+    --logo-text: white;
+
+    --tocnav-normal-text: #707070;
+    --tocnav-normal-bg: var(--bg);
+    --tocnav-hover-text: var(--tocnav-normal-text);
+    --tocnav-hover-bg: #f8f8f8;
+    --tocnav-active-text: #c00;
+    --tocnav-active-bg: var(--tocnav-normal-bg);
+
+    --tocsidebar-text: var(--text);
+    --tocsidebar-bg: #f7f8f9;
+    --tocsidebar-shadow: rgba(0,0,0,.1);
+    --tocsidebar-heading-text: hsla(203,20%,40%,.7);
+
+    --toclink-text: var(--text);
+    --toclink-underline: #3980b5;
+    --toclink-visited-text: var(--toclink-text);
+    --toclink-visited-underline: #054572;
+
+    --heading-text: #005a9c;
+
+    --hr-text: var(--text);
+
+    --algo-border: #def;
+
+    --del-text: red;
+    --del-bg: transparent;
+    --ins-text: #080;
+    --ins-bg: transparent;
+
+    --a-normal-text: #034575;
+    --a-normal-underline: #bbb;
+    --a-visited-text: var(--a-normal-text);
+    --a-visited-underline: #707070;
+    --a-hover-bg: rgba(75%, 75%, 75%, .25);
+    --a-active-text: #c00;
+    --a-active-underline: #c00;
+
+    --blockquote-border: silver;
+    --blockquote-bg: transparent;
+    --blockquote-text: currentcolor;
+
+    --issue-border: #e05252;
+    --issue-bg: #fbe9e9;
+    --issue-text: var(--text);
+    --issueheading-text: #831616;
+
+    --example-border: #e0cb52;
+    --example-bg: #fcfaee;
+    --example-text: var(--text);
+    --exampleheading-text: #574b0f;
+
+    --note-border: #52e052;
+    --note-bg: #e9fbe9;
+    --note-text: var(--text);
+    --noteheading-text: hsl(120, 70%, 30%);
+    --notesummary-underline: silver;
+
+    --assertion-border: #aaa;
+    --assertion-bg: #eee;
+    --assertion-text: black;
+
+    --advisement-border: orange;
+    --advisement-bg: #fec;
+    --advisement-text: var(--text);
+    --advisementheading-text: #b35f00;
+
+    --warning-border: red;
+    --warning-bg: hsla(40,100%,50%,0.95);
+    --warning-text: var(--text);
+
+    --amendment-border: #330099;
+    --amendment-bg: #F5F0FF;
+    --amendment-text: var(--text);
+    --amendmentheading-text: #220066;
+
+    --def-border: #8ccbf2;
+    --def-bg: #def;
+    --def-text: var(--text);
+    --defrow-border: #bbd7e9;
+
+    --datacell-border: silver;
+
+    --indexinfo-text: #707070;
+
+    --indextable-hover-text: black;
+    --indextable-hover-bg: #f7f8f9;
+
+    --outdatedspec-bg: rgba(0, 0, 0, .5);
+    --outdatedspec-text: black;
+    --outdated-bg: maroon;
+    --outdated-text: white;
+    --outdated-shadow: red;
+
+    --editedrec-bg: darkorange;
+}</style>
+<style>/* style-counters */
+
+body {
+    counter-reset: example figure issue;
+}
+.issue {
+    counter-increment: issue;
+}
+.issue:not(.no-marker)::before {
+    content: "Issue " counter(issue);
+}
+
+.example {
+    counter-increment: example;
+}
+.example:not(.no-marker)::before {
+    content: "Example " counter(example);
+}
+.invalid.example:not(.no-marker)::before,
+.illegal.example:not(.no-marker)::before {
+    content: "Invalid Example" counter(example);
+}
+
+figcaption {
+    counter-increment: figure;
+}
+figcaption:not(.no-marker)::before {
+    content: "Figure " counter(figure) " ";
+}</style>
+<style>/* style-dfn-panel */
+
+:root {
+    --dfnpanel-bg: #ddd;
+    --dfnpanel-text: var(--text);
+}
+.dfn-panel {
+    position: absolute;
+    z-index: 35;
+    height: auto;
+    width: -webkit-fit-content;
+    width: fit-content;
+    max-width: 300px;
+    max-height: 500px;
+    overflow: auto;
+    padding: 0.5em 0.75em;
+    font: small Helvetica Neue, sans-serif, Droid Sans Fallback;
+    background: var(--dfnpanel-bg);
+    color: var(--dfnpanel-text);
+    border: outset 0.2em;
+}
+.dfn-panel:not(.on) { display: none; }
+.dfn-panel * { margin: 0; padding: 0; text-indent: 0; }
+.dfn-panel > b { display: block; }
+.dfn-panel a { color: var(--dfnpanel-text); }
+.dfn-panel a:not(:hover) { text-decoration: none !important; border-bottom: none !important; }
+.dfn-panel > b + b { margin-top: 0.25em; }
+.dfn-panel ul { padding: 0; }
+.dfn-panel li { list-style: inside; }
+.dfn-panel.activated {
+    display: inline-block;
+    position: fixed;
+    left: .5em;
+    bottom: 2em;
+    margin: 0 auto;
+    max-width: calc(100vw - 1.5em - .4em - .5em);
+    max-height: 30vh;
+}
+
+.dfn-paneled { cursor: pointer; }
+</style>
+<style>/* style-md-lists */
+
+/* This is a weird hack for me not yet following the commonmark spec
+   regarding paragraph and lists. */
+[data-md] > :first-child {
+    margin-top: 0;
+}
+[data-md] > :last-child {
+    margin-bottom: 0;
+}</style>
+<style>/* style-selflinks */
+
+:root {
+    --selflink-text: white;
+    --selflink-bg: gray;
+    --selflink-hover-text: black;
+}
+.heading, .issue, .note, .example, li, dt {
+    position: relative;
+}
+a.self-link {
+    position: absolute;
+    top: 0;
+    left: calc(-1 * (3.5rem - 26px));
+    width: calc(3.5rem - 26px);
+    height: 2em;
+    text-align: center;
+    border: none;
+    transition: opacity .2s;
+    opacity: .5;
+}
+a.self-link:hover {
+    opacity: 1;
+}
+.heading > a.self-link {
+    font-size: 83%;
+}
+li > a.self-link {
+    left: calc(-1 * (3.5rem - 26px) - 2em);
+}
+dfn > a.self-link {
+    top: auto;
+    left: auto;
+    opacity: 0;
+    width: 1.5em;
+    height: 1.5em;
+    background: var(--selflink-bg);
+    color: var(--selflink-text);
+    font-style: normal;
+    transition: opacity .2s, background-color .2s, color .2s;
+}
+dfn:hover > a.self-link {
+    opacity: 1;
+}
+dfn > a.self-link:hover {
+    color: var(--selflink-hover-text);
+}
+
+a.self-link::before            { content: "¶"; }
+.heading > a.self-link::before { content: "§"; }
+dfn > a.self-link::before      { content: "#"; }
+</style>
+<style>/* style-darkmode */
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --text: #ddd;
+        --bg: black;
+
+        --unofficial-watermark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cg fill='%23100808' transform='translate(200 200) rotate(-45) translate(-200 -200)' stroke='%23100808' stroke-width='3'%3E%3Ctext x='50%25' y='220' style='font: bold 70px sans-serif; text-anchor: middle; letter-spacing: 6px;'%3EUNOFFICIAL%3C/text%3E%3Ctext x='50%25' y='305' style='font: bold 70px sans-serif; text-anchor: middle; letter-spacing: 6px;'%3EDRAFT%3C/text%3E%3C/g%3E%3C/svg%3E");
+
+        --logo-bg: #1a5e9a;
+        --logo-active-bg: #c00;
+        --logo-text: white;
+
+        --tocnav-normal-text: #999;
+        --tocnav-normal-bg: var(--bg);
+        --tocnav-hover-text: var(--tocnav-normal-text);
+        --tocnav-hover-bg: #080808;
+        --tocnav-active-text: #f44;
+        --tocnav-active-bg: var(--tocnav-normal-bg);
+
+        --tocsidebar-text: var(--text);
+        --tocsidebar-bg: #080808;
+        --tocsidebar-shadow: rgba(255,255,255,.1);
+        --tocsidebar-heading-text: hsla(203,20%,40%,.7);
+
+        --toclink-text: var(--text);
+        --toclink-underline: #6af;
+        --toclink-visited-text: var(--toclink-text);
+        --toclink-visited-underline: #054572;
+
+        --heading-text: #8af;
+
+        --hr-text: var(--text);
+
+        --algo-border: #456;
+
+        --del-text: #f44;
+        --del-bg: transparent;
+        --ins-text: #4a4;
+        --ins-bg: transparent;
+
+        --a-normal-text: #6af;
+        --a-normal-underline: #555;
+        --a-visited-text: var(--a-normal-text);
+        --a-visited-underline: var(--a-normal-underline);
+        --a-hover-bg: rgba(25%, 25%, 25%, .2);
+        --a-active-text: #f44;
+        --a-active-underline: var(--a-active-text);
+
+        --borderedblock-bg: rgba(255, 255, 255, .05);
+
+        --blockquote-border: silver;
+        --blockquote-bg: var(--borderedblock-bg);
+        --blockquote-text: currentcolor;
+
+        --issue-border: #e05252;
+        --issue-bg: var(--borderedblock-bg);
+        --issue-text: var(--text);
+        --issueheading-text: hsl(0deg, 70%, 70%);
+
+        --example-border: hsl(50deg, 90%, 60%);
+        --example-bg: var(--borderedblock-bg);
+        --example-text: var(--text);
+        --exampleheading-text: hsl(50deg, 70%, 70%);
+
+        --note-border: hsl(120deg, 100%, 35%);
+        --note-bg: var(--borderedblock-bg);
+        --note-text: var(--text);
+        --noteheading-text: hsl(120, 70%, 70%);
+        --notesummary-underline: silver;
+
+        --assertion-border: #444;
+        --assertion-bg: var(--borderedblock-bg);
+        --assertion-text: var(--text);
+
+        --advisement-border: orange;
+        --advisement-bg: #222218;
+        --advisement-text: var(--text);
+        --advisementheading-text: #f84;
+
+        --warning-border: red;
+        --warning-bg: hsla(40,100%,20%,0.95);
+        --warning-text: var(--text);
+
+        --amendment-border: #330099;
+        --amendment-bg: #080010;
+        --amendment-text: var(--text);
+        --amendmentheading-text: #cc00ff;
+
+        --def-border: #8ccbf2;
+        --def-bg: #080818;
+        --def-text: var(--text);
+        --defrow-border: #136;
+
+        --datacell-border: silver;
+
+        --indexinfo-text: #aaa;
+
+        --indextable-hover-text: var(--text);
+        --indextable-hover-bg: #181818;
+
+        --outdatedspec-bg: rgba(255, 255, 255, .5);
+        --outdatedspec-text: black;
+        --outdated-bg: maroon;
+        --outdated-text: white;
+        --outdated-shadow: red;
+
+        --editedrec-bg: darkorange;
+    }
+    /* In case a transparent-bg image doesn't expect to be on a dark bg,
+       which is quite common in practice... */
+    img { background: white; }
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --selflink-text: black;
+        --selflink-bg: silver;
+        --selflink-hover-text: white;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --dfnpanel-bg: #222;
+        --dfnpanel-text: var(--text);
+    }
+}</style>
+ <body class="h-entry">
+  <div class="head">
+   <p data-fill-with="logo"><a class="logo" href="https://www.w3.org/"> <img alt="W3C" height="48" src="https://www.w3.org/StyleSheets/TR/2016/logos/W3C" width="72"> </a> </p>
+   <h1>UI Events KeyboardEvent code Implementation Report</h1>
+   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Editor’s Draft, <time class="dt-updated" datetime="2021-10-20">20 October 2021</time></span></h2>
+   <div data-fill-with="spec-metadata">
+    <dl>
+     <dt>This version:
+     <dd><a class="u-url" href="https://w3c.github.io/uievents-code/impl-report.html">https://w3c.github.io/uievents-code/impl-report.html</a>
+     <dt>Issue Tracking:
+     <dd><a href="https://github.com/w3c/uievents-code/issues/">GitHub</a>
+     <dt class="editor">Editor:
+     <dd class="editor p-author h-card vcard"><a class="p-name fn u-email email" href="mailto:garykac@google.com">Gary Kacmarcik</a> (<span class="p-org org">Google</span>)
+    </dl>
+   </div>
+   <div data-fill-with="warning"></div>
+   <p class="copyright" data-fill-with="copyright"><a href="https://www.w3.org/Consortium/Legal/ipr-notice#Copyright">Copyright</a> © 2021 <a href="https://www.w3.org/"><abbr title="World Wide Web Consortium">W3C</abbr></a><sup>®</sup> (<a href="https://www.csail.mit.edu/"><abbr title="Massachusetts Institute of Technology">MIT</abbr></a>, <a href="https://www.ercim.eu/"><abbr title="European Research Consortium for Informatics and Mathematics">ERCIM</abbr></a>, <a href="https://www.keio.ac.jp/">Keio</a>, <a href="https://ev.buaa.edu.cn/">Beihang</a>). W3C <a href="https://www.w3.org/Consortium/Legal/ipr-notice#Legal_Disclaimer">liability</a>, <a href="https://www.w3.org/Consortium/Legal/ipr-notice#W3C_Trademarks">trademark</a> and <a href="https://www.w3.org/Consortium/Legal/2015/copyright-software-and-document" rel="license">permissive document license</a> rules apply. </p>
+   <hr title="Separator for header">
+  </div>
+  <div class="p-summary" data-fill-with="abstract">
+   <h2 class="no-num no-toc no-ref heading settled" id="abstract"><span class="content">Abstract</span></h2>
+   <p>This document reports on implementations of the <a data-link-type="biblio" href="#biblio-uievents-code">[UIEvents-Code]</a> specification.</p>
+  </div>
+  <h2 class="no-num no-toc no-ref heading settled" id="status"><span class="content">Status of this document</span></h2>
+  <div data-fill-with="status">
+   <p> <em>This section describes the status of this document at the time of its publication. Other documents may supersede this document. A list of current <abbr title="World Wide Web Consortium">W3C</abbr> publications and the latest revision of this technical report can be found in the <a href="https://www.w3.org/TR/"><abbr title="World Wide Web Consortium">W3C</abbr> technical reports index</a> at https://www.w3.org/TR/.</em> </p>
+   <p> This document was published by the <a href="https://www.w3.org/2019/webapps/">Web Applications Working Group</a> as an Editors Draft. This document is intended to become a W3C Recommendation. </p>
+   <p></p>
+   <p> This document was published by the <a href="https://www.w3.org/2019/webapps/">Web Applications Working Group</a> as a Working Draft.
+
+    Feedback and comments on this specification are welcome. Please use <a href="https://github.com/w3c/uievents-code/issues">GitHub issues</a> Historical discussions can be found in the <a href="https://lists.w3.org/Archives/Public/public-webapps/">public-webapps@w3.org archives</a>. </p>
+   <p> Publication as an Editors Draft does not imply endorsement by the <abbr title="World Wide Web Consortium">W3C</abbr> Membership. This is a draft document and may
+    be updated, replaced or obsoleted by other documents at any time. It is inappropriate to cite
+    this document as other than work in progress. </p>
+   <p> This document was produced by a group operating under the <a href="https://www.w3.org/Consortium/Patent-Policy-20200915/"><abbr title="World Wide Web Consortium">W3C</abbr> Patent Policy</a>. <abbr title="World Wide Web Consortium">W3C</abbr> maintains a <a href="https://www.w3.org/2004/01/pp-impl/114929/status" rel="disclosure">public list of any patent disclosures</a> made in connection with the deliverables of the group; that page also includes instructions for disclosing a patent. An individual who has actual knowledge of a patent which the individual believes contains <a href="https://www.w3.org/Consortium/Patent-Policy-20200915/#def-essential">Essential Claim(s)</a> must disclose the information in accordance with <a href="https://www.w3.org/Consortium/Patent-Policy-20200915/#sec-Disclosure">section 6 of the <abbr title="World Wide Web Consortium">W3C</abbr> Patent Policy</a>. </p>
+   <p>This document is governed by the <a href="https://www.w3.org/2020/Process-20200915/" id="w3c_process_revision">15 September 2020 W3C Process Document</a>. </p>
+  </div>
+  <div data-fill-with="at-risk"></div>
+  <nav data-fill-with="table-of-contents" id="toc">
+   <h2 class="no-num no-toc no-ref" id="contents">Table of Contents</h2>
+   <ol class="toc" role="directory">
+    <li><a href="#introduction"><span class="secno">1</span> <span class="content">Introduction</span></a>
+    <li><a href="#methodology"><span class="secno">2</span> <span class="content">Methodology</span></a>
+    <li>
+     <a href="#results"><span class="secno">3</span> <span class="content">Results</span></a>
+     <ol class="toc">
+      <li><a href="#summary"><span class="secno">3.1</span> <span class="content">Summary</span></a>
+      <li>
+       <a href="#raw-results"><span class="secno">3.2</span> <span class="content">Raw Results</span></a>
+       <ol class="toc">
+        <li><a href="#code-attribute"><span class="secno">3.2.1</span> <span class="content"><code class="idl"><span>code</span></code> Attribute</span></a>
+        <li><a href="#required-values"><span class="secno">3.2.2</span> <span class="content">Required <code class="idl"><span>code</span></code> Values</span></a>
+        <li><a href="#optional-values"><span class="secno">3.2.3</span> <span class="content">Optional <code class="idl"><span>code</span></code> Values</span></a>
+       </ol>
+     </ol>
+    <li>
+     <a href="#conformance"><span class="secno"></span> <span class="content">Conformance</span></a>
+     <ol class="toc">
+      <li><a href="#conventions"><span class="secno"></span> <span class="content">Document conventions</span></a>
+      <li><a href="#conformant-algorithms"><span class="secno"></span> <span class="content">Conformant Algorithms</span></a>
+     </ol>
+    <li>
+     <a href="#index"><span class="secno"></span> <span class="content">Index</span></a>
+     <ol class="toc">
+      <li><a href="#index-defined-elsewhere"><span class="secno"></span> <span class="content">Terms defined by reference</span></a>
+     </ol>
+    <li>
+     <a href="#references"><span class="secno"></span> <span class="content">References</span></a>
+     <ol class="toc">
+      <li><a href="#normative"><span class="secno"></span> <span class="content">Normative References</span></a>
+     </ol>
+   </ol>
+  </nav>
+  <main>
+   <h2 class="heading settled" data-level="1" id="introduction"><span class="secno">1. </span><span class="content">Introduction</span><a class="self-link" href="#introduction"></a></h2>
+   <p>The <a data-link-type="biblio" href="#biblio-uievents-code">[UIEvents-Code]</a> specification defines the set of values that are valid for use
+	in the <code class="idl"><a data-link-type="idl" href="https://www.w3.org/TR/uievents/#dom-keyboardevent-code" id="ref-for-dom-keyboardevent-code">code</a></code> attribute.</p>
+   <p>This document summarizes the current implementation status of the <code class="idl"><a data-link-type="idl" href="https://www.w3.org/TR/uievents/#dom-keyboardevent-code" id="ref-for-dom-keyboardevent-code①">code</a></code> attribute and its values.</p>
+   <p>The following versions of each user agents were tested:</p>
+   <ul>
+    <li data-md>
+     <p>Google Chrome 60.0.3112.113 (Windows 10, OS X 10.12.2, Ubuntu)</p>
+    <li data-md>
+     <p>Mozilla Firefox 55.0 (Windows 10, OS X 10.12.2, Ubuntu)</p>
+    <li data-md>
+     <p>Microsoft Edge 83.0.478.58 (Windows 10)</p>
+    <li data-md>
+     <p>Apple Safari 13.1.1 (OS X 10.14.6)</p>
+   </ul>
+   <h2 class="heading settled" data-level="2" id="methodology"><span class="secno">2. </span><span class="content">Methodology</span><a class="self-link" href="#methodology"></a></h2>
+   <p>Because there is no automated way to test these key press events (expecially
+	considering that international keyboard are often required), these tests were all
+	performed manually.</p>
+   <p>Manual tests were performed by visiting the <a href="https://domeventviewer.com/key-event-viewer.html">domeeventviewer.com/key-event-viewer.html</a> test page and examining the "code" column after pressing the key being tested. To test
+	keys (like "IntlBackslash") that are only present on keyboards for certain locales,
+	this requires using a keyboard that contains the key being tested.</p>
+   <p>For purposes of this report, Chrome, Firefox and Safari are considered independent
+	implementations.</p>
+   <h2 class="heading settled" data-level="3" id="results"><span class="secno">3. </span><span class="content">Results</span><a class="self-link" href="#results"></a></h2>
+   <h3 class="heading settled" data-level="3.1" id="summary"><span class="secno">3.1. </span><span class="content">Summary</span><a class="self-link" href="#summary"></a></h3>
+   <p>Manual tests for all 112 required values of the <code class="idl"><a data-link-type="idl" href="https://www.w3.org/TR/uievents/#dom-keyboardevent-code" id="ref-for-dom-keyboardevent-code②">code</a></code> attribute <b>Pass</b> in at least 2 independent implementations.</p>
+   <p>The Candidate Recommendation exit criteria are therefore fulfilled.</p>
+   <p>In addition, the specification describes 60 optional values that may be used to
+	support multimedia or legacy keyboards. Of these, manual tests confirm that 9 of these
+	Pass in at least 2 independent implementations.</p>
+   <h3 class="heading settled" data-level="3.2" id="raw-results"><span class="secno">3.2. </span><span class="content">Raw Results</span><a class="self-link" href="#raw-results"></a></h3>
+   <p>The following tables present the result of the manual tests.</p>
+   <p>Entries marked "Pass" generate the expected value when the corresponding key is
+	pressed.</p>
+   <p>Entries marked "Fail" generate some value other than the expected value when the
+	corresponding key is pressed. Wherever possible, a Note is included that provides more
+	information about the failure.</p>
+   <p>Entries marked with a "?" have not been tested, typically because devices
+	with that key were not available (for example, because keyboards with those keys are
+	not supported on that platform).</p>
+   <p>Entries marked with "N/A" are not currently testable, typically because the devices
+	with that key do not generate separate keyboard events. E.g., FnLock.</p>
+   <h4 class="heading settled" data-level="3.2.1" id="code-attribute"><span class="secno">3.2.1. </span><span class="content"><code class="idl"><a data-link-type="idl" href="https://www.w3.org/TR/uievents/#dom-keyboardevent-code" id="ref-for-dom-keyboardevent-code③">code</a></code> Attribute</span><a class="self-link" href="#code-attribute"></a></h4>
+   <p>The <code class="idl"><a data-link-type="idl" href="https://www.w3.org/TR/uievents/#dom-keyboardevent-code" id="ref-for-dom-keyboardevent-code④">code</a></code> attribute (defined in <a data-link-type="biblio" href="#biblio-uievents">[UIEvents]</a>) is present in all
+		browsers tested.</p>
+   <table class="data-table full-width" id="key-attribute-impl">
+    <thead>
+     <tr>
+      <th rowspan="2"><code class="idl"><a data-link-type="idl" href="https://www.w3.org/TR/uievents/#keyboardevent" id="ref-for-keyboardevent">KeyboardEvent</a></code> attribute
+      <th class="code-impl-data" colspan="3">Windows
+      <th class="code-impl-data" colspan="3">macOS
+      <th class="code-impl-data" colspan="2">Linux
+      <th rowspan="2">Notes
+     <tr>
+      <th class="code-impl-data">Chrome
+      <th class="code-impl-data">Firefox
+      <th class="code-impl-data">Edge
+      <th class="code-impl-data">Chrome
+      <th class="code-impl-data">Firefox
+      <th class="code-impl-data">Safari
+      <th class="code-impl-data">Chrome
+      <th class="code-impl-data">Firefox
+    <tbody>
+     <tr>
+      <td><code class="idl"><a data-link-type="idl" href="https://www.w3.org/TR/uievents/#dom-keyboardevent-code" id="ref-for-dom-keyboardevent-code⑤">code</a></code>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td>
+   </table>
+   <h4 class="heading settled" data-level="3.2.2" id="required-values"><span class="secno">3.2.2. </span><span class="content">Required <code class="idl"><a data-link-type="idl" href="https://www.w3.org/TR/uievents/#dom-keyboardevent-code" id="ref-for-dom-keyboardevent-code⑥">code</a></code> Values</span><a class="self-link" href="#required-values"></a></h4>
+   <p>This section lists the test results for the basic set of <code class="idl"><a data-link-type="idl" href="https://www.w3.org/TR/uievents/#dom-keyboardevent-code" id="ref-for-dom-keyboardevent-code⑦">code</a></code> attribute values that a conforming implementation must support.</p>
+   <table class="data-table full-width" id="code-table-standard">
+    <thead>
+     <tr>
+      <th rowspan="2"><a data-link-type="dfn" href="http://www.w3.org/TR/uievents-code/#" id="termref-for-">code attribute value</a>
+      <th class="code-impl-data" colspan="3">Windows
+      <th class="code-impl-data" colspan="3">macOS
+      <th class="code-impl-data" colspan="2">Linux
+      <th rowspan="2">Notes
+     <tr>
+      <th class="code-impl-data">Chrome
+      <th class="code-impl-data">Firefox
+      <th class="code-impl-data">Edge
+      <th class="code-impl-data">Chrome
+      <th class="code-impl-data">Firefox
+      <th class="code-impl-data">Safari
+      <th class="code-impl-data">Chrome
+      <th class="code-impl-data">Firefox
+    <tbody>
+     <tr>
+      <td colspan="10" style="background-color: #B9C9FE">Alphanumeric Section - Writing System Keys
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Backquote"><code class="code">"Backquote"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Backslash"><code class="code">"Backslash"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-BracketLeft"><code class="code">"BracketLeft"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-BracketRight"><code class="code">"BracketRight"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Comma"><code class="code">"Comma"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Digit0"><code class="code">"Digit0"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Digit1"><code class="code">"Digit1"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Digit2"><code class="code">"Digit2"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Digit3"><code class="code">"Digit3"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Digit4"><code class="code">"Digit4"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Digit5"><code class="code">"Digit5"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Digit6"><code class="code">"Digit6"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Digit7"><code class="code">"Digit7"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Digit8"><code class="code">"Digit8"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Digit9"><code class="code">"Digit9"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Equal"><code class="code">"Equal"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-IntlBackslash"><code class="code">"IntlBackslash"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>Safari swaps IntlBackslash with Backquote on keyboards that support IntlBackslash
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-IntlRo"><code class="code">"IntlRo"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-IntlYen"><code class="code">"IntlYen"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyA"><code class="code">"KeyA"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyB"><code class="code">"KeyB"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyC"><code class="code">"KeyC"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyD"><code class="code">"KeyD"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyE"><code class="code">"KeyE"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyF"><code class="code">"KeyF"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyG"><code class="code">"KeyG"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyH"><code class="code">"KeyH"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyI"><code class="code">"KeyI"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyJ"><code class="code">"KeyJ"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyK"><code class="code">"KeyK"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyL"><code class="code">"KeyL"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyM"><code class="code">"KeyM"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyN"><code class="code">"KeyN"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyO"><code class="code">"KeyO"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyP"><code class="code">"KeyP"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyQ"><code class="code">"KeyQ"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyR"><code class="code">"KeyR"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyS"><code class="code">"KeyS"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyT"><code class="code">"KeyT"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyU"><code class="code">"KeyU"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyV"><code class="code">"KeyV"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyW"><code class="code">"KeyW"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyX"><code class="code">"KeyX"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyY"><code class="code">"KeyY"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KeyZ"><code class="code">"KeyZ"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Minus"><code class="code">"Minus"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Period"><code class="code">"Period"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Quote"><code class="code">"Quote"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Semicolon"><code class="code">"Semicolon"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Slash"><code class="code">"Slash"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td colspan="10" style="background-color: #B9C9FE">Alphanumeric Section - Functional Keys
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-AltLeft"><code class="code">"AltLeft"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-AltRight"><code class="code">"AltRight"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Backspace"><code class="code">"Backspace"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-CapsLock"><code class="code">"CapsLock"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-ContextMenu"><code class="code">"ContextMenu"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>Safari returns "Unidentified"
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-ControlLeft"><code class="code">"ControlLeft"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-ControlRight"><code class="code">"ControlRight"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Enter"><code class="code">"Enter"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-MetaLeft"><code class="code">"MetaLeft"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-no">Fail</span>
+      <td>Firefox returns "OSLeft"
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-MetaRight"><code class="code">"MetaRight"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-no">Fail</span>
+      <td>Firefox returns "OSRight"
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-ShiftLeft"><code class="code">"ShiftLeft"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-ShiftRight"><code class="code">"ShiftRight"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Space"><code class="code">"Space"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Tab"><code class="code">"Tab"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Convert"><code class="code">"Convert"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-KanaMode"><code class="code">"KanaMode"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-NonConvert"><code class="code">"NonConvert"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td colspan="10" style="background-color: #B9C9FE">Control Pad Section
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Delete"><code class="code">"Delete"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-End"><code class="code">"End"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Home"><code class="code">"Home"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Insert"><code class="code">"Insert"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>Safari returns "Help"
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-PageDown"><code class="code">"PageDown"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-PageUp"><code class="code">"PageUp"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td colspan="10" style="background-color: #B9C9FE">Arrow Pad Section
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-ArrowDown"><code class="code">"ArrowDown"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-ArrowLeft"><code class="code">"ArrowLeft"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-ArrowRight"><code class="code">"ArrowRight"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-ArrowUp"><code class="code">"ArrowUp"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td colspan="10" style="background-color: #B9C9FE">Numpad Section
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-NumLock"><code class="code">"NumLock"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Numpad0"><code class="code">"Numpad0"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Numpad1"><code class="code">"Numpad1"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Numpad2"><code class="code">"Numpad2"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Numpad3"><code class="code">"Numpad3"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Numpad4"><code class="code">"Numpad4"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Numpad5"><code class="code">"Numpad5"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Numpad6"><code class="code">"Numpad6"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Numpad7"><code class="code">"Numpad7"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Numpad8"><code class="code">"Numpad8"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Numpad9"><code class="code">"Numpad9"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-NumpadAdd"><code class="code">"NumpadAdd"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-NumpadDecimal"><code class="code">"NumpadDecimal"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-NumpadDivide"><code class="code">"NumpadDivide"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-NumpadEnter"><code class="code">"NumpadEnter"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-NumpadMultiply"><code class="code">"NumpadMultiply"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-NumpadSubtract"><code class="code">"NumpadSubtract"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td colspan="10" style="background-color: #B9C9FE">Function Section
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Escape"><code class="code">"Escape"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-F1"><code class="code">"F1"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-F2"><code class="code">"F2"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-F3"><code class="code">"F3"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-F4"><code class="code">"F4"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-F5"><code class="code">"F5"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-F6"><code class="code">"F6"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-F7"><code class="code">"F7"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-F8"><code class="code">"F8"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-F9"><code class="code">"F9"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-F10"><code class="code">"F10"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-F11"><code class="code">"F11"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>macOS &amp; Ubuntu enter fullscreen; Chrome requires KeyboardLock
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-F12"><code class="code">"F12"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-PrintScreen"><code class="code">"PrintScreen"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>macOS returns "F13"; Ubuntu takes screenshot
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-ScrollLock"><code class="code">"ScrollLock"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>macOS decreases brightness
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Pause"><code class="code">"Pause"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>macOS increases brightness
+     <tr>
+      <td colspan="10" style="background-color: #B9C9FE">Special Values
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Unidentified"><code class="code">"Unidentified"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+   </table>
+   <h4 class="heading settled" data-level="3.2.3" id="optional-values"><span class="secno">3.2.3. </span><span class="content">Optional <code class="idl"><a data-link-type="idl" href="https://www.w3.org/TR/uievents/#dom-keyboardevent-code" id="ref-for-dom-keyboardevent-code⑧">code</a></code> Values</span><a class="self-link" href="#optional-values"></a></h4>
+   <p>This section lists the test results for the basic set of <code class="idl"><a data-link-type="idl" href="https://www.w3.org/TR/uievents/#dom-keyboardevent-code" id="ref-for-dom-keyboardevent-code⑨">code</a></code> attribute values that a conforming implementation may use to support special
+		keyboards (such as multimedia or legacy keyboards).</p>
+   <table class="data-table full-width" id="code-table-optional">
+    <thead>
+     <tr>
+      <th rowspan="2"><a data-link-type="dfn" href="http://www.w3.org/TR/uievents-code/#" id="termref-for-①">code attribute value</a>
+      <th class="code-impl-data" colspan="3">Windows
+      <th class="code-impl-data" colspan="3">macOS
+      <th class="code-impl-data" colspan="2">Linux
+      <th rowspan="2">Notes
+     <tr>
+      <th class="code-impl-data">Chrome
+      <th class="code-impl-data">Firefox
+      <th class="code-impl-data">Edge
+      <th class="code-impl-data">Chrome
+      <th class="code-impl-data">Firefox
+      <th class="code-impl-data">Safari
+      <th class="code-impl-data">Chrome
+      <th class="code-impl-data">Firefox
+    <tbody>
+     <tr>
+      <td colspan="10" style="background-color: #B9C9FE">Media Keys
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-BrowserBack"><code class="code">"BrowserBack"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>Handled by OS (Chrome requires KeyboardLock)
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-BrowserFavorites"><code class="code">"BrowserFavorites"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>Handled by OS (Chrome requires KeyboardLock)
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-BrowserForward"><code class="code">"BrowserForward"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>Handled by OS (Chrome requires KeyboardLock)
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-BrowserHome"><code class="code">"BrowserHome"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>Handled by OS (Chrome requires KeyboardLock)
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-BrowserRefresh"><code class="code">"BrowserRefresh"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-BrowserSearch"><code class="code">"BrowserSearch"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data-dark"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data-dark"><span class="code-impl-no">Fail</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-BrowserStop"><code class="code">"BrowserStop"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Eject"><code class="code">"Eject"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-LaunchApp1"><code class="code">"LaunchApp1"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-LaunchApp2"><code class="code">"LaunchApp2"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-LaunchMail"><code class="code">"LaunchMail"</code></a>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data"><span>N/A</span>
+      <td class="code-impl-data"><span>N/A</span>
+      <td class="code-impl-data"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td>Handled by OS
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-MediaPlayPause"><code class="code">"MediaPlayPause"</code></a>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data"><span>N/A</span>
+      <td class="code-impl-data"><span>N/A</span>
+      <td class="code-impl-data"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td>Handled by OS
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-MediaSelect"><code class="code">"MediaSelect"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-MediaStop"><code class="code">"MediaStop"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-MediaTrackNext"><code class="code">"MediaTrackNext"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-MediaTrackPrevious"><code class="code">"MediaTrackPrevious"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Power"><code class="code">"Power"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Sleep"><code class="code">"Sleep"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-AudioVolumeDown"><code class="code">"AudioVolumeDown"</code></a>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data"><span>N/A</span>
+      <td class="code-impl-data"><span>N/A</span>
+      <td class="code-impl-data"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td>Handled by OS
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-AudioVolumeMute"><code class="code">"AudioVolumeMute"</code></a>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data"><span>N/A</span>
+      <td class="code-impl-data"><span>N/A</span>
+      <td class="code-impl-data"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td>Handled by OS
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-AudioVolumeUp"><code class="code">"AudioVolumeUp"</code></a>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data"><span>N/A</span>
+      <td class="code-impl-data"><span>N/A</span>
+      <td class="code-impl-data"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td>Handled by OS
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-WakeUp"><code class="code">"WakeUp"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td colspan="10" style="background-color: #B9C9FE">Alphanumeric Section - Functional Keys
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Lang1"><code class="code">"Lang1"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>Safari returns KanaMode
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Lang2"><code class="code">"Lang2"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Lang3"><code class="code">"Lang3"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Lang4"><code class="code">"Lang4"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Lang5"><code class="code">"Lang5"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td colspan="10" style="background-color: #B9C9FE">Numpad Section
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-NumpadBackspace"><code class="code">"NumpadBackspace"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data-dark"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data-dark"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data-dark"><span class="code-impl-no">Fail</span>
+      <td>Chrome/Firefox/Safari return "Backspace"
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-NumpadClear"><code class="code">"NumpadClear"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-NumpadClearEntry"><code class="code">"NumpadClearEntry"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-NumpadComma"><code class="code">"NumpadComma"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>Need to test with Brazilian keyboard.
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-NumpadEqual"><code class="code">"NumpadEqual"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-NumpadHash"><code class="code">"NumpadHash"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-NumpadMemoryAdd"><code class="code">"NumpadMemoryAdd"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-NumpadMemoryClear"><code class="code">"NumpadMemoryClear"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-NumpadMemoryRecall"><code class="code">"NumpadMemoryRecall"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-NumpadMemoryStore"><code class="code">"NumpadMemoryStore"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-NumpadMemorySubtract"><code class="code">"NumpadMemorySubtract"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-NumpadParenLeft"><code class="code">"NumpadParenLeft"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-NumpadParenRight"><code class="code">"NumpadParenRight"</code></a>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span class="code-impl-no">Fail</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td class="code-impl-data-dark"><span class="code-impl-yes">Pass</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-NumpadStar"><code class="code">"NumpadStar"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td colspan="10" style="background-color: #B9C9FE">Function Section
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Fn"><code class="code">"Fn"</code></a>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data"><span>N/A</span>
+      <td class="code-impl-data"><span>N/A</span>
+      <td class="code-impl-data"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-FnLock"><code class="code">"FnLock"</code></a>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data"><span>N/A</span>
+      <td class="code-impl-data"><span>N/A</span>
+      <td class="code-impl-data"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td class="code-impl-data-dark"><span>N/A</span>
+      <td>
+     <tr>
+      <td colspan="10" style="background-color: #B9C9FE">Legacy, Non-Standard and Special Keys
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Hyper"><code class="code">"Hyper"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Super"><code class="code">"Super"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Turbo"><code class="code">"Turbo"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Abort"><code class="code">"Abort"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Resume"><code class="code">"Resume"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Suspend"><code class="code">"Suspend"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Again"><code class="code">"Again"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Copy"><code class="code">"Copy"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Cut"><code class="code">"Cut"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Find"><code class="code">"Find"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Open"><code class="code">"Open"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Paste"><code class="code">"Paste"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Props"><code class="code">"Props"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Select"><code class="code">"Select"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Undo"><code class="code">"Undo"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Hiragana"><code class="code">"Hiragana"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+     <tr>
+      <td><a href="https://w3c.github.io/uievents-code/#code-Katakana"><code class="code">"Katakana"</code></a>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td class="code-impl-data-dark"><span>?</span>
+      <td>
+   </table>
+  </main>
+  <div data-fill-with="conformance">
+   <h2 class="no-ref no-num heading settled" id="conformance"><span class="content">Conformance</span><a class="self-link" href="#conformance"></a></h2>
+   <h3 class="no-ref no-num heading settled" id="conventions"><span class="content">Document conventions</span><a class="self-link" href="#conventions"></a></h3>
+   <p>Conformance requirements are expressed with a combination of
+    descriptive assertions and RFC 2119 terminology. The key words “MUST”,
+    “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL NOT”, “SHOULD”, “SHOULD NOT”,
+    “RECOMMENDED”, “MAY”, and “OPTIONAL” in the normative parts of this
+    document are to be interpreted as described in RFC 2119.
+    However, for readability, these words do not appear in all uppercase
+    letters in this specification. </p>
+   <p>All of the text of this specification is normative except sections
+    explicitly marked as non-normative, examples, and notes. <a data-link-type="biblio" href="#biblio-rfc2119">[RFC2119]</a></p>
+   <p>Examples in this specification are introduced with the words “for example”
+    or are set apart from the normative text with <code>class="example"</code>,
+    like this: </p>
+   <div class="example" id="example-ae2b6bc0">
+    <a class="self-link" href="#example-ae2b6bc0"></a> 
+    <p>This is an example of an informative example.</p>
+   </div>
+   <p>Informative notes begin with the word “Note” and are set apart from the
+    normative text with <code>class="note"</code>, like this: </p>
+   <p class="note" role="note">Note, this is an informative note.</p>
+   <h3 class="no-ref no-num heading settled" id="conformant-algorithms"><span class="content">Conformant Algorithms</span><a class="self-link" href="#conformant-algorithms"></a></h3>
+   <p>Requirements phrased in the imperative as part of algorithms (such as
+    "strip any leading space characters" or "return false and abort these
+    steps") are to be interpreted with the meaning of the key word ("must",
+    "should", "may", etc) used in introducing the algorithm.</p>
+   <p>Conformance requirements phrased as algorithms or specific steps can be
+    implemented in any manner, so long as the end result is equivalent. In
+    particular, the algorithms defined in this specification are intended to
+    be easy to understand and are not intended to be performant. Implementers
+    are encouraged to optimize.</p>
+  </div>
+  <p id="back-to-top" role="navigation"><a href="#toc"><abbr title="Back to top">↑</abbr></a></p>
+  . 
+<script src="https://www.w3.org/scripts/TR/2016/fixup.js"></script>
+  <h2 class="no-num no-ref heading settled" id="index"><span class="content">Index</span><a class="self-link" href="#index"></a></h2>
+  <aside class="dfn-panel" data-for="term-for-keyboardevent">
+   <a href="https://www.w3.org/TR/uievents/#keyboardevent">https://www.w3.org/TR/uievents/#keyboardevent</a><b>Referenced in:</b>
+   <ul>
+    <li><a href="#ref-for-keyboardevent">3.2.1. code Attribute</a>
+   </ul>
+  </aside>
+  <aside class="dfn-panel" data-for="term-for-dom-keyboardevent-code">
+   <a href="https://www.w3.org/TR/uievents/#dom-keyboardevent-code">https://www.w3.org/TR/uievents/#dom-keyboardevent-code</a><b>Referenced in:</b>
+   <ul>
+    <li><a href="#ref-for-dom-keyboardevent-code">1. Introduction</a> <a href="#ref-for-dom-keyboardevent-code①">(2)</a>
+    <li><a href="#ref-for-dom-keyboardevent-code②">3.1. Summary</a>
+    <li><a href="#ref-for-dom-keyboardevent-code③">3.2.1. code Attribute</a> <a href="#ref-for-dom-keyboardevent-code④">(2)</a> <a href="#ref-for-dom-keyboardevent-code⑤">(3)</a>
+    <li><a href="#ref-for-dom-keyboardevent-code⑥">3.2.2. Required code Values</a> <a href="#ref-for-dom-keyboardevent-code⑦">(2)</a>
+    <li><a href="#ref-for-dom-keyboardevent-code⑧">3.2.3. Optional code Values</a> <a href="#ref-for-dom-keyboardevent-code⑨">(2)</a>
+   </ul>
+  </aside>
+  <aside class="dfn-panel" data-for="term-for-">
+   <a href="http://www.w3.org/TR/uievents-code/#">http://www.w3.org/TR/uievents-code/#</a><b>Referenced in:</b>
+   <ul>
+    <li><a href="#termref-for-">3.2.2. Required code Values</a>
+    <li><a href="#termref-for-">3.2.3. Optional code Values</a>
+   </ul>
+  </aside>
+  <h3 class="no-num no-ref heading settled" id="index-defined-elsewhere"><span class="content">Terms defined by reference</span><a class="self-link" href="#index-defined-elsewhere"></a></h3>
+  <ul class="index">
+   <li>
+    <a data-link-type="biblio">[UIEvents]</a> defines the following terms:
+    <ul>
+     <li><span class="dfn-paneled" id="term-for-keyboardevent">KeyboardEvent</span>
+     <li><span class="dfn-paneled" id="term-for-dom-keyboardevent-code">code</span>
+    </ul>
+   <li>
+    <a data-link-type="biblio">[UIEvents-Code]</a> defines the following terms:
+    <ul>
+     <li><span class="dfn-paneled" id="term-for-">code attribute value</span>
+    </ul>
+  </ul>
+  <h2 class="no-num no-ref heading settled" id="references"><span class="content">References</span><a class="self-link" href="#references"></a></h2>
+  <h3 class="no-num no-ref heading settled" id="normative"><span class="content">Normative References</span><a class="self-link" href="#normative"></a></h3>
+  <dl>
+   <dt id="biblio-rfc2119">[RFC2119]
+   <dd>S. Bradner. <a href="https://datatracker.ietf.org/doc/html/rfc2119"><cite>Key words for use in RFCs to Indicate Requirement Levels</cite></a>. March 1997. Best Current Practice. URL: <a href="https://datatracker.ietf.org/doc/html/rfc2119">https://datatracker.ietf.org/doc/html/rfc2119</a>
+   <dt id="biblio-uievents">[UIEvents]
+   <dd>Gary Kacmarcik; Travis Leithead; Doug Schepers. <a href="https://www.w3.org/TR/uievents/"><cite>UI Events</cite></a>. 30 May 2019. WD. URL: <a href="https://www.w3.org/TR/uievents/">https://www.w3.org/TR/uievents/</a>
+   <dt id="biblio-uievents-code">[UIEvents-Code]
+   <dd>Gary Kacmarcik; Travis Leithead. <a href="https://www.w3.org/TR/uievents-code/"><cite>UI Events KeyboardEvent code Values</cite></a>. 1 June 2017. CR. URL: <a href="https://www.w3.org/TR/uievents-code/">https://www.w3.org/TR/uievents-code/</a>
+  </dl>
+<script>/* script-dfn-panel */
+
+document.body.addEventListener("click", function(e) {
+    var queryAll = function(sel) { return [].slice.call(document.querySelectorAll(sel)); }
+    // Find the dfn element or panel, if any, that was clicked on.
+    var el = e.target;
+    var target;
+    var hitALink = false;
+    while(el.parentElement) {
+        if(el.tagName == "A") {
+            // Clicking on a link in a <dfn> shouldn't summon the panel
+            hitALink = true;
+        }
+        if(el.classList.contains("dfn-paneled")) {
+            target = "dfn";
+            break;
+        }
+        if(el.classList.contains("dfn-panel")) {
+            target = "dfn-panel";
+            break;
+        }
+        el = el.parentElement;
+    }
+    if(target != "dfn-panel") {
+        // Turn off any currently "on" or "activated" panels.
+        queryAll(".dfn-panel.on, .dfn-panel.activated").forEach(function(el){
+            el.classList.remove("on");
+            el.classList.remove("activated");
+        });
+    }
+    if(target == "dfn" && !hitALink) {
+        // open the panel
+        var dfnPanel = document.querySelector(".dfn-panel[data-for='" + el.id + "']");
+        if(dfnPanel) {
+            dfnPanel.classList.add("on");
+            var rect = el.getBoundingClientRect();
+            dfnPanel.style.left = window.scrollX + rect.right + 5 + "px";
+            dfnPanel.style.top = window.scrollY + rect.top + "px";
+            var panelRect = dfnPanel.getBoundingClientRect();
+            var panelWidth = panelRect.right - panelRect.left;
+            if(panelRect.right > document.body.scrollWidth && (rect.left - (panelWidth + 5)) > 0) {
+                // Reposition, because the panel is overflowing
+                dfnPanel.style.left = window.scrollX + rect.left - (panelWidth + 5) + "px";
+            }
+        } else {
+            console.log("Couldn't find .dfn-panel[data-for='" + el.id + "']");
+        }
+    } else if(target == "dfn-panel") {
+        // Switch it to "activated" state, which pins it.
+        el.classList.add("activated");
+        el.style.left = null;
+        el.style.top = null;
+    }
+
+});
+</script>

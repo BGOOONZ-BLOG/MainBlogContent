@@ -1,0 +1,85 @@
+#
+# Makefile.math
+# Autoconf Fragment when using Math
+# Daniel Veillard and Irene Vatton 1997
+#
+
+AMAYA_MATH_OPTIONS=# -I$(QUEX_PATH) -liconv -DQUEX_OPTION_ASSERTS_DISABLED
+
+AMAYA_MATH_OBJ= \
+	MathMLAPP.o \
+	MathMLbuilder.o \
+	Mathedit.o \
+	Mathedit_parser.o # \
+	# chemistry.o \
+	# chemistry-core-engine.o \
+	# chemistry.tab.o
+
+AMAYA_MATH_SRC= \
+        MathML.h \
+	MathMLAPP.c 
+
+AMAYA_MATH_LIBS= 
+
+AMAYA_MATH_EXTRA_LIBS=
+
+AMAYA_MATH_INCLUDES=
+
+MATH_SCHEMAS= $(AMAYA)/MathML.S $(AMAYA)/MathMLP.P $(AMAYA)/MathMLT.T
+
+math_schema= compMATH compMATHP compMATHT MathML.h
+
+#
+# Structure schema compilation.
+#
+compMATH: $(AMAYA)/MathML.STR
+$(AMAYA)/MathML.STR : $(AMAYA)/MathML.S ../bin/str ../bin/prs ../bin/tra
+	STR=`pwd`/../bin/str;PRS=`pwd`/../bin/prs;TRA=`pwd`/../bin/tra;\
+	cd $(AMAYA); THOTDIR=`pwd`/.. ;export THOTDIR; \
+	$$STR $(ALL_AMAYA_OPTIONS) MathML ; \
+	$$PRS $(ALL_AMAYA_OPTIONS) MathMLP ; \
+	$$TRA $(ALL_AMAYA_OPTIONS) -DXML MathMLT MathMLTX ; \
+	$$TRA $(ALL_AMAYA_OPTIONS) MathMLT
+
+#
+# Presentation schemas compilation
+#
+compMATHP: $(AMAYA)/MathMLP.PRS
+$(AMAYA)/MathMLP.PRS : $(AMAYA)/MathMLP.P ../bin/prs
+	PRS=`pwd`/../bin/prs;\
+	cd $(AMAYA); THOTDIR=`pwd`/.. ;export THOTDIR; \
+	$$PRS $(ALL_AMAYA_OPTIONS) MathMLP
+
+#
+# Traduction schemas compilation
+#
+compMATHT: $(AMAYA)/MathMLT.TRA
+$(AMAYA)/MathMLT.TRA : $(AMAYA)/MathMLT.T ../bin/tra
+	TRA=`pwd`/../bin/tra;\
+	cd $(AMAYA); THOTDIR=`pwd`/.. ;export THOTDIR; \
+	$$TRA $(ALL_AMAYA_OPTIONS) -DXML MathMLT MathMLTX ; \
+	$$TRA $(ALL_AMAYA_OPTIONS) MathMLT
+
+#
+# Interface schemas compilation
+#
+MathML.h MathMLAPP.c: $(AMAYA)/MathML.STR $(AMAYA)/MathML.A ../bin/app
+	(if test "$(AMAYA)" != "" -a "$(AMAYA)" != "." ; then \
+	    $(CP) $(AMAYA)/MathML.A .  ; \
+	    $(CP) $(AMAYA)/MathML.STR .  ; \
+	fi)
+	THOTDIR=$(THOTDIR) ; export THOTDIR ; \
+	../bin/app $(ALL_AMAYA_OPTIONS) MathML.A
+	
+#
+# Mathedit Parsers
+#
+# MODE = chemistry
+
+# $(MODE).tab.hpp $(MODE).tab.cpp: $(MODE).ypp
+# 	bison $(AMAYA)/$(MODE).ypp
+
+# $(MODE).cpp $(MODE)-core-engine.cpp $(MODE) $(MODE)-token_ids: $(MODE).qx
+# 	quex -i $(AMAYA)/$(MODE).qx --engine $(MODE) \
+# 	 --token-prefix TKN_ \ --foreign-token-id-file $(AMAYA)/$(MODE).h \
+# 	 -b wchar_t

@@ -1,0 +1,107 @@
+<p>The <code>toolbar</code> role defines the containing element as a collection of commonly used function buttons or controls represented in a compact visual form.</p>
+<h2 id="description">Description</h2>
+<p>A toolbar is a collection of commonly used controls, such as buttons or checkboxes, grouped together in a compact visual form. The <code>toolbar</code> role can be used to communicate the presence and purpose of such a grouping to screen reader users and can help reduce the number of tab stops for keyboard users. Only use the <code>toolbar</code> role to group 3 or more controls.</p>
+<p>The toolbar is commonly a subset of functions found in a <code>menubar</code> as a way to reduce user effort. If you have more than one toolbar in a menubar, each toolbar requires a label; which you can include with <a href="/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-labelledby"><code>aria-labelledby</code></a> or <a href="/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-label"><code>aria-label</code></a>.</p>
+<p>When creating a toolbar, you need to implement focus management and keyboard interactions within the toolbar, handling when the same keyboard interactions is used both in the toolbar and in included native control. The <kbd>Left Arrow</kbd> and <kbd>Right Arrow</kbd> should be used to navigate between the controls withing a horizontal tool bar. The <kbd>Up Arrow</kbd> and <kbd>Down Arrow</kbd> should be used if the toolbar is vertical – in which case you also want to include the <code>aria-orientation="vertical"</code> – or, in a horizontal toolbar, can be reserved for operating controls, such as spin buttons that require vertical arrow keys to operate.</p>
+<p>Avoid including controls whose operation requires arrow keys used for toolbar navigation. If you must include such a control, make it the last control in the toolbar. For example, in a horizontal toolbar, a textbox could be included as the last element.</p>
+<p>If any of the otherwise interactive elements within the toolbar are temporarily disabled, consider letting them remain focusable so screen reader users can be made aware of their presence.</p>
+<h3 id="associated-wai-aria-roles-states-and-properties">Associated WAI-ARIA roles, states, and properties</h3>
+<ul>
+<li><a href="/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-orientation"><code>aria-orientation</code></a>
+<ul>
+<li>: Elements with the role toolbar have an implicit <code>aria-orientation</code> value of horizontal.</li>
+</ul></li>
+<li><a href="/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-labelledby"><code>aria-labelledby</code></a> / <a href="/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-label"><code>aria-label</code></a>
+<ul>
+<li>: If the toolbar has a visible label, reference it by ID with the <code>aria-labelledby</code> attribute. Otherwise, provide an <code>aria-label</code>. If there is more than one toolbar in a menu, naming is required.</li>
+</ul></li>
+</ul>
+<h3 id="keyboard-interactions">Keyboard interactions</h3>
+<p>Implement focus management so the keyboard tab sequence includes one stop for the toolbar and arrow keys move focus among the controls in the toolbar.</p>
+<ul>
+<li><kbd>Tab</kbd> and <kbd>Shift + Tab</kbd>
+<ul>
+<li><p>: Move focus into and out of the toolbar. When focus moves into a toolbar:</p>
+<ul>
+<li>If focus is moving into the toolbar for the first time, focus is set on the first control that is not disabled.</li>
+<li>If the toolbar has previously contained focus, focus is optionally set on the control that last had focus. Otherwise, it is set on the first control that is not disabled.</li>
+</ul></li>
+</ul></li>
+<li><kbd>Home</kbd> (Optional)
+<ul>
+<li>: Moves focus to first element.</li>
+</ul></li>
+<li><kbd>End</kbd> (Optional)
+<ul>
+<li>: Moves focus to last element.</li>
+</ul></li>
+</ul>
+<h4 id="horizontal-toolbar">Horizontal toolbar</h4>
+<p>Elements with the role toolbar have an implicit <code>aria-orientation</code> value of horizontal. If the toolbar indeed has this orientation, the following keyboard interactions need to be implemented:</p>
+<ul>
+<li><kbd>Left Arrow</kbd> (For a horizontal toolbar (the default)
+<ul>
+<li>: Moves focus to the previous control. Optionally, focus movement may wrap from the first element to the last element.</li>
+</ul></li>
+<li><kbd>Right Arrow</kbd> (For a horizontal toolbar (the default)
+<ul>
+<li>: Moves focus to the next control. Optionally, focus movement may wrap from the last element to the first element.</li>
+</ul></li>
+</ul>
+<p>In toolbars with multiple rows of controls, allow the left and right arrows to wraps from row to row, leaving the option of reserving vertical arrow keys for operating controls, such as navigating among radios buttons, or incrementing/decrementing a numeric spinner.</p>
+<h4 id="vertical-toolbar">Vertical toolbar</h4>
+<p>If the toolbar is vertical, ensure <code>aria-orientation="vertical"</code> is set, and the following keyboard interactions are implemented:</p>
+<ul>
+<li><kbd>Down Arrow</kbd> (For a horizontal toolbar (the default)
+<ul>
+<li>: Moves focus to the previous control. Optionally, focus movement may wrap from the first element to the last element.</li>
+</ul></li>
+<li><kbd>Up Arrow</kbd> (For a horizontal toolbar (the default)
+<ul>
+<li>: Moves focus to the next control. Optionally, focus movement may wrap from the last element to the first element.</li>
+</ul></li>
+</ul>
+<h3 id="required-javascript-features">Required JavaScript features</h3>
+<p>Implement focus management so the keyboard tab sequence includes one stop for the toolbar and arrow keys move focus among the controls in the toolbar. When tabbing into the toolbar, focus returns to the control that last had focus.</p>
+<p>While the toolbar element itself does not receive focus, focus on movement into, out of, and within the toolbar has to be managed. On load, the first element in the tabbing sequence within the toolbar has <code>tabindex="0"</code> with <code>tabindex="-1"</code> set on all other focusable elements within the toolbar. Depending on the [keyboard interaction], the element receiving focus gets set to <code>tabindex="0"</code> and the element that just lost focus gets switched back to <code>tabindex="-1"</code>. Set focus, <code>element.focus()</code>, on the element that has <code>tabindex="0"</code>. This is called “roving tabindex”. A benefit of using roving tabindex to manage focus is that the browser will scroll the newly focused element into view.</p>
+<p>If the design calls for a specific element to be focused the next time the user moves focus into the toolbar with <kbd>Tab</kbd> or <kbd>Shift + Tab</kbd>, check if that target element has <code>tabindex="0"</code> when toolbar loses focus.</p>
+<p>When the toolbar has focus within it, provide visual cues. When an element within the toolbar has focus, a visual cue must be included on both the toolbar itself - to help the toolbar supports directional navigation with the arrow keys - and the control that has focus. The CSS pseudoclasses of <code>:focus</code> and <code>:focus-within</code> can be used to target both elements.</p>
+<h2 id="examples">Examples</h2>
+<p><a href="https://www.w3.org/TR/wai-aria-practices-1.2/examples/toolbar/toolbar.html">Toolbar example from the <abbr title="world wide web consortium">W3C</abbr></a></p>
+<h2 id="accessibility-concerns">Accessibility Concerns</h2>
+<p>Avoid including controls whose operation requires arrow keys used for toolbar navigation (right and left arrows, or top and bottom for vertical toolbars). If you must include such a control, make it the last control in the toolbar. For example, in a horizontal toolbar, a textbox could be included as the last element.</p>
+<p>If any of the otherwise interactive elements within the toolbar are disabled, consider letting them remain focusable so screen reader users can be made aware of their presence.</p>
+<h2 id="specifications">Specifications</h2>
+<table>
+<colgroup>
+<col style="width: 72%" />
+<col style="width: 27%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Specification</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>{{SpecName(“ARIA”,“#toolbar”,“ARIA: toolbar role”)}}</td>
+<td>{{Spec2(‘ARIA’)}}</td>
+</tr>
+<tr class="even">
+<td>{{SpecName(“ARIA Authoring Practices 1.2”,“#toolbar”,“toolbar role”)}}</td>
+<td>{{Spec2(‘ARIA Authoring Practices 1.2’)}}</td>
+</tr>
+</tbody>
+</table>
+<h2 id="see-also">See Also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/CSS/:focus">The CSS <code>:focus</code> pseudoclass</a></li>
+<li><a href="/en-US/docs/Web/CSS/:focus-within">The CSS <code>:focus-within</code> pseudclass</a></li>
+</ul>
+<section id="Quick_links">
+<ol type="1">
+<li><p><a href="/en-US/docs/Web/Accessibility/ARIA/Roles"><strong>WAI-ARIA roles</strong></a></p>
+<p>{{ListSubpagesForSidebar(“/en-US/docs/Web/Accessibility/ARIA/Roles”)}}</p></li>
+</ol>
+</section>

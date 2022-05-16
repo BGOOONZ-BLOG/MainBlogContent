@@ -1,0 +1,98 @@
+<p>{{CanvasSidebar}} {{PreviousNext(“Web/API/Canvas_API/Tutorial”, “Web/API/Canvas_API/Tutorial/Drawing_shapes”)}}</p>
+<p>Let’s start this tutorial by looking at the {{HTMLElement(“canvas”)}} {{Glossary(“HTML”)}} element itself. At the end of this page, you will know how to set up a canvas 2D context and have drawn a first example in your browser.</p>
+<h2 id="the-canvas-element">The <code>&lt;canvas&gt;</code> element</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">&lt;canvas</span><span class="ot"> id=</span><span class="st">&quot;tutorial&quot;</span><span class="ot"> width=</span><span class="st">&quot;150&quot;</span><span class="ot"> height=</span><span class="st">&quot;150&quot;</span><span class="kw">&gt;&lt;/canvas&gt;</span></a></code></pre></div>
+<p>At first sight a {{HTMLElement(“canvas”)}} looks like the {{HTMLElement(“img”)}} element, with the only clear difference being that it doesn’t have the <code>src</code> and <code>alt</code> attributes. Indeed, the <code>&lt;canvas&gt;</code> element has only two attributes, {{htmlattrxref(“width”, “canvas”)}} and {{htmlattrxref(“height”, “canvas”)}}. These are both optional and can also be set using {{Glossary(“DOM”)}} <a href="/en-US/docs/Web/API/HTMLCanvasElement">properties</a>. When no <code>width</code> and <code>height</code> attributes are specified, the canvas will initially be <strong>300 pixels</strong> wide and <strong>150 pixels</strong> high. The element can be sized arbitrarily by {{Glossary(“CSS”)}}, but during rendering the image is scaled to fit its layout size: if the CSS sizing doesn’t respect the ratio of the initial canvas, it will appear distorted.</p>
+<blockquote>
+<p><strong>Note:</strong> If your renderings seem distorted, try specifying your <code>width</code> and <code>height</code> attributes explicitly in the <code>&lt;canvas&gt;</code> attributes, and not using CSS.</p>
+</blockquote>
+<p>The <a href="/en-US/docs/Web/HTML/Global_attributes/id"><code>id</code></a> attribute isn’t specific to the <code>&lt;canvas&gt;</code> element but is one of the <a href="/en-US/docs/Web/HTML/Global_attributes">global HTML attributes</a> which can be applied to any HTML element (like <a href="/en-US/docs/Web/HTML/Global_attributes/class"><code>class</code></a> for instance). It is always a good idea to supply an <code>id</code> because this makes it much easier to identify it in a script.</p>
+<p>The <code>&lt;canvas&gt;</code> element can be styled just like any normal image ({{cssxref(“margin”)}}, {{cssxref(“border”)}}, {{cssxref(“background”)}}…). These rules, however, don’t affect the actual drawing on the canvas. We’ll see how this is done in a <a href="/en-US/docs/Web/API/Canvas_API/Tutorial/Applying_styles_and_colors">dedicated chapter</a> of this tutorial. When no styling rules are applied to the canvas it will initially be fully transparent.</p>
+<h3 id="fallback-content">Fallback content</h3>
+<p>The <code>&lt;canvas&gt;</code> element differs from an {{HTMLElement(“img”)}} tag in that, like for {{HTMLElement(“video”)}}, {{HTMLElement(“audio”)}}, or {{HTMLElement(“picture”)}} elements, it is easy to define some fallback content, to be displayed in older browsers not supporting it, like versions of Internet Explorer earlier than version 9 or textual browsers. You should always provide fallback content to be displayed by those browsers.</p>
+<p>Providing fallback content is very straightforward: just insert the alternate content inside the <code>&lt;canvas&gt;</code> element. Browsers that don’t support <code>&lt;canvas&gt;</code> will ignore the container and render the fallback content inside it. Browsers that do support <code>&lt;canvas&gt;</code> will ignore the content inside the container, and just render the canvas normally.</p>
+<p>For example, we could provide a text description of the canvas content or provide a static image of the dynamically rendered content. This can look something like this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">&lt;canvas</span><span class="ot"> id=</span><span class="st">&quot;stockGraph&quot;</span><span class="ot"> width=</span><span class="st">&quot;150&quot;</span><span class="ot"> height=</span><span class="st">&quot;150&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  current stock price: $3.15 + 0.15</a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">&lt;/canvas&gt;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="kw">&lt;canvas</span><span class="ot"> id=</span><span class="st">&quot;clock&quot;</span><span class="ot"> width=</span><span class="st">&quot;150&quot;</span><span class="ot"> height=</span><span class="st">&quot;150&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="kw">&lt;img</span><span class="ot"> src=</span><span class="st">&quot;images/clock.png&quot;</span><span class="ot"> width=</span><span class="st">&quot;150&quot;</span><span class="ot"> height=</span><span class="st">&quot;150&quot;</span><span class="ot"> alt=</span><span class="st">&quot;&quot;</span><span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="kw">&lt;/canvas&gt;</span></a></code></pre></div>
+<p>Telling the user to use a different browser that supports canvas does not help users who can’t read the canvas at all, for example. Providing a useful fallback text or sub DOM helps to make the canvas more accessible.</p>
+<h3 id="required-canvas-tag">Required <code>&lt;/canvas&gt;</code> tag</h3>
+<p>As a consequence of the way fallback is provided, unlike the {{HTMLElement(“img”)}} element, the {{HTMLElement(“canvas”)}} element <strong>requires</strong> the closing tag (<code>&lt;/canvas&gt;</code>). If this tag is not present, the rest of the document would be considered the fallback content and wouldn’t be displayed.</p>
+<p>If fallback content is not needed, a simple <code>&lt;canvas id="foo" ...&gt;&lt;/canvas&gt;</code> is fully compatible with all browsers that support canvas at all.</p>
+<h2 id="the-rendering-context">The rendering context</h2>
+<p>The {{HTMLElement(“canvas”)}} element creates a fixed-size drawing surface that exposes one or more <strong>rendering contexts</strong>, which are used to create and manipulate the content shown. In this tutorial, we focus on the 2D rendering context. Other contexts may provide different types of rendering; for example, <a href="/en-US/docs/Web/API/WebGL_API">WebGL</a> uses a 3D context based on <a href="http://www.khronos.org/opengles/">OpenGL ES</a>.</p>
+<p>The canvas is initially blank. To display something, a script first needs to access the rendering context and draw on it. The {{HTMLElement(“canvas”)}} element has a method called {{domxref(“HTMLCanvasElement.getContext”, “getContext()”)}}, used to obtain the rendering context and its drawing functions. <code>getContext()</code> takes one parameter, the type of context. For 2D graphics, such as those covered by this tutorial, you specify <code>"2d"</code> to get a {{domxref(“CanvasRenderingContext2D”)}}.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">var</span> canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;tutorial&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">var</span> ctx <span class="op">=</span> <span class="va">canvas</span>.<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a></code></pre></div>
+<p>The first line in the script retrieves the node in the DOM representing the {{HTMLElement(“canvas”)}} element by calling the {{domxref(“document.getElementById()”)}} method. Once you have the element node, you can access the drawing context using its <code>getContext()</code> method.</p>
+<h2 id="checking-for-support">Checking for support</h2>
+<p>The fallback content is displayed in browsers which do not support {{HTMLElement(“canvas”)}}. Scripts can also check for support programmatically by testing for the presence of the <code>getContext()</code> method. Our code snippet from above becomes something like this:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">var</span> canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;tutorial&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="cf">if</span> (<span class="va">canvas</span>.<span class="at">getContext</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-4" title="4">  <span class="kw">var</span> ctx <span class="op">=</span> <span class="va">canvas</span>.<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="co">// drawing code here</span></a>
+<a class="sourceLine" id="cb4-6" title="6"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="co">// canvas-unsupported code here</span></a>
+<a class="sourceLine" id="cb4-8" title="8"><span class="op">}</span></a></code></pre></div>
+<h2 id="a-skeleton-template">A skeleton template</h2>
+<p>Here is a minimalistic template, which we’ll be using as a starting point for later examples.</p>
+<blockquote>
+<p><strong>Note:</strong> it is not good practice to embed a script inside HTML. We do it here to keep the example concise.</p>
+</blockquote>
+<div class="sourceCode" id="cb5"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb5-1" title="1"><span class="dt">&lt;!DOCTYPE </span>html<span class="dt">&gt;</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="kw">&lt;html&gt;</span></a>
+<a class="sourceLine" id="cb5-3" title="3">  <span class="kw">&lt;head&gt;</span></a>
+<a class="sourceLine" id="cb5-4" title="4">    <span class="kw">&lt;meta</span><span class="ot"> charset=</span><span class="st">&quot;utf-8&quot;</span><span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb5-5" title="5">    <span class="kw">&lt;title&gt;</span>Canvas tutorial<span class="kw">&lt;/title&gt;</span></a>
+<a class="sourceLine" id="cb5-6" title="6">    <span class="kw">&lt;script&gt;</span></a>
+<a class="sourceLine" id="cb5-7" title="7">      <span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-8" title="8">        <span class="kw">var</span> canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;tutorial&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-9" title="9">        <span class="cf">if</span> (<span class="va">canvas</span>.<span class="at">getContext</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-10" title="10">          <span class="kw">var</span> ctx <span class="op">=</span> <span class="va">canvas</span>.<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-11" title="11">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-12" title="12">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-13" title="13">    <span class="kw">&lt;/script&gt;</span></a>
+<a class="sourceLine" id="cb5-14" title="14">    <span class="kw">&lt;style&gt;</span></a>
+<a class="sourceLine" id="cb5-15" title="15">      canvas { <span class="kw">border</span>: <span class="dv">1</span><span class="dt">px</span> <span class="dv">solid</span> <span class="cn">black</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb5-16" title="16">    <span class="kw">&lt;/style&gt;</span></a>
+<a class="sourceLine" id="cb5-17" title="17">  <span class="kw">&lt;/head&gt;</span></a>
+<a class="sourceLine" id="cb5-18" title="18">  <span class="kw">&lt;body</span><span class="ot"> onload=</span><span class="st">&quot;draw();&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb5-19" title="19">    <span class="kw">&lt;canvas</span><span class="ot"> id=</span><span class="st">&quot;tutorial&quot;</span><span class="ot"> width=</span><span class="st">&quot;150&quot;</span><span class="ot"> height=</span><span class="st">&quot;150&quot;</span><span class="kw">&gt;&lt;/canvas&gt;</span></a>
+<a class="sourceLine" id="cb5-20" title="20">  <span class="kw">&lt;/body&gt;</span></a>
+<a class="sourceLine" id="cb5-21" title="21"><span class="kw">&lt;/html&gt;</span></a></code></pre></div>
+<p>The script includes a function called <code>draw()</code>, which is executed once the page finishes loading; this is done by listening for the {{event(“load”)}} event on the document. This function, or one like it, could also be called using {{domxref(“setTimeout()”)}}, {{domxref(“setInterval()”)}}, or any other event handler, as long as the page has been loaded first.</p>
+<p>Here is how a template would look in action. As shown here, it is initially blank.</p>
+<p>{{EmbedLiveSample(“A_skeleton_template”, 160, 160)}}</p>
+<h2 id="a-simple-example">A simple example</h2>
+<p>To begin, let’s take a look at a simple example that draws two intersecting rectangles, one of which has alpha transparency. We’ll explore how this works in more detail in later examples.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb6-1" title="1"><span class="dt">&lt;!DOCTYPE </span>html<span class="dt">&gt;</span></a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="kw">&lt;html&gt;</span></a>
+<a class="sourceLine" id="cb6-3" title="3"> <span class="kw">&lt;head&gt;</span></a>
+<a class="sourceLine" id="cb6-4" title="4">  <span class="kw">&lt;meta</span><span class="ot"> charset=</span><span class="st">&quot;utf-8&quot;</span><span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb6-5" title="5">  <span class="kw">&lt;script</span><span class="ot"> type=</span><span class="st">&quot;application/javascript&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb6-6" title="6">    <span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-7" title="7">      <span class="kw">var</span> canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;canvas&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-8" title="8">      <span class="cf">if</span> (<span class="va">canvas</span>.<span class="at">getContext</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-9" title="9">        <span class="kw">var</span> ctx <span class="op">=</span> <span class="va">canvas</span>.<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-10" title="10"></a>
+<a class="sourceLine" id="cb6-11" title="11">        <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&#39;rgb(200, 0, 0)&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-12" title="12">        <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="dv">10</span><span class="op">,</span> <span class="dv">10</span><span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="dv">50</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-13" title="13"></a>
+<a class="sourceLine" id="cb6-14" title="14">        <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&#39;rgba(0, 0, 200, 0.5)&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-15" title="15">        <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="dv">30</span><span class="op">,</span> <span class="dv">30</span><span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="dv">50</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-16" title="16">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-17" title="17">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-18" title="18">  <span class="kw">&lt;/script&gt;</span></a>
+<a class="sourceLine" id="cb6-19" title="19"> <span class="kw">&lt;/head&gt;</span></a>
+<a class="sourceLine" id="cb6-20" title="20"> <span class="kw">&lt;body</span><span class="ot"> onload=</span><span class="st">&quot;draw();&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb6-21" title="21">   <span class="kw">&lt;canvas</span><span class="ot"> id=</span><span class="st">&quot;canvas&quot;</span><span class="ot"> width=</span><span class="st">&quot;150&quot;</span><span class="ot"> height=</span><span class="st">&quot;150&quot;</span><span class="kw">&gt;&lt;/canvas&gt;</span></a>
+<a class="sourceLine" id="cb6-22" title="22"> <span class="kw">&lt;/body&gt;</span></a>
+<a class="sourceLine" id="cb6-23" title="23"><span class="kw">&lt;/html&gt;</span></a></code></pre></div>
+<p>This example looks like this:</p>
+<p>{{EmbedLiveSample(“A_simple_example”, 160, 160, “canvas_ex1.png”)}}</p>
+<p>{{PreviousNext(“Web/API/Canvas_API/Tutorial”, “Web/API/Canvas_API/Tutorial/Drawing_shapes”)}}</p>

@@ -1,0 +1,297 @@
+<p>{{DefaultAPISidebar(“CSS Typed Object Model API”)}}</p>
+<p>The <strong><a href="/en-US/docs/Web/API/CSS_Typed_OM_API">CSS Typed Object Model API</a></strong> exposes CSS values as typed JavaScript objects to allow their performant manipulation.</p>
+<p>Converting <a href="/en-US/docs/Web/API/CSS_Object_Model">CSS Object Model</a> value strings into meaningfully-typed JavaScript representations and back (via {{domxref(“HTMLElement.style”)}}) can incur a significant performance overhead.</p>
+<p>The CSS Typed OM makes CSS manipulation more logical and performant by providing object features (rather than CSSOM string manipulation), providing access to types, methods, and an object model for CSS values.</p>
+<p>This article provides an introduction to all of its main features.</p>
+<h2 id="computedstylemap">computedStyleMap()</h2>
+<p>With the CSS Typed OM API, we can access all the CSS properties and values — including custom properties — that are impacting an element. Let’s see how this works by creating our first example, which explores {{domxref(‘Element.computedStyleMap()’, ‘computedStyleMap()’)}}.</p>
+<h3 id="getting-all-the-properties-and-values">Getting all the properties and values</h3>
+<h4 id="html">HTML</h4>
+<p>We start with some HTML: a paragraph with a link, as well as a definition list to which we will add all the CSS Property / Value pairs.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">&lt;p&gt;</span></a>
+<a class="sourceLine" id="cb1-2" title="2">   <span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;https://example.com&quot;</span><span class="kw">&gt;</span>Link<span class="kw">&lt;/a&gt;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="kw">&lt;dl</span><span class="ot"> id=</span><span class="st">&quot;regurgitation&quot;</span><span class="kw">&gt;&lt;/dl&gt;</span></a></code></pre></div>
+<h4 id="javascript">JavaScript</h4>
+<p>We add JavaScript to grab our unstyled link and return back a definition list of all the default CSS property values impacting the link using <code>computedStyleMap()</code>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">// get the element</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">const</span> myElement <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;a&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="co">// get the &lt;dl&gt; we&#39;ll be populating</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="kw">const</span> stylesList <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#regurgitation&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6"></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="co">// Retrieve all computed styles with computedStyleMap()</span></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="kw">const</span> defaultComputedStyles <span class="op">=</span> <span class="va">myElement</span>.<span class="at">computedStyleMap</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="co">// iterate thru the map of all the properties and values, adding a &lt;dt&gt; and &lt;dd&gt; for each</span></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="cf">for</span> (<span class="kw">const</span> [prop<span class="op">,</span> val] <span class="kw">of</span> defaultComputedStyles) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-12" title="12">    <span class="co">// properties</span></a>
+<a class="sourceLine" id="cb2-13" title="13">    <span class="kw">const</span> cssProperty <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;dt&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14">    <span class="va">cssProperty</span>.<span class="at">appendChild</span>(<span class="va">document</span>.<span class="at">createTextNode</span>(prop))<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-15" title="15">    <span class="va">stylesList</span>.<span class="at">appendChild</span>(cssProperty)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-16" title="16"></a>
+<a class="sourceLine" id="cb2-17" title="17">    <span class="co">// values</span></a>
+<a class="sourceLine" id="cb2-18" title="18">    <span class="kw">const</span> cssValue <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;dd&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-19" title="19">    <span class="va">cssValue</span>.<span class="at">appendChild</span>(<span class="va">document</span>.<span class="at">createTextNode</span>(val))<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-20" title="20">    <span class="va">stylesList</span>.<span class="at">appendChild</span>(cssValue)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-21" title="21"><span class="op">}</span></a></code></pre></div>
+<p>The <code>computedStyleMap()</code> method returns a {{domxref(‘StylePropertyMapReadOnly’)}} object containing the <a href="/en-US/docs/Web/API/StylePropertyMapReadOnly/size"><code>size</code></a> property, which indicates how many properties are in the map. We iterate through the style map, creating a <a href="/en-US/docs/Web/HTML/Element/dt"><code>&lt;dt&gt;</code></a> and <a href="/en-US/docs/Web/HTML/Element/dd"><code>&lt;dd&gt;</code></a> for each property and value respectively.</p>
+<h4 id="result">Result</h4>
+<p>In <a href="/en-US/docs/Web/API/Element/computedStyleMap#browser_compatibility">browsers that support <code>computedStyleMap()</code></a>, you’ll see a list of all the CSS properties and values. In other browsers, you’ll just see a link.</p>
+<p>{{EmbedLiveSample(“Getting_all_the_properties_and_values”, 120, 300)}}</p>
+<p>Did you realize how many default CSS properties a link had? Update the JavaScript on line 2 to select the {{htmlelement(“p”)}} rather than the {{htmlelement(“a”)}}. You’ll notice a difference in the <a href="/en-US/docs/Web/CSS/margin-top"><code>margin-top</code></a> and <a href="/en-US/docs/Web/CSS/margin-bottom"><code>margin-bottom</code></a> default computed values.</p>
+<h3 id="get-method-custom-properties">.get() method / custom properties</h3>
+<p>Let’s update our example to only retrieve a few properties and values. Let’s start by adding some CSS to our example, including a custom property and an inheritable property:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb3-1" title="1">p {</a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">font-weight</span>: <span class="dv">bold</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">}</a>
+<a class="sourceLine" id="cb3-4" title="4"></a>
+<a class="sourceLine" id="cb3-5" title="5">a {</a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="va">--color</span>: <span class="cn">red</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="kw">color</span>: <span class="fu">var(</span><span class="va">--color</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">}</a></code></pre></div>
+<p>Instead of getting <em>all</em> the properties, we create an array of properties of interest and use the {{domxref(‘StylePropertyMapReadOnly.get()’)}} method to get each of their values:</p>
+<p><code>html hidden &lt;p&gt;    &lt;a href="https://example.com"&gt;Link&lt;/a&gt; &lt;/p&gt; &lt;dl id="regurgitation"&gt;&lt;/dl&gt;</code></p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="co">// get the element</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="kw">const</span> myElement <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;a&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="co">// get the &lt;dl&gt; we&#39;ll be populating</span></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="kw">const</span> stylesList <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#regurgitation&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-6" title="6"></a>
+<a class="sourceLine" id="cb4-7" title="7"><span class="co">// Retrieve all computed styles with computedStyleMap()</span></a>
+<a class="sourceLine" id="cb4-8" title="8"><span class="kw">const</span> allComputedStyles <span class="op">=</span> <span class="va">myElement</span>.<span class="at">computedStyleMap</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-9" title="9"></a>
+<a class="sourceLine" id="cb4-10" title="10"><span class="co">// array of properties we&#39;re interested in</span></a>
+<a class="sourceLine" id="cb4-11" title="11"><span class="kw">const</span> ofInterest <span class="op">=</span> [<span class="st">&#39;font-weight&#39;</span><span class="op">,</span> <span class="st">&#39;border-left-color&#39;</span><span class="op">,</span> <span class="st">&#39;color&#39;</span><span class="op">,</span> <span class="st">&#39;--color&#39;</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-12" title="12"></a>
+<a class="sourceLine" id="cb4-13" title="13"><span class="co">// iterate through our properties of interest</span></a>
+<a class="sourceLine" id="cb4-14" title="14"><span class="cf">for</span> ( <span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">ofInterest</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span> ) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-15" title="15">    <span class="co">// properties</span></a>
+<a class="sourceLine" id="cb4-16" title="16">  <span class="kw">const</span> cssProperty <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;dt&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-17" title="17">  <span class="va">cssProperty</span>.<span class="at">appendChild</span>(<span class="va">document</span>.<span class="at">createTextNode</span>(ofInterest[i]))<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-18" title="18">  <span class="va">stylesList</span>.<span class="at">appendChild</span>(cssProperty)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-19" title="19">    <span class="co">// values</span></a>
+<a class="sourceLine" id="cb4-20" title="20">  <span class="kw">const</span> cssValue <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;dd&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-21" title="21">  <span class="va">cssValue</span>.<span class="at">appendChild</span>(<span class="va">document</span>.<span class="at">createTextNode</span>( <span class="va">allComputedStyles</span>.<span class="at">get</span>(ofInterest[i])))<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-22" title="22">    <span class="va">stylesList</span>.<span class="at">appendChild</span>(cssValue)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-23" title="23"><span class="op">}</span></a></code></pre></div>
+<p>{{EmbedLiveSample(“.get_method_custom_properties”, 120, 300)}}</p>
+<p>We included {{cssxref(‘border-left-color’)}} to demonstrate that, had we included all the properties, every value that defaults to <a href="/en-US/docs/Web/CSS/color_value"><code>currentcolor</code></a> (including {{cssxref(‘caret-color’)}}, {{cssxref(‘outline-color’)}}, {{cssxref(‘text-decoration-color’)}}, {{cssxref(‘column-rule-color’)}}, etc.) would return <code>rgb(255, 0, 0)</code>. The link has inherited <code>font-weight: bold;</code> from the paragraph’s styles, listing it as <code>font-weight: 700</code>. Custom properties, like our <code>--color: red</code> , are properties. As such, they are accessible via <code>get()</code>.</p>
+<p>You’ll note that custom properties retain the value as written in the stylesheet, whereas computed styles will be listed as the computed value — {{cssxref(‘color’)}} was listed as an <a href="/en-US/docs/Web/CSS/color_value"><code>rgb()</code></a> value and the {{cssxref(‘font-weight’)}} returned was <code>700</code> even though we use a {{cssxref(‘&lt;color&gt;’, ‘named color’)}} and the <code>bold</code> keyword.</p>
+<h3 id="cssunitvalue-and-csskeywordvalue">CSSUnitValue and CSSKeywordValue</h3>
+<p>The power of the CSS Typed OM is that values are separate from units; parsing and concatenating string values may become be a thing of the past. Every CSS property in a style map has a value. If the value is a keyword, the object returned is a <a href="/en-US/docs/Web/API/CSSKeywordValue"><code>CSSKeywordValue</code></a>. If the value is numeric, a <a href="/en-US/docs/Web/API/CSSUnitValue"><code>CSSUnitValue</code></a> is returned.</p>
+<p><code>CSSKeywordValue</code> is a class that defines keywords like <code>inherit</code>, <code>initial</code>, <code>unset</code>, and other strings you don’t quote, such as <code>auto</code> and <code>grid</code>. This subclass gives you a <code>value</code> property via {{domxref(“cssKeywordValue.value”)}}.</p>
+<p><code>CSSUnitValue</code> is returned if the value is a unit type. It is a class that defines numbers with units of measurement like <code>20px</code>, <code>40%</code>, <code>200ms</code>, or <code>7</code>. It is returned with two properties: a <code>value</code> and a <code>unit</code>. With this type we can access the numeric value — {{domxref(‘cssUnitValue.value’)}} — and its unit — {{domxref(‘cssUnitValue.unit’)}}.</p>
+<p>Let’s write a plain paragraph, apply no styles, and inspect a few of its CSS properties by returning a table with the unit and value:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">&lt;p&gt;</span></a>
+<a class="sourceLine" id="cb5-2" title="2">   This is a paragraph with some content. Open up this example in Codepen or</a>
+<a class="sourceLine" id="cb5-3" title="3">   JSFiddle, and change some features. Try adding some CSS, such as a width</a>
+<a class="sourceLine" id="cb5-4" title="4">   for this paragraph, or adding a CSS property to the ofInterest array.</a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb5-6" title="6"><span class="kw">&lt;table</span><span class="ot"> id=</span><span class="st">&quot;regurgitation&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb5-7" title="7">  <span class="kw">&lt;thead&gt;</span></a>
+<a class="sourceLine" id="cb5-8" title="8">    <span class="kw">&lt;tr&gt;</span></a>
+<a class="sourceLine" id="cb5-9" title="9">      <span class="kw">&lt;th&gt;</span>Property<span class="kw">&lt;/th&gt;</span></a>
+<a class="sourceLine" id="cb5-10" title="10">      <span class="kw">&lt;th&gt;</span>Value<span class="kw">&lt;/th&gt;</span></a>
+<a class="sourceLine" id="cb5-11" title="11">      <span class="kw">&lt;th&gt;</span>Unit<span class="kw">&lt;/th&gt;</span></a>
+<a class="sourceLine" id="cb5-12" title="12">    <span class="kw">&lt;/tr&gt;</span></a>
+<a class="sourceLine" id="cb5-13" title="13"><span class="kw">&lt;/table&gt;</span></a></code></pre></div>
+<p>For each property of interest, we list the name of the property, use <code>.get(propertyName).value</code> to return the value, and, if the object returned by the <code>get()</code> is a <code>CSSUnitValue</code>, list the unit type we retrieve with <code>.get(propertyName).unit</code>.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="co">// get the element we&#39;re inspecting</span></a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="kw">const</span> myElement <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;p&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-3" title="3"></a>
+<a class="sourceLine" id="cb6-4" title="4"><span class="co">// get the table we&#39;ll be populating</span></a>
+<a class="sourceLine" id="cb6-5" title="5"><span class="kw">const</span> stylesTable <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#regurgitation&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-6" title="6"></a>
+<a class="sourceLine" id="cb6-7" title="7"><span class="co">// Retrieve all computed styles with computedStyleMap()</span></a>
+<a class="sourceLine" id="cb6-8" title="8"><span class="kw">const</span> allComputedStyles <span class="op">=</span> <span class="va">myElement</span>.<span class="at">computedStyleMap</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-9" title="9"></a>
+<a class="sourceLine" id="cb6-10" title="10"><span class="co">// array of properties we&#39;re interested in</span></a>
+<a class="sourceLine" id="cb6-11" title="11"><span class="kw">const</span> ofInterest <span class="op">=</span> [<span class="st">&#39;padding-top&#39;</span><span class="op">,</span> <span class="st">&#39;margin-bottom&#39;</span><span class="op">,</span> <span class="st">&#39;font-size&#39;</span><span class="op">,</span> <span class="st">&#39;font-stretch&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb6-12" title="12">     <span class="st">&#39;animation-duration&#39;</span><span class="op">,</span> <span class="st">&#39;animation-iteration-count&#39;</span><span class="op">,</span> <span class="st">&#39;width&#39;</span><span class="op">,</span> <span class="st">&#39;height&#39;</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-13" title="13"><span class="co">// iterate thru our properties of interest</span></a>
+<a class="sourceLine" id="cb6-14" title="14"><span class="cf">for</span> ( <span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">ofInterest</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span> ) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-15" title="15">      <span class="co">// create a row</span></a>
+<a class="sourceLine" id="cb6-16" title="16">    <span class="kw">const</span> row <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>( <span class="st">&#39;tr&#39;</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-17" title="17"></a>
+<a class="sourceLine" id="cb6-18" title="18">      <span class="co">// add the name of the property</span></a>
+<a class="sourceLine" id="cb6-19" title="19">    <span class="kw">const</span> cssProperty <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>( <span class="st">&#39;td&#39;</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-20" title="20">    <span class="va">cssProperty</span>.<span class="at">appendChild</span>( <span class="va">document</span>.<span class="at">createTextNode</span>( ofInterest[i] ) )<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-21" title="21">    <span class="va">row</span>.<span class="at">appendChild</span>( cssProperty )<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-22" title="22"></a>
+<a class="sourceLine" id="cb6-23" title="23">      <span class="co">// and the unitless value</span></a>
+<a class="sourceLine" id="cb6-24" title="24">    <span class="kw">const</span> cssValue <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>( <span class="st">&#39;td&#39;</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-25" title="25">      <span class="co">// shrink long floats to 1 decimal point</span></a>
+<a class="sourceLine" id="cb6-26" title="26">    <span class="kw">let</span> propVal <span class="op">=</span> <span class="va">allComputedStyles</span>.<span class="at">get</span>( ofInterest[i] ).<span class="at">value</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-27" title="27">    propVal <span class="op">=</span> ( propVal <span class="op">%</span> <span class="dv">1</span> ) <span class="op">?</span> <span class="va">propVal</span>.<span class="at">toFixed</span>( <span class="dv">1</span> ) : propVal<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-28" title="28">    <span class="va">cssValue</span>.<span class="at">appendChild</span>(<span class="va">document</span>.<span class="at">createTextNode</span>( propVal ))<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-29" title="29">    <span class="va">row</span>.<span class="at">appendChild</span>( cssValue )<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-30" title="30"></a>
+<a class="sourceLine" id="cb6-31" title="31">      <span class="co">// and the type of unit</span></a>
+<a class="sourceLine" id="cb6-32" title="32">    <span class="kw">const</span> cssUnit <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>( <span class="st">&#39;td&#39;</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-33" title="33">    <span class="va">cssUnit</span>.<span class="at">appendChild</span>( <span class="va">document</span>.<span class="at">createTextNode</span>( <span class="va">allComputedStyles</span>.<span class="at">get</span>( ofInterest[i] ).<span class="at">unit</span> ))<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-34" title="34">    <span class="va">row</span>.<span class="at">appendChild</span>( cssUnit )<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-35" title="35"></a>
+<a class="sourceLine" id="cb6-36" title="36">    <span class="co">//add the row to the table</span></a>
+<a class="sourceLine" id="cb6-37" title="37">    <span class="va">stylesTable</span>.<span class="at">appendChild</span>( row )<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-38" title="38"><span class="op">}</span></a></code></pre></div>
+<p>{{EmbedLiveSample(“CSSUnitValue_and_CSSKeywordValue”, 120, 300)}}</p>
+<p>For those of you using a non-supporting browser, the above output should look something like this:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Property</th>
+<th>Value</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>{{cssxref(“padding-top”)}}</td>
+<td>0</td>
+<td><code>px</code></td>
+</tr>
+<tr class="even">
+<td>{{cssxref(“margin-bottom”)}}</td>
+<td>16</td>
+<td><code>px</code></td>
+</tr>
+<tr class="odd">
+<td>{{cssxref(“font-size”)}}</td>
+<td>16</td>
+<td><code>px</code></td>
+</tr>
+<tr class="even">
+<td>{{cssxref(“font-stretch”)}}</td>
+<td>100</td>
+<td><code>%</code></td>
+</tr>
+<tr class="odd">
+<td>{{cssxref(“animation-duration”)}}</td>
+<td>0</td>
+<td><code>px</code></td>
+</tr>
+<tr class="even">
+<td>{{cssxref(“animation-iteration-count”)}}</td>
+<td>1</td>
+<td><em>number</em></td>
+</tr>
+<tr class="odd">
+<td>{{cssxref(“width”)}}</td>
+<td>auto</td>
+<td><em>undefined</em></td>
+</tr>
+<tr class="even">
+<td>{{cssxref(“height”)}}</td>
+<td>auto</td>
+<td><em>undefined</em></td>
+</tr>
+</tbody>
+</table>
+<p>You’ll note the {{cssxref(‘&lt;length&gt;’)}} unit returned is <code>px</code>, the {{cssxref(‘&lt;percentage&gt;’)}} unit returned is <code>percent</code>, the {{cssxref(‘&lt;time&gt;’)}} unit is <code>s</code> for ‘seconds’, and the unitless {{cssxref(‘&lt;number&gt;’)}} unit is <code>number</code>.</p>
+<p>We didn’t declare a {{cssxref(‘width’)}} or a {{cssxref(‘height’)}} for the paragraph, both of which default to <code>auto</code> and therefore return a <a href="/en-US/docs/Web/API/CSSKeywordValue"><code>CSSKeywordValue</code></a> instead of a <a href="/en-US/docs/Web/API/CSSUnitValue"><code>CSSUnitValue</code></a>. <code>CSSKeywordValue</code>s do not have a unit property, so in these cases our <code>get().unit</code> returns <code>undefined</code>.</p>
+<p>Had the <code>width</code> or <code>height</code> been defined in a <code>&lt;length&gt;</code> or <code>&lt;percent&gt;</code>, the <a href="/en-US/docs/Web/API/CSSUnitValue"><code>CSSUnitValue</code></a> unit would have been <code>px</code> or <code>percent</code> respectively.</p>
+<p>There are other types available:</p>
+<ul>
+<li>An <a href="/en-US/docs/Web/CSS/image"><code>&lt;image&gt;</code></a> will return a {{domxref(‘CSSImageValue’)}}.</li>
+<li>A <a href="/en-US/docs/Web/CSS/color_value"><code>&lt;color&gt;</code></a> would return a {{domxref(‘CSSStyleValue’)}}.</li>
+<li>A {{cssxref(‘transform’)}} returns a <code>CSSTransformValue</code>.</li>
+<li>A <a href="/en-US/docs/Web/CSS/--*">custom property</a> returns a {{domxref(‘CSSUnparsedValue’)}}.</li>
+</ul>
+<p>You can use a <code>CSSUnitValue</code> or <code>CSSKeywordValue</code> to create other objects. For example, the parameters for a {{domxref(‘CSSPositionValue’)}} is one to two <code>CSSUnitValues</code> or <code>CSSKeywordValues</code>, or one of each:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">let</span> position <span class="op">=</span> <span class="kw">new</span> <span class="at">CSSPositionValue</span>(</a>
+<a class="sourceLine" id="cb7-2" title="2">    <span class="kw">new</span> <span class="at">CSSKeywordValue</span>(<span class="st">&quot;center&quot;</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb7-3" title="3">    <span class="kw">new</span> <span class="at">CSSUnitValue</span>(<span class="dv">10</span><span class="op">,</span> <span class="st">&quot;px&quot;</span>))<span class="op">;</span></a></code></pre></div>
+<h2 id="cssstylevalue">CSSStyleValue</h2>
+<p>The <code>CSSStyleValue</code> interface of the <a href="/en-US/docs/Web/API/CSS_Object_Model#css_typed_object_model">CSS Typed Object Model API</a> is the base class of all CSS values accessible through the Typed OM API, including {{domxref(‘CSSImageValue’)}}, {{domxref(‘CSSKeywordValue’)}}, {{domxref(‘CSSNumericValue’)}}, {{domxref(‘CSSPositionValue’)}}, {{domxref(‘CSSTransformValue’)}}, and {{domxref(‘CSSUnparsedValue’)}}.</p>
+<p>It has two methods:</p>
+<ul>
+<li>{{domxref(“CSSStyleValue.parse()”)}}</li>
+<li>{{domxref(“CSSStyleValue.parseAll()”)}}</li>
+</ul>
+<p>As noted above, <code>StylePropertyMapReadOnly.get('--customProperty')</code> returns a {{domxref(‘CSSUnparsedValue’)}}. We can parse <code>CSSUnparsedValue</code> object instances with the inherited {{domxref(‘CSSStyleValue.parse()’)}} and {{domxref(‘CSSStyleValue.parseAll()’)}} methods.</p>
+<p>Let’s examine a CSS example with several custom properties, transforms, <code>calc()</code>s, and other features. We’ll take a look at what their types are by employing short JavaScript snippets outputting to {{domxref(‘console.log()’)}}:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb8-1" title="1"><span class="in">:root</span> {</a>
+<a class="sourceLine" id="cb8-2" title="2">    <span class="va">--mainColor</span>: <span class="fu">hsl(</span><span class="dv">198</span><span class="op">,</span> <span class="dv">43</span><span class="dt">%</span><span class="op">,</span> <span class="dv">42</span><span class="dt">%</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-3" title="3">    <span class="va">--black</span>: <span class="fu">hsl(</span><span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="dt">%</span><span class="op">,</span> <span class="dv">16</span><span class="dt">%</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-4" title="4">    <span class="va">--white</span>: <span class="fu">hsl(</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="dt">%</span><span class="op">,</span><span class="dv">97</span><span class="dt">%</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-5" title="5">    <span class="va">--unit</span>: <span class="dv">1.2</span><span class="dt">rem</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-6" title="6">}</a>
+<a class="sourceLine" id="cb8-7" title="7"></a>
+<a class="sourceLine" id="cb8-8" title="8">button {</a>
+<a class="sourceLine" id="cb8-9" title="9">    <span class="va">--mainColor</span>: <span class="fu">hsl(</span><span class="dv">198</span><span class="op">,</span> <span class="dv">100</span><span class="dt">%</span><span class="op">,</span> <span class="dv">66</span><span class="dt">%</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-10" title="10">    <span class="kw">display</span>: <span class="dv">inline-block</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-11" title="11">    <span class="kw">padding</span>: <span class="fu">var(</span><span class="va">--unit</span><span class="fu">)</span> <span class="fu">calc(var(</span><span class="va">--unit</span><span class="fu">)</span><span class="op">*</span><span class="dv">2</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-12" title="12">    <span class="kw">width</span>: <span class="fu">calc(</span><span class="dv">30</span><span class="dt">%</span> <span class="op">+</span> <span class="dv">20</span><span class="dt">px</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-13" title="13">    <span class="kw">background</span>: <span class="dv">no-repeat</span> <span class="dv">5</span><span class="dt">%</span> <span class="dv">center</span> <span class="fu">url(</span><span class="st">magicwand.png</span><span class="fu">)</span> <span class="fu">var(</span><span class="va">--mainColor</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-14" title="14">    <span class="kw">border</span>: <span class="dv">4</span><span class="dt">px</span> <span class="dv">solid</span> <span class="fu">var(</span><span class="va">--mainColor</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-15" title="15">    <span class="kw">border-radius</span>: <span class="dv">2</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-16" title="16">    <span class="kw">font-size</span>: <span class="fu">calc(var(</span><span class="va">--unit</span><span class="fu">)</span><span class="op">*</span><span class="dv">2</span><span class="fu">)</span><span class="op">;</span> <span class="kw">color</span>: <span class="fu">var(</span><span class="va">--white</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-17" title="17">    <span class="kw">cursor</span>: <span class="dv">pointer</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-18" title="18">    <span class="kw">transform</span>: <span class="fu">scale(</span><span class="dv">0.95</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-19" title="19">}</a></code></pre></div>
+<p>Let’s add the class to a button (a button which does nothing).</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">&lt;button&gt;</span>Styled Button<span class="kw">&lt;/button&gt;</span></a></code></pre></div>
+<p>```js hidden // get the element const button = document.querySelector( ‘button’ );</p>
+<p>// Retrieve all computed styles with computedStyleMap() const allComputedStyles = button.computedStyleMap();</p>
+<p>// CSSMathSum Example let btnWidth = allComputedStyles.get(‘width’)</p>
+<p>console.log( btnWidth ); // CSSMathSum console.log( btnWidth.values ); // CSSNumericArray {0: CSSUnitValue, 1: CSSUnitValue, length: 2} console.log( btnWidth.operator ); // ‘sum’</p>
+<p>// CSSTransformValue let transform = allComputedStyles.get(‘transform’);</p>
+<p>console.log( transform ); // CSSTransformValue {0: CSSScale, 1: CSSTranslate, length: 2, is2D: true} console.log( transform.length ); // 1 console.log( transform[0] ); // CSSScale {x: CSSUnitValue, y: CSSUnitValue, z: CSSUnitValue, is2D: true} console.log( transform[0].x ); // CSSUnitValue {value: 0.95, unit: “number”} console.log( transform[0].y ); // CSSUnitValue {value: 0.95, unit: “number”} console.log( transform[0].z ); // CSSUnitValue {value: 1, unit: “number”} console.log( transform.is2D ); // true</p>
+<p>// CSSImageValue let bgImage = allComputedStyles.get(‘background-image’);</p>
+<p>console.log( bgImage ); // CSSImageValue console.log( bgImage.toString() ); // url(“magicwand.png”)</p>
+<p>// CSSUnparsedValue let unit = allComputedStyles.get(‘–unit’);</p>
+<p>console.log( unit ) //</p>
+<p>let parsedUnit = CSSNumericValue.parse( unit ); console.log( parsedUnit ); console.log( parsedUnit.unit ); console.log( parsedUnit.value ); ```</p>
+<p>We grab our <code>StylePropertyMapReadOnly</code> with the following JavaScript:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">const</span> allComputedStyles <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;button&#39;</span>).<span class="at">computedStyleMap</span>()<span class="op">;</span></a></code></pre></div>
+<p>The following examples reference <code>allComputedStyles</code>:</p>
+<h3 id="cssunparsedvalue">CSSUnparsedValue</h3>
+<p>The {{domxref(‘CSSUnparsedValue’)}} represents <a href="/en-US/docs/Web/CSS/Using_CSS_custom_properties">custom properties</a>:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1"><span class="co">// CSSUnparsedValue</span></a>
+<a class="sourceLine" id="cb11-2" title="2"><span class="kw">let</span> unit <span class="op">=</span> <span class="va">allComputedStyles</span>.<span class="at">get</span>(<span class="st">&#39;--unit&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-3" title="3"></a>
+<a class="sourceLine" id="cb11-4" title="4"><span class="va">console</span>.<span class="at">log</span>( unit )    <span class="co">// CSSUnparsedValue {0: &quot; 1.2rem&quot;, length: 1}</span></a>
+<a class="sourceLine" id="cb11-5" title="5"><span class="va">console</span>.<span class="at">log</span> (unit[<span class="dv">0</span>] ) <span class="co">// &quot; 1.2rem&quot;</span></a></code></pre></div>
+<p>When we invoke <code>get()</code>, a custom property of type <code>CSSUnparsedValue</code> is returned. Note the space before the <code>1.2rem</code>. To get a unit and value, we need a <code>CSSUnitValue</code>, which we can retrieve using the <code>CSSStyleValue.parse()</code> method on the <code>CSSUnparsedValue</code>.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb12-1" title="1"><span class="kw">let</span> parsedUnit <span class="op">=</span> <span class="va">CSSNumericValue</span>.<span class="at">parse</span>( unit )<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-2" title="2"><span class="va">console</span>.<span class="at">log</span>( parsedUnit )<span class="op">;</span>        <span class="co">// CSSUnitValue {value: 1.2, unit: &quot;rem&quot;}</span></a>
+<a class="sourceLine" id="cb12-3" title="3"><span class="va">console</span>.<span class="at">log</span>( <span class="va">parsedUnit</span>.<span class="at">unit</span> )<span class="op">;</span>   <span class="co">// &quot;rem&quot;</span></a>
+<a class="sourceLine" id="cb12-4" title="4"><span class="va">console</span>.<span class="at">log</span>( <span class="va">parsedUnit</span>.<span class="at">value</span> )<span class="op">;</span>  <span class="co">// 1.2</span></a></code></pre></div>
+<h3 id="cssmathsum">CSSMathSum</h3>
+<p>Although the <a href="/en-US/docs/Web/HTML/Element/button"><code>&lt;button&gt;</code></a> element is an inline element by default, we’ve added <a href="/en-US/docs/Web/CSS/CSS_Display"><code>display: inline-block;</code></a> to enable sizing. In our CSS we have <code>width: calc(30% + 20px);</code>, which is a <a href="/en-US/docs/Web/CSS/calc()"><code>calc()</code></a> function to define the width.</p>
+<p>When we <code>get()</code> the <code>width</code>, we get a <a href="/en-US/docs/Web/API/CSSMathSum"><code>CSSMathSum</code></a> returned. {{domxref(‘CSSMathSum.values’)}} is a {{domxref(‘CSSNumericArray’)}} with 2 <code>CSSUnitValues</code>.</p>
+<p>The value of {{domxref(‘CSSMathValue.operator’)}} is <code>sum</code>:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb13-1" title="1"><span class="kw">let</span> btnWidth <span class="op">=</span> <span class="va">allComputedStyles</span>.<span class="at">get</span>(<span class="st">&#39;width&#39;</span>)</a>
+<a class="sourceLine" id="cb13-2" title="2"></a>
+<a class="sourceLine" id="cb13-3" title="3"><span class="va">console</span>.<span class="at">log</span>( btnWidth )<span class="op">;</span>             <span class="co">// CSSMathSum</span></a>
+<a class="sourceLine" id="cb13-4" title="4"><span class="va">console</span>.<span class="at">log</span>( <span class="va">btnWidth</span>.<span class="at">values</span> )<span class="op">;</span>      <span class="co">// CSSNumericArray {0: CSSUnitValue, 1: CSSUnitValue, length: 2}</span></a>
+<a class="sourceLine" id="cb13-5" title="5"><span class="va">console</span>.<span class="at">log</span>( <span class="va">btnWidth</span>.<span class="at">operator</span> )<span class="op">;</span>    <span class="co">// &#39;sum&#39;</span></a></code></pre></div>
+<h3 id="csstransformvalue-with-cssscale">CSSTransformValue with CSSScale</h3>
+<p>The <a href="/en-US/docs/Web/CSS/CSS_Display"><code>display: inline-block;</code></a> also enables transforming. In our CSS we have <code>transform: scale(0.95);</code>, which is a {{cssxref(‘transform’)}} function.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb14-1" title="1"><span class="kw">let</span> transform <span class="op">=</span> <span class="va">allComputedStyles</span>.<span class="at">get</span>(<span class="st">&#39;transform&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-2" title="2"></a>
+<a class="sourceLine" id="cb14-3" title="3"><span class="va">console</span>.<span class="at">log</span>( transform )<span class="op">;</span>        <span class="co">// CSSTransformValue {0: CSSScale, 1: CSSTranslate, length: 2, is2D: true}</span></a>
+<a class="sourceLine" id="cb14-4" title="4"><span class="va">console</span>.<span class="at">log</span>( <span class="va">transform</span>.<span class="at">length</span> )<span class="op">;</span> <span class="co">// 1</span></a>
+<a class="sourceLine" id="cb14-5" title="5"><span class="va">console</span>.<span class="at">log</span>( transform[<span class="dv">0</span>] )<span class="op">;</span>     <span class="co">// CSSScale {x: CSSUnitValue, y: CSSUnitValue, z: CSSUnitValue, is2D: true}</span></a>
+<a class="sourceLine" id="cb14-6" title="6"><span class="va">console</span>.<span class="at">log</span>( transform[<span class="dv">0</span>].<span class="at">x</span> )<span class="op">;</span>   <span class="co">// CSSUnitValue {value: 0.95, unit: &quot;number&quot;}</span></a>
+<a class="sourceLine" id="cb14-7" title="7"><span class="va">console</span>.<span class="at">log</span>( transform[<span class="dv">0</span>].<span class="at">y</span> )<span class="op">;</span>      <span class="co">// CSSUnitValue {value: 0.95, unit: &quot;number&quot;}</span></a>
+<a class="sourceLine" id="cb14-8" title="8"><span class="va">console</span>.<span class="at">log</span>( transform[<span class="dv">0</span>].<span class="at">z</span> )<span class="op">;</span>   <span class="co">// CSSUnitValue {value: 1, unit: &quot;number&quot;}</span></a>
+<a class="sourceLine" id="cb14-9" title="9"><span class="va">console</span>.<span class="at">log</span>( <span class="va">transform</span>.<span class="at">is2D</span> )<span class="op">;</span>   <span class="co">// true</span></a></code></pre></div>
+<p>When we <code>get()</code> the <code>transform</code> property, we get a {{domxref(‘CSSTransformValue’)}}. We can query the length (or number) of transform functions with the .<code>length</code> property.</p>
+<p>Seen as we have a length of <code>1</code>, which represents a single transform function, we log the first object and get a <code>CSSScale</code> object. We get <code>CSSUnitValues</code> when we query the <code>x</code>, <code>y</code>, and <code>z</code> scaling. The readonly <code>CSSScale.is2D</code> property is <code>true</code> in this scenario.</p>
+<p>Had we added <code>translate()</code>, <code>skew()</code>, and <code>rotate()</code> transform functions, the length would have been <code>4</code>, each with their own <code>x</code>, <code>y</code>, <code>z</code> values, and each with an <code>.is2D</code> property. For example, had we included <code>transform: translate3d(1px, 1px, 3px)</code>, the <code>.get('transform')</code> would have returned a <code>CSSTranslate</code> with <code>CSSUnitValues</code> for <code>x</code>, <code>y</code>, and <code>z</code>, and the readonly .i<code>s2D</code> property would have been <code>false</code>.</p>
+<h3 id="cssimagevalue">CSSImageValue</h3>
+<p>Our button has one background image: a magic wand.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb15-1" title="1"><span class="kw">let</span> bgImage <span class="op">=</span> <span class="va">allComputedStyles</span>.<span class="at">get</span>(<span class="st">&#39;background-image&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb15-2" title="2"></a>
+<a class="sourceLine" id="cb15-3" title="3"><span class="va">console</span>.<span class="at">log</span>( bgImage )<span class="op">;</span>             <span class="co">// CSSImageValue</span></a>
+<a class="sourceLine" id="cb15-4" title="4"><span class="va">console</span>.<span class="at">log</span>( <span class="va">bgImage</span>.<span class="at">toString</span>() )<span class="op">;</span>  <span class="co">// url(&quot;magicwand.png&quot;)</span></a></code></pre></div>
+<p>When we <code>get()</code> the <code>'background-image'</code>, a {{domxref(‘CSSImageValue’)}} is returned. While we used the CSS {{cssxref(‘background’)}} shorthand property, the inherited {{domxref(‘Object.prototype.toString()’)}} method, shows we returned only the image, ’<code>url("magicwand.png")'</code>.</p>
+<p>Notice that the value returned is the absolute path to the image — this is returned even if the original <code>url()</code> value was relative. Had the background image been a gradient or multiple background images, <code>.get('background-image')</code> would have returned a <code>CSSStyleValue</code>. The <code>CSSImageValue</code> is returned only if there is a single image, and only if that single image declaration is a URL.</p>
+<h3 id="summary">Summary</h3>
+<p>This should get you started with understanding the CSS Typed OM. Take a look at all the <a href="/en-US/docs/Web/API/CSS_Typed_OM_API/Guide">CSS Typed OM</a> interfaces to learn more.</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/CSS_Painting_API/Guide">Using the CSS Painting API</a></li>
+</ul>

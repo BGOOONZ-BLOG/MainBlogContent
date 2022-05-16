@@ -1,0 +1,48 @@
+<p>{{APIRef(“Web Audio API”)}}</p>
+<p>The <a href="/en-US/docs/Web/API/Web_Audio_API">Web Audio API’s</a> {{domxref(“AudioParam”)}} interface property <strong><code>value</code></strong> gets or sets the value of this {{domxref(“AudioParam”)}} at the current time. Initially, the value is set to {{domxref(“AudioParam.defaultValue”)}}.</p>
+<p>Setting <code>value</code> has the same effect as calling {{domxref(“AudioParam.setValueAtTime”)}} with the time returned by the <code>AudioContext</code>’s {{domxref(“BaseAudioContext/currentTime”, “currentTime”)}} property.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> curValue <span class="op">=</span> <span class="va">audioParam</span>.<span class="at">value</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="va">audioParam</span>.<span class="at">value</span> <span class="op">=</span> newValue<span class="op">;</span></a></code></pre></div>
+<h3 id="value">Value</h3>
+<p>A floating-point {{jsxref(“Number”)}} indicating the parameter’s value as of the current time. This value will be between the values specified by the {{domxref(“AudioParam.minValue”, “minValue”)}} and {{domxref(“AudioParam.maxValue”, “maxValue”)}} properties.</p>
+<h2 id="usage-notes">Usage notes</h2>
+<h3 id="value-precision-and-variation">Value precision and variation</h3>
+<p>The data type used internally to store <code>value</code> is a single-precision (32-bit) floating point number, while JavaScript uses 64-bit double-precision floating point numbers. As a result, the value you read from the <code>value</code> property may not always exactly equal what you set it to.</p>
+<p>Consider this example:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> source <span class="op">=</span> <span class="kw">new</span> <span class="at">AudioBufferSourceNode</span>(...)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">const</span> rate <span class="op">=</span> <span class="fl">5.3</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="va">source</span>.<span class="va">playbackRate</span>.<span class="at">value</span> <span class="op">=</span> rate<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="va">console</span>.<span class="at">log</span>(<span class="va">source</span>.<span class="va">playbackRate</span>.<span class="at">value</span> <span class="op">===</span> rate)<span class="op">;</span></a></code></pre></div>
+<p>The log output will be <code>false</code>, because the playback rate parameter, <code>rate</code>, was converted to the 32-bit floating-point number closest to 5.3, which yields 5.300000190734863. One solution is to use the {{jsxref(“Math.fround()”)}} method, which returns the single-precision value equivalent to the 64-bit JavaScript value specified—when setting <code>value</code>, like this:</p>
+<pre><code>const source = new AudioBufferSourceNode(...);
+const rate = Math.fround(5.3);
+source.playbackRate.value = rate;
+console.log(source.playbackRate.value === rate);</code></pre>
+<p>In this case, the log output will be <code>true</code>.</p>
+<h3 id="value-of-a-property-which-is-changing-over-time">Value of a property which is changing over time</h3>
+<p>The <code>value</code> of an <code>AudioParam</code> can either be fixed or can vary over time. This is reflected by the <code>value</code> getter, which returns the value of the parameter as of the audio rendering engine’s most recent <strong>render quantum</strong>, or moment at which audio buffers are processed and updated. In addition to processing audio buffers, each render quantum updates the <code>value</code> of each <code>AudioParam</code> as needed given the current time and any established time-based parameter value changes.</p>
+<p>Upon first creating the parameter, its value is set to its default value, given by {{domxref(“AudioParam.defaultValue”)}}. This is the parameter’s value at a time of 0.0 seconds, and will remain the parameter’s value until the first render quantum in which the value is altered.</p>
+<p>During each render quantum, the browser does the following things related to managing the value of a parameter:</p>
+<ul>
+<li>If the <code>value</code> setter has been used, the parameter’s value is changed to the value given.</li>
+<li>If the current time equals or exceeds the time specified by a previous call to {{domxref(“AudioParam.setValueAtTime”, “setValueAtTime()”)}}, the <code>value</code> is changed to the value passed into <code>setValueAtTime()</code>.</li>
+<li>If any graduated or ramped value changing methods have been called and the current time is within the time range over which the graduated change should occur, the value is updated based on the appropriate algorithm. These ramped or graduated value-changing methods include {{domxref(“AudioParam.linearRampToValueAtTime”, “linearRampToValueAtTime()”)}}, {{domxref(“AudioParam.setTargetAtTime”, “setTargetAtTime()”)}}, and {{domxref(“AudioParam.setValueCurveAtTime”, “setValueCurveAtTime()”)}}.</li>
+</ul>
+<p>Thus, the <code>value</code> of a parameter is maintained to accurately reflect the state of the parameter over time.</p>
+<h2 id="example">Example</h2>
+<p>This example instantly changes the volume of a {{domxref(“GainNode”)}} to 40%.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">const</span> audioCtx <span class="op">=</span> <span class="kw">new</span> <span class="at">AudioContext</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="kw">const</span> gainNode <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createGain</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="va">gainNode</span>.<span class="va">gain</span>.<span class="at">value</span> <span class="op">=</span> <span class="fl">0.4</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="co">// which is identical to:</span></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="va">gainNode</span>.<span class="va">gain</span>.<span class="at">setValueAtTime</span>(<span class="fl">0.4</span><span class="op">,</span> <span class="va">audioCtx</span>.<span class="at">currentTime</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<p>When changing the gain value of a {{domxref(“GainNode”)}}, Google Chrome prior to version 64 (January 2018) would perform a smooth interpolation to prevent dezippering. Starting with version 64, the value is changed instantly to bring it in line with the Web Audio spec. See <a href="https://www.chromestatus.com/feature/5287995770929152">Chrome Platform Status</a> for details.</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API">Using the Web Audio API</a></li>
+</ul>

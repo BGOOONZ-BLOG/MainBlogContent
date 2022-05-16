@@ -1,0 +1,291 @@
+<p>{{DefaultAPISidebar(“Gamepad API”)}}</p>
+<p>HTML5 introduced many of the necessary components for rich, interactive game development. Technologies like <code>&lt;canvas&gt;</code>, WebGL, <code>&lt;audio&gt;</code>, and <code>&lt;video&gt;</code>, along with JavaScript implementations, have matured to the point where they can now support many tasks previously requiring native code. The Gamepad API is a way for developers and designers to access and use gamepads and other game controllers.</p>
+<p>The <a href="/en-US/docs/Web/API/Gamepad_API">Gamepad API</a> introduces new events on the {{ domxref(“Window”) }} object for reading gamepad and controller (hereby referred to as <em>gamepad</em>) state. In addition to these events, the API also adds a {{ domxref(“Gamepad”) }} object, which you can use to query the state of a connected gamepad, and a {{ domxref(“navigator.getGamepads()”) }} method which you can use to get a list of gamepads known to the page.</p>
+<h2 id="connecting-to-a-gamepad">Connecting to a gamepad</h2>
+<p>When a new gamepad is connected to the computer, the focused page first receives a {{ domxref(“Window/gamepadconnected_event”, “gamepadconnected”) }} event. If a gamepad is already connected when the page loaded, the {{ domxref(“Window/gamepadconnected_event”, “gamepadconnected”) }} event is dispatched to the focused page when the user presses a button or moves an axis.</p>
+<blockquote>
+<p><strong>Note:</strong> In Firefox, gamepads are only exposed to a page when the user interacts with one with the page visible. This helps prevent gamepads being used for fingerprinting the user. Once one gamepad has been interacted with, other gamepads that are connected will automatically be visible.</p>
+</blockquote>
+<p>You can use {{domxref(“Window/gamepadconnected_event”, “gamepadconnected”)}} like this:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">window</span>.<span class="at">addEventListener</span>(<span class="st">&quot;gamepadconnected&quot;</span><span class="op">,</span> <span class="kw">function</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Gamepad connected at index %d: %s. %d buttons, %d axes.&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb1-3" title="3">    <span class="va">e</span>.<span class="va">gamepad</span>.<span class="at">index</span><span class="op">,</span> <span class="va">e</span>.<span class="va">gamepad</span>.<span class="at">id</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb1-4" title="4">    <span class="va">e</span>.<span class="va">gamepad</span>.<span class="va">buttons</span>.<span class="at">length</span><span class="op">,</span> <span class="va">e</span>.<span class="va">gamepad</span>.<span class="va">axes</span>.<span class="at">length</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>Each gamepad has a unique ID associated with it, which is available on the event’s {{domxref(“GamepadEvent.gamepad”, “gamepad”)}} property.</p>
+<h2 id="disconnecting-a-gamepad">Disconnecting a gamepad</h2>
+<p>When a gamepad is disconnected, and if a page has previously received data for that gamepad (e.g. {{ domxref(“Window/gamepadconnected_event”, “gamepadconnected”) }}), a second event is dispatched to the focused window, {{ event(“gamepaddisconnected”) }}:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">window</span>.<span class="at">addEventListener</span>(<span class="st">&quot;gamepaddisconnected&quot;</span><span class="op">,</span> <span class="kw">function</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Gamepad disconnected from index %d: %s&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-3" title="3">    <span class="va">e</span>.<span class="va">gamepad</span>.<span class="at">index</span><span class="op">,</span> <span class="va">e</span>.<span class="va">gamepad</span>.<span class="at">id</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>The gamepad’s {{domxref(“Gamepad.index”, “index”)}} property will be unique per-device connected to the system, even if multiple controllers of the same type are used. The <code>index</code> property also functions as the index into the {{jsxref(“Array”)}} returned by {{ domxref(“Navigator.getGamepads()”) }}.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">var</span> gamepads <span class="op">=</span> <span class="op">{};</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw">function</span> <span class="at">gamepadHandler</span>(event<span class="op">,</span> connecting) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="kw">var</span> gamepad <span class="op">=</span> <span class="va">event</span>.<span class="at">gamepad</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">  <span class="co">// Note:</span></a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="co">// gamepad === navigator.getGamepads()[gamepad.index]</span></a>
+<a class="sourceLine" id="cb3-7" title="7"></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="cf">if</span> (connecting) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-9" title="9">    gamepads[<span class="va">gamepad</span>.<span class="at">index</span>] <span class="op">=</span> gamepad<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10">  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-11" title="11">    <span class="kw">delete</span> gamepads[<span class="va">gamepad</span>.<span class="at">index</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-12" title="12">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-13" title="13"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-14" title="14"></a>
+<a class="sourceLine" id="cb3-15" title="15"><span class="va">window</span>.<span class="at">addEventListener</span>(<span class="st">&quot;gamepadconnected&quot;</span><span class="op">,</span> <span class="kw">function</span>(e) <span class="op">{</span> <span class="at">gamepadHandler</span>(e<span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span> <span class="op">},</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-16" title="16"><span class="va">window</span>.<span class="at">addEventListener</span>(<span class="st">&quot;gamepaddisconnected&quot;</span><span class="op">,</span> <span class="kw">function</span>(e) <span class="op">{</span> <span class="at">gamepadHandler</span>(e<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span> <span class="op">},</span> <span class="kw">false</span>)<span class="op">;</span></a></code></pre></div>
+<p>This previous example also demonstrates how the <code>gamepad</code> property can be held after the event has completed — a technique we will use for device state querying later.</p>
+<h2 id="querying-the-gamepad-object">Querying the Gamepad object</h2>
+<p>As you can see, the <strong>gamepad</strong> events discussed above include a <code>gamepad</code> property on the event object, which returns a {{ domxref(“Gamepad”) }} object. We can use this in order to determine which gamepad (i.e., its ID) had caused the event, since multiple gamepads might be connected at once. We can do much more with the {{ domxref(“Gamepad”) }} object, including holding a reference to it and querying it to find out which buttons and axes are being pressed at any one time. Doing so is often desirable for games or other interactive web pages that need to know the state of a gamepad now vs. the next time an event fires.</p>
+<p>Performing such checks tends to involve using the {{ domxref(“Gamepad”) }} object in conjunction with an animation loop (e.g., {{ domxref(“Window.requestAnimationFrame”,“requestAnimationFrame”) }}), where developers want to make decisions for the current frame based on the state of the gamepad or gamepads.</p>
+<p>The {{domxref(“Navigator.getGamepads()”)}} method returns an array of all devices currently visible to the webpage, as {{ domxref(“Gamepad”) }} objects (the first value is always <code>null</code>, so <code>null</code> will be returned if there are no gamepads connected.) This can then be used to get the same information. For example, the first code example above you be rewritten as shown below:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="va">window</span>.<span class="at">addEventListener</span>(<span class="st">&quot;gamepadconnected&quot;</span><span class="op">,</span> <span class="kw">function</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="kw">var</span> gp <span class="op">=</span> <span class="va">navigator</span>.<span class="at">getGamepads</span>()[<span class="va">e</span>.<span class="va">gamepad</span>.<span class="at">index</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Gamepad connected at index %d: %s. %d buttons, %d axes.&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb4-4" title="4">    <span class="va">gp</span>.<span class="at">index</span><span class="op">,</span> <span class="va">gp</span>.<span class="at">id</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb4-5" title="5">    <span class="va">gp</span>.<span class="va">buttons</span>.<span class="at">length</span><span class="op">,</span> <span class="va">gp</span>.<span class="va">axes</span>.<span class="at">length</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-6" title="6"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>The {{ domxref(“Gamepad”) }} object’s properties are as follows:</p>
+<ul>
+<li><code>id</code>: A string containing some information about the controller. This is not strictly specified, but in Firefox it will contain three pieces of information separated by dashes (<code>-</code>): two 4-digit hexadecimal strings containing the USB vendor and product id of the controller, and the name of the controller as provided by the driver. This information is intended to allow you to find a mapping for the controls on the device as well as display useful feedback to the user.</li>
+<li><code>index</code>: An integer that is unique for each gamepad currently connected to the system. This can be used to distinguish multiple controllers. Note that disconnecting a device and then connecting a new device may reuse the previous index.</li>
+<li><code>mapping</code>: A string indicating whether the browser has remapped the controls on the device to a known layout. Currently there is only one supported known layout — the <a href="https://dvcs.w3.org/hg/gamepad/raw-file/default/gamepad.html#remapping">standard gamepad</a>. If the browser is able to map controls on the device to that layout the <code>mapping</code> property will be set to the string <code>standard</code>.</li>
+<li><code>connected</code>: A boolean indicating whether the gamepad is still connected to the system. If this is so the value is <code>True</code>; if not, it is <code>False</code>.</li>
+<li><p><code>buttons</code>: An array of {{ domxref(“GamepadButton”) }} objects representing the buttons present on the device. Each {{ domxref(“GamepadButton”) }} has a <code>pressed</code> and a <code>value</code> property:</p>
+<ul>
+<li>The <code>pressed</code> property is a boolean indicating whether the button is currently pressed (<code>true</code>) or unpressed (<code>false</code>).</li>
+<li>The <code>value</code> property is a floating point value used to enable representing analog buttons, such as the triggers on many modern gamepads. The values are normalized to the range 0.0..1.0, with 0.0 representing a button that is not pressed, and 1.0 representing a button that is fully pressed.</li>
+</ul></li>
+<li><code>axes</code>: An array representing the controls with axes present on the device (e.g. analog thumb sticks). Each entry in the array is a floating point value in the range -1.0 - 1.0, representing the axis position from the lowest value (-1.0) to the highest value (1.0).</li>
+<li><p><code>timestamp</code>: This returns a {{ domxref(“DOMHighResTimeStamp”) }} representing the last time the data for this gamepad was updated, allowing developers to determine if the <code>axes</code> and <code>button</code> data have been updated from the hardware. The value must be relative to the <code>navigationStart</code> attribute of the {{ domxref(“PerformanceTiming”) }} interface. Values are monotonically increasing, meaning that they can be compared to determine the ordering of updates, as newer values will always be greater than or equal to older values. Note that this property is not currently supported in Firefox.</p></li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> The Gamepad object is available on the {{ domxref(“Window/gamepadconnected_event”, “gamepadconnected”) }} event rather than the {{ domxref(“Window”) }} object itself, for security reasons. Once we have a reference to it, we can query its properties for information about the current state of the gamepad. Behind the scenes, this object will be updated every time the gamepad’s state changes.</p>
+</blockquote>
+<h3 id="using-button-information">Using button information</h3>
+<p>Let’s look at a simple example that displays connection information for one gamepad (it ignores subsequent gamepad connections) and allows you to move a ball around the screen using the four gamepad buttons on the right hand side of the gamepad. You can <a href="https://chrisdavidmills.github.io/gamepad-buttons/">view the demo live</a>, and <a href="https://github.com/chrisdavidmills/gamepad-buttons/tree/master">find the source code</a> on Github.</p>
+<p>To start with, we declare some variables: The <code>gamepadInfo</code> paragraph that the connection info is written into, the <code>ball</code> that we want to move, the <code>start</code> variable that acts as the ID for <code>requestAnimation Frame</code>, the <code>a</code> and <code>b</code> variables that act as position modifiers for moving the ball, and the shorthand variables that will be used for the {{ domxref(“Window.requestAnimationFrame”, “requestAnimationFrame()”) }} and {{ domxref(“Window.cancelAnimationFrame”, “cancelAnimationFrame()”) }} cross browser forks.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">var</span> gamepadInfo <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;gamepad-info&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="kw">var</span> ball <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;ball&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="kw">var</span> start<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="kw">var</span> a <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="kw">var</span> b <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></a></code></pre></div>
+<p>Next we use the {{domxref(“Window/gamepadconnected_event”, “gamepadconnected”)}} event to check for a gamepad being connected. When one is connected, we grab the gamepad using {{ domxref(“Navigator.getGamepads()”) }}<code>[0]</code>, print information about the gamepad into our gamepad info <code>div</code>, and fire the <code>gameLoop()</code> function that starts the whole ball movement process up.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="va">window</span>.<span class="at">addEventListener</span>(<span class="st">&quot;gamepadconnected&quot;</span><span class="op">,</span> <span class="kw">function</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="kw">var</span> gp <span class="op">=</span> <span class="va">navigator</span>.<span class="at">getGamepads</span>()[<span class="va">e</span>.<span class="va">gamepad</span>.<span class="at">index</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-3" title="3">  <span class="va">gamepadInfo</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="st">&quot;Gamepad connected at index &quot;</span> <span class="op">+</span> <span class="va">gp</span>.<span class="at">index</span> <span class="op">+</span> <span class="st">&quot;: &quot;</span> <span class="op">+</span> <span class="va">gp</span>.<span class="at">id</span> <span class="op">+</span> <span class="st">&quot;. It has &quot;</span> <span class="op">+</span> <span class="va">gp</span>.<span class="va">buttons</span>.<span class="at">length</span> <span class="op">+</span> <span class="st">&quot; buttons and &quot;</span> <span class="op">+</span> <span class="va">gp</span>.<span class="va">axes</span>.<span class="at">length</span> <span class="op">+</span> <span class="st">&quot; axes.&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-4" title="4"></a>
+<a class="sourceLine" id="cb6-5" title="5">  <span class="at">gameLoop</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>Now we use the {{domxref(“Window/gamepaddisconnected_event”, “gamepaddisconnected”)}} event to check if the gamepad is disconnected again. If so, we stop the {{DOMxRef(“Window.requestAnimationFrame”, “requestAnimationFrame()”)}} loop (see below) and revert the gamepad information back to what it was originally.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="va">window</span>.<span class="at">addEventListener</span>(<span class="st">&quot;gamepaddisconnected&quot;</span><span class="op">,</span> <span class="kw">function</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="va">gamepadInfo</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="st">&quot;Waiting for gamepad.&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb7-3" title="3"></a>
+<a class="sourceLine" id="cb7-4" title="4">  <span class="at">cancelRequestAnimationFrame</span>(start)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-5" title="5"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>Chrome does things differently here. Instead of constantly storing the gamepad’s latest state in a variable it only stores a snapshot, so to do the same thing in Chrome you have to keep polling it and then only use the {{ domxref(“Gamepad”) }} object in code when it is available. We have done this below using {{ domxref(“setInterval()”) }}; once the object is available the gamepad info is outputted, the game loop is started, and the interval is cleared using {{ domxref(“clearInterval”) }}. Note that in older versions of Chrome {{ domxref(“Navigator.getGamepads()”) }} is implemented with a <code>webkit</code> prefix. We attempt to detect and handle both the prefixed version and the standard version of the function for backwards compatibility.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">var</span> interval<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-2" title="2"></a>
+<a class="sourceLine" id="cb8-3" title="3"><span class="cf">if</span> (<span class="op">!</span>(<span class="st">&#39;ongamepadconnected&#39;</span> <span class="kw">in</span> window)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-4" title="4">  <span class="co">// No gamepad events available, poll instead.</span></a>
+<a class="sourceLine" id="cb8-5" title="5">  interval <span class="op">=</span> <span class="at">setInterval</span>(pollGamepads<span class="op">,</span> <span class="dv">500</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-6" title="6"><span class="op">}</span></a>
+<a class="sourceLine" id="cb8-7" title="7"></a>
+<a class="sourceLine" id="cb8-8" title="8"><span class="kw">function</span> <span class="at">pollGamepads</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-9" title="9">  <span class="kw">var</span> gamepads <span class="op">=</span> <span class="va">navigator</span>.<span class="at">getGamepads</span> <span class="op">?</span> <span class="va">navigator</span>.<span class="at">getGamepads</span>() : (<span class="va">navigator</span>.<span class="at">webkitGetGamepads</span> <span class="op">?</span> <span class="va">navigator</span>.<span class="at">webkitGetGamepads</span> : [])<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-10" title="10">  <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">gamepads</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-11" title="11">    <span class="kw">var</span> gp <span class="op">=</span> gamepads[i]<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-12" title="12">    <span class="cf">if</span> (gp) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-13" title="13">      <span class="va">gamepadInfo</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="st">&quot;Gamepad connected at index &quot;</span> <span class="op">+</span> <span class="va">gp</span>.<span class="at">index</span> <span class="op">+</span> <span class="st">&quot;: &quot;</span> <span class="op">+</span> <span class="va">gp</span>.<span class="at">id</span> <span class="op">+</span></a>
+<a class="sourceLine" id="cb8-14" title="14">        <span class="st">&quot;. It has &quot;</span> <span class="op">+</span> <span class="va">gp</span>.<span class="va">buttons</span>.<span class="at">length</span> <span class="op">+</span> <span class="st">&quot; buttons and &quot;</span> <span class="op">+</span> <span class="va">gp</span>.<span class="va">axes</span>.<span class="at">length</span> <span class="op">+</span> <span class="st">&quot; axes.&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-15" title="15">      <span class="at">gameLoop</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-16" title="16">      <span class="at">clearInterval</span>(interval)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-17" title="17">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb8-18" title="18">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb8-19" title="19"><span class="op">}</span></a></code></pre></div>
+<p>Now on to the main game loop. In each execution of the loop we check if one of four buttons is being pressed; if so, we update the values of the <code>a</code> and <code>b</code> movement variables appropriately, then update the {{ cssxref(“left”) }} and {{ cssxref(“top”) }} properties, changing their values to the current values of <code>a</code> and <code>b</code> respectively. This has the effect of moving the ball around the screen.  In current versions of Chrome (version 34 as of this writing) the button values are stored as an array of double values, instead of {{ domxref(“GamepadButton”) }} objects. This is fixed in development versions.</p>
+<p>After all this is done, we use our <code>requestAnimationFrame()</code> to request the next animation frame, running <code>gameLoop()</code> again.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">function</span> <span class="at">buttonPressed</span>(b) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-2" title="2">  <span class="cf">if</span> (<span class="kw">typeof</span>(b) <span class="op">==</span> <span class="st">&quot;object&quot;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-3" title="3">    <span class="cf">return</span> <span class="va">b</span>.<span class="at">pressed</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-4" title="4">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb9-5" title="5">  <span class="cf">return</span> b <span class="op">==</span> <span class="fl">1.0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-6" title="6"><span class="op">}</span></a>
+<a class="sourceLine" id="cb9-7" title="7"></a>
+<a class="sourceLine" id="cb9-8" title="8"><span class="kw">function</span> <span class="at">gameLoop</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-9" title="9">  <span class="kw">var</span> gamepads <span class="op">=</span> <span class="va">navigator</span>.<span class="at">getGamepads</span> <span class="op">?</span> <span class="va">navigator</span>.<span class="at">getGamepads</span>() : (<span class="va">navigator</span>.<span class="at">webkitGetGamepads</span> <span class="op">?</span> <span class="va">navigator</span>.<span class="at">webkitGetGamepads</span> : [])<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-10" title="10">  <span class="cf">if</span> (<span class="op">!</span>gamepads) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-11" title="11">    <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-12" title="12">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb9-13" title="13"></a>
+<a class="sourceLine" id="cb9-14" title="14">  <span class="kw">var</span> gp <span class="op">=</span> gamepads[<span class="dv">0</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-15" title="15">  <span class="cf">if</span> (<span class="at">buttonPressed</span>(<span class="va">gp</span>.<span class="at">buttons</span>[<span class="dv">0</span>])) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-16" title="16">    b<span class="op">--;</span></a>
+<a class="sourceLine" id="cb9-17" title="17">  <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (<span class="at">buttonPressed</span>(<span class="va">gp</span>.<span class="at">buttons</span>[<span class="dv">2</span>])) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-18" title="18">    b<span class="op">++;</span></a>
+<a class="sourceLine" id="cb9-19" title="19">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb9-20" title="20">  <span class="cf">if</span> (<span class="at">buttonPressed</span>(<span class="va">gp</span>.<span class="at">buttons</span>[<span class="dv">1</span>])) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-21" title="21">    a<span class="op">++;</span></a>
+<a class="sourceLine" id="cb9-22" title="22">  <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (<span class="at">buttonPressed</span>(<span class="va">gp</span>.<span class="at">buttons</span>[<span class="dv">3</span>])) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-23" title="23">    a<span class="op">--;</span></a>
+<a class="sourceLine" id="cb9-24" title="24">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb9-25" title="25"></a>
+<a class="sourceLine" id="cb9-26" title="26">  <span class="va">ball</span>.<span class="va">style</span>.<span class="at">left</span> <span class="op">=</span> a <span class="op">*</span> <span class="dv">2</span> <span class="op">+</span> <span class="st">&quot;px&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-27" title="27">  <span class="va">ball</span>.<span class="va">style</span>.<span class="at">top</span> <span class="op">=</span> b <span class="op">*</span> <span class="dv">2</span> <span class="op">+</span> <span class="st">&quot;px&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-28" title="28"></a>
+<a class="sourceLine" id="cb9-29" title="29">  start <span class="op">=</span> <span class="at">requestAnimationFrame</span>(gameLoop)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-30" title="30"><span class="op">}</span></a></code></pre></div>
+<h2 id="complete-example-displaying-gamepad-state">Complete example: Displaying gamepad state</h2>
+<p>This example shows how to use the {{ domxref(“Gamepad”) }} object, as well as the {{ domxref(“Window/gamepadconnected_event”, “gamepadconnected”) }} and {{domxref(“Window/gamepaddisconnected_event”, “gamepaddisconnected”)}} events in order to display the state of all gamepads connected to the system. You can find a <a href="https://luser.github.io/gamepadtest/">working demo</a> and look at the <a href="https://github.com/luser/gamepadtest">full source code</a> on Github.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">var</span> haveEvents <span class="op">=</span> <span class="st">&#39;ongamepadconnected&#39;</span> <span class="kw">in</span> window<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-2" title="2"><span class="kw">var</span> controllers <span class="op">=</span> <span class="op">{};</span></a>
+<a class="sourceLine" id="cb10-3" title="3"></a>
+<a class="sourceLine" id="cb10-4" title="4"><span class="kw">function</span> <span class="at">connecthandler</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-5" title="5">  <span class="at">addgamepad</span>(<span class="va">e</span>.<span class="at">gamepad</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-6" title="6"><span class="op">}</span></a>
+<a class="sourceLine" id="cb10-7" title="7"></a>
+<a class="sourceLine" id="cb10-8" title="8"><span class="kw">function</span> <span class="at">addgamepad</span>(gamepad) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-9" title="9">  controllers[<span class="va">gamepad</span>.<span class="at">index</span>] <span class="op">=</span> gamepad<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-10" title="10"></a>
+<a class="sourceLine" id="cb10-11" title="11">  <span class="kw">var</span> d <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-12" title="12">  <span class="va">d</span>.<span class="at">setAttribute</span>(<span class="st">&quot;id&quot;</span><span class="op">,</span> <span class="st">&quot;controller&quot;</span> <span class="op">+</span> <span class="va">gamepad</span>.<span class="at">index</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-13" title="13"></a>
+<a class="sourceLine" id="cb10-14" title="14">  <span class="kw">var</span> t <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;h1&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-15" title="15">  <span class="va">t</span>.<span class="at">appendChild</span>(<span class="va">document</span>.<span class="at">createTextNode</span>(<span class="st">&quot;gamepad: &quot;</span> <span class="op">+</span> <span class="va">gamepad</span>.<span class="at">id</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-16" title="16">  <span class="va">d</span>.<span class="at">appendChild</span>(t)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-17" title="17"></a>
+<a class="sourceLine" id="cb10-18" title="18">  <span class="kw">var</span> b <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-19" title="19">  <span class="va">b</span>.<span class="at">className</span> <span class="op">=</span> <span class="st">&quot;buttons&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-20" title="20">  <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">gamepad</span>.<span class="va">buttons</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-21" title="21">    <span class="kw">var</span> e <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;span&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-22" title="22">    <span class="va">e</span>.<span class="at">className</span> <span class="op">=</span> <span class="st">&quot;button&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-23" title="23">    <span class="co">//e.id = &quot;b&quot; + i;</span></a>
+<a class="sourceLine" id="cb10-24" title="24">    <span class="va">e</span>.<span class="at">innerHTML</span> <span class="op">=</span> i<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-25" title="25">    <span class="va">b</span>.<span class="at">appendChild</span>(e)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-26" title="26">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-27" title="27"></a>
+<a class="sourceLine" id="cb10-28" title="28">  <span class="va">d</span>.<span class="at">appendChild</span>(b)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-29" title="29"></a>
+<a class="sourceLine" id="cb10-30" title="30">  <span class="kw">var</span> a <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-31" title="31">  <span class="va">a</span>.<span class="at">className</span> <span class="op">=</span> <span class="st">&quot;axes&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-32" title="32"></a>
+<a class="sourceLine" id="cb10-33" title="33">  <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">gamepad</span>.<span class="va">axes</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-34" title="34">    <span class="kw">var</span> p <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;progress&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-35" title="35">    <span class="va">p</span>.<span class="at">className</span> <span class="op">=</span> <span class="st">&quot;axis&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-36" title="36">    <span class="co">//p.id = &quot;a&quot; + i;</span></a>
+<a class="sourceLine" id="cb10-37" title="37">    <span class="va">p</span>.<span class="at">setAttribute</span>(<span class="st">&quot;max&quot;</span><span class="op">,</span> <span class="st">&quot;2&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-38" title="38">    <span class="va">p</span>.<span class="at">setAttribute</span>(<span class="st">&quot;value&quot;</span><span class="op">,</span> <span class="st">&quot;1&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-39" title="39">    <span class="va">p</span>.<span class="at">innerHTML</span> <span class="op">=</span> i<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-40" title="40">    <span class="va">a</span>.<span class="at">appendChild</span>(p)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-41" title="41">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-42" title="42"></a>
+<a class="sourceLine" id="cb10-43" title="43">  <span class="va">d</span>.<span class="at">appendChild</span>(a)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-44" title="44"></a>
+<a class="sourceLine" id="cb10-45" title="45">  <span class="co">// See https://github.com/luser/gamepadtest/blob/master/index.html</span></a>
+<a class="sourceLine" id="cb10-46" title="46">  <span class="kw">var</span> start <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;start&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-47" title="47">  <span class="cf">if</span> (start) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-48" title="48">    <span class="va">start</span>.<span class="va">style</span>.<span class="at">display</span> <span class="op">=</span> <span class="st">&quot;none&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-49" title="49">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-50" title="50"></a>
+<a class="sourceLine" id="cb10-51" title="51">  <span class="va">document</span>.<span class="va">body</span>.<span class="at">appendChild</span>(d)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-52" title="52">  <span class="at">requestAnimationFrame</span>(updateStatus)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-53" title="53"><span class="op">}</span></a>
+<a class="sourceLine" id="cb10-54" title="54"></a>
+<a class="sourceLine" id="cb10-55" title="55"><span class="kw">function</span> <span class="at">disconnecthandler</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-56" title="56">  <span class="at">removegamepad</span>(<span class="va">e</span>.<span class="at">gamepad</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-57" title="57"><span class="op">}</span></a>
+<a class="sourceLine" id="cb10-58" title="58"></a>
+<a class="sourceLine" id="cb10-59" title="59"><span class="kw">function</span> <span class="at">removegamepad</span>(gamepad) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-60" title="60">  <span class="kw">var</span> d <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;controller&quot;</span> <span class="op">+</span> <span class="va">gamepad</span>.<span class="at">index</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-61" title="61">  <span class="va">document</span>.<span class="va">body</span>.<span class="at">removeChild</span>(d)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-62" title="62">  <span class="kw">delete</span> controllers[<span class="va">gamepad</span>.<span class="at">index</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-63" title="63"><span class="op">}</span></a>
+<a class="sourceLine" id="cb10-64" title="64"></a>
+<a class="sourceLine" id="cb10-65" title="65"><span class="kw">function</span> <span class="at">updateStatus</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-66" title="66">  <span class="cf">if</span> (<span class="op">!</span>haveEvents) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-67" title="67">    <span class="at">scangamepads</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-68" title="68">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-69" title="69"></a>
+<a class="sourceLine" id="cb10-70" title="70">  <span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-71" title="71">  <span class="kw">var</span> j<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-72" title="72"></a>
+<a class="sourceLine" id="cb10-73" title="73">  <span class="cf">for</span> (j <span class="kw">in</span> controllers) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-74" title="74">    <span class="kw">var</span> controller <span class="op">=</span> controllers[j]<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-75" title="75">    <span class="kw">var</span> d <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;controller&quot;</span> <span class="op">+</span> j)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-76" title="76">    <span class="kw">var</span> buttons <span class="op">=</span> <span class="va">d</span>.<span class="at">getElementsByClassName</span>(<span class="st">&quot;button&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-77" title="77"></a>
+<a class="sourceLine" id="cb10-78" title="78">    <span class="cf">for</span> (i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">controller</span>.<span class="va">buttons</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-79" title="79">      <span class="kw">var</span> b <span class="op">=</span> buttons[i]<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-80" title="80">      <span class="kw">var</span> val <span class="op">=</span> <span class="va">controller</span>.<span class="at">buttons</span>[i]<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-81" title="81">      <span class="kw">var</span> pressed <span class="op">=</span> val <span class="op">==</span> <span class="fl">1.0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-82" title="82">      <span class="cf">if</span> (<span class="kw">typeof</span>(val) <span class="op">==</span> <span class="st">&quot;object&quot;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-83" title="83">        pressed <span class="op">=</span> <span class="va">val</span>.<span class="at">pressed</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-84" title="84">        val <span class="op">=</span> <span class="va">val</span>.<span class="at">value</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-85" title="85">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-86" title="86"></a>
+<a class="sourceLine" id="cb10-87" title="87">      <span class="kw">var</span> pct <span class="op">=</span> <span class="va">Math</span>.<span class="at">round</span>(val <span class="op">*</span> <span class="dv">100</span>) <span class="op">+</span> <span class="st">&quot;%&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-88" title="88">      <span class="va">b</span>.<span class="va">style</span>.<span class="at">backgroundSize</span> <span class="op">=</span> pct <span class="op">+</span> <span class="st">&quot; &quot;</span> <span class="op">+</span> pct<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-89" title="89"></a>
+<a class="sourceLine" id="cb10-90" title="90">      <span class="cf">if</span> (pressed) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-91" title="91">        <span class="va">b</span>.<span class="at">className</span> <span class="op">=</span> <span class="st">&quot;button pressed&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-92" title="92">      <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-93" title="93">        <span class="va">b</span>.<span class="at">className</span> <span class="op">=</span> <span class="st">&quot;button&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-94" title="94">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-95" title="95">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-96" title="96"></a>
+<a class="sourceLine" id="cb10-97" title="97">    <span class="kw">var</span> axes <span class="op">=</span> <span class="va">d</span>.<span class="at">getElementsByClassName</span>(<span class="st">&quot;axis&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-98" title="98">    <span class="cf">for</span> (i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">controller</span>.<span class="va">axes</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-99" title="99">      <span class="kw">var</span> a <span class="op">=</span> axes[i]<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-100" title="100">      <span class="va">a</span>.<span class="at">innerHTML</span> <span class="op">=</span> i <span class="op">+</span> <span class="st">&quot;: &quot;</span> <span class="op">+</span> <span class="va">controller</span>.<span class="at">axes</span>[i].<span class="at">toFixed</span>(<span class="dv">4</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-101" title="101">      <span class="va">a</span>.<span class="at">setAttribute</span>(<span class="st">&quot;value&quot;</span><span class="op">,</span> <span class="va">controller</span>.<span class="at">axes</span>[i] <span class="op">+</span> <span class="dv">1</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-102" title="102">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-103" title="103">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-104" title="104"></a>
+<a class="sourceLine" id="cb10-105" title="105">  <span class="at">requestAnimationFrame</span>(updateStatus)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-106" title="106"><span class="op">}</span></a>
+<a class="sourceLine" id="cb10-107" title="107"></a>
+<a class="sourceLine" id="cb10-108" title="108"><span class="kw">function</span> <span class="at">scangamepads</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-109" title="109">  <span class="kw">var</span> gamepads <span class="op">=</span> <span class="va">navigator</span>.<span class="at">getGamepads</span> <span class="op">?</span> <span class="va">navigator</span>.<span class="at">getGamepads</span>() : (<span class="va">navigator</span>.<span class="at">webkitGetGamepads</span> <span class="op">?</span> <span class="va">navigator</span>.<span class="at">webkitGetGamepads</span>() : [])<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-110" title="110">  <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">gamepads</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-111" title="111">    <span class="cf">if</span> (gamepads[i]) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-112" title="112">      <span class="cf">if</span> (gamepads[i].<span class="at">index</span> <span class="kw">in</span> controllers) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-113" title="113">        controllers[gamepads[i].<span class="at">index</span>] <span class="op">=</span> gamepads[i]<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-114" title="114">      <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-115" title="115">        <span class="at">addgamepad</span>(gamepads[i])<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-116" title="116">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-117" title="117">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-118" title="118">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-119" title="119"><span class="op">}</span></a>
+<a class="sourceLine" id="cb10-120" title="120"></a>
+<a class="sourceLine" id="cb10-121" title="121"><span class="va">window</span>.<span class="at">addEventListener</span>(<span class="st">&quot;gamepadconnected&quot;</span><span class="op">,</span> connecthandler)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-122" title="122"><span class="va">window</span>.<span class="at">addEventListener</span>(<span class="st">&quot;gamepaddisconnected&quot;</span><span class="op">,</span> disconnecthandler)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-123" title="123"></a>
+<a class="sourceLine" id="cb10-124" title="124"><span class="cf">if</span> (<span class="op">!</span>haveEvents) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-125" title="125"> <span class="at">setInterval</span>(scangamepads<span class="op">,</span> <span class="dv">500</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-126" title="126"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<table>
+<colgroup>
+<col style="width: 62%" />
+<col style="width: 22%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Specification</th>
+<th>Status</th>
+<th>Comment</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>{{SpecName(“Gamepad”, “#gamepad-interface”, “Gamepad”)}}</td>
+<td>{{Spec2(“Gamepad”)}}</td>
+<td>Initial definition</td>
+</tr>
+</tbody>
+</table>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat(“api.Gamepad”)}}</p>

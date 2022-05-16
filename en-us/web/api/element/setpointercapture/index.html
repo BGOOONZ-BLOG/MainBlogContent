@@ -1,0 +1,68 @@
+<p>{{APIRef(“DOM”)}}</p>
+<p>The <strong><code>setPointerCapture()</code></strong> method of the {{domxref(“Element”)}} interface is used to designate a specific element as the <em>capture target</em> of future pointer events. Subsequent events for the pointer will be targeted at the capture element until capture is released (via {{domxref(“Element.releasePointerCapture()”)}} or the {{domxref(“HTMLElement/pointerup_event”, “pointerup”)}} event is fired).</p>
+<blockquote>
+<p><strong>Note:</strong> When pointer capture is set, {{domxref(“HTMLElement/pointerover_event”, “pointerover”)}}, {{domxref(“HTMLElement/pointerout_event”, “pointerout”)}}, {{domxref(“HTMLElement/pointerenter_event”, “pointerenter”)}}, and {{domxref(“HTMLElement/pointerleave_event”, “pointerleave”)}} events are only generated when crossing the boundary of the capture target. This has the effect of suppressing these events on all other elements.</p>
+</blockquote>
+<h3 id="overview-of-pointer-capture">Overview of pointer capture</h3>
+<p><em>Pointer capture</em> allows events for a particular <em>pointer event</em> ({{domxref(“PointerEvent”)}}) to be re-targeted to a particular element instead of the normal (or <em>hit test</em>) target at a pointer’s location. This can be used to ensure that an element continues to receive pointer events even if the pointer device’s contact moves off the element (such as by scrolling or panning).</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">targetElement</span>.<span class="at">setPointerCapture</span>(pointerId)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>pointerId</code>
+<ul>
+<li>: The {{domxref(“PointerEvent.pointerId”, “pointerId”)}} of a {{domxref(“PointerEvent”)}} object.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>This method returns {{jsxref(“undefined”)}}.</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><code>NotFoundError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if <code>pointerId</code> does not match any active pointer.</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<p>This example sets pointer capture on a {{HtmlElement(“div”)}} when you press down on it. This lets you slide the element horizontally, even when you pointer moves outside of its boundaries.</p>
+<h3 id="html">HTML</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;slider&quot;</span><span class="kw">&gt;</span>SLIDE ME<span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<h3 id="css">CSS</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb3-1" title="1">div {</a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">width</span>: <span class="dv">140</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="kw">height</span>: <span class="dv">50</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="kw">display</span>: flex<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">  <span class="kw">align-items</span>: <span class="dv">center</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="kw">justify-content</span>: <span class="dv">center</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="kw">background</span>: <span class="cn">#fbe</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">}</a></code></pre></div>
+<h3 id="javascript">JavaScript</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">function</span> <span class="at">beginSliding</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="va">slider</span>.<span class="at">onpointermove</span> <span class="op">=</span> slide<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3">  <span class="va">slider</span>.<span class="at">setPointerCapture</span>(<span class="va">e</span>.<span class="at">pointerId</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="op">}</span></a>
+<a class="sourceLine" id="cb4-5" title="5"></a>
+<a class="sourceLine" id="cb4-6" title="6"><span class="kw">function</span> <span class="at">stopSliding</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="va">slider</span>.<span class="at">onpointermove</span> <span class="op">=</span> <span class="kw">null</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-8" title="8">  <span class="va">slider</span>.<span class="at">releasePointerCapture</span>(<span class="va">e</span>.<span class="at">pointerId</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-9" title="9"><span class="op">}</span></a>
+<a class="sourceLine" id="cb4-10" title="10"></a>
+<a class="sourceLine" id="cb4-11" title="11"><span class="kw">function</span> <span class="at">slide</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-12" title="12">  <span class="va">slider</span>.<span class="va">style</span>.<span class="at">transform</span> <span class="op">=</span> <span class="vs">`translate(</span><span class="sc">${</span><span class="va">e</span>.<span class="at">clientX</span> <span class="op">-</span> <span class="dv">70</span><span class="sc">}</span><span class="vs">px)`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-13" title="13"><span class="op">}</span></a>
+<a class="sourceLine" id="cb4-14" title="14"></a>
+<a class="sourceLine" id="cb4-15" title="15"><span class="kw">const</span> slider <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;slider&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-16" title="16"></a>
+<a class="sourceLine" id="cb4-17" title="17"><span class="va">slider</span>.<span class="at">onpointerdown</span> <span class="op">=</span> beginSliding<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-18" title="18"><span class="va">slider</span>.<span class="at">onpointerup</span> <span class="op">=</span> stopSliding<span class="op">;</span></a></code></pre></div>
+<h3 id="result">Result</h3>
+<p>{{EmbedLiveSample(“Example”)}}</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{domxref(“Element.releasePointerCapture”)}}</li>
+<li>{{domxref(“Pointer_events”,“Pointer Events”)}}</li>
+</ul>

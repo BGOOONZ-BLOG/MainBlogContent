@@ -1,0 +1,107 @@
+<p>{{securecontext_header}}{{DefaultAPISidebar(“Geolocation API”)}}</p>
+<p>The Geolocation API is used to retrieve the user’s location, so that it can for example be used to display their position using a mapping API. This article explains the basics of how to use it.</p>
+<h2 id="the-geolocation-object">The geolocation object</h2>
+<p>The <a href="/en-US/docs/Web/API/Geolocation">Geolocation API</a> is available through the {{domxref(“navigator.geolocation”)}} object.</p>
+<p>If the object exists, geolocation services are available. You can test for the presence of geolocation thusly:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="cf">if</span>(<span class="st">&#39;geolocation&#39;</span> <span class="kw">in</span> navigator) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="co">/* geolocation is available */</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-4" title="4">  <span class="co">/* geolocation IS NOT available */</span></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="op">}</span></a></code></pre></div>
+<h3 id="getting-the-current-position">Getting the current position</h3>
+<p>To obtain the user’s current location, you can call the {{domxref(“Geolocation.getCurrentPosition”,“getCurrentPosition()”)}} method. This initiates an asynchronous request to detect the user’s position, and queries the positioning hardware to get up-to-date information. When the position is determined, the defined callback function is executed. You can optionally provide a second callback function to be executed if an error occurs. A third, optional, parameter is an options object where you can set the maximum age of the position returned, the time to wait for a request, and if you want high accuracy for the position.</p>
+<blockquote>
+<p><strong>Note:</strong> By default, {{domxref(“Geolocation.getCurrentPosition”,“getCurrentPosition()”)}} tries to answer as fast as possible with a low accuracy result. It is useful if you need a quick answer regardless of the accuracy. Devices with a GPS, for example, can take a minute or more to get a GPS fix, so less accurate data (IP location or wifi) may be returned to <code>getCurrentPosition()</code>.</p>
+</blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">navigator</span>.<span class="va">geolocation</span>.<span class="at">getCurrentPosition</span>((position) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="at">doSomething</span>(<span class="va">position</span>.<span class="va">coords</span>.<span class="at">latitude</span><span class="op">,</span> <span class="va">position</span>.<span class="va">coords</span>.<span class="at">longitude</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>The above example will cause the <code>doSomething()</code> function to execute when the location is obtained.</p>
+<h3 id="watching-the-current-position">Watching the current position</h3>
+<p>If the position data changes (either by device movement or if more accurate geo information arrives), you can set up a callback function that is called with that updated position information. This is done using the {{domxref(“Geolocation.watchPosition”,“watchPosition()”)}} function, which has the same input parameters as {{domxref(“Geolocation.getCurrentPosition”,“getCurrentPosition()”)}}. The callback function is called multiple times, allowing the browser to either update your location as you move, or provide a more accurate location as different techniques are used to geolocate you. The error callback function, which is optional just as it is for <code>getCurrentPosition()</code>, can be called repeatedly.</p>
+<blockquote>
+<p><strong>Note:</strong> You can use {{domxref(“Geolocation.watchPosition”,“watchPosition()”)}} without an initial {{domxref(“Geolocation.getCurrentPosition”,“getCurrentPosition()”)}} call.</p>
+</blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> watchID <span class="op">=</span> <span class="va">navigator</span>.<span class="va">geolocation</span>.<span class="at">watchPosition</span>((position) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="at">doSomething</span>(<span class="va">position</span>.<span class="va">coords</span>.<span class="at">latitude</span><span class="op">,</span> <span class="va">position</span>.<span class="va">coords</span>.<span class="at">longitude</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>The {{domxref(“Geolocation.watchPosition”,“watchPosition()”)}} method returns an ID number that can be used to uniquely identify the requested position watcher; you use this value in tandem with the {{domxref(“Geolocation.clearWatch”,“clearWatch()”)}} method to stop watching the user’s location.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="va">navigator</span>.<span class="va">geolocation</span>.<span class="at">clearWatch</span>(watchID)<span class="op">;</span></a></code></pre></div>
+<h3 id="fine-tuning-the-response">Fine tuning the response</h3>
+<p>Both {{domxref(“Geolocation.getCurrentPosition”,“getCurrentPosition()”)}} and {{domxref(“Geolocation.watchPosition”,“watchPosition()”)}} accept a success callback, an optional error callback, and an optional options object.</p>
+<p>This object allows you to specify whether to enable high accuracy, a maximum age for the returned position value (up until this age it will be cached and reused if the same position is requested again; after this the browser will request fresh position data), and a timeout value that dictates how long the browser should attempt to get the position data for, before it times out.</p>
+<p>A call to {{domxref(“Geolocation.watchPosition”,“watchPosition”)}} could look like:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">function</span> <span class="at">success</span>(position) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="at">doSomething</span>(<span class="va">position</span>.<span class="va">coords</span>.<span class="at">latitude</span><span class="op">,</span> <span class="va">position</span>.<span class="va">coords</span>.<span class="at">longitude</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="op">}</span></a>
+<a class="sourceLine" id="cb5-4" title="4"></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="kw">function</span> <span class="at">error</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-6" title="6">  <span class="at">alert</span>(<span class="st">&#39;Sorry, no position available.&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-7" title="7"><span class="op">}</span></a>
+<a class="sourceLine" id="cb5-8" title="8"></a>
+<a class="sourceLine" id="cb5-9" title="9"><span class="kw">const</span> options <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-10" title="10">  <span class="dt">enableHighAccuracy</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb5-11" title="11">  <span class="dt">maximumAge</span><span class="op">:</span> <span class="dv">30000</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb5-12" title="12">  <span class="dt">timeout</span><span class="op">:</span> <span class="dv">27000</span></a>
+<a class="sourceLine" id="cb5-13" title="13"><span class="op">};</span></a>
+<a class="sourceLine" id="cb5-14" title="14"></a>
+<a class="sourceLine" id="cb5-15" title="15"><span class="kw">const</span> watchID <span class="op">=</span> <span class="va">navigator</span>.<span class="va">geolocation</span>.<span class="at">watchPosition</span>(success<span class="op">,</span> error<span class="op">,</span> options)<span class="op">;</span></a></code></pre></div>
+<h2 id="describing-a-position">Describing a position</h2>
+<p>The user’s location is described using a {{domxref(“GeolocationPosition”)}} object instance, which itself contains a {{domxref(“GeolocationCoordinates”)}} object instance.</p>
+<p>The <code>GeolocationPosition</code> instance contains only two things, a <code>coords</code> property that contains the <code>GeolocationCoordinates</code> instance, and a <code>timestamp</code> property that contains a {{domxref(“DOMTimeStamp”)}} instance representing the time at which the position data was retrieved.</p>
+<p>The <code>GeolocationCoordinates</code> instance contains a number of properties, but the two you’ll use most commonly are <code>latitude</code> and <code>longitude</code>, which are what you need to draw your position on a map. Hence many Geolocation success callbacks look fairly simple:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">function</span> <span class="at">success</span>(position) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="kw">const</span> latitude  <span class="op">=</span> <span class="va">position</span>.<span class="va">coords</span>.<span class="at">latitude</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-3" title="3">  <span class="kw">const</span> longitude <span class="op">=</span> <span class="va">position</span>.<span class="va">coords</span>.<span class="at">longitude</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-4" title="4"></a>
+<a class="sourceLine" id="cb6-5" title="5">  <span class="co">// Do something with your latitude and longitude</span></a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="op">}</span></a></code></pre></div>
+<p>You can however get a number of other bits of information from a <code>GeolocationCoordinates</code> object, including altitude, speed, what direction the device is facing, and an accuracy measure of the altitude, longitude, and latitude data.</p>
+<h2 id="handling-errors">Handling errors</h2>
+<p>The error callback function, if provided when calling <code>getCurrentPosition()</code> or <code>watchPosition()</code>, expects a <a href="/en-US/docs/Web/API/GeolocationPositionError"><code>GeolocationPositionError</code></a> object instance as its first parameter. This object type contains two properties, a <code>code</code> indicating what type of error has been returned, and a human-readable <code>message</code> that describes what the error code means.</p>
+<p>You could use it like so:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">function</span> <span class="at">errorCallback</span>(error) <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="at">alert</span>(<span class="vs">`ERROR(</span><span class="sc">${</span><span class="va">error</span>.<span class="at">code</span><span class="sc">}</span><span class="vs">): </span><span class="sc">${</span><span class="va">error</span>.<span class="at">message</span><span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-3" title="3"><span class="op">};</span></a></code></pre></div>
+<h2 id="examples">Examples</h2>
+<p>In the following example the Geolocation API is used to retrieve the user’s latitude and longitude. If sucessful, the available hyperlink is populated with an <code>openstreetmap.org</code> URL that will show their location.</p>
+<p>```css hidden body { padding: 20px; background-color:#ffffc9 }</p>
+<p>button { margin: .5rem 0; } ```</p>
+<h3 id="html">HTML</h3>
+<div class="sourceCode" id="cb8"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">&lt;button</span><span class="ot"> id</span> <span class="ot">=</span> <span class="st">&quot;find-me&quot;</span><span class="kw">&gt;</span>Show my location<span class="kw">&lt;/button&gt;&lt;br/&gt;</span></a>
+<a class="sourceLine" id="cb8-2" title="2"><span class="kw">&lt;p</span><span class="ot"> id</span> <span class="ot">=</span> <span class="st">&quot;status&quot;</span><span class="kw">&gt;&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb8-3" title="3"><span class="kw">&lt;a</span><span class="ot"> id</span> <span class="ot">=</span> <span class="st">&quot;map-link&quot;</span><span class="ot"> target=</span><span class="st">&quot;_blank&quot;</span><span class="kw">&gt;&lt;/a&gt;</span></a></code></pre></div>
+<h3 id="javascript">JavaScript</h3>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">function</span> <span class="at">geoFindMe</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-2" title="2"></a>
+<a class="sourceLine" id="cb9-3" title="3">  <span class="kw">const</span> status <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#status&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-4" title="4">  <span class="kw">const</span> mapLink <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#map-link&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-5" title="5"></a>
+<a class="sourceLine" id="cb9-6" title="6">  <span class="va">mapLink</span>.<span class="at">href</span> <span class="op">=</span> <span class="st">&#39;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-7" title="7">  <span class="va">mapLink</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-8" title="8"></a>
+<a class="sourceLine" id="cb9-9" title="9">  <span class="kw">function</span> <span class="at">success</span>(position) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-10" title="10">    <span class="kw">const</span> latitude  <span class="op">=</span> <span class="va">position</span>.<span class="va">coords</span>.<span class="at">latitude</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-11" title="11">    <span class="kw">const</span> longitude <span class="op">=</span> <span class="va">position</span>.<span class="va">coords</span>.<span class="at">longitude</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-12" title="12"></a>
+<a class="sourceLine" id="cb9-13" title="13">    <span class="va">status</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-14" title="14">    <span class="va">mapLink</span>.<span class="at">href</span> <span class="op">=</span> <span class="vs">`https://www.openstreetmap.org/#map=18/</span><span class="sc">${</span>latitude<span class="sc">}</span><span class="vs">/</span><span class="sc">${</span>longitude<span class="sc">}</span><span class="vs">`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-15" title="15">    <span class="va">mapLink</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="vs">`Latitude: </span><span class="sc">${</span>latitude<span class="sc">}</span><span class="vs"> °, Longitude: </span><span class="sc">${</span>longitude<span class="sc">}</span><span class="vs"> °`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-16" title="16">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb9-17" title="17"></a>
+<a class="sourceLine" id="cb9-18" title="18">  <span class="kw">function</span> <span class="at">error</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-19" title="19">    <span class="va">status</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;Unable to retrieve your location&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-20" title="20">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb9-21" title="21"></a>
+<a class="sourceLine" id="cb9-22" title="22">  <span class="cf">if</span>(<span class="op">!</span><span class="va">navigator</span>.<span class="at">geolocation</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-23" title="23">    <span class="va">status</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;Geolocation is not supported by your browser&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-24" title="24">  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-25" title="25">    <span class="va">status</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;Locating…&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-26" title="26">    <span class="va">navigator</span>.<span class="va">geolocation</span>.<span class="at">getCurrentPosition</span>(success<span class="op">,</span> error)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-27" title="27">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb9-28" title="28"></a>
+<a class="sourceLine" id="cb9-29" title="29"><span class="op">}</span></a>
+<a class="sourceLine" id="cb9-30" title="30"></a>
+<a class="sourceLine" id="cb9-31" title="31"><span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#find-me&#39;</span>).<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> geoFindMe)<span class="op">;</span></a></code></pre></div>
+<h3 id="result">Result</h3>
+<p>{{EmbedLiveSample(‘Examples’, 350, 150, "“,”“,”“,”geolocation")}}</p>

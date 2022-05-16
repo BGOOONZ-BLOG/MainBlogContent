@@ -1,0 +1,50 @@
+<p>{{draft}}{{ APIRef(“Web Audio API”) }}</p>
+<p>The <strong><code>createMediaStreamTrackSource()</code></strong> method of the {{ domxref(“AudioContext”) }} interface creates and returns a {{domxref(“MediaStreamTrackAudioSourceNode”)}} which represents an audio source whose data comes from the specified {{domxref(“MediaStreamTrack”)}}.</p>
+<p>This differs from {{domxref(“AudioContext.createMediaStreamSource”, “createMediaStreamSource()”)}}, which creates a {{domxref(“MediaStreamAudioSourceNode”)}} whose audio comes from the audio track in a specified {{domxref(“MediaStream”)}} whose {{domxref(“MediaStreamTrack.id”, “id”)}} is first, lexicographically (alphabetically).</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> audioCtx <span class="op">=</span> <span class="kw">new</span> <span class="at">AudioContext</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">var</span> track <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createMediaStreamTrackSource</span>(track)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>track</code>
+<ul>
+<li>: The {{domxref(“MediaStreamTrack”)}} to use as the source of all audio data for the new node.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A {{domxref(“MediaStreamTrackAudioSourceNode”)}} object which acts as a source for audio data found in the specified audio track.</p>
+<h2 id="example">Example</h2>
+<p>In this example, {{domxref(“MediaDevices.getUserMedia”, “getUserMedia()”)}} is used to request access to the user’s microphone. Once that access is attained, an audio context is established and a {{domxref(“MediaStreamTrackAudioSourceNode”)}} is created using <code>createMediaStreamTrackSource()</code>, taking its audio from the first audio track in the stream returned by <code>getUserMedia()</code>.</p>
+<p>Then a {{domxref(“BiquadFilterNode”)}} is created using {{domxref(“BaseAudioContext/createBiquadFilter”, “createBiquadFilter()”)}}, and it’s configured as desired to perform a lowshelf filter on the audio coming from the source. The output from the microphone is then routed into the new biquad filter, and the filter’s output is in turn routed to the audio context’s {{domxref(“BaseAudioContext/destination”, “destination”)}}.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">navigator</span>.<span class="va">mediaDevices</span>.<span class="at">getUserMedia</span> (<span class="op">{</span><span class="dt">audio</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span> <span class="dt">video</span><span class="op">:</span> <span class="kw">false</span><span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-2" title="2">.<span class="at">then</span>(<span class="kw">function</span>(stream) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="va">audio</span>.<span class="at">srcObject</span> <span class="op">=</span> stream<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="va">audio</span>.<span class="at">onloadedmetadata</span> <span class="op">=</span> <span class="kw">function</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="va">audio</span>.<span class="at">play</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">    <span class="va">audio</span>.<span class="at">muted</span> <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb2-8" title="8"></a>
+<a class="sourceLine" id="cb2-9" title="9">  <span class="kw">let</span> audioCtx <span class="op">=</span> <span class="kw">new</span> <span class="at">AudioContext</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="kw">let</span> source <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createMediaStreamSource</span>(stream)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11"></a>
+<a class="sourceLine" id="cb2-12" title="12">  <span class="kw">let</span> biquadFilter <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createBiquadFilter</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13">  <span class="va">biquadFilter</span>.<span class="at">type</span> <span class="op">=</span> <span class="st">&quot;lowshelf&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14">  <span class="va">biquadFilter</span>.<span class="va">frequency</span>.<span class="at">value</span> <span class="op">=</span> <span class="dv">3000</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-15" title="15">  <span class="va">biquadFilter</span>.<span class="va">gain</span>.<span class="at">value</span> <span class="op">=</span> <span class="dv">20</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-16" title="16"></a>
+<a class="sourceLine" id="cb2-17" title="17">  <span class="va">source</span>.<span class="at">connect</span>(biquadFilter)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">  <span class="va">biquadFilter</span>.<span class="at">connect</span>(<span class="va">audioCtx</span>.<span class="at">destination</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-19" title="19"><span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-20" title="20">.<span class="at">catch</span>(<span class="kw">function</span>(err) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-21" title="21">  <span class="co">// Handle getUserMedia() error</span></a>
+<a class="sourceLine" id="cb2-22" title="22"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>Web Audio API</li>
+<li><a href="/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API">Using the Web Audio API</a></li>
+<li>{{domxref(“MediaStreamTrackAudioSource”)}}</li>
+</ul>

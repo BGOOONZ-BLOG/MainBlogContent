@@ -1,0 +1,60 @@
+<p>{{APIRef(“Clipboard API”)}}</p>
+<p>The {{domxref(“Clipboard”)}} method <strong><code>write()</code></strong> writes arbitrary data, such as images, to the clipboard. This can be used to implement cut and copy functionality.</p>
+<p>The <code>"clipboard-write"</code> permission of the <a href="/en-US/docs/Web/API/Permissions_API">Permissions API</a>, is granted automatically to pages when they are in the active tab.</p>
+<blockquote>
+<p><strong>Note:</strong> Browser support for the asynchronous clipboard APIs is still in the process of being implemented. Be sure to check the {{anch(“Browser compatibility”, “compatibility table”)}} as well as {{SectionOnPage(“/en-US/docs/Web/API/Clipboard”, “Clipboard availability”)}} for more information.</p>
+</blockquote>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> promise <span class="op">=</span> <span class="va">navigator</span>.<span class="va">clipboard</span>.<span class="at">write</span>(data)</a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>data</code>
+<ul>
+<li>: An array of {{domxref(“ClipboardItem”)}} objects containing data to be written to the clipboard.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A {{jsxref(“Promise”)}} which is resolved when the data has been written to the clipboard. The promise is rejected if the clipboard is unable to complete the clipboard access.</p>
+<h2 id="example">Example</h2>
+<p>This example function replaces the current contents of the clipboard with a specified string.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">function</span> <span class="at">setClipboard</span>(text) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">    <span class="kw">var</span> type <span class="op">=</span> <span class="st">&quot;text/plain&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">    <span class="kw">var</span> blob <span class="op">=</span> <span class="kw">new</span> <span class="at">Blob</span>([text]<span class="op">,</span> <span class="op">{</span> type <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">    <span class="kw">var</span> data <span class="op">=</span> [<span class="kw">new</span> <span class="at">ClipboardItem</span>(<span class="op">{</span> [type]<span class="op">:</span> blob <span class="op">}</span>)]<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6">    <span class="va">navigator</span>.<span class="va">clipboard</span>.<span class="at">write</span>(data).<span class="at">then</span>(</a>
+<a class="sourceLine" id="cb2-7" title="7">        <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-8" title="8">        <span class="co">/* success */</span></a>
+<a class="sourceLine" id="cb2-9" title="9">        <span class="op">},</span></a>
+<a class="sourceLine" id="cb2-10" title="10">        <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-11" title="11">        <span class="co">/* failure */</span></a>
+<a class="sourceLine" id="cb2-12" title="12">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-13" title="13">    )<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14"><span class="op">}</span></a></code></pre></div>
+<p>The code begins by creating a new a {{domxref(“Blob”)}} object. This object is required to construct a {{domxref(“ClipboardItem”)}} object which is sent to the clipboard. The {{domxref(“Blob”)}} constructor takes in the content we want to copy and its type. This {{domxref(“Blob”)}} object can be derived from many sources e.g. a {{domxref(“Canvas”)}}.</p>
+<p>Next, we create a new {{domxref(“ClipboardItem”)}} object into which the blob will be placed for sending to the clipboard. The key of the object passed to the {{domxref(“ClipboardItem”)}} constructor indicates the content type, the value indicates the content. Then <code>write()</code> is called, specifying both a fulfillment function and an error function.</p>
+<h3 id="example-of-copying-canvas-contents-to-the-clipboard">Example of copying canvas contents to the clipboard</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">function</span> <span class="at">copyCanvasContentsToClipboard</span>(canvas<span class="op">,</span> onDone<span class="op">,</span> onError) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="va">canvas</span>.<span class="at">toBlob</span>(<span class="kw">function</span> (blob) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="kw">let</span> data <span class="op">=</span> [<span class="kw">new</span> <span class="at">ClipboardItem</span>(<span class="op">{</span> [<span class="va">blob</span>.<span class="at">type</span>]<span class="op">:</span> blob <span class="op">}</span>)]<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4"></a>
+<a class="sourceLine" id="cb3-5" title="5">    <span class="va">navigator</span>.<span class="va">clipboard</span>.<span class="at">write</span>(data).<span class="at">then</span>(<span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-6" title="6">      <span class="at">onDone</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">    <span class="op">},</span> <span class="kw">function</span> (err) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-8" title="8">      <span class="at">onError</span>(err)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">    <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb3-10" title="10">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="op">}</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> You can only pass in one clipboard item at a time.</p>
+</blockquote>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Clipboard_API">Clipboard API</a></li>
+<li><a href="https://async-clipboard-api.glitch.me/">Async Clipboard API demo on Glitch</a></li>
+<li><a href="https://web.dev/image-support-for-async-clipboard/">Image support for Async Clipboard article</a></li>
+</ul>

@@ -1,0 +1,222 @@
+<p>{{CanvasSidebar}} {{PreviousNext(“Web/API/Canvas_API/Tutorial/Using_images”, “Web/API/Canvas_API/Tutorial/Compositing”)}}</p>
+<p>Earlier in this tutorial we’ve learned about the <a href="/en-US/docs/Web/API/Canvas_API/Tutorial/Drawing_shapes">canvas grid</a> and the <strong>coordinate space</strong>. Until now, we only used the default grid and changed the size of the overall canvas for our needs. With transformations there are more powerful ways to translate the origin to a different position, rotate the grid and even scale it.</p>
+<h2 id="saving-and-restoring-state">Saving and restoring state</h2>
+<p>Before we look at the transformation methods, let’s look at two other methods which are indispensable once you start generating ever more complex drawings.</p>
+<ul>
+<li>{{domxref(“CanvasRenderingContext2D.save”, “save()”)}}
+<ul>
+<li>: Saves the entire state of the canvas.</li>
+</ul></li>
+<li>{{domxref(“CanvasRenderingContext2D.restore”, “restore()”)}}
+<ul>
+<li>: Restores the most recently saved canvas state.</li>
+</ul></li>
+</ul>
+<p>Canvas states are stored on a stack. Every time the <code>save()</code> method is called, the current drawing state is pushed onto the stack. A drawing state consists of</p>
+<ul>
+<li>The transformations that have been applied (i.e. <code>translate</code>, <code>rotate</code> and <code>scale</code> – see below).</li>
+<li>The current values of the following attributes: {{domxref(“CanvasRenderingContext2D.strokeStyle”, “strokeStyle”)}}, {{domxref(“CanvasRenderingContext2D.fillStyle”, “fillStyle”)}}, {{domxref(“CanvasRenderingContext2D.globalAlpha”, “globalAlpha”)}}, {{domxref(“CanvasRenderingContext2D.lineWidth”, “lineWidth”)}}, {{domxref(“CanvasRenderingContext2D.lineCap”, “lineCap”)}}, {{domxref(“CanvasRenderingContext2D.lineJoin”, “lineJoin”)}}, {{domxref(“CanvasRenderingContext2D.miterLimit”, “miterLimit”)}}, {{domxref(“CanvasRenderingContext2D.lineDashOffset”, “lineDashOffset”)}}, {{domxref(“CanvasRenderingContext2D.shadowOffsetX”, “shadowOffsetX”)}}, {{domxref(“CanvasRenderingContext2D.shadowOffsetY”, “shadowOffsetY”)}}, {{domxref(“CanvasRenderingContext2D.shadowBlur”, “shadowBlur”)}}, {{domxref(“CanvasRenderingContext2D.shadowColor”, “shadowColor”)}}, {{domxref(“CanvasRenderingContext2D.globalCompositeOperation”, “globalCompositeOperation”)}}, {{domxref(“CanvasRenderingContext2D.font”, “font”)}}, {{domxref(“CanvasRenderingContext2D.textAlign”, “textAlign”)}}, {{domxref(“CanvasRenderingContext2D.textBaseline”, “textBaseline”)}}, {{domxref(“CanvasRenderingContext2D.direction”, “direction”)}}, {{domxref(“CanvasRenderingContext2D.imageSmoothingEnabled”, “imageSmoothingEnabled”)}}.</li>
+<li>The current <a href="/en-US/docs/Web/API/Canvas_API/Tutorial/Compositing#clipping_paths">clipping path</a>, which we’ll see in the next section.</li>
+</ul>
+<p>You can call the <code>save()</code> method as many times as you like. Each time the <code>restore()</code> method is called, the last saved state is popped off the stack and all saved settings are restored.</p>
+<h3 id="a-save-and-restore-canvas-state-example">A <code>save</code> and <code>restore</code> canvas state example</h3>
+<p>This example tries to illustrate how the stack of drawing states functions by drawing a set of consecutive rectangles.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="kw">var</span> ctx <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;canvas&#39;</span>).<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"></a>
+<a class="sourceLine" id="cb1-4" title="4">  <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">150</span><span class="op">,</span> <span class="dv">150</span>)<span class="op">;</span>   <span class="co">// Draw a rectangle with default settings</span></a>
+<a class="sourceLine" id="cb1-5" title="5">  <span class="va">ctx</span>.<span class="at">save</span>()<span class="op">;</span>                  <span class="co">// Save the default state</span></a>
+<a class="sourceLine" id="cb1-6" title="6"></a>
+<a class="sourceLine" id="cb1-7" title="7">  <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&#39;#09F&#39;</span><span class="op">;</span>      <span class="co">// Make changes to the settings</span></a>
+<a class="sourceLine" id="cb1-8" title="8">  <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="dv">15</span><span class="op">,</span> <span class="dv">15</span><span class="op">,</span> <span class="dv">120</span><span class="op">,</span> <span class="dv">120</span>)<span class="op">;</span> <span class="co">// Draw a rectangle with new settings</span></a>
+<a class="sourceLine" id="cb1-9" title="9"></a>
+<a class="sourceLine" id="cb1-10" title="10">  <span class="va">ctx</span>.<span class="at">save</span>()<span class="op">;</span>                  <span class="co">// Save the current state</span></a>
+<a class="sourceLine" id="cb1-11" title="11">  <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&#39;#FFF&#39;</span><span class="op">;</span>      <span class="co">// Make changes to the settings</span></a>
+<a class="sourceLine" id="cb1-12" title="12">  <span class="va">ctx</span>.<span class="at">globalAlpha</span> <span class="op">=</span> <span class="fl">0.5</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-13" title="13">  <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="dv">30</span><span class="op">,</span> <span class="dv">30</span><span class="op">,</span> <span class="dv">90</span><span class="op">,</span> <span class="dv">90</span>)<span class="op">;</span>   <span class="co">// Draw a rectangle with new settings</span></a>
+<a class="sourceLine" id="cb1-14" title="14"></a>
+<a class="sourceLine" id="cb1-15" title="15">  <span class="va">ctx</span>.<span class="at">restore</span>()<span class="op">;</span>               <span class="co">// Restore previous state</span></a>
+<a class="sourceLine" id="cb1-16" title="16">  <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="dv">45</span><span class="op">,</span> <span class="dv">45</span><span class="op">,</span> <span class="dv">60</span><span class="op">,</span> <span class="dv">60</span>)<span class="op">;</span>   <span class="co">// Draw a rectangle with restored settings</span></a>
+<a class="sourceLine" id="cb1-17" title="17"></a>
+<a class="sourceLine" id="cb1-18" title="18">  <span class="va">ctx</span>.<span class="at">restore</span>()<span class="op">;</span>               <span class="co">// Restore original state</span></a>
+<a class="sourceLine" id="cb1-19" title="19">  <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="dv">60</span><span class="op">,</span> <span class="dv">60</span><span class="op">,</span> <span class="dv">30</span><span class="op">,</span> <span class="dv">30</span>)<span class="op">;</span>   <span class="co">// Draw a rectangle with restored settings</span></a>
+<a class="sourceLine" id="cb1-20" title="20"><span class="op">}</span></a></code></pre></div>
+<p><code>html hidden &lt;canvas id="canvas" width="150" height="150"&gt;&lt;/canvas&gt;</code></p>
+<p><code>js hidden draw();</code></p>
+<p>The first step is to draw a large rectangle with the default settings. Next we save this state and make changes to the fill color. We then draw the second and smaller blue rectangle and save the state. Again we change some drawing settings and draw the third semi-transparent white rectangle.</p>
+<p>So far this is pretty similar to what we’ve done in previous sections. However once we call the first <code>restore()</code> statement, the top drawing state is removed from the stack, and settings are restored. If we hadn’t saved the state using <code>save()</code>, we would need to change the fill color and transparency manually in order to return to the previous state. This would be easy for two properties, but if we have more than that, our code would become very long, very fast.</p>
+<p>When the second <code>restore()</code> statement is called, the original state (the one we set up before the first call to <code>save</code>) is restored and the last rectangle is once again drawn in black.</p>
+<p>{{EmbedLiveSample(“A_save_and_restore_canvas_state_example”, “180”, “180”, “canvas_savestate.png”)}}</p>
+<h2 id="translating">Translating</h2>
+<p>The first of the transformation methods we’ll look at is <code>translate()</code>. This method is used to move the canvas and its origin to a different point in the grid.</p>
+<ul>
+<li>{{domxref(“CanvasRenderingContext2D.translate”, “translate(x, y)”)}}
+<ul>
+<li>: Moves the canvas and its origin on the grid. <code>x</code> indicates the horizontal distance to move, and <code>y</code> indicates how far to move the grid vertically.</li>
+</ul></li>
+</ul>
+<p><img src="canvas_grid_translate.png" /></p>
+<p>It’s a good idea to save the canvas state before doing any transformations. In most cases, it is just easier to call the <code>restore</code> method than having to do a reverse translation to return to the original state. Also if you’re translating inside a loop and don’t save and restore the canvas state, you might end up missing part of your drawing, because it was drawn outside the canvas edge.</p>
+<h3 id="a-translate-example">A <code>translate</code> example</h3>
+<p>This example demonstrates some of the benefits of translating the canvas origin. Without the <code>translate()</code> method, all of the rectangles would be drawn at the same position (0,0). The <code>translate()</code> method also gives us the freedom to place the rectangle anywhere on the canvas without having to manually adjust coordinates in the <code>fillRect()</code> function. This makes it a little easier to understand and use.</p>
+<p>In the <code>draw()</code> function, we call the <code>fillRect()</code> function nine times using two <code>for</code> loops. In each loop, the canvas is translated, the rectangle is drawn, and the canvas is returned back to its original state. Note how the call to <code>fillRect()</code> uses the same coordinates each time, relying on <code>translate()</code> to adjust the drawing position.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">var</span> ctx <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;canvas&#39;</span>).<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="dv">3</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">    <span class="cf">for</span> (<span class="kw">var</span> j <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> j <span class="op">&lt;</span> <span class="dv">3</span><span class="op">;</span> j<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">      <span class="va">ctx</span>.<span class="at">save</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">      <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&#39;rgb(&#39;</span> <span class="op">+</span> (<span class="dv">51</span> <span class="op">*</span> i) <span class="op">+</span> <span class="st">&#39;, &#39;</span> <span class="op">+</span> (<span class="dv">255</span> <span class="op">-</span> <span class="dv">51</span> <span class="op">*</span> i) <span class="op">+</span> <span class="st">&#39;, 255)&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7">      <span class="va">ctx</span>.<span class="at">translate</span>(<span class="dv">10</span> <span class="op">+</span> j <span class="op">*</span> <span class="dv">50</span><span class="op">,</span> <span class="dv">10</span> <span class="op">+</span> i <span class="op">*</span> <span class="dv">50</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">      <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">25</span><span class="op">,</span> <span class="dv">25</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9">      <span class="va">ctx</span>.<span class="at">restore</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-11" title="11">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-12" title="12"><span class="op">}</span></a></code></pre></div>
+<p><code>html hidden &lt;canvas id="canvas" width="150" height="150"&gt;&lt;/canvas&gt;</code></p>
+<p><code>js hidden draw();</code></p>
+<p>{{EmbedLiveSample(“A_translate_example”, “160”, “160”, “translate.png”)}}</p>
+<h2 id="rotating">Rotating</h2>
+<p>The second transformation method is <code>rotate()</code>. We use it to rotate the canvas around the current origin.</p>
+<ul>
+<li>{{domxref(“CanvasRenderingContext2D.rotate”, “rotate(angle)”)}}
+<ul>
+<li>: Rotates the canvas clockwise around the current origin by the <code>angle</code> number of radians.</li>
+</ul></li>
+</ul>
+<p><img src="canvas_grid_rotate.png" /></p>
+<p>The rotation center point is always the canvas origin. To change the center point, we will need to move the canvas by using the <code>translate()</code> method.</p>
+<h3 id="a-rotate-example">A <code>rotate</code> example</h3>
+<p>In this example, we’ll use the <code>rotate()</code> method to first rotate a rectangle from the canvas origin and then from the center of the rectangle itself with the help of <code>translate()</code>.</p>
+<blockquote>
+<p><strong>Note:</strong> Angles are in radians, not degrees. To convert, we are using: <code>radians = (Math.PI/180)*degrees</code>.</p>
+</blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">var</span> ctx <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;canvas&#39;</span>).<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="co">// left rectangles, rotate from canvas origin</span></a>
+<a class="sourceLine" id="cb3-5" title="5">  <span class="va">ctx</span>.<span class="at">save</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="co">// blue rect</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&#39;#0095DD&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="dv">30</span><span class="op">,</span> <span class="dv">30</span><span class="op">,</span> <span class="dv">100</span><span class="op">,</span> <span class="dv">100</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">  <span class="va">ctx</span>.<span class="at">rotate</span>((<span class="va">Math</span>.<span class="at">PI</span> / <span class="dv">180</span>) <span class="op">*</span> <span class="dv">25</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10">  <span class="co">// grey rect</span></a>
+<a class="sourceLine" id="cb3-11" title="11">  <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&#39;#4D4E53&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-12" title="12">  <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="dv">30</span><span class="op">,</span> <span class="dv">30</span><span class="op">,</span> <span class="dv">100</span><span class="op">,</span> <span class="dv">100</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-13" title="13">  <span class="va">ctx</span>.<span class="at">restore</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-14" title="14"></a>
+<a class="sourceLine" id="cb3-15" title="15">  <span class="co">// right rectangles, rotate from rectangle center</span></a>
+<a class="sourceLine" id="cb3-16" title="16">  <span class="co">// draw blue rect</span></a>
+<a class="sourceLine" id="cb3-17" title="17">  <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&#39;#0095DD&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-18" title="18">  <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="dv">150</span><span class="op">,</span> <span class="dv">30</span><span class="op">,</span> <span class="dv">100</span><span class="op">,</span> <span class="dv">100</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-19" title="19"></a>
+<a class="sourceLine" id="cb3-20" title="20">  <span class="va">ctx</span>.<span class="at">translate</span>(<span class="dv">200</span><span class="op">,</span> <span class="dv">80</span>)<span class="op">;</span> <span class="co">// translate to rectangle center</span></a>
+<a class="sourceLine" id="cb3-21" title="21">                          <span class="co">// x = x + 0.5 * width</span></a>
+<a class="sourceLine" id="cb3-22" title="22">                          <span class="co">// y = y + 0.5 * height</span></a>
+<a class="sourceLine" id="cb3-23" title="23">  <span class="va">ctx</span>.<span class="at">rotate</span>((<span class="va">Math</span>.<span class="at">PI</span> / <span class="dv">180</span>) <span class="op">*</span> <span class="dv">25</span>)<span class="op">;</span> <span class="co">// rotate</span></a>
+<a class="sourceLine" id="cb3-24" title="24">  <span class="va">ctx</span>.<span class="at">translate</span>(<span class="op">-</span><span class="dv">200</span><span class="op">,</span> <span class="dv">-80</span>)<span class="op">;</span> <span class="co">// translate back</span></a>
+<a class="sourceLine" id="cb3-25" title="25"></a>
+<a class="sourceLine" id="cb3-26" title="26">  <span class="co">// draw grey rect</span></a>
+<a class="sourceLine" id="cb3-27" title="27">  <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&#39;#4D4E53&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-28" title="28">  <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="dv">150</span><span class="op">,</span> <span class="dv">30</span><span class="op">,</span> <span class="dv">100</span><span class="op">,</span> <span class="dv">100</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-29" title="29"><span class="op">}</span></a></code></pre></div>
+<p>To rotate the rectangle around its own center, we translate the canvas to the center of the rectangle, then rotate the canvas, then translate the canvas back to 0,0, and then draw the rectangle.</p>
+<p><code>html hidden &lt;canvas id="canvas" width="300" height="200"&gt;&lt;/canvas&gt;</code></p>
+<p><code>js hidden draw();</code></p>
+<p>{{EmbedLiveSample(“A_rotate_example”, “310”, “210”, “rotate.png”)}}</p>
+<h2 id="scaling">Scaling</h2>
+<p>The next transformation method is scaling. We use it to increase or decrease the units in our canvas grid. This can be used to draw scaled down or enlarged shapes and bitmaps.</p>
+<ul>
+<li>{{domxref(“CanvasRenderingContext2D.scale”, “scale(x, y)”)}}
+<ul>
+<li>: Scales the canvas units by x horizontally and by y vertically. Both parameters are real numbers. Values that are smaller than 1.0 reduce the unit size and values above 1.0 increase the unit size. Values of 1.0 leave the units the same size.</li>
+</ul></li>
+</ul>
+<p>Using negative numbers you can do axis mirroring (for example using <code>translate(0,canvas.height); scale(1,-1);</code> you will have the well-known Cartesian coordinate system, with the origin in the bottom left corner).</p>
+<p>By default, one unit on the canvas is exactly one pixel. If we apply, for instance, a scaling factor of 0.5, the resulting unit would become 0.5 pixels and so shapes would be drawn at half size. In a similar way setting the scaling factor to 2.0 would increase the unit size and one unit now becomes two pixels. This results in shapes being drawn twice as large.</p>
+<h3 id="a-scale-example">A <code>scale</code> example</h3>
+<p>In this last example, we’ll draw shapes with different scaling factors.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="kw">var</span> ctx <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;canvas&#39;</span>).<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"></a>
+<a class="sourceLine" id="cb4-4" title="4">  <span class="co">// draw a simple rectangle, but scale it.</span></a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="va">ctx</span>.<span class="at">save</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-6" title="6">  <span class="va">ctx</span>.<span class="at">scale</span>(<span class="dv">10</span><span class="op">,</span> <span class="dv">3</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="dv">1</span><span class="op">,</span> <span class="dv">10</span><span class="op">,</span> <span class="dv">10</span><span class="op">,</span> <span class="dv">10</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-8" title="8">  <span class="va">ctx</span>.<span class="at">restore</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-9" title="9"></a>
+<a class="sourceLine" id="cb4-10" title="10">  <span class="co">// mirror horizontally</span></a>
+<a class="sourceLine" id="cb4-11" title="11">  <span class="va">ctx</span>.<span class="at">scale</span>(<span class="op">-</span><span class="dv">1</span><span class="op">,</span> <span class="dv">1</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-12" title="12">  <span class="va">ctx</span>.<span class="at">font</span> <span class="op">=</span> <span class="st">&#39;48px serif&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-13" title="13">  <span class="va">ctx</span>.<span class="at">fillText</span>(<span class="st">&#39;MDN&#39;</span><span class="op">,</span> <span class="dv">-135</span><span class="op">,</span> <span class="dv">120</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-14" title="14"><span class="op">}</span></a></code></pre></div>
+<p><code>html hidden &lt;canvas id="canvas" width="150" height="150"&gt;&lt;/canvas&gt;</code></p>
+<p><code>js hidden draw();</code></p>
+<p>{{EmbedLiveSample(“A_scale_example”, “160”, “160”, “scale.png”)}}</p>
+<h2 id="transforms">Transforms</h2>
+<p>Finally, the following transformation methods allow modifications directly to the transformation matrix.</p>
+<ul>
+<li><p>{{domxref(“CanvasRenderingContext2D.transform”, “transform(a, b, c, d, e, f)”)}}</p>
+<ul>
+<li><p>: Multiplies the current transformation matrix with the matrix described by its arguments. The transformation matrix is described by:</p>
+<p><math><semantics><mrow><mo>[</mo><mtable columnalign="center center center" rowspacing="0.5ex"><mtr><mtd><mi>a</mi></mtd><mtd><mi>c</mi></mtd><mtd><mi>e</mi></mtd></mtr><mtr><mtd><mi>b</mi></mtd><mtd><mi>d</mi></mtd><mtd><mi>f</mi></mtd></mtr><mtr><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>1</mn></mtd></mtr></mtable><mo>]</mo></mrow><annotation encoding="TeX"></annotation></semantics></math></p>
+<p>If any of the arguments are <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Infinity"><code>Infinity</code></a> the transformation matrix must be marked as infinite instead of the method throwing an exception.</p></li>
+</ul></li>
+</ul>
+<p>The parameters of this function are:</p>
+<ul>
+<li><code>a (m11)</code>
+<ul>
+<li>: Horizontal scaling.</li>
+</ul></li>
+<li><em><code>b (m12)</code></em>
+<ul>
+<li>: Horizontal skewing.</li>
+</ul></li>
+<li><code>c (m21)</code>
+<ul>
+<li>: Vertical skewing.</li>
+</ul></li>
+<li><code>d (m22)</code>
+<ul>
+<li>: Vertical scaling.</li>
+</ul></li>
+<li><code>e (dx)</code>
+<ul>
+<li>: Horizontal moving.</li>
+</ul></li>
+<li><code>f (dy)</code>
+<ul>
+<li>: Vertical moving.</li>
+</ul></li>
+<li>{{domxref(“CanvasRenderingContext2D.setTransform”, “setTransform(a, b, c, d, e, f)”)}}
+<ul>
+<li>: Resets the current transform to the identity matrix, and then invokes the <code>transform()</code> method with the same arguments. This basically undoes the current transformation, then sets the specified transform, all in one step.</li>
+</ul></li>
+<li>{{domxref(“CanvasRenderingContext2D.resetTransform”, “resetTransform()”)}}
+<ul>
+<li>: Resets the current transform to the identity matrix. This is the same as calling: <code>ctx.setTransform(1, 0, 0, 1, 0, 0);</code></li>
+</ul></li>
+</ul>
+<h3 id="example-for-transform-and-settransform">Example for <code>transform</code> and <code>setTransform</code></h3>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="kw">var</span> ctx <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;canvas&#39;</span>).<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3"></a>
+<a class="sourceLine" id="cb5-4" title="4">  <span class="kw">var</span> sin <span class="op">=</span> <span class="va">Math</span>.<span class="at">sin</span>(<span class="va">Math</span>.<span class="at">PI</span> / <span class="dv">6</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-5" title="5">  <span class="kw">var</span> cos <span class="op">=</span> <span class="va">Math</span>.<span class="at">cos</span>(<span class="va">Math</span>.<span class="at">PI</span> / <span class="dv">6</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-6" title="6">  <span class="va">ctx</span>.<span class="at">translate</span>(<span class="dv">100</span><span class="op">,</span> <span class="dv">100</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-7" title="7">  <span class="kw">var</span> c <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-8" title="8">  <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;=</span> <span class="dv">12</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-9" title="9">    c <span class="op">=</span> <span class="va">Math</span>.<span class="at">floor</span>(<span class="dv">255</span> / <span class="dv">12</span> <span class="op">*</span> i)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-10" title="10">    <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&#39;rgb(&#39;</span> <span class="op">+</span> c <span class="op">+</span> <span class="st">&#39;, &#39;</span> <span class="op">+</span> c <span class="op">+</span> <span class="st">&#39;, &#39;</span> <span class="op">+</span> c <span class="op">+</span> <span class="st">&#39;)&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-11" title="11">    <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">100</span><span class="op">,</span> <span class="dv">10</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-12" title="12">    <span class="va">ctx</span>.<span class="at">transform</span>(cos<span class="op">,</span> sin<span class="op">,</span> <span class="op">-</span>sin<span class="op">,</span> cos<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-13" title="13">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-14" title="14"></a>
+<a class="sourceLine" id="cb5-15" title="15">  <span class="va">ctx</span>.<span class="at">setTransform</span>(<span class="op">-</span><span class="dv">1</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">1</span><span class="op">,</span> <span class="dv">100</span><span class="op">,</span> <span class="dv">100</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-16" title="16">  <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&#39;rgba(255, 128, 255, 0.5)&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-17" title="17">  <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="dv">100</span><span class="op">,</span> <span class="dv">100</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-18" title="18"><span class="op">}</span></a></code></pre></div>
+<p><code>html hidden &lt;canvas id="canvas" width="200" height="250"&gt;&lt;/canvas&gt;</code></p>
+<p><code>js hidden draw();</code></p>
+<p>{{EmbedLiveSample(“Example_for_transform_and_setTransform”, “230”, “280”, “canvas_transform.png”)}}</p>
+<p>{{PreviousNext(“Web/API/Canvas_API/Tutorial/Using_images”, “Web/API/Canvas_API/Tutorial/Compositing”)}}</p>

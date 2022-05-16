@@ -1,0 +1,64 @@
+<p>{{APIRef(“Service Workers API”)}}</p>
+<p>The <strong><code>put()</code></strong> method of the {{domxref(“Cache”)}} interface allows key/value pairs to be added to the current {{domxref(“Cache”)}} object.</p>
+<p>Often, you will just want to {{domxref(“fetch()”)}} one or more requests, then add the result straight to your cache. In such cases you are better off using {{domxref(“Cache.add”,“Cache.add()”)}}/{{domxref(“Cache.addAll”,“Cache.addAll()”)}}, as they are shorthand functions for one or more of these operations.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="at">fetch</span>(url).<span class="at">then</span>(<span class="kw">function</span>(response) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="cf">if</span> (<span class="op">!</span><span class="va">response</span>.<span class="at">ok</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-3" title="3">    <span class="cf">throw</span> <span class="kw">new</span> <span class="at">TypeError</span>(<span class="st">&#39;Bad response status&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-4" title="4">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-5" title="5">  <span class="cf">return</span> <span class="va">cache</span>.<span class="at">put</span>(url<span class="op">,</span> response)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="op">}</span>)</a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> <code>put()</code> will overwrite any key/value pair previously stored in the cache that matches the request.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> {{domxref(“Cache.add”)}}/{{domxref(“Cache.addAll”)}} do not cache responses with <code>Response.status</code> values that are not in the 200 range, whereas {{domxref(“Cache.put”)}} lets you store any request/response pair. As a result, {{domxref(“Cache.add”)}}/{{domxref(“Cache.addAll”)}} can’t be used to store opaque responses, whereas {{domxref(“Cache.put”)}} can.</p>
+</blockquote>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">cache</span>.<span class="at">put</span>(request<span class="op">,</span> response).<span class="at">then</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="co">// request/response pair has been added to the cache</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li>request
+<ul>
+<li>: The {{domxref(“Request”)}} object or URL that you want to add to the cache.</li>
+</ul></li>
+<li>response
+<ul>
+<li>: The {{domxref(“Response”)}} you want to match up to the request.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A {{jsxref(“Promise”)}} that resolves with <code>undefined</code>.</p>
+<blockquote>
+<p><strong>Note:</strong> The promise will reject with a <code>TypeError</code> if the URL scheme is not <code>http</code> or <code>https</code>.</p>
+</blockquote>
+<h2 id="examples">Examples</h2>
+<p>This example is from the MDN <a href="https://github.com/mdn/sw-test/">sw-test example</a> (see <a href="https://mdn.github.io/sw-test/">sw-test running live</a>). Here we wait for a {{domxref(“FetchEvent”)}} to fire. We construct a custom response like so:</p>
+<ol type="1">
+<li>Check whether a match for the request is found in the {{domxref(“CacheStorage”)}} using {{domxref(“CacheStorage.match”,“CacheStorage.match()”)}}. If so, serve that.</li>
+<li>If not, open the <code>v1</code> cache using <code>open()</code>, put the default network request in the cache using {{domxref(“Cache.put”,“Cache.put()”)}} and return a clone of the default network request using <code>return response.clone()</code>. Clone is needed because <code>put()</code> consumes the response body.</li>
+<li>If this fails (e.g., because the network is down), return a fallback response.</li>
+</ol>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">var</span> response<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">var</span> cachedResponse <span class="op">=</span> <span class="va">caches</span>.<span class="at">match</span>(<span class="va">event</span>.<span class="at">request</span>).<span class="at">catch</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="cf">return</span> <span class="at">fetch</span>(<span class="va">event</span>.<span class="at">request</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="op">}</span>).<span class="at">then</span>(<span class="kw">function</span>(r) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-5" title="5">  response <span class="op">=</span> r<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="va">caches</span>.<span class="at">open</span>(<span class="st">&#39;v1&#39;</span>).<span class="at">then</span>(<span class="kw">function</span>(cache) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-7" title="7">    <span class="va">cache</span>.<span class="at">put</span>(<span class="va">event</span>.<span class="at">request</span><span class="op">,</span> response)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">  <span class="cf">return</span> <span class="va">response</span>.<span class="at">clone</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10"><span class="op">}</span>).<span class="at">catch</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-11" title="11">  <span class="cf">return</span> <span class="va">caches</span>.<span class="at">match</span>(<span class="st">&#39;/sw-test/gallery/myLittleVader.jpg&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-12" title="12"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers">Using Service Workers</a></li>
+<li>{{domxref(“Cache”)}}</li>
+<li>{{domxref(“caches”)}}</li>
+</ul>

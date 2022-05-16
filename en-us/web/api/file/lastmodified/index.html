@@ -1,0 +1,54 @@
+<p>{{APIRef(“File”)}}</p>
+<p>The <strong><code>File.lastModified</code></strong> read-only property provides the last modified date of the file as the number of milliseconds since the Unix epoch (January 1, 1970 at midnight). Files without a known last modified date return the current date.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> time <span class="op">=</span> <span class="va">instanceOfFile</span>.<span class="at">lastModified</span><span class="op">;</span></a></code></pre></div>
+<h3 id="value">Value</h3>
+<p>A number that represents the number of milliseconds since the Unix epoch.</p>
+<h2 id="example">Example</h2>
+<h3 id="reading-from-file-input">Reading from file input</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;file&quot;</span><span class="ot"> multiple id=</span><span class="st">&quot;fileInput&quot;</span><span class="kw">&gt;</span></a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> fileInput <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#fileInput&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="va">fileInput</span>.<span class="at">addEventListener</span>(<span class="st">&#39;change&#39;</span><span class="op">,</span> (event) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="co">// files is a FileList object (similar to NodeList)</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="kw">const</span> files <span class="op">=</span> <span class="va">event</span>.<span class="va">target</span>.<span class="at">files</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"></a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="cf">for</span> (<span class="kw">let</span> file <span class="kw">of</span> files) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-7" title="7">    <span class="kw">const</span> date <span class="op">=</span> <span class="kw">new</span> <span class="at">Date</span>(<span class="va">file</span>.<span class="at">lastModified</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">    <span class="va">console</span>.<span class="at">log</span>(<span class="vs">`</span><span class="sc">${</span><span class="va">file</span>.<span class="at">name</span><span class="sc">}</span><span class="vs"> has a last modified date of </span><span class="sc">${</span>date<span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-10" title="10"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>Try the results out below:</p>
+<p>{{ EmbedLiveSample(‘Reading_from_file_input’, 300, 50) }}</p>
+<h3 id="dynamically-created-files">Dynamically created files</h3>
+<p>If a File is created dynamically, the last modified time can be supplied in the {{domxref(“File.File()”, “new File()”)}} constructor function. If it is missing, <code>lastModified</code> inherits the current time from {{jsxref(“Date.now()”)}} at the moment the <code>File</code> object gets created.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">const</span> fileWithDate <span class="op">=</span> <span class="kw">new</span> <span class="at">File</span>([]<span class="op">,</span> <span class="st">&#39;file.bin&#39;</span><span class="op">,</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="dt">lastModified</span><span class="op">:</span> <span class="kw">new</span> <span class="at">Date</span>(<span class="dv">2017</span><span class="op">,</span> <span class="dv">1</span><span class="op">,</span> <span class="dv">1</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="va">console</span>.<span class="at">log</span>(<span class="va">fileWithDate</span>.<span class="at">lastModified</span>)<span class="op">;</span> <span class="co">//returns 1485903600000</span></a>
+<a class="sourceLine" id="cb4-5" title="5"></a>
+<a class="sourceLine" id="cb4-6" title="6"><span class="kw">const</span> fileWithoutDate <span class="op">=</span> <span class="kw">new</span> <span class="at">File</span>([]<span class="op">,</span> <span class="st">&#39;file.bin&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-7" title="7"><span class="va">console</span>.<span class="at">log</span>(<span class="va">fileWithoutDate</span>.<span class="at">lastModified</span>)<span class="op">;</span> <span class="co">//returns current time</span></a></code></pre></div>
+<h2 id="reduced-time-precision">Reduced time precision</h2>
+<p>To offer protection against timing attacks and fingerprinting, the precision of <code>someFile.lastModified</code> might get rounded depending on browser settings. In Firefox, the <code>privacy.reduceTimerPrecision</code>  preference is enabled by default and defaults to 20us in Firefox 59; in 60 it will be 2ms.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="co">// reduced time precision (2ms) in Firefox 60</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="va">someFile</span>.<span class="at">lastModified</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="co">// 1519211809934</span></a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="co">// 1519211810362</span></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="co">// 1519211811670</span></a>
+<a class="sourceLine" id="cb5-6" title="6"><span class="co">// ...</span></a>
+<a class="sourceLine" id="cb5-7" title="7"></a>
+<a class="sourceLine" id="cb5-8" title="8"><span class="co">// reduced time precision with `privacy.resistFingerprinting` enabled</span></a>
+<a class="sourceLine" id="cb5-9" title="9"><span class="va">someFile</span>.<span class="at">lastModified</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-10" title="10"><span class="co">// 1519129853500</span></a>
+<a class="sourceLine" id="cb5-11" title="11"><span class="co">// 1519129858900</span></a>
+<a class="sourceLine" id="cb5-12" title="12"><span class="co">// 1519129864400</span></a>
+<a class="sourceLine" id="cb5-13" title="13"><span class="co">// ...</span></a></code></pre></div>
+<p>In Firefox, you can also enabled <code>privacy.resistFingerprinting</code>, the precision will be 100ms or the value of <code>privacy.resistFingerprinting.reduceTimerPrecision.microseconds</code>, whichever is larger.</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{domxref(“File”)}}</li>
+</ul>

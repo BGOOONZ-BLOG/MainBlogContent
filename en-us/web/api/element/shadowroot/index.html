@@ -1,0 +1,44 @@
+<p>{{APIRef(“Shadow DOM”)}}</p>
+<p>The <code>Element.shadowRoot</code> read-only property represents the shadow root hosted by the element.</p>
+<p>Use {{DOMxRef(“Element.attachShadow()”)}} to add a shadow root to an existing element.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> shadowroot <span class="op">=</span> <span class="va">element</span>.<span class="at">shadowRoot</span><span class="op">;</span></a></code></pre></div>
+<h3 id="value">Value</h3>
+<p>A {{DOMxRef(“ShadowRoot”)}} object instance, or <code>null</code> if the associated shadow root was attached with its {{DOMxRef(“ShadowRoot.mode”, “mode”)}} set to <code>closed</code>. (See {{DOMxRef(“Element.attachShadow()”)}} for further details).</p>
+<h2 id="examples">Examples</h2>
+<p>The following snippets are taken from our <a href="https://github.com/mdn/web-components-examples/tree/master/life-cycle-callbacks">life-cycle-callbacks</a> example (<a href="https://mdn.github.io/web-components-examples/life-cycle-callbacks">see it live also</a>), which creates an element that displays a square of a size and color specified in the element’s attributes.</p>
+<p>Inside the <code>&lt;custom-square&gt;</code> element’s class definition we include some life cycle callbacks that make a call to an external function, <code>updateStyle()</code>, which actually applies the size and color to the element. You’ll see that we are passing it <code>this</code> (the custom element itself) as a parameter.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="at">connectedCallback</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Custom square element added to page.&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="at">updateStyle</span>(<span class="kw">this</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="at">attributeChangedCallback</span>(name<span class="op">,</span> oldValue<span class="op">,</span> newValue) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Custom square element attributes changed.&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="at">updateStyle</span>(<span class="kw">this</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="op">}</span></a></code></pre></div>
+<p>In the <code>updateStyle()</code> function itself, we get a reference to the shadow DOM using {{domxref(“Element.shadowRoot”)}}. From here we use standard DOM traversal techniques to find the {{htmlelement(“style”)}} element inside the shadow DOM and then update the CSS found inside it:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">function</span> <span class="at">updateStyle</span>(elem) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">const</span> shadow <span class="op">=</span> <span class="va">elem</span>.<span class="at">shadowRoot</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="kw">const</span> childNodes <span class="op">=</span> <span class="va">Array</span>.<span class="at">from</span>(<span class="va">shadow</span>.<span class="at">childNodes</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4"></a>
+<a class="sourceLine" id="cb3-5" title="5">  <span class="va">childNodes</span>.<span class="at">forEach</span>(childNode <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-6" title="6">    <span class="cf">if</span> (<span class="va">childNode</span>.<span class="at">nodeName</span> <span class="op">===</span> <span class="st">&#39;STYLE&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-7" title="7">      <span class="va">childNode</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="vs">`</span></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="vs">        div {</span></a>
+<a class="sourceLine" id="cb3-9" title="9"><span class="vs">          width: </span><span class="sc">${</span><span class="va">elem</span>.<span class="at">getAttribute</span>(<span class="st">&#39;l&#39;</span>)<span class="sc">}</span><span class="vs">px;</span></a>
+<a class="sourceLine" id="cb3-10" title="10"><span class="vs">          height: </span><span class="sc">${</span><span class="va">elem</span>.<span class="at">getAttribute</span>(<span class="st">&#39;l&#39;</span>)<span class="sc">}</span><span class="vs">px;</span></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="vs">          background-color: </span><span class="sc">${</span><span class="va">elem</span>.<span class="at">getAttribute</span>(<span class="st">&#39;c&#39;</span>)<span class="sc">}</span><span class="vs">;</span></a>
+<a class="sourceLine" id="cb3-12" title="12"><span class="vs">        }</span></a>
+<a class="sourceLine" id="cb3-13" title="13"><span class="vs">      `</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-14" title="14">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-15" title="15">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-16" title="16"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{DOMxRef(“Element.openOrClosedShadowRoot”)}} {{non-standard_inline}}</li>
+</ul>

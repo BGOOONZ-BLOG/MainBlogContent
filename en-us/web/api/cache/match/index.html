@@ -1,0 +1,55 @@
+<p>{{APIRef(“Service Workers API”)}}</p>
+<p>The <strong><code>match()</code></strong> method of the {{domxref(“Cache”)}} interface returns a {{jsxref(“Promise”)}} that resolves to the {{domxref(“Response”)}} associated with the first matching request in the {{domxref(“Cache”)}} object. If no match is found, the {{jsxref(“Promise”)}} resolves to {{jsxref(“undefined”)}}.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">cache</span>.<span class="at">match</span>(request<span class="op">,</span> <span class="op">{</span>options<span class="op">}</span>).<span class="at">then</span>(<span class="kw">function</span>(response) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="co">// Do something with the response</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li>request
+<ul>
+<li>: The {{domxref(“Request”)}} for which you are attempting to find responses in the {{domxref(“Cache”)}}. This can be a {{domxref(“Request”)}} object or a URL.</li>
+</ul></li>
+<li><p>options {{optional_inline}}</p>
+<ul>
+<li><p>: An object that sets options for the <code>match</code> operation. The available options are:</p>
+<ul>
+<li><code>ignoreSearch</code>: A boolean value that specifies whether to ignore the query string in the URL.  For example, if set to <code>true</code> the <code>?value=bar</code> part of <code>http://foo.com/?value=bar</code> would be ignored when performing a match. It defaults to <code>false</code>.</li>
+<li><code>ignoreMethod</code>: A boolean value that, when set to <code>true</code>, prevents matching operations from validating the {{domxref(“Request”)}} <code>http</code> method (normally only <code>GET</code> and <code>HEAD</code> are allowed.) It defaults to <code>false</code>.</li>
+<li><code>ignoreVary</code>: A boolean value that when set to <code>true</code> tells the matching operation not to perform <code>VARY</code> header matching — i.e. if the URL matches you will get a match regardless of whether the {{domxref(“Response”)}} object has a <code>VARY</code> header. It defaults to <code>false</code>.</li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A {{jsxref(“Promise”)}} that resolves to the first {{domxref(“Response”)}} that matches the request or to {{jsxref(“undefined”)}} if no match is found.</p>
+<blockquote>
+<p><strong>Note:</strong> <code>Cache.match()</code> is basically identical to {{domxref(“Cache.matchAll()”)}}, except that rather than resolving with an array of all matching responses, it resolves with the first matching response only (that is, <code>response[0]</code>).</p>
+</blockquote>
+<h2 id="examples">Examples</h2>
+<p>This example is taken from the <a href="https://github.com/GoogleChrome/samples/blob/gh-pages/service-worker/custom-offline-page/service-worker.js">custom offline page</a> example (<a href="https://googlechrome.github.io/samples/service-worker/custom-offline-page/index.html">live demo</a>). It uses a cache to supply selected data when a request fails. A <code>catch()</code> clause is triggered when the call to <code>fetch()</code> throws an exception. Inside the <code>catch()</code> clause, <code>match()</code> is used to return the correct response.</p>
+<p>In this example, only HTML documents retrieved with the GET HTTP verb will be cached. If our <code>if()</code> condition is false, then this fetch handler won’t intercept the request. If there are any other fetch handlers registered, they will get a chance to call <code>event.respondWith()</code>. If no fetch handlers call <code>event.respondWith()</code>, the request will be handled by the browser as if there were no service worker involvement. If <code>fetch()</code> returns a valid HTTP response with an response code in the 4xx or 5xx range, the <code>catch()</code> will NOT be called.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">self</span>.<span class="at">addEventListener</span>(<span class="st">&#39;fetch&#39;</span><span class="op">,</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="co">// We only want to call event.respondWith() if this is a GET request for an HTML document.</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="cf">if</span> (<span class="va">event</span>.<span class="va">request</span>.<span class="at">method</span> <span class="op">===</span> <span class="st">&#39;GET&#39;</span> <span class="op">&amp;&amp;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">      <span class="va">event</span>.<span class="va">request</span>.<span class="va">headers</span>.<span class="at">get</span>(<span class="st">&#39;accept&#39;</span>).<span class="at">indexOf</span>(<span class="st">&#39;text/html&#39;</span>) <span class="op">!==</span> <span class="dv">-1</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Handling fetch event for&#39;</span><span class="op">,</span> <span class="va">event</span>.<span class="va">request</span>.<span class="at">url</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">    <span class="va">event</span>.<span class="at">respondWith</span>(</a>
+<a class="sourceLine" id="cb2-7" title="7">      <span class="at">fetch</span>(<span class="va">event</span>.<span class="at">request</span>).<span class="at">catch</span>(<span class="kw">function</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-8" title="8">        <span class="va">console</span>.<span class="at">error</span>(<span class="st">&#39;Fetch failed; returning offline page instead.&#39;</span><span class="op">,</span> e)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9">        <span class="cf">return</span> <span class="va">caches</span>.<span class="at">open</span>(OFFLINE_CACHE).<span class="at">then</span>(<span class="kw">function</span>(cache) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-10" title="10">          <span class="cf">return</span> <span class="va">cache</span>.<span class="at">match</span>(OFFLINE_URL)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11">        <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12">      <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-13" title="13">    )<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-15" title="15"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers">Using Service Workers</a></li>
+<li>{{domxref(“Cache”)}}</li>
+<li>{{domxref(“caches”)}}</li>
+</ul>

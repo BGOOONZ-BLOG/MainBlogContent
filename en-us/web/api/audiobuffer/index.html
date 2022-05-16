@@ -1,0 +1,84 @@
+<p>{{APIRef(“Web Audio API”)}}</p>
+<p>The <strong><code>AudioBuffer</code></strong> interface represents a short audio asset residing in memory, created from an audio file using the {{ domxref(“BaseAudioContext/decodeAudioData”, “AudioContext.decodeAudioData()”) }} method, or from raw data using {{ domxref(“BaseAudioContext/createBuffer”, “AudioContext.createBuffer()”) }}. Once put into an AudioBuffer, the audio can then be played by being passed into an {{ domxref(“AudioBufferSourceNode”) }}.</p>
+<p>Objects of these types are designed to hold small audio snippets, typically less than 45 s. For longer sounds, objects implementing the {{domxref(“MediaElementAudioSourceNode”)}} are more suitable. The buffer contains data in the following format: non-interleaved IEEE754 32-bit linear PCM with a nominal range between <code>-1</code> and <code>+1</code>, that is, a 32-bit floating point buffer, with each sample between -1.0 and 1.0. If the {{domxref(“AudioBuffer”)}} has multiple channels, they are stored in separate buffers.</p>
+<h2 id="constructor">Constructor</h2>
+<ul>
+<li>{{domxref(“AudioBuffer.AudioBuffer”, “AudioBuffer()”)}}
+<ul>
+<li>: Creates and returns a new <code>AudioBuffer</code> object instance.</li>
+</ul></li>
+</ul>
+<h2 id="properties">Properties</h2>
+<ul>
+<li>{{domxref(“AudioBuffer.sampleRate”)}} {{readonlyInline}}
+<ul>
+<li>: Returns a float representing the sample rate, in samples per second, of the PCM data stored in the buffer.</li>
+</ul></li>
+<li>{{domxref(“AudioBuffer.length”)}} {{readonlyInline}}
+<ul>
+<li>: Returns an integer representing the length, in sample-frames, of the PCM data stored in the buffer.</li>
+</ul></li>
+<li>{{domxref(“AudioBuffer.duration”)}} {{readonlyInline}}
+<ul>
+<li>: Returns a double representing the duration, in seconds, of the PCM data stored in the buffer.</li>
+</ul></li>
+<li>{{domxref(“AudioBuffer.numberOfChannels”)}} {{readonlyInline}}
+<ul>
+<li>: Returns an integer representing the number of discrete audio channels described by the PCM data stored in the buffer.</li>
+</ul></li>
+</ul>
+<h2 id="methods">Methods</h2>
+<ul>
+<li>{{domxref(“AudioBuffer.getChannelData()”)}}
+<ul>
+<li>: Returns a {{jsxref(“Float32Array”)}} containing the PCM data associated with the channel, defined by the <code>channel</code> parameter (with <code>0</code> representing the first channel).</li>
+</ul></li>
+<li>{{domxref(“AudioBuffer.copyFromChannel()”)}}
+<ul>
+<li>: Copies the samples from the specified channel of the <code>AudioBuffer</code> to the <code>destination</code> array.</li>
+</ul></li>
+<li>{{domxref(“AudioBuffer.copyToChannel()”)}}
+<ul>
+<li>: Copies the samples to the specified channel of the <code>AudioBuffer</code>, from the <code>source</code> array.</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<p>The following simple example shows how to create an <code>AudioBuffer</code> and fill it with random white noise. You can find the full source code at our <a href="https://github.com/mdn/webaudio-examples">webaudio-examples</a> repository; a <a href="https://mdn.github.io/webaudio-examples/audio-buffer/">running live</a> version is also available.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> audioCtx <span class="op">=</span> <span class="kw">new</span> (<span class="va">window</span>.<span class="at">AudioContext</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">webkitAudioContext</span>)()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="co">// Create an empty three-second stereo buffer at the sample rate of the AudioContext</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="kw">var</span> myArrayBuffer <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createBuffer</span>(<span class="dv">2</span><span class="op">,</span> <span class="va">audioCtx</span>.<span class="at">sampleRate</span> <span class="op">*</span> <span class="dv">3</span><span class="op">,</span> <span class="va">audioCtx</span>.<span class="at">sampleRate</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-5" title="5"></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="co">// Fill the buffer with white noise;</span></a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="co">// just random values between -1.0 and 1.0</span></a>
+<a class="sourceLine" id="cb1-8" title="8"><span class="cf">for</span> (<span class="kw">var</span> channel <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> channel <span class="op">&lt;</span> <span class="va">myArrayBuffer</span>.<span class="at">numberOfChannels</span><span class="op">;</span> channel<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-9" title="9">  <span class="co">// This gives us the actual array that contains the data</span></a>
+<a class="sourceLine" id="cb1-10" title="10">  <span class="kw">var</span> nowBuffering <span class="op">=</span> <span class="va">myArrayBuffer</span>.<span class="at">getChannelData</span>(channel)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-11" title="11">  <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">myArrayBuffer</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-12" title="12">    <span class="co">// Math.random() is in [0; 1.0]</span></a>
+<a class="sourceLine" id="cb1-13" title="13">    <span class="co">// audio needs to be in [-1.0; 1.0]</span></a>
+<a class="sourceLine" id="cb1-14" title="14">    nowBuffering[i] <span class="op">=</span> <span class="va">Math</span>.<span class="at">random</span>() <span class="op">*</span> <span class="dv">2</span> <span class="op">-</span> <span class="dv">1</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-15" title="15">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-16" title="16"><span class="op">}</span></a>
+<a class="sourceLine" id="cb1-17" title="17"></a>
+<a class="sourceLine" id="cb1-18" title="18"><span class="co">// Get an AudioBufferSourceNode.</span></a>
+<a class="sourceLine" id="cb1-19" title="19"><span class="co">// This is the AudioNode to use when we want to play an AudioBuffer</span></a>
+<a class="sourceLine" id="cb1-20" title="20"><span class="kw">var</span> source <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createBufferSource</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-21" title="21"></a>
+<a class="sourceLine" id="cb1-22" title="22"><span class="co">// set the buffer in the AudioBufferSourceNode</span></a>
+<a class="sourceLine" id="cb1-23" title="23"><span class="va">source</span>.<span class="at">buffer</span> <span class="op">=</span> myArrayBuffer<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-24" title="24"></a>
+<a class="sourceLine" id="cb1-25" title="25"><span class="co">// connect the AudioBufferSourceNode to the</span></a>
+<a class="sourceLine" id="cb1-26" title="26"><span class="co">// destination so we can hear the sound</span></a>
+<a class="sourceLine" id="cb1-27" title="27"><span class="va">source</span>.<span class="at">connect</span>(<span class="va">audioCtx</span>.<span class="at">destination</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-28" title="28"></a>
+<a class="sourceLine" id="cb1-29" title="29"><span class="co">// start the source playing</span></a>
+<a class="sourceLine" id="cb1-30" title="30"><span class="va">source</span>.<span class="at">start</span>()<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API">Using the Web Audio API</a></li>
+</ul>

@@ -1,0 +1,61 @@
+<p>{{ApiRef(“HTML DOM”)}}</p>
+<p>The <strong><code>onerror</code></strong> property of the {{domxref(“GlobalEventHandlers”)}} mixin is an <a href="/en-US/docs/Web/Events/Event_handlers">event handler</a> that processes {{event(“error”)}} events.</p>
+<p>Error events are fired at various targets for different kinds of errors:</p>
+<ul>
+<li>When a <strong>JavaScript runtime error</strong> (including syntax errors and exceptions thrown within handlers) occurs, an <a href="/en-US/docs/Web/API/Element/error_event"><code>error</code></a> event using interface {{domxref(“ErrorEvent”)}} is fired at {{domxref(“window”)}} and <code>window.onerror()</code> is invoked (as well as handlers attached by {{domxref(“EventTarget.addEventListener”)}} (not only capturing)).</li>
+<li>When a resource (such as an {{HTMLElement(“img”)}} or {{HTMLElement(“script”)}}) <strong>fails to load</strong>, an <a href="/en-US/docs/Web/API/Element/error_event"><code>error</code></a> event using interface {{domxref(“Event”)}} is fired at the element that initiated the load, and the <code>onerror()</code> handler on the element is invoked. These error events do not bubble up to window, but can be handled with a {{domxref(“EventTarget.addEventListener”)}} configured with <code>useCapture</code> set to <code>true</code>.</li>
+</ul>
+<p>Installing a global <code>error</code> event handler is useful for automated collection of error reports.</p>
+<h2 id="syntax">Syntax</h2>
+<p>For historical reasons, different arguments are passed to <code>window.onerror</code> and <code>element.onerror</code> handlers (as well as on error-type {{domxref(“EventTarget.addEventListener”)}} handlers).</p>
+<h3 id="window.onerror">window.onerror</h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">window</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span>(message<span class="op">,</span> source<span class="op">,</span> lineno<span class="op">,</span> colno<span class="op">,</span> error) <span class="op">{</span> <span class="co">/* ... */</span> <span class="op">};</span></a></code></pre></div>
+<p>Function parameters:</p>
+<ul>
+<li><code>message</code>: error message (string). Available as <code>event</code> (sic!) in HTML <code>onerror=""</code> handler.</li>
+<li><code>source</code>: URL of the script where the error was raised (string)</li>
+<li><code>lineno</code>: Line number where error was raised (number)</li>
+<li><code>colno</code>: Column number for the line where the error occurred (number)</li>
+<li><code>error</code>: <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error">Error Object</a> (object). May be <code>null</code> if no corresponding Error Object is available.</li>
+</ul>
+<p>When the function returns <code>true</code>, this prevents the firing of the default event handler.</p>
+<h3 id="window.addeventlistenererror">window.addEventListener(‘error’)</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">window</span>.<span class="at">addEventListener</span>(<span class="st">&#39;error&#39;</span><span class="op">,</span> <span class="kw">function</span>(event) <span class="op">{</span> <span class="co">/* ... */</span> <span class="op">}</span>)</a></code></pre></div>
+<p><code>event</code> of type {{domxref(“ErrorEvent”)}} contains all the information about the event and the error.</p>
+<h3 id="element.onerror">element.onerror</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="va">element</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span> <span class="co">/* ... */</span> <span class="op">}</span></a></code></pre></div>
+<p><code>element.onerror</code> accepts a function with a single argument of type {{domxref(“Event”)}}.</p>
+<p>A good example for this is when you are using an image tag, and need to specify a backup image in case the one you need is not available on the server for any reason.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">&lt;img</span><span class="ot"> src=</span><span class="st">&quot;imagefound.gif&quot;</span><span class="ot"> onerror=</span><span class="st">&quot;this.onerror=null;this.src=&#39;imagenotfound.gif&#39;;&quot;</span> <span class="kw">/&gt;</span></a></code></pre></div>
+<p>The reason we have the <code>this.onerror=null</code> in the function is that the browser will be stuck in an endless loop if the onerror image itself generates an error.</p>
+<h2 id="notes">Notes</h2>
+<p>When an error occurs in a script, loaded from a <a href="/en-US/docs/Web/Security/Same-origin_policy">different origin</a>, the details of the error are not reported to prevent leaking information (see {{bug(“363897”)}}). Instead the error reported is <strong><code>"Script error."</code></strong> This behavior can be overridden in some browsers using the <code>{{htmlattrxref("crossorigin","script")}}</code> attribute on {{HTMLElement(“script”)}} and having the server send the appropriate <a href="/en-US/docs/Web/HTTP/CORS">CORS</a> HTTP response headers.  A workaround is to isolate “Script error.” and handle it knowing that the error detail is only viewable in the browser console and not accessible via JavaScript.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="va">window</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span> (msg<span class="op">,</span> url<span class="op">,</span> lineNo<span class="op">,</span> columnNo<span class="op">,</span> error) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="kw">var</span> string <span class="op">=</span> <span class="va">msg</span>.<span class="at">toLowerCase</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3">  <span class="kw">var</span> substring <span class="op">=</span> <span class="st">&#39;script error&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-4" title="4">  <span class="cf">if</span> (<span class="va">string</span>.<span class="at">indexOf</span>(substring) <span class="op">&gt;</span> <span class="dv">-1</span>)<span class="op">{</span></a>
+<a class="sourceLine" id="cb5-5" title="5">    <span class="at">alert</span>(<span class="st">&#39;Script Error: See Browser Console for Detail&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-6" title="6">  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-7" title="7">    <span class="kw">var</span> message <span class="op">=</span> [</a>
+<a class="sourceLine" id="cb5-8" title="8">      <span class="st">&#39;Message: &#39;</span> <span class="op">+</span> msg<span class="op">,</span></a>
+<a class="sourceLine" id="cb5-9" title="9">      <span class="st">&#39;URL: &#39;</span> <span class="op">+</span> url<span class="op">,</span></a>
+<a class="sourceLine" id="cb5-10" title="10">      <span class="st">&#39;Line: &#39;</span> <span class="op">+</span> lineNo<span class="op">,</span></a>
+<a class="sourceLine" id="cb5-11" title="11">      <span class="st">&#39;Column: &#39;</span> <span class="op">+</span> columnNo<span class="op">,</span></a>
+<a class="sourceLine" id="cb5-12" title="12">      <span class="st">&#39;Error object: &#39;</span> <span class="op">+</span> <span class="va">JSON</span>.<span class="at">stringify</span>(error)</a>
+<a class="sourceLine" id="cb5-13" title="13">    ].<span class="at">join</span>(<span class="st">&#39; - &#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-14" title="14"></a>
+<a class="sourceLine" id="cb5-15" title="15">    <span class="at">alert</span>(message)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-16" title="16">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-17" title="17"></a>
+<a class="sourceLine" id="cb5-18" title="18">  <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-19" title="19"><span class="op">};</span></a></code></pre></div>
+<p>When using the inline HTML markup (<code>&lt;body onerror="alert('an error occurred')"&gt;</code>), the HTML specification requires arguments passed to <code>onerror</code> to be named <code>event</code>, <code>source</code>, <code>lineno</code>, <code>colno</code>, <code>error</code>. In browsers that have not implemented this requirement, they can still be obtained via <code>arguments[0]</code> through <code>arguments[2]</code>.</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="https://blog.sentry.io/2016/01/04/client-javascript-reporting-window-onerror">Capture and report JavaScript errors with window.onerror (blog.sentry.io, 2016)</a></li>
+<li><a href="https://danlimerick.wordpress.com/2014/01/18/how-to-catch-javascript-errors-with-window-onerror-even-on-chrome-and-firefox/">How to catch JavaScript Errors with window.onerror (even on Chrome and Firefox) (danlimerick.wordpress.com, 2014)</a></li>
+</ul>

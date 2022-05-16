@@ -1,0 +1,76 @@
+<p>{{securecontext_header}}{{DefaultAPISidebar(“Contact Picker API”)}}</p>
+<p>The Contact Picker API allows users to select entries from their contact list and share limited details of the selected entries with a website or application.</p>
+<blockquote>
+<p><strong>Note:</strong> This API is <em>not available</em> in <a href="/en-US/docs/Web/API/Web_Workers_API">Web Workers</a> (not exposed via {{domxref(“WorkerNavigator”)}}).</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> The Contact Picker API should not be confused with the deprecated <a href="/docs/Archive/B2G_OS/API/Contacts_API">Contact API</a>.</p>
+</blockquote>
+<h2 id="contact-picker-api-concepts-and-usage">Contact Picker API Concepts and Usage</h2>
+<p>Access to contacts has long been a feature available within native applications. The Contacts Picker API brings that functionality to web applications.</p>
+<p>Use cases include selecting contacts to message via an email or chat application, selecting a contacts phone number for use with voice over IP (VOIP), or for discovering contacts who have already joined a social platform. User agents can also offer a consistent experience with other applications on a users device.</p>
+<p>When calling the {{domxref(‘ContactsManager.select’, ‘select’)}} method of the {{domxref(‘ContactsManager’)}} interface, the user is presented with a contact picker, whereby they can then select contact information to share with the web application. User interaction is required before permission to display the contact picker is granted and access to contacts is not persistent; the user must grant access every time a request is made by the application.</p>
+<p>This API is only available from a secure top-level browsing context and very carefully considers the sensitivity and privacy of contact data. The onus is on the user for choosing data to share and only allows specific data for selected contacts, with no access to any data for other contacts.</p>
+<h2 id="interfaces">Interfaces</h2>
+<ul>
+<li>{{domxref(“ContactAddress”)}}
+<ul>
+<li>: Represents a physical address.</li>
+</ul></li>
+<li>{{domxref(“ContactsManager”)}}
+<ul>
+<li>: Provides a way for users to select and share limited details of contacts with a web application.</li>
+</ul></li>
+<li>{{domxref(“Navigator.contacts”)}}
+<ul>
+<li>: Returns a {{domxref(“ContactsManager”)}} object instance, from which all other functionality can be accessed.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<h3 id="feature-detection">Feature Detection</h3>
+<p>The following code checks whether the Contact Picker API is supported.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> supported <span class="op">=</span> <span class="st">&#39;contacts&#39;</span> <span class="kw">in</span> navigator<span class="op">;</span></a></code></pre></div>
+<h3 id="checking-for-supported-properties">Checking for Supported Properties</h3>
+<p>The following asynchronous function uses the <code>getProperties()</code> method to check for supported properties.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">async</span> <span class="kw">function</span> <span class="at">checkProperties</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">const</span> supportedProperties <span class="op">=</span> <span class="cf">await</span> <span class="va">navigator</span>.<span class="va">contacts</span>.<span class="at">getProperties</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="cf">if</span> (<span class="va">supportedProperties</span>.<span class="at">includes</span>(<span class="st">&#39;name&#39;</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">    <span class="co">// run code for name support</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="cf">if</span> (<span class="va">supportedProperties</span>.<span class="at">includes</span>(<span class="st">&#39;email&#39;</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-7" title="7">    <span class="co">// run code for email support</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-9" title="9">  <span class="cf">if</span> (<span class="va">supportedProperties</span>.<span class="at">includes</span>(<span class="st">&#39;tel&#39;</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-10" title="10">    <span class="co">// run code for telephone number support</span></a>
+<a class="sourceLine" id="cb2-11" title="11">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-12" title="12">  <span class="cf">if</span> (<span class="va">supportedProperties</span>.<span class="at">includes</span>(<span class="st">&#39;address&#39;</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-13" title="13">    <span class="co">// run code for address support</span></a>
+<a class="sourceLine" id="cb2-14" title="14">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-15" title="15">  <span class="cf">if</span> (<span class="va">supportedProperties</span>.<span class="at">includes</span>(<span class="st">&#39;icon&#39;</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-16" title="16">    <span class="co">// run code for avatar support</span></a>
+<a class="sourceLine" id="cb2-17" title="17">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-18" title="18"><span class="op">}</span></a></code></pre></div>
+<h3 id="selecting-contacts">Selecting Contacts</h3>
+<p>The following example sets an array of properties to be retrieved for each contact, as well as setting an options object to allow for multiple contacts to be selected.</p>
+<p>An asynchronous function is then defined which uses the <code>select()</code> method to present the user with a contact picker interface and handle the chosen results.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> props <span class="op">=</span> [<span class="st">&#39;name&#39;</span><span class="op">,</span> <span class="st">&#39;email&#39;</span><span class="op">,</span> <span class="st">&#39;tel&#39;</span><span class="op">,</span> <span class="st">&#39;address&#39;</span><span class="op">,</span> <span class="st">&#39;icon&#39;</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">const</span> opts <span class="op">=</span> <span class="op">{</span><span class="dt">multiple</span><span class="op">:</span> <span class="kw">true</span><span class="op">};</span></a>
+<a class="sourceLine" id="cb3-3" title="3"></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="kw">async</span> <span class="kw">function</span> <span class="at">getContacts</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-5" title="5">  <span class="cf">try</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-6" title="6">      <span class="kw">const</span> contacts <span class="op">=</span> <span class="cf">await</span> <span class="va">navigator</span>.<span class="va">contacts</span>.<span class="at">select</span>(props<span class="op">,</span> opts)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">      <span class="at">handleResults</span>(contacts)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="op">}</span> <span class="cf">catch</span> (ex) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-9" title="9">      <span class="co">// Handle any errors here.</span></a>
+<a class="sourceLine" id="cb3-10" title="10">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="op">}</span></a></code></pre></div>
+<p><code>handleResults()</code> is a developer defined function.</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications(“api.ContactsManager”)}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat(“api.ContactsManager”)}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="https://web.dev/contact-picker/">A Contact Picker for the Web</a></li>
+<li><a href="https://contact-picker.glitch.me/">A Contact Picker demo on glitch</a></li>
+</ul>

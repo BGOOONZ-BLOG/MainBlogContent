@@ -1,0 +1,117 @@
+<p>{{APIRef(“File System API”)}}{{SeeCompatTable}}{{Non-standard_header}}</p>
+<p>If the item described by the {{domxref(“DataTransferItem”)}} is a file, <code>webkitGetAsEntry()</code> returns a {{domxref(“FileSystemFileEntry”)}} or {{domxref(“FileSystemDirectoryEntry”)}} representing it. If the item isn’t a file, <code>null</code> is returned.</p>
+<blockquote>
+<p><strong>Note:</strong> This function is implemented as <code>webkitGetAsEntry()</code> in non-WebKit browsers including Firefox at this time; it may be renamed to <code>getAsEntry()</code> in the future, so you should code defensively, looking for both.</p>
+</blockquote>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">DataTransferItem</span>.<span class="at">webkitGetAsEntry</span>()<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<p>None.</p>
+<h3 id="return-value">Return value</h3>
+<p>A {{domxref(“FileSystemEntry”)}}-based object describing the dropped item. This will be either {{domxref(“FileSystemFileEntry”)}} or {{domxref(“FileSystemDirectoryEntry”)}}.</p>
+<h2 id="example">Example</h2>
+<p>In this example, a drop zone is created, which responds to the {{event(“drop”)}} event by scanning through the dropped files and directories, outputting a hierarchical directory listing.</p>
+<h3 id="html-content">HTML content</h3>
+<p>The HTML establishes the drop zone itself, which is a {{HTMLElement(“div”)}} element with the ID <code>"dropzone"</code>, and an unordered list element with the ID <code>"listing"</code>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">&lt;p&gt;</span>Drag files and/or directories to the box below!<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;dropzone&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;boxtitle&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb2-5" title="5">    Drop Files Here</a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb2-8" title="8"></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="kw">&lt;h2&gt;</span>Directory tree:<span class="kw">&lt;/h2&gt;</span></a>
+<a class="sourceLine" id="cb2-10" title="10"></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="kw">&lt;ul</span><span class="ot"> id=</span><span class="st">&quot;listing&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb2-12" title="12"><span class="kw">&lt;/ul&gt;</span></a></code></pre></div>
+<h3 id="css-content">CSS content</h3>
+<p>The styles used by the example are shown here.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb3-1" title="1"><span class="pp">#dropzone</span> {</a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">text-align</span>: <span class="dv">center</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="kw">width</span>: <span class="dv">300</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="kw">height</span>: <span class="dv">100</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">  <span class="kw">margin</span>: <span class="dv">10</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="kw">padding</span>: <span class="dv">10</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="kw">border</span>: <span class="dv">4</span><span class="dt">px</span> <span class="dv">dashed</span> <span class="cn">red</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="kw">border-radius</span>: <span class="dv">10</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">}</a>
+<a class="sourceLine" id="cb3-10" title="10"></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="pp">#boxtitle</span> {</a>
+<a class="sourceLine" id="cb3-12" title="12">  <span class="kw">display</span>: <span class="dv">table-cell</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-13" title="13">  <span class="kw">vertical-align</span>: <span class="dv">middle</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-14" title="14">  <span class="kw">text-align</span>: <span class="dv">center</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-15" title="15">  <span class="kw">color</span>: <span class="cn">black</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-16" title="16">  <span class="kw">font</span>: <span class="dv">bold</span> <span class="dv">2</span><span class="dt">em</span> <span class="st">&quot;Arial&quot;</span><span class="op">,</span> <span class="dv">sans-serif</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-17" title="17">  <span class="kw">width</span>: <span class="dv">300</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-18" title="18">  <span class="kw">height</span>: <span class="dv">100</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-19" title="19">}</a>
+<a class="sourceLine" id="cb3-20" title="20"></a>
+<a class="sourceLine" id="cb3-21" title="21">body {</a>
+<a class="sourceLine" id="cb3-22" title="22">  <span class="kw">font</span>: <span class="dv">14</span><span class="dt">px</span> <span class="st">&quot;Arial&quot;</span><span class="op">,</span> <span class="dv">sans-serif</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-23" title="23">}</a></code></pre></div>
+<h3 id="javascript-content">JavaScript content</h3>
+<p>First, let’s look at the recursive <code>scanFiles()</code> function. This function takes as input a {{domxref(“FileSystemEntry”)}} representing an entry in the file system to be scanned and processed (the <code>item</code> parameter), and an element into which to insert the list of contents (the <code>container</code> parameter).</p>
+<blockquote>
+<p><strong>Note:</strong> To read all files in a directory, <code>readEntries</code> needs to be called repeatedly until it returns an empty array. In Chromium-based browsers, the following example will only return a max of 100 entries.</p>
+</blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">let</span> dropzone <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;dropzone&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="kw">let</span> listing <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;listing&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="kw">function</span> <span class="at">scanFiles</span>(item<span class="op">,</span> container) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="kw">let</span> elem <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;li&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-6" title="6">  <span class="va">elem</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="va">item</span>.<span class="at">name</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="va">container</span>.<span class="at">appendChild</span>(elem)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-8" title="8"></a>
+<a class="sourceLine" id="cb4-9" title="9"> <span class="cf">if</span> (<span class="va">item</span>.<span class="at">isDirectory</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-10" title="10">    <span class="kw">let</span> directoryReader <span class="op">=</span> <span class="va">item</span>.<span class="at">createReader</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-11" title="11">    <span class="kw">let</span> directoryContainer <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;ul&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-12" title="12">    <span class="va">container</span>.<span class="at">appendChild</span>(directoryContainer)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-13" title="13">    <span class="va">directoryReader</span>.<span class="at">readEntries</span>(<span class="kw">function</span>(entries) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-14" title="14">        <span class="va">entries</span>.<span class="at">forEach</span>(<span class="kw">function</span>(entry) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-15" title="15">          <span class="at">scanFiles</span>(entry<span class="op">,</span> directoryContainer)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-16" title="16">      <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-17" title="17">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-18" title="18">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-19" title="19"><span class="op">}</span></a></code></pre></div>
+<p><code>scanFiles()</code> begins by creating a new {{HTMLElement(“li”)}} element to represent the item being scanned, inserts the name of the item into it as its text content, and then appends it to the container. The container is always a list element in this example, as you’ll see shortly.</p>
+<p>Once the current item is in the list, the item’s {{domxref(“FileSystemEntry.isDirectory”, “isDirectory”)}} property is checked. If the item is a directory, we need to recurse into that directory. The first step is to create a {{domxref(“FileSystemDirectoryReader”)}} to handle fetching the directory’s contents. That’s done by calling the item’s {{domxref(“FileSystemDirectoryEntry.createReader”, “createReader()”)}} method. Then a new {{HTMLElement(“ul”)}} is created and appended to the parent list; this will contain the directory’s contents in the next level down in the list’s hierarchy.</p>
+<p>After that, {{domxref(“FileSystemDirectoryReader.readEntries”, “directoryReader.readEntries()”)}} is called to read in all the entries in the directory. These are each, in turn, passed into a recursive call to <code>scanFiles()</code> to process them. Any of them which are files are inserted into the list; any which are directories are inserted into the list and a new level of the list’s hierarchy is added below, and so forth.</p>
+<p>Then come the event handlers. First, we prevent the {{event(“dragover”)}} event from being handled by the default handler, so that our drop zone can receive the drop:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="va">dropzone</span>.<span class="at">addEventListener</span>(<span class="st">&quot;dragover&quot;</span><span class="op">,</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2">    <span class="va">event</span>.<span class="at">preventDefault</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="op">},</span> <span class="kw">false</span>)<span class="op">;</span></a></code></pre></div>
+<p>The event handler that kicks everything off, of course, is the handler for the {{event(“drop”)}} event:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="va">dropzone</span>.<span class="at">addEventListener</span>(<span class="st">&quot;drop&quot;</span><span class="op">,</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="kw">let</span> items <span class="op">=</span> <span class="va">event</span>.<span class="va">dataTransfer</span>.<span class="at">items</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-3" title="3"></a>
+<a class="sourceLine" id="cb6-4" title="4">  <span class="va">event</span>.<span class="at">preventDefault</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-5" title="5">  <span class="va">listing</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&quot;&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-6" title="6"></a>
+<a class="sourceLine" id="cb6-7" title="7">  <span class="cf">for</span> (<span class="kw">let</span> i<span class="op">=</span><span class="dv">0</span><span class="op">;</span> i<span class="op">&lt;</span><span class="va">items</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-8" title="8">    <span class="kw">let</span> item <span class="op">=</span> items[i].<span class="at">webkitGetAsEntry</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-9" title="9"></a>
+<a class="sourceLine" id="cb6-10" title="10">    <span class="cf">if</span> (item) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-11" title="11">        <span class="at">scanFiles</span>(item<span class="op">,</span> listing)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-12" title="12">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-13" title="13">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-14" title="14"><span class="op">},</span> <span class="kw">false</span>)<span class="op">;</span></a></code></pre></div>
+<p>This fetches the list of {{domxref(“DataTransferItem”)}} objects representing the items dropped from <code>event.dataTransfer.items</code>. Then we call {{domxref(“Event.preventDefault()”)}} to prevent the event from being handled further after we’re done.</p>
+<p>Now it’s time to start building the list. First, the list is emptied by setting {{domxref(“Node.textContent”, “listing.textContent”)}} to be empty. That leaves us with an empty {{domxref(“ul”)}} to begin inserting directory entries into.</p>
+<p>Then we iterate over the items in the list of dropped items. For each one, we call its {{domxref(“DataTransferItem.webkitGetAsEntry”, “webkitGetAsEntry()”)}} method to obtain a {{domxref(“FileSystemEntry”)}} representing the file. If that’s successful, we call <code>scanFiles()</code> to process the item—either by adding it to the list if it’s just a file or by adding it and walking down into it if it’s a directory.</p>
+<h3 id="result">Result</h3>
+<p>You can see how this works by trying it out below. Find some files and directories and drag them in, and take a look at the resulting output.</p>
+<p>{{ EmbedLiveSample(‘Example’, 600, 400) }}</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<p>This API has no official W3C or WHATWG specification.</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/File_and_Directory_Entries_API">File and Directory Entries API</a></li>
+<li><a href="/en-US/docs/Web/API/File_and_Directory_Entries_API/Introduction">Introduction to the File System API</a></li>
+<li>{{domxref(“DataTransferItem”)}}</li>
+<li>{{domxref(“FileSystemEntry”)}}, {{domxref(“FileSystemFileEntry”)}}, and {{domxref(“FileSystemDirectoryEntry”)}}</li>
+<li>Events: {{event(“dragover”)}} and {{event(“drop”)}}</li>
+</ul>

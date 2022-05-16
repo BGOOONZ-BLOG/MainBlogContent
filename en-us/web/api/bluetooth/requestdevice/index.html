@@ -1,0 +1,67 @@
+<p>{{APIRef(“Bluetooth API”)}} {{securecontext_header}}{{SeeCompatTable}}</p>
+<p>The <strong><code>Bluetooth.requestDevice()</code></strong> method of the {{domxref(“Bluetooth”)}} interface returns a {{jsxref(“Promise”)}} to a {{domxref(“BluetoothDevice”)}} object with the specified options. If there is no chooser UI, this method returns the first device matching the criteria.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">Bluetooth</span>.<span class="at">requestDevice</span>([options])</a>
+<a class="sourceLine" id="cb1-2" title="2">  .<span class="at">then</span>(<span class="kw">function</span>(bluetoothDevice) <span class="op">{</span> <span class="co">/* ... */</span> <span class="op">}</span>)</a></code></pre></div>
+<h3 id="return-value">Return value</h3>
+<p>A {{jsxref(“Promise”)}} to a {{domxref(“BluetoothDevice”)}} object.</p>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><p>options {{optional_inline}}</p>
+<ul>
+<li><p>: An object that sets options for the device request. The available options are:</p>
+<ul>
+<li><code>filters[]</code>: An array of <code>BluetoothScanFilters</code>. This filter consists of an array of <code>BluetoothServiceUUID</code>s, a <code>name</code> parameter, and a <code>namePrefix</code> parameter.</li>
+<li><code>optionalServices[]</code>: An array of <code>BluetoothServiceUUID</code>s.</li>
+<li><code>acceptAllDevices</code>: A boolean value indicating that the requesting script can accept all Bluetooth devices. The default is <code>false</code>.</li>
+</ul></li>
+</ul></li>
+</ul>
+<h2 id="exceptions">Exceptions</h2>
+<ul>
+<li><code>TypeError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the provided <code>options</code> do not make sense. For example, <code>options.filters</code> is present and <code>options.acceptAllDevices</code> is <code>true</code>, or if <code>options.filters</code> is not present and <code>options.acceptAllDevices</code> is <code>false</code>. Or <code>options.filters</code> is <code>[]</code>.</li>
+</ul></li>
+<li><code>NotFoundError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if there is no Bluetooth device that matches the specified options.</li>
+</ul></li>
+<li><code>SecurityError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if this operation is not permitted in this context due to security concerns. For example, it is called from insecure origin.</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">// Discovery options match any devices advertising:</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="co">// . The standard heart rate service.</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="co">// . Both 16-bit service IDs 0x1802 and 0x1803.</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="co">// . A proprietary 128-bit UUID service c48e6067-5295-48d3-8d5c-0395f61792b1.</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="co">// . Devices with name &quot;ExampleName&quot;.</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="co">// . Devices with name starting with &quot;Prefix&quot;.</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="co">//</span></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="co">// And enables access to the battery service if devices</span></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="co">// include it, even if devices do not advertise that service.</span></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="kw">let</span> options <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-11" title="11">  <span class="dt">filters</span><span class="op">:</span> [</a>
+<a class="sourceLine" id="cb2-12" title="12">    <span class="op">{</span><span class="dt">services</span><span class="op">:</span> [<span class="st">&#39;heart_rate&#39;</span>]<span class="op">},</span></a>
+<a class="sourceLine" id="cb2-13" title="13">    <span class="op">{</span><span class="dt">services</span><span class="op">:</span> [<span class="bn">0x1802</span><span class="op">,</span> <span class="bn">0x1803</span>]<span class="op">},</span></a>
+<a class="sourceLine" id="cb2-14" title="14">    <span class="op">{</span><span class="dt">services</span><span class="op">:</span> [<span class="st">&#39;c48e6067-5295-48d3-8d5c-0395f61792b1&#39;</span>]<span class="op">},</span></a>
+<a class="sourceLine" id="cb2-15" title="15">    <span class="op">{</span><span class="dt">name</span><span class="op">:</span> <span class="st">&#39;ExampleName&#39;</span><span class="op">},</span></a>
+<a class="sourceLine" id="cb2-16" title="16">    <span class="op">{</span><span class="dt">namePrefix</span><span class="op">:</span> <span class="st">&#39;Prefix&#39;</span><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-17" title="17">  ]<span class="op">,</span></a>
+<a class="sourceLine" id="cb2-18" title="18">  <span class="dt">optionalServices</span><span class="op">:</span> [<span class="st">&#39;battery_service&#39;</span>]</a>
+<a class="sourceLine" id="cb2-19" title="19"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-20" title="20"></a>
+<a class="sourceLine" id="cb2-21" title="21"><span class="va">navigator</span>.<span class="va">bluetooth</span>.<span class="at">requestDevice</span>(options).<span class="at">then</span>(<span class="kw">function</span>(device) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-22" title="22">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Name: &#39;</span> <span class="op">+</span> <span class="va">device</span>.<span class="at">name</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-23" title="23">  <span class="co">// Do something with the device.</span></a>
+<a class="sourceLine" id="cb2-24" title="24"><span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-25" title="25">.<span class="at">catch</span>(<span class="kw">function</span>(error) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-26" title="26">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Something went wrong. &quot;</span> <span class="op">+</span> error)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-27" title="27"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p><a href="https://webbluetoothcg.github.io/web-bluetooth/#example-filter-by-services">Detailed examples</a> are in the specification.</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

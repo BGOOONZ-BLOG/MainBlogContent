@@ -1,0 +1,56 @@
+<p>{{APIRef(“Web Audio API”)}}</p>
+<p>The read-only <strong><code>parameters</code></strong> property of the {{domxref(“AudioWorkletNode”)}} interface returns the associated {{domxref(“AudioParamMap”)}} — that is, a <code>Map</code>-like collection of {{domxref(“AudioParam”)}} objects. They are instantiated during creation of the underlying {{domxref(“AudioWorkletProcessor”)}} according to its {{domxref(“AudioWorkletProcessor.parameterDescriptors”, “parameterDescriptors”)}} static getter.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">audioWorkletNodeInstance</span>.<span class="at">parameters</span></a></code></pre></div>
+<h3 id="value">Value</h3>
+<p>The {{domxref(“AudioParamMap”)}} object containing {{domxref(“AudioParam”)}} instances. They can be automated in the same way as with default <code>AudioNode</code>s, and their calculated values can be used in the {{domxref(“AudioWorkletProcessor.process”, “process”)}} method of your {{domxref(“AudioWorkletProcessor”)}}.</p>
+<h2 id="examples">Examples</h2>
+<p>To demonstrate creation and usage of custom <code>AudioParam</code>s, we’ll expand the example from {{domxref(“AudioWorkletNode”)}} page. There we’ve created a simple node which outputs white noise. Here, additionally, we’ll create a custom gain parameter, so we can directly change volume of the output (although you could use {{domxref(“GainNode”)}} to achieve this as well).</p>
+<p>First, we need to define a custom <code>AudioWorkletProcessor</code>, and register it. Note that this should be done in a separate file.</p>
+<p>We expand the processor by adding a static {{domxref(“AudioWorkletProcessor.parameterDescriptors”, “parameterDescriptors”)}} getter. It will be used internally by the <code>AudioWorkletNode</code> constructor to populate its <code>parameters</code> with instantiated <code>AudioParam</code> objects.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">// white-noise-processor.js</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">class</span> WhiteNoiseProcessor <span class="kw">extends</span> AudioWorkletProcessor <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="kw">static</span> get <span class="at">parameterDescriptors</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">    <span class="cf">return</span> [<span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">      <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;customGain&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-6" title="6">      <span class="dt">defaultValue</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-7" title="7">      <span class="dt">minValue</span><span class="op">:</span> <span class="dv">0</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-8" title="8">      <span class="dt">maxValue</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-9" title="9">      <span class="dt">automationRate</span><span class="op">:</span> <span class="st">&#39;a-rate&#39;</span></a>
+<a class="sourceLine" id="cb2-10" title="10">    <span class="op">}</span>]</a>
+<a class="sourceLine" id="cb2-11" title="11">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-12" title="12"></a>
+<a class="sourceLine" id="cb2-13" title="13">  <span class="at">process</span> (inputs<span class="op">,</span> outputs<span class="op">,</span> parameters) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-14" title="14">    <span class="kw">const</span> output <span class="op">=</span> outputs[<span class="dv">0</span>]</a>
+<a class="sourceLine" id="cb2-15" title="15">    <span class="va">output</span>.<span class="at">forEach</span>(channel <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-16" title="16">      <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">channel</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-17" title="17">        channel[i] <span class="op">=</span> (<span class="va">Math</span>.<span class="at">random</span>() <span class="op">*</span> <span class="dv">2</span> <span class="op">-</span> <span class="dv">1</span>) <span class="op">*</span></a>
+<a class="sourceLine" id="cb2-18" title="18">          (parameters[<span class="st">&#39;customGain&#39;</span>].<span class="at">length</span> <span class="op">&gt;</span> <span class="dv">1</span> <span class="op">?</span> parameters[<span class="st">&#39;customGain&#39;</span>][i] : parameters[<span class="st">&#39;customGain&#39;</span>][<span class="dv">0</span>])</a>
+<a class="sourceLine" id="cb2-19" title="19">        <span class="co">// note: a parameter contains an array of 128 values (one value for each of 128 samples),</span></a>
+<a class="sourceLine" id="cb2-20" title="20">        <span class="co">// however it may contain a single value which is to be used for all 128 samples</span></a>
+<a class="sourceLine" id="cb2-21" title="21">        <span class="co">// if no automation is scheduled for the moment.</span></a>
+<a class="sourceLine" id="cb2-22" title="22">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-23" title="23">    <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-24" title="24">    <span class="cf">return</span> <span class="kw">true</span></a>
+<a class="sourceLine" id="cb2-25" title="25">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-26" title="26"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-27" title="27"></a>
+<a class="sourceLine" id="cb2-28" title="28"><span class="at">registerProcessor</span>(<span class="st">&#39;white-noise-processor&#39;</span><span class="op">,</span> WhiteNoiseProcessor)</a></code></pre></div>
+<p>Next, in our main scripts file we’ll load the processor, create an instance of <code>AudioWorkletNode</code> passing it the name of the processor, and connect the node to an audio graph.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> audioContext <span class="op">=</span> <span class="kw">new</span> <span class="at">AudioContext</span>()</a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="cf">await</span> <span class="va">audioContext</span>.<span class="va">audioWorklet</span>.<span class="at">addModule</span>(<span class="st">&#39;white-noise-processor.js&#39;</span>)</a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw">const</span> whiteNoiseNode <span class="op">=</span> <span class="kw">new</span> <span class="at">AudioWorkletNode</span>(audioContext<span class="op">,</span> <span class="st">&#39;white-noise-processor&#39;</span>)</a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="va">whiteNoiseNode</span>.<span class="at">connect</span>(<span class="va">audioContext</span>.<span class="at">destination</span>)</a></code></pre></div>
+<p>Now we can change the gain on the node like this:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">const</span> gainParam <span class="op">=</span> <span class="va">whiteNoiseNode</span>.<span class="va">parameters</span>.<span class="at">get</span>(<span class="st">&#39;customGain&#39;</span>)</a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="va">gainParam</span>.<span class="at">setValueAtTime</span>(<span class="dv">0</span><span class="op">,</span> <span class="va">audioContext</span>.<span class="at">currentTime</span>)</a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="va">gainParam</span>.<span class="at">linearRampToValueAtTime</span>(<span class="fl">0.5</span><span class="op">,</span> <span class="va">audioContext</span>.<span class="at">currentTime</span> <span class="op">+</span> <span class="fl">0.5</span>)</a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Web_Audio_API">Web Audio API</a></li>
+<li><a href="/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API">Using the Web Audio API</a></li>
+</ul>

@@ -1,0 +1,101 @@
+<p>{{APIRef(“File API”)}}</p>
+<p>The <strong><code>Blob</code></strong> object represents a blob, which is a file-like object of immutable, raw data; they can be read as text or binary data, or converted into a {{DOMxRef(“ReadableStream”)}} so its methods can be used for processing the data.</p>
+<p>Blobs can represent data that isn’t necessarily in a JavaScript-native format. The {{DOMxRef(“File”)}} interface is based on <code>Blob</code>, inheriting blob functionality and expanding it to support files on the user’s system.</p>
+<h2 id="using-blobs">Using blobs</h2>
+<p>To construct a <code>Blob</code> from other non-blob objects and data, use the {{DOMxRef(“Blob.Blob”, “Blob()”)}} constructor. To create a blob that contains a subset of another blob’s data, use the {{DOMxRef(“Blob.slice()”, “slice()”)}} method. To obtain a <code>Blob</code> object for a file on the user’s file system, see the {{DOMxRef(“File”)}} documentation.</p>
+<p>The APIs accepting <code>Blob</code> objects are also listed in the {{DOMxRef(“File”)}} documentation.</p>
+<h2 id="constructor">Constructor</h2>
+<ul>
+<li>{{DOMxRef(“Blob.Blob”, “Blob()”)}}
+<ul>
+<li>: Returns a newly created <code>Blob</code> object which contains a concatenation of all of the data in the array passed into the constructor.</li>
+</ul></li>
+</ul>
+<h2 id="instance-properties">Instance properties</h2>
+<ul>
+<li>{{DOMxRef(“Blob.prototype.size”)}} {{readonlyinline}}
+<ul>
+<li>: The size, in bytes, of the data contained in the <code>Blob</code> object.</li>
+</ul></li>
+<li>{{DOMxRef(“Blob.prototype.type”)}} {{readonlyinline}}
+<ul>
+<li>: A string indicating the MIME type of the data contained in the <code>Blob</code>. If the type is unknown, this string is empty.</li>
+</ul></li>
+</ul>
+<h2 id="instance-methods">Instance methods</h2>
+<ul>
+<li>{{DOMxRef(“Blob.prototype.arrayBuffer()”)}}
+<ul>
+<li>: Returns a promise that resolves with an {{jsxref(“ArrayBuffer”)}} containing the entire contents of the <code>Blob</code> as binary data.</li>
+</ul></li>
+<li>{{DOMxRef(“Blob.prototype.slice()”)}}
+<ul>
+<li>: Returns a new <code>Blob</code> object containing the data in the specified range of bytes of the blob on which it’s called.</li>
+</ul></li>
+<li>{{DOMxRef(“Blob.prototype.stream()”)}}
+<ul>
+<li>: Returns a {{DOMxRef(“ReadableStream”)}} that can be used to read the contents of the <code>Blob</code>.</li>
+</ul></li>
+<li>{{DOMxRef(“Blob.prototype.text()”)}}
+<ul>
+<li>: Returns a promise that resolves with a {{DOMxRef(“USVString”)}} containing the entire contents of the <code>Blob</code> interpreted as UTF-8 text.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<h3 id="creating-a-blob">Creating a blob</h3>
+<p>The {{DOMxRef(“Blob.Blob”, “Blob()”)}} constructor can create blobs from other objects. For example, to construct a blob from a JSON string:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> obj <span class="op">=</span> <span class="op">{</span><span class="dt">hello</span><span class="op">:</span> <span class="st">&#39;world&#39;</span><span class="op">};</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">const</span> blob <span class="op">=</span> <span class="kw">new</span> <span class="at">Blob</span>([<span class="va">JSON</span>.<span class="at">stringify</span>(obj<span class="op">,</span> <span class="kw">null</span><span class="op">,</span> <span class="dv">2</span>)]<span class="op">,</span> <span class="op">{</span><span class="dt">type </span><span class="op">:</span> <span class="st">&#39;application/json&#39;</span><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h3 id="creating-a-url-representing-the-contents-of-a-typed-array">Creating a URL representing the contents of a typed array</h3>
+<p>The following code creates a JavaScript <a href="/en-US/docs/Web/JavaScript/Typed_arrays">typed array</a> and creates a new <code>Blob</code> containing the typed array’s data. It then calls {{DOMxRef(“URL.createObjectURL()”)}} to convert the blob into a {{glossary(“URL”)}}.</p>
+<h4 id="html">HTML</h4>
+<div class="sourceCode" id="cb2"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">&lt;p&gt;</span>This example creates a typed array containing the ASCII codes</a>
+<a class="sourceLine" id="cb2-2" title="2">   for the space character through the letter Z, then converts it</a>
+<a class="sourceLine" id="cb2-3" title="3">   to an object URL. A link to open that object URL is created.</a>
+<a class="sourceLine" id="cb2-4" title="4">   Click the link to see the decoded object URL.<span class="kw">&lt;/p&gt;</span></a></code></pre></div>
+<h4 id="javascript">JavaScript</h4>
+<p>The main piece of this code for example purposes is the <code>typedArrayToURL()</code> function, which creates a <code>Blob</code> from the given typed array and returns an object URL for it. Having converted the data into an object URL, it can be used in a number of ways, including as the value of the {{HTMLElement(“img”)}} element’s {{htmlattrxref(“src”, “img”)}} attribute (assuming the data contains an image, of course).</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">function</span> <span class="at">typedArrayToURL</span>(typedArray<span class="op">,</span> mimeType) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="cf">return</span> <span class="va">URL</span>.<span class="at">createObjectURL</span>(<span class="kw">new</span> <span class="at">Blob</span>([<span class="va">typedArray</span>.<span class="at">buffer</span>]<span class="op">,</span> <span class="op">{</span><span class="dt">type</span><span class="op">:</span> mimeType<span class="op">}</span>))</a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-4" title="4"></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="kw">const</span> bytes <span class="op">=</span> <span class="kw">new</span> <span class="at">Uint8Array</span>(<span class="dv">59</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6"></a>
+<a class="sourceLine" id="cb3-7" title="7"><span class="cf">for</span>(<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="dv">59</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  bytes[i] <span class="op">=</span> <span class="dv">32</span> <span class="op">+</span> i<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-10" title="10"></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="kw">const</span> url <span class="op">=</span> <span class="at">typedArrayToURL</span>(bytes<span class="op">,</span> <span class="st">&#39;text/plain&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-12" title="12"></a>
+<a class="sourceLine" id="cb3-13" title="13"><span class="kw">const</span> link <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;a&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-14" title="14"><span class="va">link</span>.<span class="at">href</span> <span class="op">=</span> url<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-15" title="15"><span class="va">link</span>.<span class="at">innerText</span> <span class="op">=</span> <span class="st">&#39;Open the array URL&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-16" title="16"></a>
+<a class="sourceLine" id="cb3-17" title="17"><span class="va">document</span>.<span class="va">body</span>.<span class="at">appendChild</span>(link)<span class="op">;</span></a></code></pre></div>
+<h4 id="result">Result</h4>
+<p>Click the link in the example to see the browser decode the object URL.</p>
+<p>{{EmbedLiveSample(“Creating_a_URL_representing_the_contents_of_a_typed_array”, 600, 200)}}</p>
+<h3 id="extracting-data-from-a-blob">Extracting data from a blob</h3>
+<p>One way to read content from a <code>Blob</code> is to use a {{DOMxRef(“FileReader”)}}. The following code reads the content of a <code>Blob</code> as a typed array:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">const</span> reader <span class="op">=</span> <span class="kw">new</span> <span class="at">FileReader</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="va">reader</span>.<span class="at">addEventListener</span>(<span class="st">&#39;loadend&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-3" title="3">   <span class="co">// reader.result contains the contents of blob as a typed array</span></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="va">reader</span>.<span class="at">readAsArrayBuffer</span>(blob)<span class="op">;</span></a></code></pre></div>
+<p>Another way to read content from a <code>Blob</code> is to use a {{domxref(“Response”)}}. The following code reads the content of a <code>Blob</code> as text:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">const</span> text <span class="op">=</span> <span class="cf">await</span> (<span class="kw">new</span> <span class="at">Response</span>(blob)).<span class="at">text</span>()<span class="op">;</span></a></code></pre></div>
+<p>Or by using {{DOMxRef(“Blob.prototype.text()”)}}:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">const</span> text <span class="op">=</span> <span class="cf">await</span> <span class="va">blob</span>.<span class="at">text</span>()<span class="op">;</span></a></code></pre></div>
+<p>By using other methods of <code>FileReader</code>, it is possible to read the contents of a Blob as a string or a data URL.</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{DOMxRef(“BlobBuilder”)}}</li>
+<li>{{DOMxRef(“FileReader”)}}</li>
+<li>{{DOMxRef(“File”)}}</li>
+<li>{{DOMxRef(“URL.createObjectURL”)}}</li>
+<li><a href="/en-US/docs/Web/API/File/Using_files_from_web_applications">Using files from web applications</a></li>
+</ul>

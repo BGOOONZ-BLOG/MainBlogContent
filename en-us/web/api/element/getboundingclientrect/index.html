@@ -1,0 +1,95 @@
+<p>{{APIRef(“DOM”)}}</p>
+<p>The <strong><code>Element.getBoundingClientRect()</code></strong> method returns a {{domxref(“DOMRect”)}} object providing information about the size of an element and its position relative to the <a href="/en-US/docs/Glossary/Viewport">viewport</a>.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1">domRect <span class="op">=</span> <span class="va">element</span>.<span class="at">getBoundingClientRect</span>()<span class="op">;</span></a></code></pre></div>
+<h3 id="value">Value</h3>
+<p>The returned value is a {{domxref(“DOMRect”)}} object which is the smallest rectangle which contains the entire element, including its padding and border-width. The <code>left</code>, <code>top</code>, <code>right</code>, <code>bottom</code>, <code>x</code>, <code>y</code>, <code>width</code>, and <code>height</code> properties describe the position and size of the overall rectangle in pixels. Properties other than <code>width</code> and <code>height</code> are relative to the top-left of the viewport.</p>
+<p><img src="element-box-diagram.png" /></p>
+<p>The <code>width</code> and <code>height</code> properties of the {{domxref(“DOMRect”)}} object returned by the method include the <code>padding</code> and <code>border-width</code>, not only the content width/height. In the standard box model, this would be equal to the <code>width</code> or <code>height</code> property of the element + <code>padding</code> + <code>border-width</code>. But if <a href="/en-US/docs/Web/CSS/box-sizing"><code>box-sizing: border-box</code></a> is set for the element this would be directly equal to its <code>width</code> or <code>height</code>.</p>
+<p>The returned value can be thought of as the union of the rectangles returned by {{domxref(“Element.getClientRects”, “getClientRects()”)}} for the element, i.e., the CSS border-boxes associated with the element.</p>
+<p>Empty border-boxes are completely ignored. If all the element’s border-boxes are empty, then a rectangle is returned with a <code>width</code> and <code>height</code> of zero and where the <code>top</code> and <code>left</code> are the top-left of the border-box for the first CSS box (in content order) for the element.</p>
+<p>The amount of scrolling that has been done of the viewport area (or any other scrollable element) is taken into account when computing the bounding rectangle. This means that the rectangle’s boundary edges (<code>top</code>, <code>right</code>, <code>bottom</code>, <code>left</code>) change their values every time the scrolling position changes (because their values are relative to the viewport and not absolute).</p>
+<p>If you need the bounding rectangle relative to the top-left corner of the document, just add the current scrolling position to the <code>top</code> and <code>left</code> properties (these can be obtained using {{domxref(“window.scrollX”)}} and {{domxref(“window.scrollY”)}}) to get a bounding rectangle which is independent from the current scrolling position.</p>
+<h3 id="cross-browser-fallback">Cross-browser fallback</h3>
+<p>Scripts requiring high cross-browser compatibility can use {{domxref(“window.pageXOffset”)}} and {{domxref(“window.pageYOffset”)}} instead of <code>window.scrollX</code> and <code>window.scrollY.</code> Scripts without access to these properties can use code like this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">// For scrollX</span></a>
+<a class="sourceLine" id="cb2-2" title="2">(((t <span class="op">=</span> <span class="va">document</span>.<span class="at">documentElement</span>) <span class="op">||</span> (t <span class="op">=</span> <span class="va">document</span>.<span class="va">body</span>.<span class="at">parentNode</span>))</a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="op">&amp;&amp;</span> <span class="kw">typeof</span> <span class="va">t</span>.<span class="at">scrollLeft</span> <span class="op">==</span> <span class="st">&#39;number&#39;</span> <span class="op">?</span> t : <span class="va">document</span>.<span class="at">body</span>).<span class="at">scrollLeft</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="co">// For scrollY</span></a>
+<a class="sourceLine" id="cb2-5" title="5">(((t <span class="op">=</span> <span class="va">document</span>.<span class="at">documentElement</span>) <span class="op">||</span> (t <span class="op">=</span> <span class="va">document</span>.<span class="va">body</span>.<span class="at">parentNode</span>))</a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="op">&amp;&amp;</span> <span class="kw">typeof</span> <span class="va">t</span>.<span class="at">scrollTop</span> <span class="op">==</span> <span class="st">&#39;number&#39;</span> <span class="op">?</span> t : <span class="va">document</span>.<span class="at">body</span>).<span class="at">scrollTop</span></a></code></pre></div>
+<h2 id="examples">Examples</h2>
+<h3 id="basic">Basic</h3>
+<p>This simple example retrieves the <code>DOMRect</code> object representing the bounding client rect of a simple <code>&lt;div&gt;</code> element, and prints out its properties below it.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">&lt;div&gt;&lt;/div&gt;</span></a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb4-1" title="1">div {</a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="kw">width</span>: <span class="dv">400</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3">  <span class="kw">height</span>: <span class="dv">200</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-4" title="4">  <span class="kw">padding</span>: <span class="dv">20</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="kw">margin</span>: <span class="dv">50</span><span class="dt">px</span> <span class="bu">auto</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-6" title="6">  <span class="kw">background</span>: <span class="cn">purple</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-7" title="7">}</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">let</span> elem <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;div&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="kw">let</span> rect <span class="op">=</span> <span class="va">elem</span>.<span class="at">getBoundingClientRect</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="cf">for</span> (<span class="kw">var</span> key <span class="kw">in</span> rect) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-4" title="4">  <span class="cf">if</span>(<span class="kw">typeof</span> rect[key] <span class="op">!==</span> <span class="st">&#39;function&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-5" title="5">    <span class="kw">let</span> para <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;p&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-6" title="6">    <span class="va">para</span>.<span class="at">textContent</span>  <span class="op">=</span> <span class="vs">`</span><span class="sc">${</span> key <span class="sc">}</span><span class="vs"> : </span><span class="sc">${</span> rect[key] <span class="sc">}</span><span class="vs">`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-7" title="7">    <span class="va">document</span>.<span class="va">body</span>.<span class="at">appendChild</span>(para)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-8" title="8">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-9" title="9"><span class="op">}</span></a></code></pre></div>
+<p>{{EmbedLiveSample(‘Basic’, ‘100%’, 640)}}</p>
+<p>Notice how the <code>width</code>/<code>height</code> are equal to its <code>width</code>/<code>height</code> + <code>padding</code>.</p>
+<p>Also note how the values of <code>x</code>/<code>left</code>, <code>y</code>/<code>top</code>, <code>right</code>, and <code>bottom</code> are equal to the absolute distance from the relevant edge of the viewport to that side of the element, in each case.</p>
+<h4 id="scrolling">Scrolling</h4>
+<p>This example demonstrates how bounding client rect is changing when document is scrolled.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;example&quot;</span><span class="kw">&gt;&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;controls&quot;</span><span class="kw">&gt;&lt;/div&gt;</span></a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb7-1" title="1">div<span class="pp">#example</span> {</a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="kw">width</span>: <span class="dv">400</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb7-3" title="3">  <span class="kw">height</span>: <span class="dv">200</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb7-4" title="4">  <span class="kw">padding</span>: <span class="dv">20</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb7-5" title="5">  <span class="kw">margin</span>: <span class="dv">50</span><span class="dt">px</span> <span class="bu">auto</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb7-6" title="6">  <span class="kw">background</span>: <span class="cn">purple</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb7-7" title="7">}</a>
+<a class="sourceLine" id="cb7-8" title="8"></a>
+<a class="sourceLine" id="cb7-9" title="9">body { <span class="kw">padding-bottom</span>: <span class="dv">1000</span><span class="dt">px</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb7-10" title="10">p { <span class="kw">margin</span>: <span class="dv">0</span><span class="op">;</span> }</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">function</span> <span class="at">update</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-2" title="2">  <span class="kw">const</span> container <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;controls&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-3" title="3">  <span class="kw">const</span> elem <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;example&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-4" title="4">  <span class="kw">const</span> rect <span class="op">=</span> <span class="va">elem</span>.<span class="at">getBoundingClientRect</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-5" title="5"></a>
+<a class="sourceLine" id="cb8-6" title="6">  <span class="va">container</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="st">&#39;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-7" title="7">  <span class="cf">for</span> (<span class="kw">let</span> key <span class="kw">in</span> rect) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-8" title="8">    <span class="cf">if</span>(<span class="kw">typeof</span> rect[key] <span class="op">!==</span> <span class="st">&#39;function&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-9" title="9">      <span class="kw">let</span> para <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;p&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-10" title="10">      <span class="va">para</span>.<span class="at">textContent</span>  <span class="op">=</span> <span class="vs">`</span><span class="sc">${</span> key <span class="sc">}</span><span class="vs"> : </span><span class="sc">${</span> rect[key] <span class="sc">}</span><span class="vs">`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-11" title="11">      <span class="va">container</span>.<span class="at">appendChild</span>(para)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-12" title="12">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb8-13" title="13">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb8-14" title="14"><span class="op">}</span></a>
+<a class="sourceLine" id="cb8-15" title="15"></a>
+<a class="sourceLine" id="cb8-16" title="16"><span class="va">document</span>.<span class="at">addEventListener</span>(<span class="st">&#39;scroll&#39;</span><span class="op">,</span> update)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-17" title="17"><span class="at">update</span>()<span class="op">;</span></a></code></pre></div>
+<p>{{EmbedLiveSample(‘Scrolling’, ‘100%’, 640)}}</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h3 id="notes">Notes</h3>
+<p>The returned <code>DOMRect</code> object can be modified in modern browsers. This was not true with older versions which effectively returned <code>DOMRectReadOnly</code>. With IE and Edge, not being able to add missing properties to their returned <a href="https://msdn.microsoft.com/en-us/library/hh826029(VS.85).aspx"><code>ClientRect</code></a>, object prevents backfilling <code>x</code> and <code>y</code>.</p>
+<p>Due to compatibility problems (see below), it is safest to rely on only properties <code>left</code>, <code>top</code>, <code>right</code>, and <code>bottom</code>.</p>
+<p>Properties in the returned <code>DOMRect</code> object are not own properties. While the <code>in</code> operator and <code>for...in</code> will find returned properties, other APIs such as <code>Object.keys()</code> will fail. Moreover, and unexpectedly, the ES2015 and newer features such as <code>Object.assign()</code> and object rest/spread will fail to copy returned properties.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1">rect <span class="op">=</span> <span class="va">elt</span>.<span class="at">getBoundingClientRect</span>()</a>
+<a class="sourceLine" id="cb9-2" title="2"><span class="co">// The result in emptyObj is {}</span></a>
+<a class="sourceLine" id="cb9-3" title="3">emptyObj <span class="op">=</span> <span class="va">Object</span>.<span class="at">assign</span>(<span class="op">{},</span> rect)</a>
+<a class="sourceLine" id="cb9-4" title="4">emptyObj <span class="op">=</span> <span class="op">{</span> ...<span class="at">rect</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb9-5" title="5"><span class="op">{</span>width<span class="op">,</span> ...<span class="at">emptyObj</span><span class="op">}</span> <span class="op">=</span> rect</a></code></pre></div>
+<p><code>DOMRect</code> properties <code>top</code>, <code>left</code>, <code>right</code>, and <code>bottom</code> are computed using the values of the object’s other properties.</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{domxref(“Element.getClientRects”, “getClientRects()”)}}</li>
+<li><a href="https://msdn.microsoft.com/en-us/library/ms536433(VS.85).aspx">MSDN: <code>getBoundingClientRect</code></a></li>
+<li><a href="https://msdn.microsoft.com/en-us/library/hh826029(VS.85).aspx">MSDN: <code>ClientRect</code></a>, an earlier version of <code>DOMRect</code></li>
+</ul>

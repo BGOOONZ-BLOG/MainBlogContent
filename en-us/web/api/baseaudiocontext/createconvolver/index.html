@@ -1,0 +1,47 @@
+<p>{{ APIRef(“Web Audio API”) }}</p>
+<p>The <code>createConvolver()</code> method of the {{ domxref(“BaseAudioContext”) }} interface creates a {{ domxref(“ConvolverNode”) }}, which is commonly used to apply reverb effects to your audio. See the <a href="https://webaudio.github.io/web-audio-api/#background-3">spec definition of Convolution</a> for more information.</p>
+<blockquote>
+<p><strong>Note:</strong> The {{domxref(“ConvolverNode.ConvolverNode”, “ConvolverNode()”)}} constructor is the recommended way to create a {{domxref(“ConvolverNode”)}}; see <a href="/en-US/docs/Web/API/AudioNode#creating_an_audionode">Creating an AudioNode</a>.</p>
+</blockquote>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">baseAudioContext</span>.<span class="at">createConvolver</span>()<span class="op">;</span></a></code></pre></div>
+<h3 id="returns">Returns</h3>
+<p>A {{domxref(“ConvolverNode”)}}.</p>
+<h2 id="example">Example</h2>
+<p>The following example shows basic usage of an AudioContext to create a convolver node. The basic premise is that you create an AudioBuffer containing a sound sample to be used as an ambience to shape the convolution (called the <em>impulse response</em>,) and apply that to the convolver. The example below uses a short sample of a concert hall crowd, so the reverb effect applied is really deep and echoey.</p>
+<p>For applied examples/information, check out our <a href="https://mdn.github.io/voice-change-o-matic/">Voice-change-O-matic demo</a> (<a href="https://github.com/mdn/voice-change-o-matic/blob/gh-pages/scripts/app.js">see app.js</a> for relevant code).</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> audioCtx <span class="op">=</span> <span class="kw">new</span> (<span class="va">window</span>.<span class="at">AudioContext</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">webkitAudioContext</span>)()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">var</span> convolver <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createConvolver</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4">  ...</a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="co">// grab audio track via XHR for convolver node</span></a>
+<a class="sourceLine" id="cb2-7" title="7"></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="kw">var</span> soundSource<span class="op">,</span> concertHallBuffer<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"></a>
+<a class="sourceLine" id="cb2-10" title="10">ajaxRequest <span class="op">=</span> <span class="kw">new</span> <span class="at">XMLHttpRequest</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="va">ajaxRequest</span>.<span class="at">open</span>(<span class="st">&#39;GET&#39;</span><span class="op">,</span> <span class="st">&#39;concert-crowd.ogg&#39;</span><span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12"><span class="va">ajaxRequest</span>.<span class="at">responseType</span> <span class="op">=</span> <span class="st">&#39;arraybuffer&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13"></a>
+<a class="sourceLine" id="cb2-14" title="14"><span class="va">ajaxRequest</span>.<span class="at">onload</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-15" title="15">  <span class="kw">var</span> audioData <span class="op">=</span> <span class="va">ajaxRequest</span>.<span class="at">response</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-16" title="16">  <span class="va">audioCtx</span>.<span class="at">decodeAudioData</span>(audioData<span class="op">,</span> <span class="kw">function</span>(buffer) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-17" title="17">      concertHallBuffer <span class="op">=</span> buffer<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">      soundSource <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createBufferSource</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-19" title="19">      <span class="va">soundSource</span>.<span class="at">buffer</span> <span class="op">=</span> concertHallBuffer<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-20" title="20">    <span class="op">},</span> <span class="kw">function</span>(e)<span class="op">{</span><span class="st">&quot;Error with decoding audio data&quot;</span> <span class="op">+</span> <span class="va">e</span>.<span class="at">err</span><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-21" title="21"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-22" title="22"></a>
+<a class="sourceLine" id="cb2-23" title="23"><span class="va">ajaxRequest</span>.<span class="at">send</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-24" title="24"></a>
+<a class="sourceLine" id="cb2-25" title="25">  ...</a>
+<a class="sourceLine" id="cb2-26" title="26"></a>
+<a class="sourceLine" id="cb2-27" title="27"><span class="va">convolver</span>.<span class="at">buffer</span> <span class="op">=</span> concertHallBuffer<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API">Using the Web Audio API</a></li>
+</ul>

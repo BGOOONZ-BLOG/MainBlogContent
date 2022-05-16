@@ -1,0 +1,78 @@
+<p>{{APIRef(“Service Workers API”)}}</p>
+<p>This is the event type for <code>fetch</code> events dispatched on the {{domxref(“ServiceWorkerGlobalScope”, “service worker global scope”, "“, 1)}}. It contains information about the fetch, including the request and how the receiver will treat the response. It provides the {{domxref(”FetchEvent.respondWith“,”event.respondWith()")}} method, which allows us to provide a response to this fetch.</p>
+<h2 id="constructor">Constructor</h2>
+<ul>
+<li>{{domxref(“FetchEvent.FetchEvent()”, “FetchEvent()”)}}
+<ul>
+<li>: Creates a new <code>FetchEvent</code> object. This constructor is not typically used. The browser creates these objects itself and provides them to <code>fetch</code> event callbacks.</li>
+</ul></li>
+</ul>
+<h2 id="properties">Properties</h2>
+<p><em>Inherits properties from its ancestor, {{domxref(“Event”)}}</em>.</p>
+<ul>
+<li>{{domxref(“FetchEvent.clientId”)}} {{readonlyInline}}
+<ul>
+<li>: The {{domxref(“Client.id”, “id”)}} of the same-origin {{domxref(“Client”, “client”)}} that initiated the fetch.</li>
+</ul></li>
+<li>{{domxref(“FetchEvent.preloadResponse”)}} {{readonlyinline}}
+<ul>
+<li>: A {{jsxref(“Promise”)}} for a {{domxref(“Response”)}}, or <code>undefined</code> if this fetch is not a navigation, or <a href="/en-US/docs/Web/API/NavigationPreloadManager">navigation preload</a> is not enabled.</li>
+</ul></li>
+<li>{{domxref(“FetchEvent.replacesClientId”)}} {{readonlyInline}}
+<ul>
+<li>: The {{domxref(“Client.id”, “id”)}} of the {{domxref(“Client”, “client”)}} that is being replaced during a page navigation.</li>
+</ul></li>
+<li>{{domxref(“FetchEvent.resultingClientId”)}} {{readonlyInline}}
+<ul>
+<li>: The {{domxref(“Client.id”, “id”)}} of the {{domxref(“Client”, “client”)}} that replaces the previous client during a page navigation.</li>
+</ul></li>
+<li>{{domxref(“FetchEvent.request”)}} {{readonlyInline}}
+<ul>
+<li>: The {{domxref(“Request”)}} the browser intends to make.</li>
+</ul></li>
+</ul>
+<h2 id="methods">Methods</h2>
+<p><em>Inherits methods from its parent, {{domxref(“ExtendableEvent”)}}</em>.</p>
+<ul>
+<li>{{domxref(“FetchEvent.respondWith()”)}}
+<ul>
+<li>: Prevent the browser’s default fetch handling, and provide (a promise for) a response yourself.</li>
+</ul></li>
+<li>{{domxref(“ExtendableEvent.waitUntil()”)}}
+<ul>
+<li>: Extends the lifetime of the event. Used to notify the browser of tasks that extend beyond the returning of a response, such as streaming and caching.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>This fetch event uses the browser default for non-GET requests. For GET requests it tries to return a match in the cache, and falls back to the network. If it finds a match in the cache, it asynchronously updates the cache for next time.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">self</span>.<span class="at">addEventListener</span>(<span class="st">&#39;fetch&#39;</span><span class="op">,</span> event <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="co">// Let the browser do its default thing</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="co">// for non-GET requests.</span></a>
+<a class="sourceLine" id="cb1-4" title="4">  <span class="cf">if</span> (<span class="va">event</span>.<span class="va">request</span>.<span class="at">method</span> <span class="op">!=</span> <span class="st">&#39;GET&#39;</span>) <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-5" title="5"></a>
+<a class="sourceLine" id="cb1-6" title="6">  <span class="co">// Prevent the default, and handle the request ourselves.</span></a>
+<a class="sourceLine" id="cb1-7" title="7">  <span class="va">event</span>.<span class="at">respondWith</span>(<span class="kw">async</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-8" title="8">    <span class="co">// Try to get the response from a cache.</span></a>
+<a class="sourceLine" id="cb1-9" title="9">    <span class="kw">const</span> cache <span class="op">=</span> <span class="cf">await</span> <span class="va">caches</span>.<span class="at">open</span>(<span class="st">&#39;dynamic-v1&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-10" title="10">    <span class="kw">const</span> cachedResponse <span class="op">=</span> <span class="cf">await</span> <span class="va">cache</span>.<span class="at">match</span>(<span class="va">event</span>.<span class="at">request</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-11" title="11"></a>
+<a class="sourceLine" id="cb1-12" title="12">    <span class="cf">if</span> (cachedResponse) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-13" title="13">      <span class="co">// If we found a match in the cache, return it, but also</span></a>
+<a class="sourceLine" id="cb1-14" title="14">      <span class="co">// update the entry in the cache in the background.</span></a>
+<a class="sourceLine" id="cb1-15" title="15">      <span class="va">event</span>.<span class="at">waitUntil</span>(<span class="va">cache</span>.<span class="at">add</span>(<span class="va">event</span>.<span class="at">request</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-16" title="16">      <span class="cf">return</span> cachedResponse<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-17" title="17">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-18" title="18"></a>
+<a class="sourceLine" id="cb1-19" title="19">    <span class="co">// If we didn&#39;t find a match in the cache, use the network.</span></a>
+<a class="sourceLine" id="cb1-20" title="20">    <span class="cf">return</span> <span class="at">fetch</span>(<span class="va">event</span>.<span class="at">request</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-21" title="21">  <span class="op">}</span>())<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-22" title="22"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{jsxref(“Promise”)}}</li>
+<li><a href="/en-US/docs/Web/API/Fetch_API">Fetch API</a></li>
+</ul>

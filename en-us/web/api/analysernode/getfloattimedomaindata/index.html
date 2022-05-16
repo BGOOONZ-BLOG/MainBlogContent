@@ -1,0 +1,68 @@
+<p>{{ APIRef(“Web Audio API”) }}</p>
+<p>The <strong><code>getFloatTimeDomainData()</code></strong> method of the {{ domxref(“AnalyserNode”) }} Interface copies the current waveform, or time-domain, data into a {{jsxref(“Float32Array”)}} array passed into it.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> audioCtx <span class="op">=</span> <span class="kw">new</span> <span class="at">AudioContext</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">var</span> analyser <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createAnalyser</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">var</span> dataArray <span class="op">=</span> <span class="kw">new</span> <span class="at">Float32Array</span>(<span class="va">analyser</span>.<span class="at">fftSize</span>)<span class="op">;</span> <span class="co">// Float32Array needs to be the same length as the fftSize</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="va">analyser</span>.<span class="at">getFloatTimeDomainData</span>(dataArray)<span class="op">;</span> <span class="co">// fill the Float32Array with data returned from getFloatTimeDomainData()</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>array</code>
+<ul>
+<li>: The {{jsxref(“Float32Array”)}} that the time domain data will be copied to. If the array has fewer elements than the {{domxref(“AnalyserNode.frequencyBinCount”)}}, excess elements are dropped. If it has more elements than needed, excess elements are ignored.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>None.</p>
+<h2 id="example">Example</h2>
+<p>The following example shows basic usage of an {{domxref(“AudioContext”)}} to create an <code>AnalyserNode</code>, then {{domxref(“window.requestAnimationFrame()”,“requestAnimationFrame”)}} and {{htmlelement(“canvas”)}} to collect time domain data repeatedly and draw an “oscilloscope style” output of the current audio input. For more complete applied examples/information, check out our <a href="https://mdn.github.io/voice-change-o-matic-float-data/">Voice-change-O-matic-float-data</a> demo (see the <a href="https://github.com/mdn/voice-change-o-matic-float-data">source code</a> too).</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> audioCtx <span class="op">=</span> <span class="kw">new</span> (<span class="va">window</span>.<span class="at">AudioContext</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">webkitAudioContext</span>)()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">var</span> analyser <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createAnalyser</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4">  ...</a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="va">analyser</span>.<span class="at">fftSize</span> <span class="op">=</span> <span class="dv">1024</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="kw">var</span> bufferLength <span class="op">=</span> <span class="va">analyser</span>.<span class="at">fftSize</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="va">console</span>.<span class="at">log</span>(bufferLength)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="kw">var</span> dataArray <span class="op">=</span> <span class="kw">new</span> <span class="at">Float32Array</span>(bufferLength)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10"></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="va">canvasCtx</span>.<span class="at">clearRect</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> WIDTH<span class="op">,</span> HEIGHT)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12"></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-14" title="14">  drawVisual <span class="op">=</span> <span class="at">requestAnimationFrame</span>(draw)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-15" title="15">  <span class="va">analyser</span>.<span class="at">getFloatTimeDomainData</span>(dataArray)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-16" title="16"></a>
+<a class="sourceLine" id="cb2-17" title="17">  <span class="va">canvasCtx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&#39;rgb(200, 200, 200)&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">  <span class="va">canvasCtx</span>.<span class="at">fillRect</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> WIDTH<span class="op">,</span> HEIGHT)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-19" title="19">  <span class="va">canvasCtx</span>.<span class="at">lineWidth</span> <span class="op">=</span> <span class="dv">2</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-20" title="20">  <span class="va">canvasCtx</span>.<span class="at">strokeStyle</span> <span class="op">=</span> <span class="st">&#39;rgb(0, 0, 0)&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-21" title="21">  <span class="va">canvasCtx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-22" title="22"></a>
+<a class="sourceLine" id="cb2-23" title="23">  <span class="kw">var</span> sliceWidth <span class="op">=</span> WIDTH <span class="op">*</span> <span class="fl">1.0</span> / bufferLength<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-24" title="24">  <span class="kw">var</span> x <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-25" title="25"></a>
+<a class="sourceLine" id="cb2-26" title="26">  <span class="cf">for</span>(<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> bufferLength<span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-27" title="27">    <span class="kw">var</span> v <span class="op">=</span> dataArray[i] <span class="op">*</span> <span class="fl">200.0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-28" title="28">    <span class="kw">var</span> y <span class="op">=</span> HEIGHT/<span class="dv">2</span> <span class="op">+</span> v<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-29" title="29"></a>
+<a class="sourceLine" id="cb2-30" title="30">    <span class="cf">if</span>(i <span class="op">===</span> <span class="dv">0</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-31" title="31">      <span class="va">canvasCtx</span>.<span class="at">moveTo</span>(x<span class="op">,</span> y)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-32" title="32">    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-33" title="33">      <span class="va">canvasCtx</span>.<span class="at">lineTo</span>(x<span class="op">,</span> y)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-34" title="34">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-35" title="35">    x <span class="op">+=</span> sliceWidth<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-36" title="36">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-37" title="37"></a>
+<a class="sourceLine" id="cb2-38" title="38">  <span class="va">canvasCtx</span>.<span class="at">lineTo</span>(<span class="va">canvas</span>.<span class="at">width</span><span class="op">,</span> <span class="va">canvas</span>.<span class="at">height</span>/<span class="dv">2</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-39" title="39">  <span class="va">canvasCtx</span>.<span class="at">stroke</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-40" title="40"><span class="op">};</span></a>
+<a class="sourceLine" id="cb2-41" title="41"></a>
+<a class="sourceLine" id="cb2-42" title="42"><span class="at">draw</span>()<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API">Using the Web Audio API</a></li>
+</ul>

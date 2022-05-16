@@ -1,0 +1,94 @@
+<p>{{APIRef(“DOM”)}}</p>
+<p>The <strong><code>removeEventListener()</code></strong> method of the {{domxref(“EventTarget”)}} interface removes an event listener previously registered with {{domxref(“EventTarget.addEventListener()”)}} from the target. The event listener to be removed is identified using a combination of the event type, the event listener function itself, and various optional options that may affect the matching process; see {{anch(“Matching event listeners for removal”)}}.</p>
+<p>Calling <code>removeEventListener()</code> with arguments that do not identify any currently registered {{domxref(“EventListener”)}} on the <code>EventTarget</code> has no effect.</p>
+<p>If an {{domxref(“EventListener”)}} is removed from an {{domxref(“EventTarget”)}} while another listener of the target is processing an event, it will not be triggered by the event. However, it can be reattached.</p>
+<blockquote>
+<p><strong>Warning:</strong> If a listener is registered twice, one with the <em>capture</em> flag set and one without, you must remove each one separately. Removal of a capturing listener does not affect a non-capturing version of the same listener, and vice versa.</p>
+</blockquote>
+<p>Event listeners can also be removed by passing an {{domxref(“AbortSignal”)}} to an {{domxref(“EventTarget/addEventListener()”, “addEventListener()”)}} and then later calling {{domxref(“AbortController/abort()”, “abort()”)}} on the controller owning the signal.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="at">removeEventListener</span>(type<span class="op">,</span> listener)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="at">removeEventListener</span>(type<span class="op">,</span> listener<span class="op">,</span> options)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="at">removeEventListener</span>(type<span class="op">,</span> listener<span class="op">,</span> useCapture)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>type</code>
+<ul>
+<li>: A string which specifies the type of event for which to remove an event listener.</li>
+</ul></li>
+<li><code>listener</code>
+<ul>
+<li>: The {{domxref(“EventListener”)}} function of the event handler to remove from the event target.</li>
+</ul></li>
+<li><code>options</code> {{optional_inline}}
+<ul>
+<li><p>: An options object that specifies characteristics about the event listener.</p>
+<p>The available options are:</p>
+<ul>
+<li><code>capture</code>: A boolean value that specifies whether the {{domxref(“EventListener”)}} to be removed is registered as a capturing listener or not. If this parameter is absent, a default value of <code>false</code> is assumed.</li>
+</ul></li>
+</ul></li>
+<li><code>useCapture</code> {{optional_inline}}
+<ul>
+<li>: A boolean value that specifies whether the {{domxref(“EventListener”)}} to be removed is registered as a capturing listener or not. If this parameter is absent, a default value of <code>false</code> is assumed.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>None.</p>
+<h3 id="matching-event-listeners-for-removal">Matching event listeners for removal</h3>
+<p>Given an event listener previously added by calling {{domxref(“EventTarget.addEventListener”, “addEventListener()”)}}, you may eventually come to a point at which you need to remove it. Obviously, you need to specify the same <code>type</code> and <code>listener</code> parameters to <code>removeEventListener()</code>. But what about the <code>options</code> or <code>useCapture</code> parameters?</p>
+<p>While <code>addEventListener()</code> will let you add the same listener more than once for the same type if the options are different, the only option <code>removeEventListener()</code> checks is the <code>capture</code>/<code>useCapture</code> flag. Its value must match for <code>removeEventListener()</code> to match, but the other values don’t.</p>
+<p>For example, consider this call to <code>addEventListener()</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">element</span>.<span class="at">addEventListener</span>(<span class="st">&quot;mousedown&quot;</span><span class="op">,</span> handleMouseDown<span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></a></code></pre></div>
+<p>Now consider each of these two calls to <code>removeEventListener()</code>:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="va">element</span>.<span class="at">removeEventListener</span>(<span class="st">&quot;mousedown&quot;</span><span class="op">,</span> handleMouseDown<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span>     <span class="co">// Fails</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="va">element</span>.<span class="at">removeEventListener</span>(<span class="st">&quot;mousedown&quot;</span><span class="op">,</span> handleMouseDown<span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span>      <span class="co">// Succeeds</span></a></code></pre></div>
+<p>The first call fails because the value of <code>useCapture</code> doesn’t match. The second succeeds, since <code>useCapture</code> matches up.</p>
+<p>Now consider this:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="va">element</span>.<span class="at">addEventListener</span>(<span class="st">&quot;mousedown&quot;</span><span class="op">,</span> handleMouseDown<span class="op">,</span> <span class="op">{</span> <span class="dt">passive</span><span class="op">:</span> <span class="kw">true</span> <span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>Here, we specify an <code>options</code> object in which <code>passive</code> is set to <code>true</code>, while the other options are left to the default value of <code>false</code>.</p>
+<p>Now look at each of these calls to <code>removeEventListener()</code> in turn. Any of them in which <code>capture</code> or <code>useCapture</code> is <code>true</code> fail; all others succeed.</p>
+<p>Only the <code>capture</code> setting matters to <code>removeEventListener()</code>.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="va">element</span>.<span class="at">removeEventListener</span>(<span class="st">&quot;mousedown&quot;</span><span class="op">,</span> handleMouseDown<span class="op">,</span> <span class="op">{</span> <span class="dt">passive</span><span class="op">:</span> <span class="kw">true</span> <span class="op">}</span>)<span class="op">;</span>     <span class="co">// Succeeds</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="va">element</span>.<span class="at">removeEventListener</span>(<span class="st">&quot;mousedown&quot;</span><span class="op">,</span> handleMouseDown<span class="op">,</span> <span class="op">{</span> <span class="dt">capture</span><span class="op">:</span> <span class="kw">false</span> <span class="op">}</span>)<span class="op">;</span>    <span class="co">// Succeeds</span></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="va">element</span>.<span class="at">removeEventListener</span>(<span class="st">&quot;mousedown&quot;</span><span class="op">,</span> handleMouseDown<span class="op">,</span> <span class="op">{</span> <span class="dt">capture</span><span class="op">:</span> <span class="kw">true</span> <span class="op">}</span>)<span class="op">;</span>     <span class="co">// Fails</span></a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="va">element</span>.<span class="at">removeEventListener</span>(<span class="st">&quot;mousedown&quot;</span><span class="op">,</span> handleMouseDown<span class="op">,</span> <span class="op">{</span> <span class="dt">passive</span><span class="op">:</span> <span class="kw">false</span> <span class="op">}</span>)<span class="op">;</span>    <span class="co">// Succeeds</span></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="va">element</span>.<span class="at">removeEventListener</span>(<span class="st">&quot;mousedown&quot;</span><span class="op">,</span> handleMouseDown<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span>                 <span class="co">// Succeeds</span></a>
+<a class="sourceLine" id="cb5-6" title="6"><span class="va">element</span>.<span class="at">removeEventListener</span>(<span class="st">&quot;mousedown&quot;</span><span class="op">,</span> handleMouseDown<span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span>                  <span class="co">// Fails</span></a></code></pre></div>
+<p>It’s worth noting that some browser releases have been inconsistent on this, and unless you have specific reasons otherwise, it’s probably wise to use the same values used for the call to <code>addEventListener()</code> when calling <code>removeEventListener()</code>.</p>
+<h2 id="example">Example</h2>
+<p>This example shows how to add a <code>mouseover</code>-based event listener that removes a <code>click</code>-based event listener.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">const</span> body <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;body&#39;</span>)</a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="kw">const</span> clickTarget <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;click-target&#39;</span>)</a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="kw">const</span> mouseOverTarget <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;mouse-over-target&#39;</span>)</a>
+<a class="sourceLine" id="cb6-4" title="4"></a>
+<a class="sourceLine" id="cb6-5" title="5"><span class="kw">let</span> toggle <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="kw">function</span> <span class="at">makeBackgroundYellow</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-7" title="7">  <span class="cf">if</span> (toggle) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-8" title="8">    <span class="va">body</span>.<span class="va">style</span>.<span class="at">backgroundColor</span> <span class="op">=</span> <span class="st">&#39;white&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-9" title="9">  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-10" title="10">    <span class="va">body</span>.<span class="va">style</span>.<span class="at">backgroundColor</span> <span class="op">=</span> <span class="st">&#39;yellow&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-11" title="11">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-12" title="12"></a>
+<a class="sourceLine" id="cb6-13" title="13">  toggle <span class="op">=</span> <span class="op">!</span>toggle<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-14" title="14"><span class="op">}</span></a>
+<a class="sourceLine" id="cb6-15" title="15"></a>
+<a class="sourceLine" id="cb6-16" title="16"><span class="va">clickTarget</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb6-17" title="17">  makeBackgroundYellow<span class="op">,</span></a>
+<a class="sourceLine" id="cb6-18" title="18">  <span class="kw">false</span></a>
+<a class="sourceLine" id="cb6-19" title="19">)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-20" title="20"></a>
+<a class="sourceLine" id="cb6-21" title="21"><span class="va">mouseOverTarget</span>.<span class="at">addEventListener</span>(<span class="st">&#39;mouseover&#39;</span><span class="op">,</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-22" title="22">  <span class="va">clickTarget</span>.<span class="at">removeEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb6-23" title="23">    makeBackgroundYellow<span class="op">,</span></a>
+<a class="sourceLine" id="cb6-24" title="24">    <span class="kw">false</span></a>
+<a class="sourceLine" id="cb6-25" title="25">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-26" title="26"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{domxref(“EventTarget.addEventListener()”)}}</li>
+</ul>

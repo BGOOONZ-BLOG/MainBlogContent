@@ -1,0 +1,51 @@
+<p>{{APIRef(“Web Audio API”)}}{{deprecated_header}}</p>
+<p>The <code>AudioContext.createJavaScriptNode()</code> method creates a {{domxref(“JavaScriptNode”)}} which is used for directly manipulating audio data with JavaScript.</p>
+<blockquote>
+<p><strong>Note:</strong> This method is obsolete, and has been renamed to {{domxref(“BaseAudioContext/createScriptProcessor”, “AudioContext.createScriptProcessor()”)}}. See also {{domxref(“ScriptProcessorNode”)}}.</p>
+</blockquote>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> jsNode <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createJavaScriptNode</span>(bufferSize<span class="op">,</span> numInputChannels<span class="op">,</span> numOutputChannels)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>bufferSize</code>
+<ul>
+<li>: The buffer size must be in units of sample frames, i.e., one of: 256, 512, 1024, 2048, 4096, 8192, or 16384. It controls the frequency of callbacks asking for a buffer refill. Smaller sizes allow for lower latency and higher for better overall quality.</li>
+</ul></li>
+<li><code>numInputChannels</code>
+<ul>
+<li>: The number of input channels in the audio stream.</li>
+</ul></li>
+<li><code>numOutputChannels</code>
+<ul>
+<li>: The number of output channels in the audio stream.</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<p>The following script illustrates the use of <code>createJavaScriptNode()</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> SineWave <span class="op">=</span> <span class="kw">function</span>(context) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">var</span> that <span class="op">=</span> <span class="kw">this</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="kw">this</span>.<span class="at">x</span> <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> <span class="co">// Initial sample number</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="kw">this</span>.<span class="at">context</span> <span class="op">=</span> context<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="kw">this</span>.<span class="at">node</span> <span class="op">=</span> <span class="va">context</span>.<span class="at">createJavaScriptNode</span>(<span class="dv">1024</span><span class="op">,</span> <span class="dv">1</span><span class="op">,</span> <span class="dv">1</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="kw">this</span>.<span class="va">node</span>.<span class="at">onaudioprocess</span> <span class="op">=</span> <span class="kw">function</span>(e) <span class="op">{</span> <span class="va">that</span>.<span class="at">process</span>(e) <span class="op">};</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-8" title="8"></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="va">SineWave</span>.<span class="va">prototype</span>.<span class="at">process</span> <span class="op">=</span> <span class="kw">function</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="kw">var</span> data <span class="op">=</span> <span class="va">e</span>.<span class="va">outputBuffer</span>.<span class="at">getChannelData</span>(<span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11">  <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">data</span>.<span class="at">length</span><span class="op">;</span> <span class="op">++</span>i) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-12" title="12">    data[i] <span class="op">=</span> <span class="va">Math</span>.<span class="at">sin</span>(<span class="kw">this</span>.<span class="at">x</span><span class="op">++</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-14" title="14"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-15" title="15"></a>
+<a class="sourceLine" id="cb2-16" title="16"><span class="va">SineWave</span>.<span class="va">prototype</span>.<span class="at">play</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-17" title="17">  <span class="kw">this</span>.<span class="va">node</span>.<span class="at">connect</span>(<span class="kw">this</span>.<span class="va">context</span>.<span class="at">destination</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-19" title="19"></a>
+<a class="sourceLine" id="cb2-20" title="20"><span class="va">SineWave</span>.<span class="va">prototype</span>.<span class="at">pause</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-21" title="21">  <span class="kw">this</span>.<span class="va">node</span>.<span class="at">disconnect</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-22" title="22"><span class="op">}</span></a></code></pre></div>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="http://0xfe.blogspot.com/2011/08/generating-tones-with-web-audio-api.html">Generating Tones with the Web Audio API</a></li>
+<li><a href="http://www.smartjava.org/content/exploring-html5-web-audio-visualizing-sound">Exploring the HTML5 Web Audio: visualizing sound</a></li>
+</ul>

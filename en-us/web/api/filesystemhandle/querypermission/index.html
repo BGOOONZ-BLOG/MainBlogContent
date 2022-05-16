@@ -1,0 +1,57 @@
+<p>{{draft}}{{securecontext_header}}{{DefaultAPISidebar(“File System Access API”)}}</p>
+<p>The <strong><code>queryPermission()</code></strong> method of the {{domxref(“FileSystemHandle”)}} interface queries the current permission state of the current handle.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> PermissionState <span class="op">=</span> <span class="va">FileSystemHandle</span>.<span class="at">queryPermission</span>(FileSystemHandlePermissionDescriptor)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><p>FileSystemHandlePermissionDescriptor {{optional_inline}}</p>
+<ul>
+<li><p>: An object which specifies the permission mode to query for. Options are as follows:</p>
+<ul>
+<li><code>'mode'</code>: Can be either <code>'read'</code> or <code>'readwrite'</code>.</li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>{{domxref(‘PermissionStatus.state’)}} which is one of <code>'granted'</code>, <code>'denied'</code> or <code>'prompt'</code>.</p>
+<p>If this returns “prompt” the website will have to call requestPermission() before any operations on the handle can be done. If this returns “denied” any operations will reject. Usually handles returned by the local file system handle factories will initially return “granted” for their read permission state. However, other than through the user revoking permission, a handle retrieved from IndexedDB is also likely to return “prompt”.</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><code>TypeError</code>
+<ul>
+<li>: If <code>mode</code> is specified with a value other than <code>'read'</code> or <code>'readwrite'</code></li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>The following asynchronous function returns true if user has granted read or readwrite permissions to the file handle. Permission is requested if not.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">// fileHandle is a FileSystemFileHandle</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="co">// withWrite is a boolean set to true if write</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="kw">async</span> <span class="kw">function</span> <span class="at">verifyPermission</span>(fileHandle<span class="op">,</span> withWrite) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="kw">const</span> opts <span class="op">=</span> <span class="op">{};</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="cf">if</span> (withWrite) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-7" title="7">    <span class="va">opts</span>.<span class="at">mode</span> <span class="op">=</span> <span class="st">&#39;readwrite&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-9" title="9"></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="co">// Check if we already have permission, if so, return true.</span></a>
+<a class="sourceLine" id="cb2-11" title="11">  <span class="cf">if</span> (<span class="cf">await</span> <span class="va">fileHandle</span>.<span class="at">queryPermission</span>(opts) <span class="op">===</span> <span class="st">&#39;granted&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-12" title="12">    <span class="cf">return</span> <span class="kw">true</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-14" title="14"></a>
+<a class="sourceLine" id="cb2-15" title="15">  <span class="co">// Request permission to the file, if the user grants permission, return true.</span></a>
+<a class="sourceLine" id="cb2-16" title="16">  <span class="cf">if</span> (<span class="cf">await</span> <span class="va">fileHandle</span>.<span class="at">requestPermission</span>(opts) <span class="op">===</span> <span class="st">&#39;granted&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-17" title="17">    <span class="cf">return</span> <span class="kw">true</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-19" title="19"></a>
+<a class="sourceLine" id="cb2-20" title="20">  <span class="co">// The user did not grant permission, return false.</span></a>
+<a class="sourceLine" id="cb2-21" title="21">  <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-22" title="22"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/File_System_Access_API">File System Access API</a></li>
+<li><a href="https://web.dev/file-system-access/">The File System Access API: simplifying access to local files</a></li>
+</ul>

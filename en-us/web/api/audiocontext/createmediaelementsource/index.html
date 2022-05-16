@@ -1,0 +1,66 @@
+<p>{{ APIRef(“Web Audio API”) }}</p>
+<p>The <code>createMediaElementSource()</code> method of the {{ domxref(“AudioContext”) }} Interface is used to create a new {{ domxref(“MediaElementAudioSourceNode”) }} object, given an existing HTML {{htmlelement(“audio”)}} or {{htmlelement(“video”)}} element, the audio from which can then be played and manipulated.</p>
+<p>For more details about media element audio source nodes, check out the {{ domxref(“MediaElementAudioSourceNode”) }} reference page.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> audioCtx <span class="op">=</span> <span class="kw">new</span> <span class="at">AudioContext</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">var</span> source <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createMediaElementSource</span>(myMediaElement)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>myMediaElement</code>
+<ul>
+<li>: An {{domxref(“HTMLMediaElement”)}} object that you want to feed into an audio processing graph to manipulate.</li>
+</ul></li>
+</ul>
+<h3 id="returns">Returns</h3>
+<p>A {{domxref(“MediaElementAudioSourceNode”)}}.</p>
+<h2 id="example">Example</h2>
+<p>This simple example creates a source from an {{htmlelement(“audio”) }} element using <code>createMediaElementSource()</code>, then passes the audio through a {{ domxref(“GainNode”) }} before feeding it into the {{ domxref(“AudioDestinationNode”) }} for playback. When the mouse pointer is moved, the <code>updatePage()</code> function is invoked, which calculates the current gain as a ratio of mouse Y position divided by overall window height. You can therefore increase and decrease the volume of the playing music by moving the mouse pointer up and down.</p>
+<blockquote>
+<p><strong>Note:</strong> You can also <a href="https://mdn.github.io/webaudio-examples/media-source-buffer/">view this example running live</a>, or <a href="https://github.com/mdn/webaudio-examples/tree/master/media-source-buffer">view the source</a>.</p>
+</blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> audioCtx <span class="op">=</span> <span class="kw">new</span> (<span class="va">window</span>.<span class="at">AudioContext</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">webkitAudioContext</span>)()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">var</span> myAudio <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;audio&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">var</span> pre <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;pre&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="kw">var</span> myScript <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;script&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="va">pre</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="va">myScript</span>.<span class="at">innerHTML</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="co">// Create a MediaElementAudioSourceNode</span></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="co">// Feed the HTMLMediaElement into it</span></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="kw">var</span> source <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createMediaElementSource</span>(myAudio)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11"></a>
+<a class="sourceLine" id="cb2-12" title="12"><span class="co">// Create a gain node</span></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="kw">var</span> gainNode <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createGain</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14"></a>
+<a class="sourceLine" id="cb2-15" title="15"><span class="co">// Create variables to store mouse pointer Y coordinate</span></a>
+<a class="sourceLine" id="cb2-16" title="16"><span class="co">// and HEIGHT of screen</span></a>
+<a class="sourceLine" id="cb2-17" title="17"><span class="kw">var</span> CurY<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18"><span class="kw">var</span> HEIGHT <span class="op">=</span> <span class="va">window</span>.<span class="at">innerHeight</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-19" title="19"></a>
+<a class="sourceLine" id="cb2-20" title="20"><span class="co">// Get new mouse pointer coordinates when mouse is moved</span></a>
+<a class="sourceLine" id="cb2-21" title="21"><span class="co">// then set new gain value</span></a>
+<a class="sourceLine" id="cb2-22" title="22"></a>
+<a class="sourceLine" id="cb2-23" title="23"><span class="va">document</span>.<span class="at">onmousemove</span> <span class="op">=</span> updatePage<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-24" title="24"></a>
+<a class="sourceLine" id="cb2-25" title="25"><span class="kw">function</span> <span class="at">updatePage</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-26" title="26">    CurY <span class="op">=</span> (<span class="va">window</span>.<span class="at">Event</span>) <span class="op">?</span> <span class="va">e</span>.<span class="at">pageY</span> : <span class="va">event</span>.<span class="at">clientY</span> <span class="op">+</span> (<span class="va">document</span>.<span class="va">documentElement</span>.<span class="at">scrollTop</span> <span class="op">?</span> <span class="va">document</span>.<span class="va">documentElement</span>.<span class="at">scrollTop</span> : <span class="va">document</span>.<span class="va">body</span>.<span class="at">scrollTop</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-27" title="27"></a>
+<a class="sourceLine" id="cb2-28" title="28">    <span class="va">gainNode</span>.<span class="va">gain</span>.<span class="at">value</span> <span class="op">=</span> CurY/HEIGHT<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-29" title="29"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-30" title="30"></a>
+<a class="sourceLine" id="cb2-31" title="31"><span class="co">// connect the AudioBufferSourceNode to the gainNode</span></a>
+<a class="sourceLine" id="cb2-32" title="32"><span class="co">// and the gainNode to the destination, so we can play the</span></a>
+<a class="sourceLine" id="cb2-33" title="33"><span class="co">// music and adjust the volume using the mouse cursor</span></a>
+<a class="sourceLine" id="cb2-34" title="34"><span class="va">source</span>.<span class="at">connect</span>(gainNode)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-35" title="35"><span class="va">gainNode</span>.<span class="at">connect</span>(<span class="va">audioCtx</span>.<span class="at">destination</span>)<span class="op">;</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> As a consequence of calling <code>createMediaElementSource()</code>, audio playback from the {{domxref(“HTMLMediaElement”)}} will be re-routed into the processing graph of the AudioContext. So playing/pausing the media can still be done through the media element API and the player controls.</p>
+</blockquote>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API">Using the Web Audio API</a></li>
+</ul>

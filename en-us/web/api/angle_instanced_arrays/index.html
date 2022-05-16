@@ -1,0 +1,73 @@
+<p>{{APIRef(“WebGL”)}}</p>
+<p>The <strong><code>ANGLE_instanced_arrays</code></strong> extension is part of the <a href="/en-US/docs/Web/API/WebGL_API">WebGL API</a> and allows to draw the same object, or groups of similar objects multiple times, if they share the same vertex data, primitive count and type.</p>
+<p>WebGL extensions are available using the {{domxref(“WebGLRenderingContext.getExtension()”)}} method. For more information, see also <a href="/en-US/docs/Web/API/WebGL_API/Using_Extensions">Using Extensions</a> in the <a href="/en-US/docs/Web/API/WebGL_API/Tutorial">WebGL tutorial</a>.</p>
+<blockquote>
+<p><strong>Note:</strong> This extension is only available to {{domxref(“WebGLRenderingContext”, “WebGL1”, "“, 1)}} contexts. In {{domxref(”WebGL2RenderingContext“,”WebGL2“,”“, 1)}}, the functionality of this extension is available on the WebGL2 context by default and the constants and methods are available without the”<code>ANGLE</code>" suffix.</p>
+<p>Despite the name “ANGLE”, this extension works on any device if the hardware supports it and not just on Windows when using the ANGLE library. “ANGLE” just indicates that this extension has been written by the ANGLE library authors.</p>
+</blockquote>
+<h2 id="constants">Constants</h2>
+<p>This extension exposes one new constant, which can be used in the {{domxref(“WebGLRenderingContext.getVertexAttrib()”, “gl.getVertexAttrib()”)}} method:</p>
+<ul>
+<li><code>ext.VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE</code>
+<ul>
+<li>: Returns a {{domxref(“WebGL_API/Types”, “GLint”)}} describing the frequency divisor used for instanced rendering when used in the {{domxref(“WebGLRenderingContext.getVertexAttrib()”, “gl.getVertexAttrib()”)}} as the <code>pname</code> parameter.</li>
+</ul></li>
+</ul>
+<h2 id="methods">Methods</h2>
+<p>This extension exposes three new methods.</p>
+<ul>
+<li>{{domxref(“ANGLE_instanced_arrays.drawArraysInstancedANGLE()”, “ext.drawArraysInstancedANGLE()”)}}
+<ul>
+<li>: Behaves identically to {{domxref(“WebGLRenderingContext.drawArrays()”, “gl.drawArrays()”)}} except that multiple instances of the range of elements are executed, and the instance advances for each iteration.</li>
+</ul></li>
+<li>{{domxref(“ANGLE_instanced_arrays.drawElementsInstancedANGLE()”, “ext.drawElementsInstancedANGLE()”)}}
+<ul>
+<li>: Behaves identically to {{domxref(“WebGLRenderingContext.drawElements()”, “gl.drawElements()”)}} except that multiple instances of the set of elements are executed and the instance advances between each set.</li>
+</ul></li>
+<li>{{domxref(“ANGLE_instanced_arrays.vertexAttribDivisorANGLE()”, “ext.vertexAttribDivisorANGLE()”)}}
+<ul>
+<li>: Modifies the rate at which generic vertex attributes advance when rendering multiple instances of primitives with {{domxref(“ANGLE_instanced_arrays.drawArraysInstancedANGLE()”, “ext.drawArraysInstancedANGLE()”)}} and {{domxref(“ANGLE_instanced_arrays.drawElementsInstancedANGLE()”, “ext.drawElementsInstancedANGLE()”)}}.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>The following example shows how to draw a given geometry multiple times with a single draw call. &gt; <strong>Warning:</strong> The following is educational, not production level code. It should generally be avoided to construct data / buffers within the rendering loop or right before use.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="co">// enable the extension</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">const</span> ext <span class="op">=</span> <span class="va">gl</span>.<span class="at">getExtension</span>(<span class="st">&#39;ANGLE_instanced_arrays&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="co">// binding the geometry buffer as usual</span></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="va">gl</span>.<span class="at">bindBuffer</span>(<span class="va">gl</span>.<span class="at">ARRAY_BUFFER</span><span class="op">,</span> geometryVertexBuffer)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="va">gl</span>.<span class="at">enableVertexAttribArray</span>(vertexPositionAttributeLocation)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="va">gl</span>.<span class="at">vertexAttribPointer</span>(vertexPositionAttributeLocation<span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="va">gl</span>.<span class="at">FLOAT</span><span class="op">,</span> <span class="kw">false</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-8" title="8"></a>
+<a class="sourceLine" id="cb1-9" title="9"><span class="co">// build position buffer</span></a>
+<a class="sourceLine" id="cb1-10" title="10"><span class="kw">const</span> instancePositions <span class="op">=</span> []<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-11" title="11"><span class="cf">for</span> (<span class="kw">const</span> instance <span class="kw">of</span> instances) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-12" title="12">  <span class="va">instancePositions</span>.<span class="at">push</span>(</a>
+<a class="sourceLine" id="cb1-13" title="13">    <span class="va">instance</span>.<span class="va">position</span>.<span class="at">x</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb1-14" title="14">    <span class="va">instance</span>.<span class="va">position</span>.<span class="at">y</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb1-15" title="15">    <span class="va">instance</span>.<span class="va">position</span>.<span class="at">z</span></a>
+<a class="sourceLine" id="cb1-16" title="16">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-17" title="17"><span class="op">}</span></a>
+<a class="sourceLine" id="cb1-18" title="18"><span class="kw">const</span> instancePositionBuffer <span class="op">=</span> <span class="at">createWebGLBufferFromData</span>(instancePositions)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-19" title="19"></a>
+<a class="sourceLine" id="cb1-20" title="20"><span class="co">// binding the instance position buffer as you would with any attribute</span></a>
+<a class="sourceLine" id="cb1-21" title="21"><span class="va">gl</span>.<span class="at">bindBuffer</span>(<span class="va">gl</span>.<span class="at">ARRAY_BUFFER</span><span class="op">,</span> instancePositionBuffer)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-22" title="22"><span class="va">gl</span>.<span class="at">enableVertexAttribArray</span>(instancePositionAttributeLocation)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-23" title="23"><span class="va">gl</span>.<span class="at">vertexAttribPointer</span>(instancePositionAttributeLocation<span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="va">gl</span>.<span class="at">FLOAT</span><span class="op">,</span> <span class="kw">false</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-24" title="24"></a>
+<a class="sourceLine" id="cb1-25" title="25"><span class="co">// mark the attribe as instanced and advance it every single(1) instance rather than every vertex</span></a>
+<a class="sourceLine" id="cb1-26" title="26"><span class="va">ext</span>.<span class="at">vertexAttribDivisorANGLE</span>(instancePositionAttributeLocation<span class="op">,</span> <span class="dv">1</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-27" title="27"></a>
+<a class="sourceLine" id="cb1-28" title="28"><span class="co">// draw geometry for each instance</span></a>
+<a class="sourceLine" id="cb1-29" title="29"><span class="va">ext</span>.<span class="at">drawArraysInstancedANGLE</span>(<span class="va">gl</span>.<span class="at">TRIANGLES</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> numGeometryVertices<span class="op">,</span> <span class="va">instances</span>.<span class="at">length</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{domxref(“WebGLRenderingContext.getExtension()”)}}</li>
+<li>{{domxref(“WebGL2RenderingContext.drawArraysInstanced()”)}}</li>
+<li>{{domxref(“WebGL2RenderingContext.drawElementsInstanced()”)}}</li>
+<li>{{domxref(“WebGL2RenderingContext.vertexAttribDivisor()”)}}</li>
+</ul>

@@ -1,0 +1,183 @@
+<p>{{non-standard_header}}</p>
+<p>The FileHandle API allows for the manipulating of files, including creating files and modifying their content (unlike the <a href="/en-US/docs/Web/API/File">File API</a>). Because the files manipulated through that API can be physically stored on the device, the editing part uses a turn-based locking mechanism in order to avoid race issues.</p>
+<h2 id="api-overview">API Overview</h2>
+<p>This API is based on the following interfaces:</p>
+<ul>
+<li>{{domxref(“IDBDatabase.createMutableFile”)}} (was called {{domxref(“IDBDatabase.mozCreateFileHandle”)}}.)</li>
+<li>{{domxref(“IDBMutableFile”)}} (was previously {{domxref(“FileHandle”)}}.)</li>
+<li>{{domxref(“LockedFile”)}}</li>
+<li>{{domxref(“FileRequest”)}}</li>
+</ul>
+<p>It also has connections with the File API, especially the {{domxref(“File”)}} and {{domxref(“Blob”)}} interfaces.</p>
+<h2 id="basic-operations">Basic operations</h2>
+<h3 id="create-a-filehandle">Create a FileHandle</h3>
+<p>Because the intent is to allow the storage of files through IndexedDB, creating a {{domxref(“IDBMutableFile”)}} instance requires an <a href="/en-US/docs/Web/API/IDBFactory#open">IndexedDB Database</a>.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> IDBReq <span class="op">=</span> <span class="va">indexedDB</span>.<span class="at">open</span>(<span class="st">&quot;myFileStorageDataBase&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="va">IDBReq</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>()<span class="op">{</span></a>
+<a class="sourceLine" id="cb1-4" title="4">  <span class="kw">var</span> DB <span class="op">=</span> <span class="kw">this</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-5" title="5">  <span class="kw">var</span> buildHandle <span class="op">=</span> <span class="va">DB</span>.<span class="at">createMutableFile</span>(<span class="st">&quot;test.txt&quot;</span><span class="op">,</span> <span class="st">&quot;plain/text&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-6" title="6"></a>
+<a class="sourceLine" id="cb1-7" title="7">  <span class="va">buildHandle</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>()<span class="op">{</span></a>
+<a class="sourceLine" id="cb1-8" title="8">    <span class="kw">var</span> myFileHandle <span class="op">=</span> <span class="kw">this</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-9" title="9">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;handle&#39;</span><span class="op">,</span> myFileHandle)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-10" title="10">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb1-11" title="11"><span class="op">};</span></a></code></pre></div>
+<p>{{domxref(“IDBDatabase.createMutableFile”,“createMutableFile()”)}} takes two arguments: a name and an optional type. Both of these are just descriptive and are not used by the database. However, they are important for the {{domxref(“FileHandle”)}} object as it can generate {{domxref(“File”)}} objects which inherit their own {{domxref(“File.name”,“name”)}} and {{domxref(“File.type”,“type”)}} from those values. That said, as the name does not match any real filename it can be an empty string, for example, and it doesn’t even have to be unique.</p>
+<blockquote>
+<p><strong>Note:</strong> the above code only creates a “temporary file” that exists only while you hold the {{domxref(“FileHandle”)}} instance. If you want a file to survive a page refresh/app relaunch, you need to store the handle in a more permanent location, like the database itself. See {{Anch(“File storage”)}} below to learn more about this.</p>
+</blockquote>
+<h3 id="perform-read-and-write-operations">Perform read and write operations</h3>
+<p>To read or write within a handled file, it is required to get a {{domxref(“LockedFile”)}}. The {{domxref(“FileHandle.open()”)}} method provides such an object which can be <code>readonly</code> or <code>readwrite</code>. Any attempt to perform a write action on a <code>readonly</code> {{domxref(“LockedFile”)}} object will fail.</p>
+<h4 id="writing">Writing</h4>
+<p>There are three possible writing operations on a locked file:</p>
+<ul>
+<li>{{domxref(“LockedFile.write”,“write”)}} : It’s an arbitrary writing method which starts writing in the file at the {{domxref(“LockedFile.location”)}} byte.</li>
+<li>{{domxref(“LockedFile.append”,“append”)}} : This operation always writes content at the end of the file.</li>
+<li>{{domxref(“LockedFile.truncate”,“truncate”)}} : This operation keeps the nth-first bytes of the file and removes the rest.</li>
+</ul>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">// Get a LockedFile object from the handle</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">var</span> myFile <span class="op">=</span> <span class="va">myFileHandle</span>.<span class="at">open</span>(<span class="st">&#39;readwrite&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="co">// Start a writing operation</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="kw">var</span> writing <span class="op">=</span> <span class="va">myFile</span>.<span class="at">append</span>(<span class="st">&#39;Some content&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6"></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="va">writing</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Writing operation successful&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-10" title="10"></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="va">writing</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-12" title="12">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Something goes wrong in the writing process: &#39;</span> <span class="op">+</span> <span class="kw">this</span>.<span class="at">error</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="op">}</span></a></code></pre></div>
+<h4 id="reading">Reading</h4>
+<p>It’s possible to directly write the content of a {{domxref(“LockedFile”)}} object without using an intermediate {{domxref(“File”)}} object and a {{domxref(“FileReader”)}} object. The {{domxref(“LockedFile”)}} interface provides a {{domxref(“LockedFile.readAsText”,“readAsText”)}} method and a {{domxref(“LockedFile.readAsArrayBuffer”,“readAsArrayBuffer”)}} method.</p>
+<p>Those two methods expect a size to indicate how many bytes must be read starting at the {{domxref(“LockedFile.location”)}} byte.</p>
+<p>To read the whole file, it is required to know its size. This information (as well as the date of its last modification) can be retrieved through the {{domxref(“LockedFile.getMetadata()”)}} method.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="co">// Get a LockedFile object from the handle</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">var</span> myFile <span class="op">=</span> <span class="va">myFileHandle</span>.<span class="at">open</span>(<span class="st">&#39;readwrite&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="co">// Retrieve the size of the file</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="kw">var</span> getmeta <span class="op">=</span> <span class="va">myFile</span>.<span class="at">getMetadata</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6"></a>
+<a class="sourceLine" id="cb3-7" title="7"><span class="va">getmeta</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="kw">var</span> size <span class="op">=</span> <span class="kw">this</span>.<span class="va">result</span>.<span class="at">size</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9"></a>
+<a class="sourceLine" id="cb3-10" title="10">  <span class="co">// The reading operation will start with the byte at index 0 in the file</span></a>
+<a class="sourceLine" id="cb3-11" title="11">  <span class="va">myFile</span>.<span class="at">location</span> <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-12" title="12"></a>
+<a class="sourceLine" id="cb3-13" title="13">  <span class="co">// Start a reading operation for the whole file content</span></a>
+<a class="sourceLine" id="cb3-14" title="14">  <span class="kw">var</span> reading <span class="op">=</span> <span class="va">myFile</span>.<span class="at">readAsText</span>(size)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-15" title="15"></a>
+<a class="sourceLine" id="cb3-16" title="16">  <span class="va">reading</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-17" title="17">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;The content of the file is:&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-18" title="18">    <span class="va">console</span>.<span class="at">log</span>(<span class="kw">this</span>.<span class="at">result</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-19" title="19">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-20" title="20"></a>
+<a class="sourceLine" id="cb3-21" title="21">  <span class="va">reading</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-22" title="22">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Something goes wrong in the reading process: &#39;</span> <span class="op">+</span> <span class="kw">this</span>.<span class="at">error</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-23" title="23">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-24" title="24"><span class="op">}</span></a></code></pre></div>
+<h3 id="file-snapshot">File snapshot</h3>
+<p>In many cases it can be handy to get a snapshot of the file. For example, there are many APIs that expect {{domxref(“Blob”)}} or {{domxref(“File”)}} objects such as {{domxref(“FileReader”)}} (which can be easier to use to read the whole file) or {{domxref(“XMLHttpRequest”)}}.</p>
+<p>It’s possible to get a {{domxref(“File”)}} object representing the current state of the file handled by the {{domxref(“FileHandle”)}} object by using the {{domxref(“FileHandle.getFile”,“getFile”)}} method. Such a {{domxref(“File”)}} object is completely desynchronized from the original file, which means any change made to that object will never be reflected to the handled file as well as any change made to the handled file will never be pushed to the {{domxref(“File”)}} object.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">var</span> mySnapshot <span class="op">=</span> <span class="kw">null</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="kw">var</span> request <span class="op">=</span> <span class="va">myFileHandle</span>.<span class="at">getFile</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="va">request</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-5" title="5">  mySnapshot <span class="op">=</span> <span class="kw">this</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-6" title="6"><span class="op">}</span></a></code></pre></div>
+<h3 id="managing-progress">Managing progress</h3>
+<p>All the methods from the {{domxref(“LockedFile”)}} interface return a {{domxref(“FileRequest”)}} object. Such an object is basically a {{domxref(“DOMRequest”)}} with an extra power: it allows to monitor the progress of an operation. Sometimes writing and reading operations can be very long, therefore it is a good idea to monitor the operation to provide feedback to the user. Such monitoring can be done using the {{domxref(“FileRequest.onprogress”)}} event handler.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">var</span> progress <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;progress&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="kw">var</span> myFile   <span class="op">=</span> <span class="va">myFileHandle</span>.<span class="at">open</span>(<span class="st">&#39;readonly&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3"></a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="co">// Let&#39;s read a 1GB file</span></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="kw">var</span> action   <span class="op">=</span> <span class="va">myFile</span>.<span class="at">readAsArrayBuffer</span>(<span class="dv">1000000000</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-6" title="6"></a>
+<a class="sourceLine" id="cb5-7" title="7"><span class="va">action</span>.<span class="at">onprogress</span> <span class="op">=</span> <span class="kw">function</span> (event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-8" title="8">  <span class="cf">if</span> (progress) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-9" title="9">    <span class="va">progress</span>.<span class="at">value</span> <span class="op">=</span> <span class="va">event</span>.<span class="at">loaded</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-10" title="10">    <span class="va">progress</span>.<span class="at">max</span>   <span class="op">=</span> <span class="va">event</span>.<span class="at">total</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-11" title="11">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-12" title="12"><span class="op">}</span></a>
+<a class="sourceLine" id="cb5-13" title="13"></a>
+<a class="sourceLine" id="cb5-14" title="14"><span class="va">action</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-15" title="15">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Yeah </span><span class="sc">\o</span><span class="st">/ Just read a 1GB file&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-16" title="16"><span class="op">}</span></a>
+<a class="sourceLine" id="cb5-17" title="17"></a>
+<a class="sourceLine" id="cb5-18" title="18"><span class="va">action</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-19" title="19">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Oups :( Unable to read a 1GB file&#39;</span>)</a>
+<a class="sourceLine" id="cb5-20" title="20"><span class="op">}</span></a></code></pre></div>
+<h2 id="file-storage">File storage</h2>
+<p>When a file handle is created, the associated file only exists as a “temporary file” as long as you hold the {{domxref(“FileHandle”)}} instance. If you want a file to survive a page refresh/app relaunch, you need to store the handle in a database (not necessarily the one used to create the {{domxref(“FileHandle”)}} object).</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">var</span> IDBReq <span class="op">=</span> <span class="va">window</span>.<span class="va">indexedDB</span>.<span class="at">open</span>(<span class="st">&#39;myFileStorageDataBase&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-2" title="2"></a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="co">// If necessary, let&#39;s create a datastore for the files</span></a>
+<a class="sourceLine" id="cb6-4" title="4"><span class="va">IDBReq</span>.<span class="at">onupgradeneeded</span> <span class="op">=</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-5" title="5">  <span class="kw">this</span>.<span class="va">result</span>.<span class="at">createObjectStore</span>(<span class="st">&#39;files&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="op">}</span></a>
+<a class="sourceLine" id="cb6-7" title="7"></a>
+<a class="sourceLine" id="cb6-8" title="8"><span class="va">IDBReq</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-9" title="9">  <span class="kw">var</span> DB <span class="op">=</span> <span class="kw">this</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-10" title="10"></a>
+<a class="sourceLine" id="cb6-11" title="11">  <span class="co">// Let&#39;s create a new file</span></a>
+<a class="sourceLine" id="cb6-12" title="12">  <span class="kw">var</span> handleReq <span class="op">=</span> <span class="va">DB</span>.<span class="at">mozCreateFileHandle</span>(<span class="st">&quot;test.txt&quot;</span><span class="op">,</span> <span class="st">&quot;plain/text&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-13" title="13"></a>
+<a class="sourceLine" id="cb6-14" title="14">  <span class="va">handleReq</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-15" title="15">    <span class="kw">var</span> myFileHandle <span class="op">=</span> <span class="kw">this</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-16" title="16">    <span class="kw">var</span> store <span class="op">=</span> <span class="va">DB</span>.<span class="at">transaction</span>([<span class="st">&#39;files&#39;</span>]<span class="op">,</span> <span class="st">&#39;readwrite&#39;</span>).<span class="at">objectStore</span>(<span class="st">&#39;files&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-17" title="17"></a>
+<a class="sourceLine" id="cb6-18" title="18">    <span class="co">// Let&#39;s store the file permanently</span></a>
+<a class="sourceLine" id="cb6-19" title="19">    <span class="co">// HINT: it could be handy to use the file name as the storage key</span></a>
+<a class="sourceLine" id="cb6-20" title="20">    <span class="kw">var</span> storeReq <span class="op">=</span> <span class="va">store</span>.<span class="at">add</span>(myFileHandle<span class="op">,</span> <span class="va">myFileHandle</span>.<span class="at">name</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-21" title="21"></a>
+<a class="sourceLine" id="cb6-22" title="22">    <span class="va">storeReq</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-23" title="23">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;The file has been successfully stored and can be retrieved anytime.&#39;</span>)</a>
+<a class="sourceLine" id="cb6-24" title="24">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-25" title="25">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-26" title="26"><span class="op">}</span></a></code></pre></div>
+<p>A file stored that way is physically put on the device. The database itself only stores a pointer to that file. It means that if the {{domxref(“FileHandle”)}} object is stored several times in several DBs or several data stores, all those objects will reference the same unique file. This is not a problem because to access the file, a {{domxref(“LockedFile”)}} object is required and operations on such object are performed in <a href="https://en.wikipedia.org/wiki/Isolation_%28database_systems%29">isolation</a>, meaning that once a {{domxref(“LockedFile”)}} is active, all operations of this {{domxref(“LockedFile”)}} are guaranteed to happen sequentially on the underlying file without being interleaved with operations from other {{domxref(“LockedFile”)}}.</p>
+<h3 id="secured-write-operation">Secured write operation</h3>
+<p>For performance reasons, write (and read) operations are done in memory. Periodically, the results of those operation are asynchronously flushed to the device storage area. If for some reason a problem occurs before that, you can lose the results of some operations. To avoid that problem, you can force the data to be flushed by using the {{domxref(“LockedFile.flush()”)}} method. Once this method has been successfully called, you can be sure your change on the file will be safe.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="co">// Get a LockedFile object from the handle</span></a>
+<a class="sourceLine" id="cb7-2" title="2"><span class="kw">var</span> myFile <span class="op">=</span> <span class="va">myFileHandle</span>.<span class="at">open</span>(<span class="st">&#39;readwrite&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-3" title="3"></a>
+<a class="sourceLine" id="cb7-4" title="4"><span class="co">// Start a writing operation</span></a>
+<a class="sourceLine" id="cb7-5" title="5"><span class="kw">var</span> writing <span class="op">=</span> <span class="va">myFile</span>.<span class="at">append</span>(<span class="st">&#39;Some content&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-6" title="6"></a>
+<a class="sourceLine" id="cb7-7" title="7"><span class="va">writing</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-8" title="8">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Writing operation successful&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-9" title="9"></a>
+<a class="sourceLine" id="cb7-10" title="10">  <span class="kw">var</span> saving <span class="op">=</span> <span class="va">myFile</span>.<span class="at">flush</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-11" title="11"></a>
+<a class="sourceLine" id="cb7-12" title="12">  <span class="va">saving</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-13" title="13">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;The file has been successfully stored&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-14" title="14">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb7-15" title="15"><span class="op">}</span></a>
+<a class="sourceLine" id="cb7-16" title="16"></a>
+<a class="sourceLine" id="cb7-17" title="17"><span class="va">writing</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-18" title="18">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Something goes wrong in the writing process: &#39;</span> <span class="op">+</span> <span class="kw">this</span>.<span class="at">error</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-19" title="19"><span class="op">}</span></a></code></pre></div>
+<h2 id="api-compatibility">API Compatibility</h2>
+<h3 id="why-a-different-api-than-filewriter">Why a different API than FileWriter?</h3>
+<p>The <a href="http://dev.w3.org/2009/dap/file-system/file-writer.html">FileWriter specification</a> defines FileWriters, objects aiming at representing editable files. <a href="http://lists.w3.org/Archives/Public/public-webapps/2012JanMar/0886.html">Discussions on public-webapps</a> led to the conclusion that the API would behave poorly in the case of different entities writing concurrently to the same file. The outcome of this discussion is the FileHandle API with its LockedFile and transaction mechanism.</p>
+<h2 id="specifications">Specifications</h2>
+<p>A formal specification draft is being written. As it does not fully match the current implementation, be warned that the implementation and/or the specification will be subject to changes.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Specification</th>
+<th>Status</th>
+<th>Comment</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>{{SpecName(‘FileSystem’)}}</td>
+<td>{{Spec2(‘FileSystem’)}}</td>
+<td>Draft proposal</td>
+</tr>
+</tbody>
+</table>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>Supported in Firefox 15.</p>

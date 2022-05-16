@@ -1,0 +1,70 @@
+<p>{{APIRef(“Web Audio API”)}}</p>
+<p>The <strong><code>AudioWorkletGlobalScope</code></strong> interface of the <a href="/en-US/docs/Web/API/Web_Audio_API">Web Audio API</a> represents a global execution context for user-supplied code, which defines custom {{domxref(“AudioWorkletProcessor”)}}-derived classes.</p>
+<p>Each {{domxref(“BaseAudioContext”)}} has a single {{domxref(“AudioWorklet”)}} available under the {{domxref(“BaseAudioContext.audioWorklet”, “audioWorklet”)}} property, which runs its code in a single <code>AudioWorkletGlobalScope</code>.</p>
+<p>As the global execution context is shared across the current <code>BaseAudioContext</code>, it’s possible to define any other variables and perform any actions allowed in worklets — apart from defining <code>AudioWorkletProcessor</code>-derived classes.</p>
+<h2 id="properties">Properties</h2>
+<ul>
+<li>{{domxref(“AudioWorkletGlobalScope.currentFrame”, “currentFrame”)}} {{readonlyinline}}
+<ul>
+<li>: Returns an integer that represents the ever-increasing current sample-frame of the audio block being processed. It is incremented by 128 (the size of a render quantum) after the processing of each audio block.</li>
+</ul></li>
+<li>{{domxref(“AudioWorkletGlobalScope.currentTime”, “currentTime”)}} {{readonlyinline}}
+<ul>
+<li>: Returns a double that represents the ever-increasing context time of the audio block being processed. It is equal to the {{domxref(“BaseAudioContext.currentTime”, “currentTime”)}} property of the {{domxref(“BaseAudioContext”)}} the worklet belongs to.</li>
+</ul></li>
+<li>{{domxref(“AudioWorkletGlobalScope.sampleRate”, “sampleRate”)}} {{readonlyinline}}
+<ul>
+<li>: Returns a float that represents the sample rate of the associated {{domxref(“BaseAudioContext”)}}.</li>
+</ul></li>
+</ul>
+<h2 id="methods">Methods</h2>
+<ul>
+<li>{{domxref(“AudioWorkletGlobalScope.registerProcessor”, “registerProcessor()”)}}
+<ul>
+<li>: Registers a class derived from the {{domxref(‘AudioWorkletProcessor’)}} interface. The class can then be used by creating an {{domxref(“AudioWorkletNode”)}}, providing its registered name.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>In this example we output all global properties into the console in the constructor of a custom {{domxref(“AudioWorkletProcessor”)}}.</p>
+<p>First we need to define the processor, and register it. Note that this should be done in a separate file.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="co">// test-processor.js</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">class</span> TestProcessor <span class="kw">extends</span> AudioWorkletProcessor <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="at">constructor</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-4" title="4">    <span class="kw">super</span>()</a>
+<a class="sourceLine" id="cb1-5" title="5">    <span class="co">// current sample-frame and time at the moment of instantiation</span></a>
+<a class="sourceLine" id="cb1-6" title="6">    <span class="co">// to see values change, you can put these two lines in process method</span></a>
+<a class="sourceLine" id="cb1-7" title="7">    <span class="va">console</span>.<span class="at">log</span>(currentFrame)</a>
+<a class="sourceLine" id="cb1-8" title="8">    <span class="va">console</span>.<span class="at">log</span>(currentTime)</a>
+<a class="sourceLine" id="cb1-9" title="9">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-10" title="10">  <span class="co">// the process method is required - output silence,</span></a>
+<a class="sourceLine" id="cb1-11" title="11">  <span class="co">// which the outputs are already filled with</span></a>
+<a class="sourceLine" id="cb1-12" title="12">  <span class="at">process</span> (inputs<span class="op">,</span> outputs<span class="op">,</span> parameters) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-13" title="13">    <span class="cf">return</span> <span class="kw">true</span></a>
+<a class="sourceLine" id="cb1-14" title="14">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-15" title="15"><span class="op">}</span></a>
+<a class="sourceLine" id="cb1-16" title="16"></a>
+<a class="sourceLine" id="cb1-17" title="17"><span class="co">// the sample rate is not going to change ever,</span></a>
+<a class="sourceLine" id="cb1-18" title="18"><span class="co">// because it&#39;s a read-only property of a BaseAudioContext</span></a>
+<a class="sourceLine" id="cb1-19" title="19"><span class="co">// and is set only during its instantiation</span></a>
+<a class="sourceLine" id="cb1-20" title="20"><span class="va">console</span>.<span class="at">log</span>(sampleRate)</a>
+<a class="sourceLine" id="cb1-21" title="21"></a>
+<a class="sourceLine" id="cb1-22" title="22"><span class="co">// you can declare any variables and use them in your processors</span></a>
+<a class="sourceLine" id="cb1-23" title="23"><span class="co">// for example it may be an ArrayBuffer with a wavetable</span></a>
+<a class="sourceLine" id="cb1-24" title="24"><span class="kw">const</span> usefulVariable <span class="op">=</span> <span class="dv">42</span></a>
+<a class="sourceLine" id="cb1-25" title="25"><span class="va">console</span>.<span class="at">log</span>(usefulVariable)</a>
+<a class="sourceLine" id="cb1-26" title="26"></a>
+<a class="sourceLine" id="cb1-27" title="27"><span class="at">registerProcessor</span>(<span class="st">&#39;test-processor&#39;</span><span class="op">,</span> TestProcessor)</a></code></pre></div>
+<p>Next, in our main scripts file we’ll load the processor, create an instance of <code>AudioWorkletNode</code> — passing the name of the processor to it — and connect the node to an audio graph. We should see the output of <code>console.log</code> calls in the console:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> audioContext <span class="op">=</span> <span class="kw">new</span> <span class="at">AudioContext</span>()</a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="cf">await</span> <span class="va">audioContext</span>.<span class="va">audioWorklet</span>.<span class="at">addModule</span>(<span class="st">&#39;test-processor.js&#39;</span>)</a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">const</span> testNode <span class="op">=</span> <span class="kw">new</span> <span class="at">AudioWorkletNode</span>(audioContext<span class="op">,</span> <span class="st">&#39;test-processor&#39;</span>)</a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="va">testNode</span>.<span class="at">connect</span>(<span class="va">audioContext</span>.<span class="at">destination</span>)</a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Web_Audio_API">Web Audio API</a></li>
+<li><a href="/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API">Using the Web Audio API</a></li>
+</ul>

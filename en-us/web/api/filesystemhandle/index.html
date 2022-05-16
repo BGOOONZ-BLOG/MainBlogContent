@@ -1,0 +1,98 @@
+<p>{{securecontext_header}}{{DefaultAPISidebar(“File System Access API”)}}</p>
+<p>The <strong><code>FileSystemHandle</code></strong> interface of the {{domxref(‘File System Access API’)}} is an object which represents a file or directory entry. Multiple handles can represent the same entry. For the most part you do not work with <code>FileSystemHandle</code> directly but rather its child interfaces {{domxref(‘FileSystemFileHandle’)}} and {{domxref(‘FileSystemDirectoryHandle’)}}.</p>
+<h2 id="interfaces-based-on-filesystemhandle">Interfaces based on FileSystemHandle</h2>
+<p>Below is a list of interfaces based on the FileSystemHandle interface.</p>
+<ul>
+<li>{{domxref(“FileSystemFileHandle”)}}
+<ul>
+<li>: Represents a handle to a file entry.</li>
+</ul></li>
+<li>{{domxref(“FileSystemDirectoryHandle”)}}
+<ul>
+<li>: Provides a handle to a directory entry.</li>
+</ul></li>
+</ul>
+<h2 id="properties">Properties</h2>
+<ul>
+<li>{{domxref(‘FileSystemHandle.kind’,‘kind’)}} {{readonlyInline}}
+<ul>
+<li>: Returns the type of entry. This is <code>'file'</code> if the associated entry is a file or <code>'directory'</code>.</li>
+</ul></li>
+<li>{{domxref(‘FileSystemHandle.name’, ‘name’)}} {{readonlyInline}}
+<ul>
+<li>: Returns the name of the associated entry.</li>
+</ul></li>
+</ul>
+<h2 id="methods">Methods</h2>
+<ul>
+<li>{{domxref(‘FileSystemHandle.isSameEntry()’, ‘isSameEntry()’)}}
+<ul>
+<li>: Compares two {{domxref(“FileSystemHandle”, “handles”)}} to see if the associated entries (either a file or directory) match.</li>
+</ul></li>
+<li>{{domxref(‘FileSystemHandle.queryPermission()’, ‘queryPermission()’)}}
+<ul>
+<li>: Queries the current permission state of the current handle.</li>
+</ul></li>
+<li>{{domxref(‘FileSystemHandle.requestPermission’, ‘requestPermission()’)}}
+<ul>
+<li>: Requests read or readwrite permissions for the file handle.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<h3 id="checking-type">Checking Type</h3>
+<p>The below code allows the user to choose a file from the file picker and then tests to see whether the handle returned is a file or directory</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="co">// store a reference to our file handle</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">let</span> fileHandle<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="kw">async</span> <span class="kw">function</span> <span class="at">getFile</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-5" title="5">  <span class="co">// open file picker</span></a>
+<a class="sourceLine" id="cb1-6" title="6">  [fileHandle] <span class="op">=</span> <span class="cf">await</span> <span class="va">window</span>.<span class="at">showOpenFilePicker</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-7" title="7"></a>
+<a class="sourceLine" id="cb1-8" title="8">  <span class="cf">if</span> (<span class="va">fileHandle</span>.<span class="at">kind</span> <span class="op">===</span> <span class="st">&#39;file&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-9" title="9">    <span class="co">// run file code</span></a>
+<a class="sourceLine" id="cb1-10" title="10">  <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (<span class="va">fileHandle</span>.<span class="at">kind</span> <span class="op">===</span> <span class="st">&#39;directory&#39;</span>)</a>
+<a class="sourceLine" id="cb1-11" title="11">    <span class="co">// run directory code</span></a>
+<a class="sourceLine" id="cb1-12" title="12">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-13" title="13"></a>
+<a class="sourceLine" id="cb1-14" title="14">}</a></code></pre></div>
+<h3 id="queryrequest-permissions">Query/Request Permissions</h3>
+<p>The following asynchronous function returns true if user has granted read or readwrite permissions to the file handle. Permission is requested if not.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">// fileHandle is a FileSystemFileHandle</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="co">// withWrite is a boolean set to true if write</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="kw">async</span> <span class="kw">function</span> <span class="at">verifyPermission</span>(fileHandle<span class="op">,</span> withWrite) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="kw">const</span> opts <span class="op">=</span> <span class="op">{};</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="cf">if</span> (withWrite) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-7" title="7">    <span class="va">opts</span>.<span class="at">mode</span> <span class="op">=</span> <span class="st">&#39;readwrite&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-9" title="9"></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="co">// Check if we already have permission, if so, return true.</span></a>
+<a class="sourceLine" id="cb2-11" title="11">  <span class="cf">if</span> (<span class="cf">await</span> <span class="va">fileHandle</span>.<span class="at">queryPermission</span>(opts) <span class="op">===</span> <span class="st">&#39;granted&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-12" title="12">    <span class="cf">return</span> <span class="kw">true</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-14" title="14"></a>
+<a class="sourceLine" id="cb2-15" title="15">  <span class="co">// Request permission to the file, if the user grants permission, return true.</span></a>
+<a class="sourceLine" id="cb2-16" title="16">  <span class="cf">if</span> (<span class="cf">await</span> <span class="va">fileHandle</span>.<span class="at">requestPermission</span>(opts) <span class="op">===</span> <span class="st">&#39;granted&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-17" title="17">    <span class="cf">return</span> <span class="kw">true</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-19" title="19"></a>
+<a class="sourceLine" id="cb2-20" title="20">  <span class="co">// The user did not grant permission, return false.</span></a>
+<a class="sourceLine" id="cb2-21" title="21">  <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-22" title="22"><span class="op">}</span></a></code></pre></div>
+<h3 id="comparing-entries">Comparing Entries</h3>
+<p>The following function compares a single entry with an array of entries, and returns a new array with any matching entries removed.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">function</span> <span class="at">removeMatches</span>(fileEntry<span class="op">,</span> entriesArr) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="kw">let</span> newArr <span class="op">=</span> <span class="va">entriesArr</span>.<span class="at">filter</span>( entry <span class="kw">=&gt;</span> <span class="op">!</span><span class="va">fileEntry</span>.<span class="at">isSameEntry</span>(entry) )</a>
+<a class="sourceLine" id="cb3-4" title="4"></a>
+<a class="sourceLine" id="cb3-5" title="5">  <span class="cf">return</span> newArr<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/File_System_Access_API">File System Access API</a></li>
+<li><a href="https://web.dev/file-system-access/">The File System Access API: simplifying access to local files</a></li>
+</ul>

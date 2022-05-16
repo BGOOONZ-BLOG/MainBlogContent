@@ -1,0 +1,127 @@
+<p>{{APIRef(“XMLHttpRequest”)}}</p>
+<p>The <a href="/en-US/docs/Web/API/FormData"><code>FormData</code></a> object lets you compile a set of key/value pairs to send using <a href="/en-US/docs/Web/API/XMLHttpRequest"><code>XMLHttpRequest</code></a>. It is primarily intended for use in sending form data, but can be used independently from forms in order to transmit keyed data. The transmitted data is in the same format that the form’s {{domxref(“HTMLFormElement.submit”,“submit()”)}} method would use to send the data if the form’s encoding type were set to <code>multipart/form-data</code>.</p>
+<h2 id="creating-a-formdata-object-from-scratch">Creating a FormData object from scratch</h2>
+<p>You can build a <code>FormData</code> object yourself, instantiating it then appending fields to it by calling its {{domxref(“FormData.append”,“append()”)}} method, like this:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> formData <span class="op">=</span> <span class="kw">new</span> <span class="at">FormData</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="va">formData</span>.<span class="at">append</span>(<span class="st">&quot;username&quot;</span><span class="op">,</span> <span class="st">&quot;Groucho&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="va">formData</span>.<span class="at">append</span>(<span class="st">&quot;accountnum&quot;</span><span class="op">,</span> <span class="dv">123456</span>)<span class="op">;</span> <span class="co">// number 123456 is immediately converted to a string &quot;123456&quot;</span></a>
+<a class="sourceLine" id="cb1-5" title="5"></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="co">// HTML file input, chosen by user</span></a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="va">formData</span>.<span class="at">append</span>(<span class="st">&quot;userfile&quot;</span><span class="op">,</span> <span class="va">fileInputElement</span>.<span class="at">files</span>[<span class="dv">0</span>])<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-8" title="8"></a>
+<a class="sourceLine" id="cb1-9" title="9"><span class="co">// JavaScript file-like object</span></a>
+<a class="sourceLine" id="cb1-10" title="10"><span class="kw">var</span> content <span class="op">=</span> <span class="st">&#39;&lt;a id=&quot;a&quot;&gt;&lt;b id=&quot;b&quot;&gt;hey!&lt;/b&gt;&lt;/a&gt;&#39;</span><span class="op">;</span> <span class="co">// the body of the new file...</span></a>
+<a class="sourceLine" id="cb1-11" title="11"><span class="kw">var</span> blob <span class="op">=</span> <span class="kw">new</span> <span class="at">Blob</span>([content]<span class="op">,</span> <span class="op">{</span> <span class="dt">type</span><span class="op">:</span> <span class="st">&quot;text/xml&quot;</span><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-12" title="12"></a>
+<a class="sourceLine" id="cb1-13" title="13"><span class="va">formData</span>.<span class="at">append</span>(<span class="st">&quot;webmasterfile&quot;</span><span class="op">,</span> blob)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-14" title="14"></a>
+<a class="sourceLine" id="cb1-15" title="15"><span class="kw">var</span> request <span class="op">=</span> <span class="kw">new</span> <span class="at">XMLHttpRequest</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-16" title="16"><span class="va">request</span>.<span class="at">open</span>(<span class="st">&quot;POST&quot;</span><span class="op">,</span> <span class="st">&quot;http://foo.com/submitform.php&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-17" title="17"><span class="va">request</span>.<span class="at">send</span>(formData)<span class="op">;</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> The fields “userfile” and “webmasterfile” both contain a file. The number assigned to the field “accountnum” is immediately converted into a string by the <a href="/en-US/docs/Web/API/FormData#append()"><code>FormData.append()</code></a> method (the field’s value can be a {{ domxref(“Blob”) }}, {{ domxref(“File”) }}, or a string: <strong>if the value is neither a Blob nor a File, the value is converted to a string</strong>).</p>
+</blockquote>
+<p>This example builds a <code>FormData</code> instance containing values for fields named “username”, “accountnum”, “userfile” and “webmasterfile”, then uses the <code>XMLHttpRequest</code> method <a href="/en-US/docs/Web/API/XMLHttpRequest#send()"><code>send()</code></a> to send the form’s data. The field “webmasterfile” is a {{domxref(“Blob”)}}. A <code>Blob</code> object represents a file-like object of immutable, raw data. Blobs represent data that isn’t necessarily in a JavaScript-native format. The {{ domxref(“File”) }} interface is based on <code>Blob</code>, inheriting blob functionality and expanding it to support files on the user’s system. In order to build a <code>Blob</code> you can invoke the {{domxref(“Blob.Blob”,“Blob() constructor”)}}.</p>
+<h2 id="retrieving-a-formdata-object-from-an-html-form">Retrieving a FormData object from an HTML form</h2>
+<p>To construct a <code>FormData</code> object that contains the data from an existing {{ HTMLElement(“form”) }}, specify that form element when creating the <code>FormData</code> object:</p>
+<blockquote>
+<p><strong>Note:</strong> FormData will only use input fields that use the name attribute.</p>
+</blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> formData <span class="op">=</span> <span class="kw">new</span> <span class="at">FormData</span>(someFormElement)<span class="op">;</span></a></code></pre></div>
+<p>For example:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">var</span> formElement <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;form&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">var</span> request <span class="op">=</span> <span class="kw">new</span> <span class="at">XMLHttpRequest</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="va">request</span>.<span class="at">open</span>(<span class="st">&quot;POST&quot;</span><span class="op">,</span> <span class="st">&quot;submitform.php&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="va">request</span>.<span class="at">send</span>(<span class="kw">new</span> <span class="at">FormData</span>(formElement))<span class="op">;</span></a></code></pre></div>
+<p>You can also append additional data to the <code>FormData</code> object between retrieving it from a form and sending it, like this:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">var</span> formElement <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;form&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="kw">var</span> formData <span class="op">=</span> <span class="kw">new</span> <span class="at">FormData</span>(formElement)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="kw">var</span> request <span class="op">=</span> <span class="kw">new</span> <span class="at">XMLHttpRequest</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="va">request</span>.<span class="at">open</span>(<span class="st">&quot;POST&quot;</span><span class="op">,</span> <span class="st">&quot;submitform.php&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="va">formData</span>.<span class="at">append</span>(<span class="st">&quot;serialnumber&quot;</span><span class="op">,</span> serialNumber<span class="op">++</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-6" title="6"><span class="va">request</span>.<span class="at">send</span>(formData)<span class="op">;</span></a></code></pre></div>
+<p>This lets you augment the form’s data before sending it along, to include additional information that’s not necessarily user-editable.</p>
+<h2 id="sending-files-using-a-formdata-object">Sending files using a FormData object</h2>
+<p>You can also send files using <code>FormData</code>. Include an {{ HTMLElement(“input”) }} element of type <code>file</code> in your {{htmlelement(“form”)}}:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">&lt;form</span><span class="ot"> enctype=</span><span class="st">&quot;multipart/form-data&quot;</span><span class="ot"> method=</span><span class="st">&quot;post&quot;</span><span class="ot"> name=</span><span class="st">&quot;fileinfo&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="kw">&lt;label&gt;</span>Your email address:<span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb5-3" title="3">  <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;email&quot;</span><span class="ot"> autocomplete=</span><span class="st">&quot;on&quot;</span><span class="ot"> autofocus name=</span><span class="st">&quot;userid&quot;</span><span class="ot"> placeholder=</span><span class="st">&quot;email&quot;</span><span class="ot"> required size=</span><span class="st">&quot;32&quot;</span><span class="ot"> maxlength=</span><span class="st">&quot;64&quot;</span> <span class="kw">/&gt;&lt;br</span> <span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb5-4" title="4">  <span class="kw">&lt;label&gt;</span>Custom file label:<span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb5-5" title="5">  <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;text&quot;</span><span class="ot"> name=</span><span class="st">&quot;filelabel&quot;</span><span class="ot"> size=</span><span class="st">&quot;12&quot;</span><span class="ot"> maxlength=</span><span class="st">&quot;32&quot;</span> <span class="kw">/&gt;&lt;br</span> <span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb5-6" title="6">  <span class="kw">&lt;label&gt;</span>File to stash:<span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb5-7" title="7">  <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;file&quot;</span><span class="ot"> name=</span><span class="st">&quot;file&quot;</span><span class="ot"> required</span> <span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb5-8" title="8">  <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;submit&quot;</span><span class="ot"> value=</span><span class="st">&quot;Stash the file!&quot;</span> <span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb5-9" title="9"><span class="kw">&lt;/form&gt;</span></a>
+<a class="sourceLine" id="cb5-10" title="10"><span class="kw">&lt;div&gt;&lt;/div&gt;</span></a></code></pre></div>
+<p>Then you can send it using code like the following:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">var</span> form <span class="op">=</span> <span class="va">document</span>.<span class="va">forms</span>.<span class="at">namedItem</span>(<span class="st">&quot;fileinfo&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="va">form</span>.<span class="at">addEventListener</span>(<span class="st">&#39;submit&#39;</span><span class="op">,</span> <span class="kw">function</span>(ev) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-3" title="3"></a>
+<a class="sourceLine" id="cb6-4" title="4">  <span class="kw">var</span> oOutput <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;div&quot;</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb6-5" title="5">      oData <span class="op">=</span> <span class="kw">new</span> <span class="at">FormData</span>(form)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-6" title="6"></a>
+<a class="sourceLine" id="cb6-7" title="7">  <span class="va">oData</span>.<span class="at">append</span>(<span class="st">&quot;CustomField&quot;</span><span class="op">,</span> <span class="st">&quot;This is some extra data&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-8" title="8"></a>
+<a class="sourceLine" id="cb6-9" title="9">  <span class="kw">var</span> oReq <span class="op">=</span> <span class="kw">new</span> <span class="at">XMLHttpRequest</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-10" title="10">  <span class="va">oReq</span>.<span class="at">open</span>(<span class="st">&quot;POST&quot;</span><span class="op">,</span> <span class="st">&quot;stash.php&quot;</span><span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-11" title="11">  <span class="va">oReq</span>.<span class="at">onload</span> <span class="op">=</span> <span class="kw">function</span>(oEvent) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-12" title="12">    <span class="cf">if</span> (<span class="va">oReq</span>.<span class="at">status</span> <span class="op">==</span> <span class="dv">200</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-13" title="13">      <span class="va">oOutput</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="st">&quot;Uploaded!&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-14" title="14">    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-15" title="15">      <span class="va">oOutput</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="st">&quot;Error &quot;</span> <span class="op">+</span> <span class="va">oReq</span>.<span class="at">status</span> <span class="op">+</span> <span class="st">&quot; occurred when trying to upload your file.&lt;br </span><span class="sc">\/</span><span class="st">&gt;&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-16" title="16">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-17" title="17">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb6-18" title="18"></a>
+<a class="sourceLine" id="cb6-19" title="19">  <span class="va">oReq</span>.<span class="at">send</span>(oData)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-20" title="20">  <span class="va">ev</span>.<span class="at">preventDefault</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-21" title="21"><span class="op">},</span> <span class="kw">false</span>)<span class="op">;</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> If you pass in a reference to the form, the <a href="/en-US/docs/Web/HTTP/Methods">request method</a> specified in the form will be used over the method specified in the open() call.</p>
+</blockquote>
+<blockquote>
+<p><strong>Warning:</strong> When using FormData to submit POST requests using {{ domxref(“XMLHttpRequest”) }} or the {{ domxref(“Fetch_API”) }} with the <code>multipart/form-data</code> Content-Type (e.g. when uploading Files and Blobs to the server), <em>do not</em> explicitly set the <a href="/en-US/docs/Web/HTTP/Headers/Content-Type"><code>Content-Type</code></a> header on the request. Doing so will prevent the browser from being able to set the Content-Type header with the boundary expression it will use to delimit form fields in the request body.</p>
+</blockquote>
+<p>You can also append a {{ domxref(“File”) }} or {{ domxref(“Blob”) }} directly to the {{ domxref(“FormData”) }} object, like this:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="va">data</span>.<span class="at">append</span>(<span class="st">&quot;myfile&quot;</span><span class="op">,</span> myBlob<span class="op">,</span> <span class="st">&quot;filename.txt&quot;</span>)<span class="op">;</span></a></code></pre></div>
+<p>When using the {{domxref(“FormData.append”,“append()”)}} method it is possible to use the third optional parameter to pass a filename inside the <code>Content-Disposition</code> header that is sent to the server. When no filename is specified (or the parameter isn’t supported), the name “blob” is used.</p>
+<h2 id="using-a-formdata-event">Using a formdata event</h2>
+<p>A more recent addition to the platform than the {{domxref(“FormData”)}} object is the <a href="/en-US/docs/Web/API/HTMLFormElement/formdata_event"><code>formdata</code> event</a> — this is fired on an {{domxref(“HTMLFormElement”)}} object after the entry list representing the form’s data is constructed. This happens when the form is submitted, but can also be triggered by the invocation of a {{domxref(“FormData.FormData”, “FormData()”)}} constructor.</p>
+<p>This allows a {{domxref(“FormData”)}} object to be quickly obtained in response to a <code>formdata</code> event firing, rather than needing to put it together yourself.</p>
+<p>Typically this is used as shown in our <a href="https://long-impatiens.glitch.me/">simple formdata event demo</a> — in the JavaScript  we reference a form:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">const</span> formElem <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;form&#39;</span>)<span class="op">;</span></a></code></pre></div>
+<p>In our <a href="/en-US/docs/Web/API/HTMLFormElement/submit_event"><code>submit</code> event</a> handler we use <a href="/en-US/docs/Web/API/Event/preventDefault"><code>preventDefault</code></a> to stop the default form submission, then invoke a {{domxref(“FormData”)}} constructor to trigger the <code>formdata</code> event:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="va">formElem</span>.<span class="at">addEventListener</span>(<span class="st">&#39;submit&#39;</span><span class="op">,</span> (e) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-2" title="2">  <span class="co">// on form submission, prevent default</span></a>
+<a class="sourceLine" id="cb9-3" title="3">  <span class="va">e</span>.<span class="at">preventDefault</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-4" title="4"></a>
+<a class="sourceLine" id="cb9-5" title="5">  <span class="co">// construct a FormData object, which fires the formdata event</span></a>
+<a class="sourceLine" id="cb9-6" title="6">  <span class="kw">new</span> <span class="at">FormData</span>(formElem)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-7" title="7"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>When the <code>formdata</code> event fires we can access the {{domxref(“FormData”)}} object using {{domxref(“FormDataEvent.formData”)}}, then do what we like with it (below we post it to the server using {{domxref(“XMLHttpRequest”)}}).</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1"><span class="va">formElem</span>.<span class="at">addEventListener</span>(<span class="st">&#39;formdata&#39;</span><span class="op">,</span> (e) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-2" title="2">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;formdata fired&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-3" title="3"></a>
+<a class="sourceLine" id="cb10-4" title="4">  <span class="co">// Get the form data from the event object</span></a>
+<a class="sourceLine" id="cb10-5" title="5">  <span class="kw">let</span> data <span class="op">=</span> <span class="va">e</span>.<span class="at">formData</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-6" title="6">  <span class="cf">for</span> (<span class="kw">var</span> value <span class="kw">of</span> <span class="va">data</span>.<span class="at">values</span>()) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-7" title="7">    <span class="va">console</span>.<span class="at">log</span>(value)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-8" title="8">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-9" title="9"></a>
+<a class="sourceLine" id="cb10-10" title="10">  <span class="co">// submit the data via XHR</span></a>
+<a class="sourceLine" id="cb10-11" title="11">  <span class="kw">let</span> request <span class="op">=</span> <span class="kw">new</span> <span class="at">XMLHttpRequest</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-12" title="12">  <span class="va">request</span>.<span class="at">open</span>(<span class="st">&quot;POST&quot;</span><span class="op">,</span> <span class="st">&quot;/formHandler&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-13" title="13">  <span class="va">request</span>.<span class="at">send</span>(data)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-14" title="14"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> The <code>formdata</code> event and {{domxref(“FormDataEvent”)}} object are available in Chrome from version 77 (and other equivalent Chromiums), and Firefox 72 (first available behind the <code>dom.formdata.event.enabled</code> pref in Firefox 71).</p>
+</blockquote>
+<h2 id="submitting-forms-and-uploading-files-via-ajax-without-formdata-objects">Submitting forms and uploading files via AJAX <em>without</em> <code>FormData</code> objects</h2>
+<p>If you want to know how to serialize and submit a form via <a href="/en-US/docs/Web/Guide/AJAX">AJAX</a> <em>without</em> using FormData objects, please read <a href="/en-US/docs/Web/API/XMLHttpRequest/Using_XMLHttpRequest#submitting_forms_and_uploading_files">this paragraph</a>.</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/XMLHttpRequest/Using_XMLHttpRequest">Using XMLHttpRequest</a></li>
+<li>{{domxref(“HTMLFormElement”)}}</li>
+<li>{{domxref(“Blob”)}}</li>
+<li><a href="/en-US/docs/Web/JavaScript/Typed_arrays">Typed Arrays</a></li>
+</ul>

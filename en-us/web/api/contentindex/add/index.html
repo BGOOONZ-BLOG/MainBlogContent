@@ -1,0 +1,104 @@
+<p>{{draft}}{{DefaultAPISidebar(“Content Index API”)}}</p>
+<p>The <strong><code>add()</code></strong> method of the {{domxref(“ContentIndex”)}} interface registers an item with the {{domxref(‘Content Index API’,‘content index’)}}.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">ContentIndex</span>.<span class="at">add</span>(ContentDescription).<span class="at">then</span>(...)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><p><em>ContentDescription</em></p>
+<ul>
+<li><p>: An {{jsxref(‘Object’)}} containing the following data:</p>
+<ul>
+<li><code>id</code>: A unique {{jsxref(‘String’)}} identifier.</li>
+<li><code>title</code>: A {{jsxref(‘String’)}} title for the item. Used in user-visible lists of content.</li>
+<li><code>title</code>: A {{jsxref(‘String’)}} title of the item. Used in user-visible lists of content.</li>
+<li><code>description</code>: A {{jsxref(‘String’)}} description of the item. Used in user-visible lists of content.</li>
+<li><code>url</code>: A {{jsxref(‘String’)}} containing the url of the corresponding HTML document. Needs to be under the scope of the current {{domxref(‘ServiceWorker’,‘service worker’)}}.</li>
+<li><p><code>category</code>: {{Optional_Inline}} A {{jsxref(‘String’)}} defining the category of content. Can be:</p>
+<ul>
+<li><code>''</code> An empty {{jsxref(‘String’)}}, this is the default.</li>
+<li><code>homepage</code></li>
+<li><code>article</code></li>
+<li><code>video</code></li>
+<li><code>audio</code></li>
+</ul></li>
+<li><p><code>icons</code>: {{Optional_Inline}} An {{jsxref(‘Array’)}} of image resources, defined as an {{jsxref(‘Object’)}} with the following data:</p>
+<ul>
+<li><code>src:</code> A url {{jsxref(‘String’)}} of the source image.</li>
+<li><code>sizes:</code> {{Optional_Inline}} A {{jsxref(‘String’)}} representation of the image size.</li>
+<li><code>type:</code> {{Optional_Inline}} The {{Glossary(“MIME type”)}} of the image.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>Returns a {{jsxref(“Promise”)}} that resolves with <code>undefined</code></p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><p><code>TypeError</code></p>
+<ul>
+<li><p>: This exception is thrown in the following conditions:</p>
+<ul>
+<li>The service worker’s registration is not present or the service worker does not contain a {{domxref(‘FetchEvent’)}}.</li>
+<li>The <code>id</code>, <code>title</code>, <code>description</code> or <code>url</code> are missing, not of type {{jsxref(‘String’)}}, or an empty {{jsxref(‘String’)}}.</li>
+<li>The items referenced by <code>icons</code> are not of image type.</li>
+</ul></li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>Here we’re declaring an item in the correct format and creating an asynchronous function which uses the <code>add</code> method to register it with the {{domxref(‘Content Index API’,‘content index’)}}.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">// our content</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">const</span> item <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="dt">id</span><span class="op">:</span> <span class="st">&#39;post-1&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="dt">url</span><span class="op">:</span> <span class="st">&#39;/posts/amet.html&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="dt">title</span><span class="op">:</span> <span class="st">&#39;Amet consectetur adipisicing&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="dt">description</span><span class="op">:</span> <span class="st">&#39;Repellat et quia iste possimus ducimus aliquid a aut eaque nostrum.&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="dt">icons</span><span class="op">:</span> [<span class="op">{</span></a>
+<a class="sourceLine" id="cb2-8" title="8">    <span class="dt">src</span><span class="op">:</span> <span class="st">&#39;/media/dark.png&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-9" title="9">    <span class="dt">sizes</span><span class="op">:</span> <span class="st">&#39;128x128&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-10" title="10">    <span class="dt">type</span><span class="op">:</span> <span class="st">&#39;image/png&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-11" title="11">  <span class="op">}</span>]<span class="op">,</span></a>
+<a class="sourceLine" id="cb2-12" title="12">  <span class="dt">category</span><span class="op">:</span> <span class="st">&#39;article&#39;</span></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="op">};</span></a>
+<a class="sourceLine" id="cb2-14" title="14"></a>
+<a class="sourceLine" id="cb2-15" title="15"><span class="co">// our asynchronous function to add indexed content</span></a>
+<a class="sourceLine" id="cb2-16" title="16"><span class="kw">async</span> <span class="kw">function</span> <span class="at">registerContent</span>(data) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-17" title="17">  <span class="kw">const</span> registration <span class="op">=</span> <span class="cf">await</span> <span class="va">navigator</span>.<span class="va">serviceWorker</span>.<span class="at">ready</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18"></a>
+<a class="sourceLine" id="cb2-19" title="19">  <span class="co">// feature detect Content Index</span></a>
+<a class="sourceLine" id="cb2-20" title="20">    <span class="cf">if</span> (<span class="op">!</span><span class="va">registration</span>.<span class="at">index</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-21" title="21">        <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-22" title="22">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-23" title="23"></a>
+<a class="sourceLine" id="cb2-24" title="24">  <span class="co">// register content</span></a>
+<a class="sourceLine" id="cb2-25" title="25">  <span class="cf">try</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-26" title="26">        <span class="cf">await</span> <span class="va">registration</span>.<span class="va">index</span>.<span class="at">add</span>(data)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-27" title="27">  <span class="op">}</span> <span class="cf">catch</span> (e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-28" title="28">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Failed to register content: &#39;</span><span class="op">,</span> <span class="va">e</span>.<span class="at">message</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-29" title="29">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-30" title="30"><span class="op">}</span></a></code></pre></div>
+<p>The <code>add</code> method can also be used within the {{domxref(‘ServiceWorker’,‘service worker’)}} scope.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="co">// our content</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">const</span> item <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="dt">id</span><span class="op">:</span> <span class="st">&#39;post-1&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="dt">url</span><span class="op">:</span> <span class="st">&#39;/posts/amet.html&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-5" title="5">  <span class="dt">title</span><span class="op">:</span> <span class="st">&#39;Amet consectetur adipisicing&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="dt">description</span><span class="op">:</span> <span class="st">&#39;Repellat et quia iste possimus ducimus aliquid a aut eaque nostrum.&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="dt">icons</span><span class="op">:</span> [<span class="op">{</span></a>
+<a class="sourceLine" id="cb3-8" title="8">    <span class="dt">src</span><span class="op">:</span> <span class="st">&#39;/media/dark.png&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-9" title="9">    <span class="dt">sizes</span><span class="op">:</span> <span class="st">&#39;128x128&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-10" title="10">    <span class="dt">type</span><span class="op">:</span> <span class="st">&#39;image/png&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-11" title="11">  <span class="op">}</span>]<span class="op">,</span></a>
+<a class="sourceLine" id="cb3-12" title="12">  <span class="dt">category</span><span class="op">:</span> <span class="st">&#39;article&#39;</span></a>
+<a class="sourceLine" id="cb3-13" title="13"><span class="op">};</span></a>
+<a class="sourceLine" id="cb3-14" title="14"></a>
+<a class="sourceLine" id="cb3-15" title="15"><span class="va">self</span>.<span class="va">registration</span>.<span class="va">index</span>.<span class="at">add</span>(item)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="https://web.dev/content-indexing-api/">An introductory article on the Content Index API</a></li>
+<li><a href="https://contentindex.dev/">An app which uses the Content Index API to list and remove ‘save for later’ content</a></li>
+<li><a href="/en-US/docs/Web/API/Service_Worker_API">Service Worker API, along with information about Cache and CacheStorage</a></li>
+</ul>

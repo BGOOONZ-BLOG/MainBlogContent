@@ -1,0 +1,73 @@
+<p>{{draft}}{{securecontext_header}}{{DefaultAPISidebar(“File System Access API”)}}</p>
+<p>The <strong><code>write()</code></strong> method of the {{domxref(“FileSystemWritableFileStream”)}} interface writes content into the file the method is called on, at the current file cursor offset.</p>
+<p>No changes are written to the actual file on disk until the stream has been closed. Changes are typically written to a temporary file instead. This method can also be used to seek to a byte point within the stream and truncate to modify the total bytes the file contains.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">FileSystemWritableFileStream</span>.<span class="at">write</span>(data).<span class="at">then</span>(...)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><p><code>data</code></p>
+<ul>
+<li><p>: Can be either the file data to write, in the form of a {{domxref(‘BufferSource’)}}, {{domxref(‘Blob’)}} or {{domxref(‘USVString’)}}. Or an object containing the following properties:</p>
+<ul>
+<li><strong><code>type</code></strong>: One of <code>'write'</code>, <code>'seek'</code> or <code>'truncate'</code>. This is required if the object is passed into the <code>write()</code> method.</li>
+<li><strong><code>data</code></strong>: The file data to write. Can be a {{domxref(‘BufferSource’)}}, {{domxref(‘Blob’)}} or {{domxref(‘USVString’)}}. This is required if the <code>type</code> is set to <code>'write'</code>.</li>
+<li><strong><code>position</code></strong>: The byte position the current file cursor should move to if type <code>'seek'</code> is used. Can also be set with <code>'write'</code> in which case the write will start at the position.</li>
+<li><strong><code>size</code></strong>: An unsigned long value representing the amount of bytes the stream should contain. This is required if the <code>type</code> is set to <code>'truncate'</code></li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>{{jsxref(‘Promise’)}} which returns undefined</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><code>NotAllowedError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if {{domxref(‘PermissionStatus’)}} is not granted.</li>
+</ul></li>
+<li><code>TypeError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if data is undefined, or if <code>position</code> or <code>size</code> aren’t valid.</li>
+</ul></li>
+<li><code>InvalidStateError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if the <code>position</code> is set and larger than the bytes available.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>This asynchronous function opens the ‘Save File’ picker, which returns a {{domxref(‘FileSystemFileHandle’)}} once a file is selected. From which a writable stream is then created using the {{domxref(‘FileSystemFileHandle.createWritable()’)}} method.</p>
+<p>A user defined {{domxref(‘Blob’)}} is then written to the stream which is subsequently closed.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">async</span> <span class="kw">function</span> <span class="at">saveFile</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="co">// create a new handle</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="kw">const</span> newHandle <span class="op">=</span> <span class="cf">await</span> <span class="va">window</span>.<span class="at">showSaveFilePicker</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="co">// create a FileSystemWritableFileStream to write to</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="kw">const</span> writableStream <span class="op">=</span> <span class="cf">await</span> <span class="va">newHandle</span>.<span class="at">createWritable</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8"></a>
+<a class="sourceLine" id="cb2-9" title="9">  <span class="co">// write our file</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="cf">await</span> <span class="va">writableStream</span>.<span class="at">write</span>(imgBlob)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11"></a>
+<a class="sourceLine" id="cb2-12" title="12">  <span class="co">// close the file and write the contents to disk.</span></a>
+<a class="sourceLine" id="cb2-13" title="13">  <span class="cf">await</span> <span class="va">writableStream</span>.<span class="at">close</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14"><span class="op">}</span></a></code></pre></div>
+<p>The following show different examples of options that can be passed into the <code>write()</code> method.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="co">// just pass in the data (no options)</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="va">writableStream</span>.<span class="at">write</span>(data)</a>
+<a class="sourceLine" id="cb3-3" title="3"></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="co">// writes the data to the stream from the determined position</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="va">writableStream</span>.<span class="at">write</span>(<span class="op">{</span> <span class="dt">type</span><span class="op">:</span> <span class="st">&quot;write&quot;</span><span class="op">,</span> <span class="dt">position</span><span class="op">:</span> position<span class="op">,</span> <span class="dt">data</span><span class="op">:</span> data <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb3-6" title="6"></a>
+<a class="sourceLine" id="cb3-7" title="7"><span class="co">// updates the current file cursor offset to the position specified</span></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="va">writableStream</span>.<span class="at">write</span>(<span class="op">{</span> <span class="dt">type</span><span class="op">:</span> <span class="st">&quot;seek&quot;</span><span class="op">,</span> <span class="dt">position</span><span class="op">:</span> position <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb3-9" title="9"></a>
+<a class="sourceLine" id="cb3-10" title="10"><span class="co">// resizes the file to be size bytes long</span></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="va">writableStream</span>.<span class="at">write</span>(<span class="op">{</span> <span class="dt">type</span><span class="op">:</span> <span class="st">&quot;truncate&quot;</span><span class="op">,</span> <span class="dt">size</span><span class="op">:</span> size <span class="op">}</span>)</a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/File_System_Access_API">File System Access API</a></li>
+<li><a href="https://web.dev/file-system-access/">The File System Access API: simplifying access to local files</a></li>
+</ul>

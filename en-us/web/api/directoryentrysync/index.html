@@ -1,0 +1,434 @@
+<p>{{APIRef(“File System API”)}}{{Non-standard_header}}</p>
+<p>The <code>DirectoryEntrySync</code> interface of the <a href="/en-US/docs/Web/API/File_and_Directory_Entries_API/Introduction">File System API</a> represents a directory in a file system. It includes methods for creating, reading, looking up, and recursively removing files in a directory.</p>
+<blockquote>
+<p><strong>Note:</strong> This interface has been abandoned: it was on a standard track and it proves not a good idea. Do not use it anymore.</p>
+</blockquote>
+<h2 id="about-this-document">About this document</h2>
+<p>This document was last updated on March 2, 2012 and follows the <a href="https://www.w3.org/TR/file-system-api/">W3C Specifications (Working Draft)</a> drafted on April 19, 2011.</p>
+<p>This specification is pretty much abandoned, having failed to reach any substantial traction.</p>
+<h2 id="basic-concepts">Basic concepts</h2>
+<p>If you want to create subdirectories, you have to create each child directory in sequence. If you try to create a directory using a full path that includes parent directories that do not exist yet, you get an error. So create the hierarchy by recursively adding a new path after creating the parent directory.</p>
+<h4 id="example">Example</h4>
+<p>The <code>getFile()</code> method returns a <code>FileEntrySync</code>, which represents a file in the file system.  The following creates an empty file called <code>seekrits.txt</code> in the root directory.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> fileEntry <span class="op">=</span> <span class="va">fs</span>.<span class="va">root</span>.<span class="at">getFile</span>(<span class="st">&#39;seekrits.txt&#39;</span><span class="op">,</span> <span class="op">{</span><span class="dt">create</span><span class="op">:</span> <span class="kw">true</span><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>The <code>getDirectory()</code> method returns a <code>DirectoryEntrySync</code>, which represents a file in the file system. The following creates a new directory called <code>superseekrit</code> in the root directory.</p>
+<pre><code>var dirEntry = fs.root.getDirectory(&#39;superseekrit&#39;, {create: true});</code></pre>
+<h2 id="method-overview">Method overview</h2>
+<table class="no-markdown">
+<tbody>
+<tr>
+<td>
+<code
+          >DirectoryReaderSync <a href="#createreader">createReader</a> () raises (<a href="/en-US/docs/Web/API/FileException">FileException</a
+          >);</code
+        >
+</td>
+</tr>
+<tr>
+<td>
+<code
+          ><a href="/en-US/docs/Web/API/FileEntrySync">FileEntrySync</a> <a href="#getfile">getFile</a> (in DOMString <em>path</em>, in optional Flags <em>options</em>) raises (<a
+            href="/en-US/docs/Web/API/FileException"
+            >FileException</a
+          >);</code
+        >
+</td>
+</tr>
+<tr>
+<td>
+<code
+          >DirectoryEntrySync <a href="#getdirectory">getDirectory</a> (in DOMString path, in optional Flags <em>options</em>) raises (<a
+            href="/en-US/docs/Web/API/FileException"
+            >FileException</a
+          >);</code
+        >
+</td>
+</tr>
+<tr>
+<td>
+<code
+          >void <a href="#removerecursively">removeRecursively</a> () raises (<a
+            href="/en-US/docs/Web/API/FileException"
+            >FileException</a
+          >);</code
+        >
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="methods">Methods</h2>
+<h3 id="createreader">createReader()</h3>
+<p>Creates a new <code>DirectoryReaderSync</code> to read entries from this directory.</p>
+<p>DirectoryReaderSync createReader ( ) raises (FileException);</p>
+<h5 id="returns">Returns</h5>
+<ul>
+<li><a href="/en-US/docs/Web/API/DirectoryReaderSync"><code>DirectoryReaderSync</code></a>
+<ul>
+<li>: Represents a directory in a file system.</li>
+</ul></li>
+</ul>
+<h5 id="parameter">Parameter</h5>
+<p>None</p>
+<h5 id="exceptions">Exceptions</h5>
+<p>This method can raise a <a href="/en-US/docs/Web/API/FileException">FileException</a> with the following codes:</p>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 85%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Exception</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>NOT_FOUND_ERR</code></td>
+<td>The directory does not exist.</td>
+</tr>
+<tr class="even">
+<td><code>SECURITY_ERR</code></td>
+<td>The browser determined that it was not safe to look up the metadata. [ todo: Explain why ]</td>
+</tr>
+</tbody>
+</table>
+<h3 id="getfile">getFile()</h3>
+<p>Depending on how you’ve set the <code>options</code> parameter, the method either creates a file or looks up an existing file.</p>
+<p>void getFile ( in DOMString path, in optional Flags options ) raises (FileException);</p>
+<h5 id="parameter-1">Parameter</h5>
+<ul>
+<li>path
+<ul>
+<li>: Either an absolute path or a relative path from the directory to the file to be looked up or created. You cannot create a file whose immediate parent does not exist. Create the parent directory first.</li>
+</ul></li>
+<li>options
+<ul>
+<li>: An object literal describing the behavior of the method. If the file does not exist, it is created.</li>
+</ul></li>
+</ul>
+<table class="no-markdown">
+<thead>
+<tr>
+<th scope="col">
+Object literal
+</th>
+<th scope="col">
+Condition
+</th>
+<th scope="col">
+Result
+</th>
+</tr>
+<tr>
+<td>
+<code>create: true</code><br /><code>exclusive: true</code>
+</td>
+<td>
+Path already exists
+</td>
+<td>
+An error is thrown.
+</td>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>create: true</code><br /><code>exclusive: false</code>
+</td>
+<td>
+Path doesn’t exist and no other error occurs
+</td>
+<td>
+A file is created. If a file already exists, no error is thrown.
+</td>
+</tr>
+<tr>
+<td>
+<code>create: false</code><br />(<code>exclusive</code> is ignored)
+</td>
+<td>
+Path exists
+</td>
+<td>
+The file is returned.
+</td>
+</tr>
+<tr>
+<td>
+<code>create: false</code><br />(<code>exclusive</code> is ignored)
+</td>
+<td>
+Path doesn’t exist
+</td>
+<td>
+An error is thrown.
+</td>
+</tr>
+<tr>
+<td>
+<code>create: false</code><br />(<code>exclusive</code> is ignored)
+</td>
+<td>
+Path exists, but is a directory
+</td>
+<td>
+An error is thrown.
+</td>
+</tr>
+</tbody>
+</table>
+<h5 id="returns-1">Returns</h5>
+<ul>
+<li><a href="/en-US/docs/Web/API/FileEntrySync"><code>FileEntrySync</code></a>
+<ul>
+<li>: Represents a file in a file system.</li>
+</ul></li>
+</ul>
+<h5 id="exceptions-1">Exceptions</h5>
+<p>This method can raise a <a href="/en-US/docs/Web/API/FileException">FileException</a> with the following codes:</p>
+<table>
+<colgroup>
+<col style="width: 21%" />
+<col style="width: 78%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Exception</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>ENCODING_ERR</code></td>
+<td>The path supplied is invalid.</td>
+</tr>
+<tr class="even">
+<td><code>NOT_FOUND_ERR</code></td>
+<td>The path was structurally correct, but refers to a resource that does not exist.</td>
+</tr>
+<tr class="odd">
+<td><code>NO_MODIFICATION_ALLOWED_ERR</code></td>
+<td>This is a permission issue. The target directory or file is not writable.</td>
+</tr>
+<tr class="even">
+<td><code>PATH_EXISTS_ERR</code></td>
+<td>The file already exists. You cannot create another one with the same path.</td>
+</tr>
+<tr class="odd">
+<td><code>QUOTA_EXCEEDED_ERROR</code></td>
+<td>The operation would cause the application to exceed its storage quota.</td>
+</tr>
+<tr class="even">
+<td><code>SECURITY_ERR</code></td>
+<td>The application does not have permission to access the element referred to by path. [ todo: Explain why ]</td>
+</tr>
+<tr class="odd">
+<td><code>TYPE_MISMATCH_ERR</code></td>
+<td>The path supplied exists, but it is not a directory.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="getdirectory">getDirectory()</h3>
+<p>Creates or looks up a directory. The method is similar to <code>getFile()</code> with DirectoryEntrySync being passed.</p>
+<p>void getDirectory ( in DOMString path, in optional Flags options ) raises (FileException);</p>
+<h5 id="parameter-2">Parameter</h5>
+<ul>
+<li>path
+<ul>
+<li>: Either an absolute path or a relative path from the directory to the file to be looked up or created. You cannot create a file whose immediate parent does not exist. Create the parent directory first.</li>
+</ul></li>
+<li>options
+<ul>
+<li>: An object literal describing the behavior of the method if the file does not exist.</li>
+</ul></li>
+</ul>
+<table class="no-markdown">
+<thead>
+<tr>
+<th scope="col">
+Object literal
+</th>
+<th scope="col">
+Condition
+</th>
+<th scope="col">
+Result
+</th>
+</tr>
+<tr>
+<td>
+<code>create: true</code><br /><code>exclusive: true</code>
+</td>
+<td>
+Path already exists
+</td>
+<td>
+An error is thrown.
+</td>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>create: true</code><br /><code>exclusive: false</code>
+</td>
+<td>
+Path doesn’t exist and no other error occurs
+</td>
+<td>
+A directory is created. If a file already exists, no error is thrown.
+</td>
+</tr>
+<tr>
+<td>
+<code>create: false</code><br />(<code>exclusive</code> is ignored)
+</td>
+<td>
+Path exists
+</td>
+<td>
+The directory is returned.
+</td>
+</tr>
+<tr>
+<td>
+<code>create: false</code><br />(<code>exclusive</code> is ignored)
+</td>
+<td>
+Path doesn’t exist
+</td>
+<td>
+An error is thrown.
+</td>
+</tr>
+<tr>
+<td>
+<code>create: false</code><br />(<code>exclusive</code> is ignored)
+</td>
+<td>
+Path exists, but is a directory
+</td>
+<td>
+An error is thrown.
+</td>
+</tr>
+</tbody>
+</table>
+<h5 id="returns-2">Returns</h5>
+<ul>
+<li><a href="/en-US/docs/Web/API/DirectoryReaderSync"><code>DirectoryEntrySync</code></a>
+<ul>
+<li>: Represents a directory in a file system.</li>
+</ul></li>
+</ul>
+<h5 id="exceptions-2">Exceptions</h5>
+<p>This method can raise a <a href="/en-US/docs/Web/API/FileException">FileException</a> with the following codes:</p>
+<table>
+<colgroup>
+<col style="width: 21%" />
+<col style="width: 78%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Exception</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>ENCODING_ERR</code></td>
+<td>The path supplied is invalid.</td>
+</tr>
+<tr class="even">
+<td><code>NOT_FOUND_ERR</code></td>
+<td>The path was structurally correct, but refers to a resource that does not exist.</td>
+</tr>
+<tr class="odd">
+<td><code>NO_MODIFICATION_ALLOWED_ERR</code></td>
+<td>This is a permission issue. The target directory or file is not writable.</td>
+</tr>
+<tr class="even">
+<td><code>PATH_EXISTS_ERR</code></td>
+<td>The file already exists. You cannot create another one with the same path.</td>
+</tr>
+<tr class="odd">
+<td><code>QUOTA_EXCEEDED_ERROR</code></td>
+<td>The operation would cause the application to exceed its storage quota.</td>
+</tr>
+<tr class="even">
+<td><code>SECURITY_ERR</code></td>
+<td>The application does not have permission to access the element referred to by path. [ todo: Explain why ]</td>
+</tr>
+<tr class="odd">
+<td><code>TYPE_MISMATCH_ERR</code></td>
+<td>The path supplied exists, but it is not a directory.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="removerecursively">removeRecursively()</h3>
+<p>Deletes a directory and all of its contents. You cannot delete the root directory of a file system.</p>
+<p>If you delete a directory that contains a file that cannot be removed or if an error occurs while the deletion is in progress, some of the contents might not be deleted. Catch these cases with error callbacks and retry the deletion.</p>
+<p>void removeRecursively ( ) raises (FileException);</p>
+<h5 id="parameter-3">Parameter</h5>
+<p>None</p>
+<h5 id="returns-3">Returns</h5>
+<p>{{jsxref(‘undefined’)}}</p>
+<h5 id="exceptions-3">Exceptions</h5>
+<p>This method can raise a <a href="/en-US/docs/Web/API/FileException">FileException</a> with the following codes:</p>
+<table class="no-markdown">
+<thead>
+<tr>
+<th scope="col">
+Exception
+</th>
+<th scope="col">
+Description
+</th>
+</tr>
+<tr>
+<td>
+<code>NOT_FOUND_ERR</code>
+</td>
+<td>
+The target directory does not exist.
+</td>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>INVALID_STATE_ERR</code>
+</td>
+<td>
+This directory is not longer valid for some reason other than being deleted.
+<p>
+[todo: Explain more ]
+</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>NO_MODIFICATION_ALLOWED_ERR</code>
+</td>
+<td>
+One of the following is not writable: the directory, its parent directory, and some of the content in the directory.
+</td>
+</tr>
+<tr>
+<td>
+<code>SECURITY_ERR</code>
+</td>
+<td>
+The application does not have permission to access the target directory, its parent, or some of its contents.
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<p>Specification: {{ spec(“http://dev.w3.org/2009/dap/file-system/pub/FileSystem/”, “File API: Directories and System Specification”, “WD”) }}</p>
+<p>Reference: <a href="/en-US/docs/Web/API/File_and_Directory_Entries_API/Introduction">File System API</a></p>
+<p>Introduction: <a href="/en-US/docs/Web/API/File_and_Directory_Entries_API/Introduction">Basic Concepts About the File System API</a></p>

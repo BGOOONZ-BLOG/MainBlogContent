@@ -1,0 +1,100 @@
+<p>{{ APIRef(“Web Audio API”) }}</p>
+<p>The <code>decodeAudioData()</code> method of the {{ domxref(“BaseAudioContext”) }} Interface is used to asynchronously decode audio file data contained in an {{jsxref(“ArrayBuffer”)}}. In this case the <code>ArrayBuffer</code> is loaded from {{domxref(“XMLHttpRequest”)}} and {{domxref(“FileReader”)}}. The decoded {{domxref(“AudioBuffer”)}} is resampled to the {{domxref(“AudioContext”)}}’s sampling rate, then passed to a callback or promise.</p>
+<p>This is the preferred method of creating an audio source for Web Audio API from an audio track. This method only works on complete file data, not fragments of audio file data.</p>
+<h2 id="syntax">Syntax</h2>
+<p>Older callback syntax:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">baseAudioContext</span>.<span class="at">decodeAudioData</span>(ArrayBuffer<span class="op">,</span> successCallback<span class="op">,</span> errorCallback)<span class="op">;</span></a></code></pre></div>
+<p>Newer promise-based syntax:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1">Promise<span class="op">&lt;</span>decodedData<span class="op">&gt;</span> <span class="va">baseAudioContext</span>.<span class="at">decodeAudioData</span>(ArrayBuffer)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><em>ArrayBuffer</em>
+<ul>
+<li>: An ArrayBuffer containing the audio data to be decoded, usually grabbed from {{domxref(“XMLHttpRequest”)}}, {{domxref(“fetch()”)}} or {{domxref(“FileReader”)}}.</li>
+</ul></li>
+<li><em>successCallback</em>
+<ul>
+<li>: A callback function to be invoked when the decoding successfully finishes. The single argument to this callback is an {{domxref(“AudioBuffer”)}} representing the <em>decodedData</em> (the decoded PCM audio data). Usually you’ll want to put the decoded data into an {{domxref(“AudioBufferSourceNode”)}}, from which it can be played and manipulated how you want.</li>
+</ul></li>
+<li><em>errorCallback</em>
+<ul>
+<li>: An optional error callback, to be invoked if an error occurs when the audio data is being decoded.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>Void, or a {{jsxref(“Promise”) }} object that fulfills with the <em>decodedData</em>.</p>
+<h2 id="example">Example</h2>
+<p>In this section we will first cover the older callback-based system and then the newer promise-based syntax.</p>
+<h3 id="older-callback-syntax">Older callback syntax</h3>
+<p>In this example, the <code>getData()</code> function uses XHR to load an audio track, setting the <code>responseType</code> of the request to <code>arraybuffer</code> so that it returns an array buffer as its <code>response</code> that we then store in the <code>audioData</code> variable . We then pass this buffer into a <code>decodeAudioData()</code> function; the success callback takes the successfully decoded PCM data, puts it into an {{ domxref(“AudioBufferSourceNode”) }} created using {{domxref(“BaseAudioContext/createBufferSource”, “AudioContext.createBufferSource()”)}}, connects the source to the {{domxref(“BaseAudioContext/destination”, “AudioContext.destination”)}} and sets it to loop.</p>
+<p>The buttons in the example run <code>getData()</code> to load the track and start it playing, and stop it playing, respectively. When the <code>stop()</code> method is called on the source, the source is cleared out.</p>
+<blockquote>
+<p><strong>Note:</strong> You can <a href="https://mdn.github.io/webaudio-examples/decode-audio-data/">run the example live</a> (or <a href="https://github.com/mdn/webaudio-examples/tree/master/decode-audio-data">view the source</a>.)</p>
+</blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="co">// define variables</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw">var</span> audioCtx <span class="op">=</span> <span class="kw">new</span> (<span class="va">window</span>.<span class="at">AudioContext</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">webkitAudioContext</span>)()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="kw">var</span> source<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"></a>
+<a class="sourceLine" id="cb3-6" title="6"><span class="kw">var</span> pre <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;pre&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7"><span class="kw">var</span> myScript <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;script&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="kw">var</span> play <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;.play&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9"><span class="kw">var</span> stop <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;.stop&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10"></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="co">// use XHR to load an audio track, and</span></a>
+<a class="sourceLine" id="cb3-12" title="12"><span class="co">// decodeAudioData to decode it and stick it in a buffer.</span></a>
+<a class="sourceLine" id="cb3-13" title="13"><span class="co">// Then we put the buffer into the source</span></a>
+<a class="sourceLine" id="cb3-14" title="14"></a>
+<a class="sourceLine" id="cb3-15" title="15"><span class="kw">function</span> <span class="at">getData</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-16" title="16">  source <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createBufferSource</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-17" title="17">  <span class="kw">var</span> request <span class="op">=</span> <span class="kw">new</span> <span class="at">XMLHttpRequest</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-18" title="18"></a>
+<a class="sourceLine" id="cb3-19" title="19">  <span class="va">request</span>.<span class="at">open</span>(<span class="st">&#39;GET&#39;</span><span class="op">,</span> <span class="st">&#39;viper.ogg&#39;</span><span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-20" title="20"></a>
+<a class="sourceLine" id="cb3-21" title="21">  <span class="va">request</span>.<span class="at">responseType</span> <span class="op">=</span> <span class="st">&#39;arraybuffer&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-22" title="22"></a>
+<a class="sourceLine" id="cb3-23" title="23">  <span class="va">request</span>.<span class="at">onload</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-24" title="24">    <span class="kw">var</span> audioData <span class="op">=</span> <span class="va">request</span>.<span class="at">response</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-25" title="25"></a>
+<a class="sourceLine" id="cb3-26" title="26">    <span class="va">audioCtx</span>.<span class="at">decodeAudioData</span>(audioData<span class="op">,</span> <span class="kw">function</span>(buffer) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-27" title="27">        <span class="va">source</span>.<span class="at">buffer</span> <span class="op">=</span> buffer<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-28" title="28"></a>
+<a class="sourceLine" id="cb3-29" title="29">        <span class="va">source</span>.<span class="at">connect</span>(<span class="va">audioCtx</span>.<span class="at">destination</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-30" title="30">        <span class="va">source</span>.<span class="at">loop</span> <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-31" title="31">      <span class="op">},</span></a>
+<a class="sourceLine" id="cb3-32" title="32"></a>
+<a class="sourceLine" id="cb3-33" title="33">      <span class="kw">function</span>(e)<span class="op">{</span> <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Error with decoding audio data&quot;</span> <span class="op">+</span> <span class="va">e</span>.<span class="at">err</span>)<span class="op">;</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-34" title="34"></a>
+<a class="sourceLine" id="cb3-35" title="35">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-36" title="36"></a>
+<a class="sourceLine" id="cb3-37" title="37">  <span class="va">request</span>.<span class="at">send</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-38" title="38"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-39" title="39"></a>
+<a class="sourceLine" id="cb3-40" title="40"><span class="co">// wire up buttons to stop and play audio</span></a>
+<a class="sourceLine" id="cb3-41" title="41"></a>
+<a class="sourceLine" id="cb3-42" title="42"><span class="va">play</span>.<span class="at">onclick</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-43" title="43">  <span class="at">getData</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-44" title="44">  <span class="va">source</span>.<span class="at">start</span>(<span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-45" title="45">  <span class="va">play</span>.<span class="at">setAttribute</span>(<span class="st">&#39;disabled&#39;</span><span class="op">,</span> <span class="st">&#39;disabled&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-46" title="46"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-47" title="47"></a>
+<a class="sourceLine" id="cb3-48" title="48"><span class="va">stop</span>.<span class="at">onclick</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-49" title="49">  <span class="va">source</span>.<span class="at">stop</span>(<span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-50" title="50">  <span class="va">play</span>.<span class="at">removeAttribute</span>(<span class="st">&#39;disabled&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-51" title="51"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-52" title="52"></a>
+<a class="sourceLine" id="cb3-53" title="53"><span class="co">// dump script to pre element</span></a>
+<a class="sourceLine" id="cb3-54" title="54"></a>
+<a class="sourceLine" id="cb3-55" title="55"><span class="va">pre</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="va">myScript</span>.<span class="at">innerHTML</span><span class="op">;</span></a></code></pre></div>
+<h3 id="new-promise-based-syntax">New promise-based syntax</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="va">ctx</span>.<span class="at">decodeAudioData</span>(audioData).<span class="at">then</span>(<span class="kw">function</span>(decodedData) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2"> <span class="co">// use the decoded data here</span></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API">Using the Web Audio API</a></li>
+</ul>

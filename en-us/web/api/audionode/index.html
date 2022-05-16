@@ -1,0 +1,106 @@
+<p>{{APIRef(“Web Audio API”)}}</p>
+<p>The <strong><code>AudioNode</code></strong> interface is a generic interface for representing an audio processing module.</p>
+<p>Examples include:</p>
+<ul>
+<li>an audio source (e.g. an HTML {{HTMLElement(“audio”)}} or {{HTMLElement(“video”)}} element, an {{domxref(“OscillatorNode”)}}, etc.),</li>
+<li>the audio destination,</li>
+<li>intermediate processing module (e.g. a filter like {{domxref(“BiquadFilterNode”)}} or {{domxref(“ConvolverNode”)}}), or</li>
+<li>volume control (like {{domxref(“GainNode”)}})</li>
+</ul>
+<p>{{InheritanceDiagram}}</p>
+<blockquote>
+<p><strong>Note:</strong> An <code>AudioNode</code> can be target of events, therefore it implements the {{domxref(“EventTarget”)}} interface.</p>
+</blockquote>
+<h2 id="description">Description</h2>
+<h3 id="the-audio-routing-graph">The audio routing graph</h3>
+<figure>
+<img src="webaudiobasics.png" alt="AudioNodes participating in an AudioContext create a audio routing graph." /><figcaption>AudioNodes participating in an AudioContext create a audio routing graph.</figcaption>
+</figure>
+<p>Each <code>AudioNode</code> has inputs and outputs, and multiple audio nodes are connected to build a <em>processing graph</em>. This graph is contained in an {{domxref(“AudioContext”)}}, and each audio node can only belong to one audio context.</p>
+<p>A <em>source node</em> has zero inputs but one or multiple outputs, and can be used to generate sound. On the other hand, a <em>destination node</em> has no outputs; instead, all its inputs are directly played back on the speakers (or whatever audio output device the audio context uses). In addition, there are <em>processing nodes</em> which have inputs and outputs. The exact processing done varies from one <code>AudioNode</code> to another but, in general, a node reads its inputs, does some audio-related processing, and generates new values for its outputs, or lets the audio pass through (for example in the {{domxref(“AnalyserNode”)}}, where the result of the processing is accessed separately).</p>
+<p>The more nodes in a graph, the higher the latency will be. For example, if your graph has a latency of 500ms, when the source node plays a sound, it will take half a second until that sound can be heard on your speakers (or even longer because of latency in the underlying audio device). Therefore, if you need to have interactive audio, keep the graph as small as possible, and put user-controlled audio nodes at the end of a graph. For example, a volume control (<code>GainNode</code>) should be the last node so that volume changes take immediate effect.</p>
+<p>Each input and output has a given amount of <em>channels</em>. For example, mono audio has one channel, while stereo audio has two channels. The Web Audio API will up-mix or down-mix the number of channels as required; check the Web Audio spec for details.</p>
+<p>For a list of all audio nodes, see the <a href="/en-US/docs/Web/API/Web_Audio_API">Web Audio API</a> homepage.</p>
+<h3 id="creating-an-audionode">Creating an <code>AudioNode</code></h3>
+<p>There are two ways to create an <code>AudioNode</code>: via the <em>constructor</em> and via the <em>factory method</em>.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="co">// constructor</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">const</span> analyserNode <span class="op">=</span> <span class="kw">new</span> <span class="at">AnalyserNode</span>(audioCtx<span class="op">,</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="dt">fftSize</span><span class="op">:</span> <span class="dv">2048</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb1-4" title="4">  <span class="dt">maxDecibels</span><span class="op">:</span> <span class="dv">-25</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb1-5" title="5">  <span class="dt">minDecibels</span><span class="op">:</span> <span class="dv">-60</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb1-6" title="6">  <span class="dt">smoothingTimeConstant</span><span class="op">:</span> <span class="fl">0.5</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-8" title="8"></a>
+<a class="sourceLine" id="cb1-9" title="9"><span class="co">// factory method</span></a>
+<a class="sourceLine" id="cb1-10" title="10"><span class="kw">const</span> analyserNode <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createAnalyser</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-11" title="11"><span class="va">analyserNode</span>.<span class="at">fftSize</span> <span class="op">=</span> <span class="dv">2048</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-12" title="12"><span class="va">analyserNode</span>.<span class="at">maxDecibels</span> <span class="op">=</span> <span class="dv">-25</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-13" title="13"><span class="va">analyserNode</span>.<span class="at">minDecibels</span> <span class="op">=</span> <span class="dv">-60</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-14" title="14"><span class="va">analyserNode</span>.<span class="at">smoothingTimeConstant</span> <span class="op">=</span> <span class="fl">0.5</span><span class="op">;</span></a></code></pre></div>
+<p>You are free to use either constructors or factory methods, or mix both, however there are advantages to using the constructors:</p>
+<ul>
+<li>All parameters can be set during construction time and don’t need to be set individually.</li>
+<li>You can <a href="https://github.com/WebAudio/web-audio-api/issues/251">sub-class an audio node</a>. While the actual processing is done internally by the browser and cannot be altered, you could write a wrapper around an audio node to provide custom properties and methods.</li>
+<li>Slightly better performance: In both Chrome and Firefox, the factory methods call the constructors internally.</li>
+</ul>
+<p><em>Brief history:</em> The first version of the Web Audio spec only defined the factory methods. After a <a href="https://github.com/WebAudio/web-audio-api/issues/250">design review in October 2013</a>, it was decided to add constructors because they have numerous benefits over factory methods. The constructors were added to the spec from August to October 2016. Factory methods continue to be included in the spec and are not deprecated.</p>
+<h2 id="properties">Properties</h2>
+<ul>
+<li>{{domxref(“AudioNode.context”)}} {{readonlyInline}}
+<ul>
+<li>: Returns the associated {{domxref(“BaseAudioContext”)}}, that is the object representing the processing graph the node is participating in.</li>
+</ul></li>
+<li>{{domxref(“AudioNode.numberOfInputs”)}} {{readonlyInline}}
+<ul>
+<li>: Returns the number of inputs feeding the node. Source nodes are defined as nodes having a <code>numberOfInputs</code> property with a value of <code>0</code>.</li>
+</ul></li>
+<li>{{domxref(“AudioNode.numberOfOutputs”)}} {{readonlyInline}}
+<ul>
+<li>: Returns the number of outputs coming out of the node. Destination nodes — like {{ domxref(“AudioDestinationNode”) }} — have a value of <code>0</code> for this attribute.</li>
+</ul></li>
+<li>{{domxref(“AudioNode.channelCount”)}}
+<ul>
+<li>: Represents an integer used to determine how many channels are used when <a href="/en-US/docs/Web/API/Web_Audio_API/Basic_concepts_behind_Web_Audio_API#up-mixing_and_down-mixing">up-mixing and down-mixing</a> connections to any inputs to the node. Its usage and precise definition depend on the value of {{domxref(“AudioNode.channelCountMode”)}}.</li>
+</ul></li>
+<li>{{domxref(“AudioNode.channelCountMode”)}}
+<ul>
+<li>: Represents an enumerated value describing the way channels must be matched between the node’s inputs and outputs.</li>
+</ul></li>
+<li>{{domxref(“AudioNode.channelInterpretation”)}}
+<ul>
+<li>: Represents an enumerated value describing the meaning of the channels. This interpretation will define how audio <a href="/en-US/docs/Web/API/Web_Audio_API/Basic_concepts_behind_Web_Audio_API#up-mixing_and_down-mixing">up-mixing and down-mixing</a> will happen. The possible values are <code>"speakers"</code> or <code>"discrete"</code>.</li>
+</ul></li>
+</ul>
+<h2 id="methods">Methods</h2>
+<p><em>Also implements methods from the interface</em> {{domxref(“EventTarget”)}}.</p>
+<ul>
+<li>{{domxref(“AudioNode.connect()”)}}
+<ul>
+<li>: Allows us to connect the output of this node to be input into another node, either as audio data or as the value of an {{domxref(“AudioParam”)}}.</li>
+</ul></li>
+<li>{{domxref(“AudioNode.disconnect()”)}}
+<ul>
+<li>: Allows us to disconnect the current node from another one it is already connected to.</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<p>This simple snippet of code shows the creation of some audio nodes, and how the <code>AudioNode</code> properties and methods can be used. You can find examples of such usage on any of the examples linked to on the <a href="/en-US/docs/Web/API/Web_Audio_API">Web Audio API</a> landing page (for example <a href="https://github.com/mdn/violent-theremin">Violent Theremin</a>).</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> audioCtx <span class="op">=</span> <span class="kw">new</span> <span class="at">AudioContext</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">const</span> oscillator <span class="op">=</span> <span class="kw">new</span> <span class="at">OscillatorNode</span>(audioCtx)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="kw">const</span> gainNode <span class="op">=</span> <span class="kw">new</span> <span class="at">GainNode</span>(audioCtx)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="va">oscillator</span>.<span class="at">connect</span>(gainNode).<span class="at">connect</span>(<span class="va">audioCtx</span>.<span class="at">destination</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="va">oscillator</span>.<span class="at">context</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="va">oscillator</span>.<span class="at">numberOfInputs</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="va">oscillator</span>.<span class="at">numberOfOutputs</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="va">oscillator</span>.<span class="at">channelCount</span><span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API">Using the Web Audio API</a></li>
+</ul>

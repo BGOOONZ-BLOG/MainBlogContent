@@ -1,0 +1,407 @@
+<p>{{CanvasSidebar}} {{PreviousNext(“Web/API/Canvas_API/Tutorial/Compositing”, “Web/API/Canvas_API/Tutorial/Advanced_animations”)}}</p>
+<p>Since we’re using JavaScript to control {{HTMLElement(“canvas”)}} elements, it’s also very easy to make (interactive) animations. In this chapter we will take a look at how to do some basic animations.</p>
+<p>Probably the biggest limitation is, that once a shape gets drawn, it stays that way. If we need to move it we have to redraw it and everything that was drawn before it. It takes a lot of time to redraw complex frames and the performance depends highly on the speed of the computer it’s running on.</p>
+<h2 id="basic-animation-steps">Basic animation steps</h2>
+<p>These are the steps you need to take to draw a frame:</p>
+<ol type="1">
+<li><strong>Clear the canvas</strong> Unless the shapes you’ll be drawing fill the complete canvas (for instance a backdrop image), you need to clear any shapes that have been drawn previously. The easiest way to do this is using the {{domxref(“CanvasRenderingContext2D.clearRect”, “clearRect()”)}} method.</li>
+<li><strong>Save the canvas state</strong> If you’re changing any setting (such as styles, transformations, etc.) which affect the canvas state and you want to make sure the original state is used each time a frame is drawn, you need to save that original state.</li>
+<li><strong>Draw animated shapes</strong> The step where you do the actual frame rendering.</li>
+<li><strong>Restore the canvas state</strong> If you’ve saved the state, restore it before drawing a new frame.</li>
+</ol>
+<h2 id="controlling-an-animation">Controlling an animation</h2>
+<p>Shapes are drawn to the canvas by using the canvas methods directly or by calling custom functions. In normal circumstances, we only see these results appear on the canvas when the script finishes executing. For instance, it isn’t possible to do an animation from within a <code>for</code> loop.</p>
+<p>That means we need a way to execute our drawing functions over a period of time. There are two ways to control an animation like this.</p>
+<h3 id="scheduled-updates">Scheduled updates</h3>
+<p>First there’s the {{domxref(“setInterval()”)}}, {{domxref(“setTimeout()”)}}, and {{domxref(“window.requestAnimationFrame()”)}} functions, which can be used to call a specific function over a set period of time.</p>
+<ul>
+<li>{{domxref(“setInterval()”)}}
+<ul>
+<li>: Starts repeatedly executing the function specified by <code>function</code> every <code>delay</code> milliseconds.</li>
+</ul></li>
+<li>{{domxref(“setTimeout()”)}}
+<ul>
+<li>: Executes the function specified by <code>function</code> in <code>delay</code> milliseconds.</li>
+</ul></li>
+<li>{{domxref(“Window.requestAnimationFrame()”, “requestAnimationFrame(callback)”)}}
+<ul>
+<li>: Tells the browser that you wish to perform an animation and requests that the browser call a specified function to update an animation before the next repaint.</li>
+</ul></li>
+</ul>
+<p>If you don’t want any user interaction you can use the <code>setInterval()</code> function which repeatedly executes the supplied code. If we wanted to make a game, we could use keyboard or mouse events to control the animation and use <code>setTimeout()</code>. By setting {{domxref(“EventListener”)}}s, we catch any user interaction and execute our animation functions.</p>
+<blockquote>
+<p><strong>Note:</strong> In the examples below, we’ll use the {{domxref(“window.requestAnimationFrame()”)}} method to control the animation. The <code>requestAnimationFrame</code> method provides a smoother and more efficient way for animating by calling the animation frame when the system is ready to paint the frame. The number of callbacks is usually 60 times per second and may be reduced to a lower rate when running in background tabs. For more information about the animation loop, especially for games, see the article <a href="/en-US/docs/Games/Anatomy">Anatomy of a video game</a> in our <a href="/en-US/docs/Games">Game development zone</a>.</p>
+</blockquote>
+<h2 id="an-animated-solar-system">An animated solar system</h2>
+<p>This example animates a small model of our solar system.</p>
+<h3 id="html">HTML</h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">&lt;canvas</span><span class="ot"> id=</span><span class="st">&quot;canvas&quot;</span><span class="ot"> width=</span><span class="st">&quot;300&quot;</span><span class="ot"> height=</span><span class="st">&quot;300&quot;</span><span class="kw">&gt;&lt;/canvas&gt;</span></a></code></pre></div>
+<h3 id="javascript">JavaScript</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> sun <span class="op">=</span> <span class="kw">new</span> <span class="at">Image</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">var</span> moon <span class="op">=</span> <span class="kw">new</span> <span class="at">Image</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">var</span> earth <span class="op">=</span> <span class="kw">new</span> <span class="at">Image</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="kw">function</span> <span class="at">init</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="va">sun</span>.<span class="at">src</span> <span class="op">=</span> <span class="st">&#39;canvas_sun.png&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="va">moon</span>.<span class="at">src</span> <span class="op">=</span> <span class="st">&#39;canvas_moon.png&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="va">earth</span>.<span class="at">src</span> <span class="op">=</span> <span class="st">&#39;canvas_earth.png&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="va">window</span>.<span class="at">requestAnimationFrame</span>(draw)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-10" title="10"></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-12" title="12">  <span class="kw">var</span> ctx <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;canvas&#39;</span>).<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13"></a>
+<a class="sourceLine" id="cb2-14" title="14">  <span class="va">ctx</span>.<span class="at">globalCompositeOperation</span> <span class="op">=</span> <span class="st">&#39;destination-over&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-15" title="15">  <span class="va">ctx</span>.<span class="at">clearRect</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">300</span><span class="op">,</span> <span class="dv">300</span>)<span class="op">;</span> <span class="co">// clear canvas</span></a>
+<a class="sourceLine" id="cb2-16" title="16"></a>
+<a class="sourceLine" id="cb2-17" title="17">  <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&#39;rgba(0, 0, 0, 0.4)&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">  <span class="va">ctx</span>.<span class="at">strokeStyle</span> <span class="op">=</span> <span class="st">&#39;rgba(0, 153, 255, 0.4)&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-19" title="19">  <span class="va">ctx</span>.<span class="at">save</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-20" title="20">  <span class="va">ctx</span>.<span class="at">translate</span>(<span class="dv">150</span><span class="op">,</span> <span class="dv">150</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-21" title="21"></a>
+<a class="sourceLine" id="cb2-22" title="22">  <span class="co">// Earth</span></a>
+<a class="sourceLine" id="cb2-23" title="23">  <span class="kw">var</span> time <span class="op">=</span> <span class="kw">new</span> <span class="at">Date</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-24" title="24">  <span class="va">ctx</span>.<span class="at">rotate</span>(((<span class="dv">2</span> <span class="op">*</span> <span class="va">Math</span>.<span class="at">PI</span>) / <span class="dv">60</span>) <span class="op">*</span> <span class="va">time</span>.<span class="at">getSeconds</span>() <span class="op">+</span> ((<span class="dv">2</span> <span class="op">*</span> <span class="va">Math</span>.<span class="at">PI</span>) / <span class="dv">60000</span>) <span class="op">*</span> <span class="va">time</span>.<span class="at">getMilliseconds</span>())<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-25" title="25">  <span class="va">ctx</span>.<span class="at">translate</span>(<span class="dv">105</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-26" title="26">  <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">-12</span><span class="op">,</span> <span class="dv">40</span><span class="op">,</span> <span class="dv">24</span>)<span class="op">;</span> <span class="co">// Shadow</span></a>
+<a class="sourceLine" id="cb2-27" title="27">  <span class="va">ctx</span>.<span class="at">drawImage</span>(earth<span class="op">,</span> <span class="dv">-12</span><span class="op">,</span> <span class="dv">-12</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-28" title="28"></a>
+<a class="sourceLine" id="cb2-29" title="29">  <span class="co">// Moon</span></a>
+<a class="sourceLine" id="cb2-30" title="30">  <span class="va">ctx</span>.<span class="at">save</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-31" title="31">  <span class="va">ctx</span>.<span class="at">rotate</span>(((<span class="dv">2</span> <span class="op">*</span> <span class="va">Math</span>.<span class="at">PI</span>) / <span class="dv">6</span>) <span class="op">*</span> <span class="va">time</span>.<span class="at">getSeconds</span>() <span class="op">+</span> ((<span class="dv">2</span> <span class="op">*</span> <span class="va">Math</span>.<span class="at">PI</span>) / <span class="dv">6000</span>) <span class="op">*</span> <span class="va">time</span>.<span class="at">getMilliseconds</span>())<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-32" title="32">  <span class="va">ctx</span>.<span class="at">translate</span>(<span class="dv">0</span><span class="op">,</span> <span class="fl">28.5</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-33" title="33">  <span class="va">ctx</span>.<span class="at">drawImage</span>(moon<span class="op">,</span> <span class="fl">-3.5</span><span class="op">,</span> <span class="fl">-3.5</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-34" title="34">  <span class="va">ctx</span>.<span class="at">restore</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-35" title="35"></a>
+<a class="sourceLine" id="cb2-36" title="36">  <span class="va">ctx</span>.<span class="at">restore</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-37" title="37"></a>
+<a class="sourceLine" id="cb2-38" title="38">  <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-39" title="39">  <span class="va">ctx</span>.<span class="at">arc</span>(<span class="dv">150</span><span class="op">,</span> <span class="dv">150</span><span class="op">,</span> <span class="dv">105</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">Math</span>.<span class="at">PI</span> <span class="op">*</span> <span class="dv">2</span><span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span> <span class="co">// Earth orbit</span></a>
+<a class="sourceLine" id="cb2-40" title="40">  <span class="va">ctx</span>.<span class="at">stroke</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-41" title="41"></a>
+<a class="sourceLine" id="cb2-42" title="42">  <span class="va">ctx</span>.<span class="at">drawImage</span>(sun<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">300</span><span class="op">,</span> <span class="dv">300</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-43" title="43"></a>
+<a class="sourceLine" id="cb2-44" title="44">  <span class="va">window</span>.<span class="at">requestAnimationFrame</span>(draw)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-45" title="45"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-46" title="46"></a>
+<a class="sourceLine" id="cb2-47" title="47"><span class="at">init</span>()<span class="op">;</span></a></code></pre></div>
+<h3 id="result">Result</h3>
+<p>{{EmbedLiveSample(“An_animated_solar_system”, “310”, “340”)}}</p>
+<h2 id="an-animated-clock">An animated clock</h2>
+<p>This example draws an animated clock, showing your current time.</p>
+<h3 id="html-1">HTML</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">&lt;canvas</span><span class="ot"> id=</span><span class="st">&quot;canvas&quot;</span><span class="ot"> width=</span><span class="st">&quot;150&quot;</span><span class="ot"> height=</span><span class="st">&quot;150&quot;</span><span class="kw">&gt;&lt;/canvas&gt;</span></a></code></pre></div>
+<h3 id="javascript-1">JavaScript</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">function</span> <span class="at">clock</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="kw">var</span> now <span class="op">=</span> <span class="kw">new</span> <span class="at">Date</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3">  <span class="kw">var</span> ctx <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;canvas&#39;</span>).<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-4" title="4">  <span class="va">ctx</span>.<span class="at">save</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="va">ctx</span>.<span class="at">clearRect</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">150</span><span class="op">,</span> <span class="dv">150</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-6" title="6">  <span class="va">ctx</span>.<span class="at">translate</span>(<span class="dv">75</span><span class="op">,</span> <span class="dv">75</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="va">ctx</span>.<span class="at">scale</span>(<span class="fl">0.4</span><span class="op">,</span> <span class="fl">0.4</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-8" title="8">  <span class="va">ctx</span>.<span class="at">rotate</span>(<span class="op">-</span><span class="va">Math</span>.<span class="at">PI</span> / <span class="dv">2</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-9" title="9">  <span class="va">ctx</span>.<span class="at">strokeStyle</span> <span class="op">=</span> <span class="st">&#39;black&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-10" title="10">  <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&#39;white&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-11" title="11">  <span class="va">ctx</span>.<span class="at">lineWidth</span> <span class="op">=</span> <span class="dv">8</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-12" title="12">  <span class="va">ctx</span>.<span class="at">lineCap</span> <span class="op">=</span> <span class="st">&#39;round&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-13" title="13"></a>
+<a class="sourceLine" id="cb4-14" title="14">  <span class="co">// Hour marks</span></a>
+<a class="sourceLine" id="cb4-15" title="15">  <span class="va">ctx</span>.<span class="at">save</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-16" title="16">  <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="dv">12</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-17" title="17">    <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-18" title="18">    <span class="va">ctx</span>.<span class="at">rotate</span>(<span class="va">Math</span>.<span class="at">PI</span> / <span class="dv">6</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-19" title="19">    <span class="va">ctx</span>.<span class="at">moveTo</span>(<span class="dv">100</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-20" title="20">    <span class="va">ctx</span>.<span class="at">lineTo</span>(<span class="dv">120</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-21" title="21">    <span class="va">ctx</span>.<span class="at">stroke</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-22" title="22">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-23" title="23">  <span class="va">ctx</span>.<span class="at">restore</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-24" title="24"></a>
+<a class="sourceLine" id="cb4-25" title="25">  <span class="co">// Minute marks</span></a>
+<a class="sourceLine" id="cb4-26" title="26">  <span class="va">ctx</span>.<span class="at">save</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-27" title="27">  <span class="va">ctx</span>.<span class="at">lineWidth</span> <span class="op">=</span> <span class="dv">5</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-28" title="28">  <span class="cf">for</span> (i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="dv">60</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-29" title="29">    <span class="cf">if</span> (i <span class="op">%</span> <span class="dv">5</span><span class="op">!=</span> <span class="dv">0</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-30" title="30">      <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-31" title="31">      <span class="va">ctx</span>.<span class="at">moveTo</span>(<span class="dv">117</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-32" title="32">      <span class="va">ctx</span>.<span class="at">lineTo</span>(<span class="dv">120</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-33" title="33">      <span class="va">ctx</span>.<span class="at">stroke</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-34" title="34">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-35" title="35">    <span class="va">ctx</span>.<span class="at">rotate</span>(<span class="va">Math</span>.<span class="at">PI</span> / <span class="dv">30</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-36" title="36">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-37" title="37">  <span class="va">ctx</span>.<span class="at">restore</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-38" title="38"></a>
+<a class="sourceLine" id="cb4-39" title="39">  <span class="kw">var</span> sec <span class="op">=</span> <span class="va">now</span>.<span class="at">getSeconds</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-40" title="40">  <span class="kw">var</span> min <span class="op">=</span> <span class="va">now</span>.<span class="at">getMinutes</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-41" title="41">  <span class="kw">var</span> hr  <span class="op">=</span> <span class="va">now</span>.<span class="at">getHours</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-42" title="42">  hr <span class="op">=</span> hr <span class="op">&gt;=</span> <span class="dv">12</span> <span class="op">?</span> hr <span class="op">-</span> <span class="dv">12</span> : hr<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-43" title="43"></a>
+<a class="sourceLine" id="cb4-44" title="44">  <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&#39;black&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-45" title="45"></a>
+<a class="sourceLine" id="cb4-46" title="46">  <span class="co">// write Hours</span></a>
+<a class="sourceLine" id="cb4-47" title="47">  <span class="va">ctx</span>.<span class="at">save</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-48" title="48">  <span class="va">ctx</span>.<span class="at">rotate</span>(hr <span class="op">*</span> (<span class="va">Math</span>.<span class="at">PI</span> / <span class="dv">6</span>) <span class="op">+</span> (<span class="va">Math</span>.<span class="at">PI</span> / <span class="dv">360</span>) <span class="op">*</span> min <span class="op">+</span> (<span class="va">Math</span>.<span class="at">PI</span> / <span class="dv">21600</span>) <span class="op">*</span>sec)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-49" title="49">  <span class="va">ctx</span>.<span class="at">lineWidth</span> <span class="op">=</span> <span class="dv">14</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-50" title="50">  <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-51" title="51">  <span class="va">ctx</span>.<span class="at">moveTo</span>(<span class="op">-</span><span class="dv">20</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-52" title="52">  <span class="va">ctx</span>.<span class="at">lineTo</span>(<span class="dv">80</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-53" title="53">  <span class="va">ctx</span>.<span class="at">stroke</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-54" title="54">  <span class="va">ctx</span>.<span class="at">restore</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-55" title="55"></a>
+<a class="sourceLine" id="cb4-56" title="56">  <span class="co">// write Minutes</span></a>
+<a class="sourceLine" id="cb4-57" title="57">  <span class="va">ctx</span>.<span class="at">save</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-58" title="58">  <span class="va">ctx</span>.<span class="at">rotate</span>((<span class="va">Math</span>.<span class="at">PI</span> / <span class="dv">30</span>) <span class="op">*</span> min <span class="op">+</span> (<span class="va">Math</span>.<span class="at">PI</span> / <span class="dv">1800</span>) <span class="op">*</span> sec)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-59" title="59">  <span class="va">ctx</span>.<span class="at">lineWidth</span> <span class="op">=</span> <span class="dv">10</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-60" title="60">  <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-61" title="61">  <span class="va">ctx</span>.<span class="at">moveTo</span>(<span class="op">-</span><span class="dv">28</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-62" title="62">  <span class="va">ctx</span>.<span class="at">lineTo</span>(<span class="dv">112</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-63" title="63">  <span class="va">ctx</span>.<span class="at">stroke</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-64" title="64">  <span class="va">ctx</span>.<span class="at">restore</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-65" title="65"></a>
+<a class="sourceLine" id="cb4-66" title="66">  <span class="co">// Write seconds</span></a>
+<a class="sourceLine" id="cb4-67" title="67">  <span class="va">ctx</span>.<span class="at">save</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-68" title="68">  <span class="va">ctx</span>.<span class="at">rotate</span>(sec <span class="op">*</span> <span class="va">Math</span>.<span class="at">PI</span> / <span class="dv">30</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-69" title="69">  <span class="va">ctx</span>.<span class="at">strokeStyle</span> <span class="op">=</span> <span class="st">&#39;#D40000&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-70" title="70">  <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&#39;#D40000&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-71" title="71">  <span class="va">ctx</span>.<span class="at">lineWidth</span> <span class="op">=</span> <span class="dv">6</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-72" title="72">  <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-73" title="73">  <span class="va">ctx</span>.<span class="at">moveTo</span>(<span class="op">-</span><span class="dv">30</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-74" title="74">  <span class="va">ctx</span>.<span class="at">lineTo</span>(<span class="dv">83</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-75" title="75">  <span class="va">ctx</span>.<span class="at">stroke</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-76" title="76">  <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-77" title="77">  <span class="va">ctx</span>.<span class="at">arc</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">10</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">Math</span>.<span class="at">PI</span> <span class="op">*</span> <span class="dv">2</span><span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-78" title="78">  <span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-79" title="79">  <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-80" title="80">  <span class="va">ctx</span>.<span class="at">arc</span>(<span class="dv">95</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">10</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">Math</span>.<span class="at">PI</span> <span class="op">*</span> <span class="dv">2</span><span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-81" title="81">  <span class="va">ctx</span>.<span class="at">stroke</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-82" title="82">  <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&#39;rgba(0, 0, 0, 0)&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-83" title="83">  <span class="va">ctx</span>.<span class="at">arc</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">Math</span>.<span class="at">PI</span> <span class="op">*</span> <span class="dv">2</span><span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-84" title="84">  <span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-85" title="85">  <span class="va">ctx</span>.<span class="at">restore</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-86" title="86"></a>
+<a class="sourceLine" id="cb4-87" title="87">  <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-88" title="88">  <span class="va">ctx</span>.<span class="at">lineWidth</span> <span class="op">=</span> <span class="dv">14</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-89" title="89">  <span class="va">ctx</span>.<span class="at">strokeStyle</span> <span class="op">=</span> <span class="st">&#39;#325FA2&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-90" title="90">  <span class="va">ctx</span>.<span class="at">arc</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">142</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">Math</span>.<span class="at">PI</span> <span class="op">*</span> <span class="dv">2</span><span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-91" title="91">  <span class="va">ctx</span>.<span class="at">stroke</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-92" title="92"></a>
+<a class="sourceLine" id="cb4-93" title="93">  <span class="va">ctx</span>.<span class="at">restore</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-94" title="94"></a>
+<a class="sourceLine" id="cb4-95" title="95">  <span class="va">window</span>.<span class="at">requestAnimationFrame</span>(clock)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-96" title="96"><span class="op">}</span></a>
+<a class="sourceLine" id="cb4-97" title="97"></a>
+<a class="sourceLine" id="cb4-98" title="98"><span class="va">window</span>.<span class="at">requestAnimationFrame</span>(clock)<span class="op">;</span></a></code></pre></div>
+<h3 id="result-1">Result</h3>
+<p>{{EmbedLiveSample(“An_animated_clock”, “180”, “200”)}}</p>
+<h2 id="a-looping-panorama">A looping panorama</h2>
+<p>In this example, a panorama is scrolled left-to-right. We’re using <a href="https://commons.wikimedia.org/wiki/File:Capitan_Meadows,_Yosemite_National_Park.jpg">an image of Yosemite National Park</a> we took from Wikipedia, but you could use any image that’s larger than the canvas.</p>
+<h3 id="html-2">HTML</h3>
+<p>The HTML includes the {{HTMLElement(“canvas”)}} in which the image is scrolled. Note that the width and height specified here must match the values of the <code>CanvasXZSize</code> and <code>CanvasYSize</code> variables in the JavaScript code.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">&lt;canvas</span><span class="ot"> id=</span><span class="st">&quot;canvas&quot;</span><span class="ot"> width=</span><span class="st">&quot;800&quot;</span><span class="ot"> height=</span><span class="st">&quot;200&quot;</span><span class="kw">&gt;&lt;/canvas&gt;</span></a></code></pre></div>
+<h3 id="javascript-2">JavaScript</h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">var</span> img <span class="op">=</span> <span class="kw">new</span> <span class="at">Image</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-2" title="2"></a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="co">// User Variables - customize these to change the image being scrolled, its</span></a>
+<a class="sourceLine" id="cb6-4" title="4"><span class="co">// direction, and the speed.</span></a>
+<a class="sourceLine" id="cb6-5" title="5"></a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="va">img</span>.<span class="at">src</span> <span class="op">=</span> <span class="st">&#39;capitan_meadows_yosemite_national_park.jpg&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-7" title="7"><span class="kw">var</span> CanvasXSize <span class="op">=</span> <span class="dv">800</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-8" title="8"><span class="kw">var</span> CanvasYSize <span class="op">=</span> <span class="dv">200</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-9" title="9"><span class="kw">var</span> speed <span class="op">=</span> <span class="dv">30</span><span class="op">;</span> <span class="co">// lower is faster</span></a>
+<a class="sourceLine" id="cb6-10" title="10"><span class="kw">var</span> scale <span class="op">=</span> <span class="fl">1.05</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-11" title="11"><span class="kw">var</span> y <span class="op">=</span> <span class="fl">-4.5</span><span class="op">;</span> <span class="co">// vertical offset</span></a>
+<a class="sourceLine" id="cb6-12" title="12"></a>
+<a class="sourceLine" id="cb6-13" title="13"><span class="co">// Main program</span></a>
+<a class="sourceLine" id="cb6-14" title="14"></a>
+<a class="sourceLine" id="cb6-15" title="15"><span class="kw">var</span> dx <span class="op">=</span> <span class="fl">0.75</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-16" title="16"><span class="kw">var</span> imgW<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-17" title="17"><span class="kw">var</span> imgH<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-18" title="18"><span class="kw">var</span> x <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-19" title="19"><span class="kw">var</span> clearX<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-20" title="20"><span class="kw">var</span> clearY<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-21" title="21"><span class="kw">var</span> ctx<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-22" title="22"></a>
+<a class="sourceLine" id="cb6-23" title="23"><span class="va">img</span>.<span class="at">onload</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-24" title="24">    imgW <span class="op">=</span> <span class="va">img</span>.<span class="at">width</span> <span class="op">*</span> scale<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-25" title="25">    imgH <span class="op">=</span> <span class="va">img</span>.<span class="at">height</span> <span class="op">*</span> scale<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-26" title="26"></a>
+<a class="sourceLine" id="cb6-27" title="27">    <span class="cf">if</span> (imgW <span class="op">&gt;</span> CanvasXSize) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-28" title="28">        <span class="co">// image larger than canvas</span></a>
+<a class="sourceLine" id="cb6-29" title="29">        x <span class="op">=</span> CanvasXSize <span class="op">-</span> imgW<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-30" title="30">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-31" title="31">    <span class="cf">if</span> (imgW <span class="op">&gt;</span> CanvasXSize) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-32" title="32">        <span class="co">// image width larger than canvas</span></a>
+<a class="sourceLine" id="cb6-33" title="33">        clearX <span class="op">=</span> imgW<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-34" title="34">    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-35" title="35">        clearX <span class="op">=</span> CanvasXSize<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-36" title="36">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-37" title="37">    <span class="cf">if</span> (imgH <span class="op">&gt;</span> CanvasYSize) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-38" title="38">        <span class="co">// image height larger than canvas</span></a>
+<a class="sourceLine" id="cb6-39" title="39">        clearY <span class="op">=</span> imgH<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-40" title="40">    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-41" title="41">        clearY <span class="op">=</span> CanvasYSize<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-42" title="42">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-43" title="43"></a>
+<a class="sourceLine" id="cb6-44" title="44">    <span class="co">// get canvas context</span></a>
+<a class="sourceLine" id="cb6-45" title="45">    ctx <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;canvas&#39;</span>).<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-46" title="46"></a>
+<a class="sourceLine" id="cb6-47" title="47">    <span class="co">// set refresh rate</span></a>
+<a class="sourceLine" id="cb6-48" title="48">    <span class="cf">return</span> <span class="at">setInterval</span>(draw<span class="op">,</span> speed)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-49" title="49"><span class="op">}</span></a>
+<a class="sourceLine" id="cb6-50" title="50"></a>
+<a class="sourceLine" id="cb6-51" title="51"><span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-52" title="52">    <span class="va">ctx</span>.<span class="at">clearRect</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> clearX<span class="op">,</span> clearY)<span class="op">;</span> <span class="co">// clear the canvas</span></a>
+<a class="sourceLine" id="cb6-53" title="53"></a>
+<a class="sourceLine" id="cb6-54" title="54">    <span class="co">// if image is &lt;= Canvas Size</span></a>
+<a class="sourceLine" id="cb6-55" title="55">    <span class="cf">if</span> (imgW <span class="op">&lt;=</span> CanvasXSize) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-56" title="56">        <span class="co">// reset, start from beginning</span></a>
+<a class="sourceLine" id="cb6-57" title="57">        <span class="cf">if</span> (x <span class="op">&gt;</span> CanvasXSize) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-58" title="58">            x <span class="op">=</span> <span class="op">-</span>imgW <span class="op">+</span> x<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-59" title="59">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-60" title="60">        <span class="co">// draw additional image1</span></a>
+<a class="sourceLine" id="cb6-61" title="61">        <span class="cf">if</span> (x <span class="op">&gt;</span> <span class="dv">0</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-62" title="62">            <span class="va">ctx</span>.<span class="at">drawImage</span>(img<span class="op">,</span> <span class="op">-</span>imgW <span class="op">+</span> x<span class="op">,</span> y<span class="op">,</span> imgW<span class="op">,</span> imgH)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-63" title="63">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-64" title="64">        <span class="co">// draw additional image2</span></a>
+<a class="sourceLine" id="cb6-65" title="65">        <span class="cf">if</span> (x <span class="op">-</span> imgW <span class="op">&gt;</span> <span class="dv">0</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-66" title="66">            <span class="va">ctx</span>.<span class="at">drawImage</span>(img<span class="op">,</span> <span class="op">-</span>imgW <span class="op">*</span> <span class="dv">2</span> <span class="op">+</span> x<span class="op">,</span> y<span class="op">,</span> imgW<span class="op">,</span> imgH)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-67" title="67">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-68" title="68">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-69" title="69"></a>
+<a class="sourceLine" id="cb6-70" title="70">    <span class="co">// image is &gt; Canvas Size</span></a>
+<a class="sourceLine" id="cb6-71" title="71">    <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-72" title="72">        <span class="co">// reset, start from beginning</span></a>
+<a class="sourceLine" id="cb6-73" title="73">        <span class="cf">if</span> (x <span class="op">&gt;</span> (CanvasXSize)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-74" title="74">            x <span class="op">=</span> CanvasXSize <span class="op">-</span> imgW<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-75" title="75">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-76" title="76">        <span class="co">// draw additional image</span></a>
+<a class="sourceLine" id="cb6-77" title="77">        <span class="cf">if</span> (x <span class="op">&gt;</span> (CanvasXSize<span class="op">-</span>imgW)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-78" title="78">            <span class="va">ctx</span>.<span class="at">drawImage</span>(img<span class="op">,</span> x <span class="op">-</span> imgW <span class="op">+</span> <span class="dv">1</span><span class="op">,</span> y<span class="op">,</span> imgW<span class="op">,</span> imgH)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-79" title="79">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-80" title="80">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-81" title="81">    <span class="co">// draw image</span></a>
+<a class="sourceLine" id="cb6-82" title="82">    <span class="va">ctx</span>.<span class="at">drawImage</span>(img<span class="op">,</span> x<span class="op">,</span> y<span class="op">,</span>imgW<span class="op">,</span> imgH)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-83" title="83">    <span class="co">// amount to move</span></a>
+<a class="sourceLine" id="cb6-84" title="84">    x <span class="op">+=</span> dx<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-85" title="85"><span class="op">}</span></a></code></pre></div>
+<h3 id="result-2">Result</h3>
+<p>{{EmbedLiveSample(“A_looping_panorama”, “830”, “250”)}}</p>
+<h2 id="mouse-following-animation">Mouse following animation</h2>
+<h3 id="html-3">HTML</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">&lt;canvas</span><span class="ot"> id=</span><span class="st">&quot;cw&quot;</span><span class="kw">&gt;&lt;/canvas&gt;</span></a></code></pre></div>
+<h3 id="css">CSS</h3>
+<div class="sourceCode" id="cb8"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb8-1" title="1"><span class="pp">#cw</span> {</a>
+<a class="sourceLine" id="cb8-2" title="2">  <span class="kw">position</span>: <span class="dv">fixed</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-3" title="3">  <span class="kw">z-index</span>: <span class="dv">-1</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-4" title="4">}</a>
+<a class="sourceLine" id="cb8-5" title="5"></a>
+<a class="sourceLine" id="cb8-6" title="6">body {</a>
+<a class="sourceLine" id="cb8-7" title="7">  <span class="kw">margin</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-8" title="8">  <span class="kw">padding</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-9" title="9">  <span class="kw">background-color</span>: <span class="fu">rgba(</span><span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">0.05</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-10" title="10">}</a></code></pre></div>
+<h3 id="javascript-3">JavaScript</h3>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">const</span> canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;cw&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-2" title="2"><span class="kw">const</span> context <span class="op">=</span> <span class="va">canvas</span>.<span class="at">getContext</span>(<span class="st">&quot;2d&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-3" title="3"><span class="va">context</span>.<span class="at">globalAlpha</span> <span class="op">=</span> <span class="fl">0.5</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-4" title="4"></a>
+<a class="sourceLine" id="cb9-5" title="5"><span class="kw">const</span> cursor <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-6" title="6">  <span class="dt">x</span><span class="op">:</span> innerWidth / <span class="dv">2</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb9-7" title="7">  <span class="dt">y</span><span class="op">:</span> innerHeight / <span class="dv">2</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb9-8" title="8"><span class="op">};</span></a>
+<a class="sourceLine" id="cb9-9" title="9"></a>
+<a class="sourceLine" id="cb9-10" title="10"><span class="kw">let</span> particlesArray <span class="op">=</span> []<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-11" title="11"></a>
+<a class="sourceLine" id="cb9-12" title="12"><span class="at">generateParticles</span>(<span class="dv">101</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-13" title="13"><span class="at">setSize</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-14" title="14"><span class="at">anim</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-15" title="15"></a>
+<a class="sourceLine" id="cb9-16" title="16"><span class="at">addEventListener</span>(<span class="st">&quot;mousemove&quot;</span><span class="op">,</span> (e) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-17" title="17">  <span class="va">cursor</span>.<span class="at">x</span> <span class="op">=</span> <span class="va">e</span>.<span class="at">clientX</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-18" title="18">  <span class="va">cursor</span>.<span class="at">y</span> <span class="op">=</span> <span class="va">e</span>.<span class="at">clientY</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-19" title="19"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-20" title="20"></a>
+<a class="sourceLine" id="cb9-21" title="21"><span class="at">addEventListener</span>(</a>
+<a class="sourceLine" id="cb9-22" title="22">  <span class="st">&quot;touchmove&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb9-23" title="23">  (e) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-24" title="24">    <span class="va">e</span>.<span class="at">preventDefault</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-25" title="25">    <span class="va">cursor</span>.<span class="at">x</span> <span class="op">=</span> <span class="va">e</span>.<span class="at">touches</span>[<span class="dv">0</span>].<span class="at">clientX</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-26" title="26">    <span class="va">cursor</span>.<span class="at">y</span> <span class="op">=</span> <span class="va">e</span>.<span class="at">touches</span>[<span class="dv">0</span>].<span class="at">clientY</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-27" title="27">  <span class="op">},</span></a>
+<a class="sourceLine" id="cb9-28" title="28">  <span class="op">{</span> <span class="dt">passive</span><span class="op">:</span> <span class="kw">false</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb9-29" title="29">)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-30" title="30"></a>
+<a class="sourceLine" id="cb9-31" title="31"><span class="at">addEventListener</span>(<span class="st">&quot;resize&quot;</span><span class="op">,</span> () <span class="kw">=&gt;</span> <span class="at">setSize</span>())<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-32" title="32"></a>
+<a class="sourceLine" id="cb9-33" title="33"><span class="kw">function</span> <span class="at">generateParticles</span>(amount) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-34" title="34">  <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> amount<span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-35" title="35">    particlesArray[i] <span class="op">=</span> <span class="kw">new</span> <span class="at">Particle</span>(</a>
+<a class="sourceLine" id="cb9-36" title="36">      innerWidth / <span class="dv">2</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb9-37" title="37">      innerHeight / <span class="dv">2</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb9-38" title="38">      <span class="dv">4</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb9-39" title="39">      <span class="at">generateColor</span>()<span class="op">,</span></a>
+<a class="sourceLine" id="cb9-40" title="40">      <span class="fl">0.02</span></a>
+<a class="sourceLine" id="cb9-41" title="41">    )<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-42" title="42">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb9-43" title="43"><span class="op">}</span></a>
+<a class="sourceLine" id="cb9-44" title="44"></a>
+<a class="sourceLine" id="cb9-45" title="45"><span class="kw">function</span> <span class="at">generateColor</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-46" title="46">  <span class="kw">let</span> hexSet <span class="op">=</span> <span class="st">&quot;0123456789ABCDEF&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-47" title="47">  <span class="kw">let</span> finalHexString <span class="op">=</span> <span class="st">&quot;#&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-48" title="48">  <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="dv">6</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-49" title="49">    finalHexString <span class="op">+=</span> hexSet[<span class="va">Math</span>.<span class="at">ceil</span>(<span class="va">Math</span>.<span class="at">random</span>() <span class="op">*</span> <span class="dv">15</span>)]<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-50" title="50">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb9-51" title="51">  <span class="cf">return</span> finalHexString<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-52" title="52"><span class="op">}</span></a>
+<a class="sourceLine" id="cb9-53" title="53"></a>
+<a class="sourceLine" id="cb9-54" title="54"><span class="kw">function</span> <span class="at">setSize</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-55" title="55">  <span class="va">canvas</span>.<span class="at">height</span> <span class="op">=</span> innerHeight<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-56" title="56">  <span class="va">canvas</span>.<span class="at">width</span> <span class="op">=</span> innerWidth<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-57" title="57"><span class="op">}</span></a>
+<a class="sourceLine" id="cb9-58" title="58"></a>
+<a class="sourceLine" id="cb9-59" title="59"><span class="kw">function</span> <span class="at">Particle</span>(x<span class="op">,</span> y<span class="op">,</span> particleTrailWidth<span class="op">,</span> strokeColor<span class="op">,</span> rotateSpeed) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-60" title="60">  <span class="kw">this</span>.<span class="at">x</span> <span class="op">=</span> x<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-61" title="61">  <span class="kw">this</span>.<span class="at">y</span> <span class="op">=</span> y<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-62" title="62">  <span class="kw">this</span>.<span class="at">particleTrailWidth</span> <span class="op">=</span> particleTrailWidth<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-63" title="63">  <span class="kw">this</span>.<span class="at">strokeColor</span> <span class="op">=</span> strokeColor<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-64" title="64">  <span class="kw">this</span>.<span class="at">theta</span> <span class="op">=</span> <span class="va">Math</span>.<span class="at">random</span>() <span class="op">*</span> <span class="va">Math</span>.<span class="at">PI</span> <span class="op">*</span> <span class="dv">2</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-65" title="65">  <span class="kw">this</span>.<span class="at">rotateSpeed</span> <span class="op">=</span> rotateSpeed<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-66" title="66">  <span class="kw">this</span>.<span class="at">t</span> <span class="op">=</span> <span class="va">Math</span>.<span class="at">random</span>() <span class="op">*</span> <span class="dv">150</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-67" title="67"></a>
+<a class="sourceLine" id="cb9-68" title="68">  <span class="kw">this</span>.<span class="at">rotate</span> <span class="op">=</span> () <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-69" title="69">    <span class="kw">const</span> ls <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-70" title="70">      <span class="dt">x</span><span class="op">:</span> <span class="kw">this</span>.<span class="at">x</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb9-71" title="71">      <span class="dt">y</span><span class="op">:</span> <span class="kw">this</span>.<span class="at">y</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb9-72" title="72">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb9-73" title="73">    <span class="kw">this</span>.<span class="at">theta</span> <span class="op">+=</span> <span class="kw">this</span>.<span class="at">rotateSpeed</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-74" title="74">    <span class="kw">this</span>.<span class="at">x</span> <span class="op">=</span> <span class="va">cursor</span>.<span class="at">x</span> <span class="op">+</span> <span class="va">Math</span>.<span class="at">cos</span>(<span class="kw">this</span>.<span class="at">theta</span>) <span class="op">*</span> <span class="kw">this</span>.<span class="at">t</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-75" title="75">    <span class="kw">this</span>.<span class="at">y</span> <span class="op">=</span> <span class="va">cursor</span>.<span class="at">y</span> <span class="op">+</span> <span class="va">Math</span>.<span class="at">sin</span>(<span class="kw">this</span>.<span class="at">theta</span>) <span class="op">*</span> <span class="kw">this</span>.<span class="at">t</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-76" title="76">    <span class="va">context</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-77" title="77">    <span class="va">context</span>.<span class="at">lineWidth</span> <span class="op">=</span> <span class="kw">this</span>.<span class="at">particleTrailWidth</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-78" title="78">    <span class="va">context</span>.<span class="at">strokeStyle</span> <span class="op">=</span> <span class="kw">this</span>.<span class="at">strokeColor</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-79" title="79">    <span class="va">context</span>.<span class="at">moveTo</span>(<span class="va">ls</span>.<span class="at">x</span><span class="op">,</span> <span class="va">ls</span>.<span class="at">y</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-80" title="80">    <span class="va">context</span>.<span class="at">lineTo</span>(<span class="kw">this</span>.<span class="at">x</span><span class="op">,</span> <span class="kw">this</span>.<span class="at">y</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-81" title="81">    <span class="va">context</span>.<span class="at">stroke</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-82" title="82">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb9-83" title="83"><span class="op">}</span></a>
+<a class="sourceLine" id="cb9-84" title="84"></a>
+<a class="sourceLine" id="cb9-85" title="85"><span class="kw">function</span> <span class="at">anim</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-86" title="86">  <span class="at">requestAnimationFrame</span>(anim)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-87" title="87"></a>
+<a class="sourceLine" id="cb9-88" title="88">  <span class="va">context</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&quot;rgba(0,0,0,0.05)&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-89" title="89">  <span class="va">context</span>.<span class="at">fillRect</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">canvas</span>.<span class="at">width</span><span class="op">,</span> <span class="va">canvas</span>.<span class="at">height</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-90" title="90"></a>
+<a class="sourceLine" id="cb9-91" title="91">  <span class="va">particlesArray</span>.<span class="at">forEach</span>((particle) <span class="kw">=&gt;</span> <span class="va">particle</span>.<span class="at">rotate</span>())<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-92" title="92"><span class="op">}</span></a></code></pre></div>
+<h3 id="result-3">Result</h3>
+<p>{{EmbedLiveSample(“Mouse_following_animation”, “500”, “500”)}}</p>
+<h2 id="other-examples">Other examples</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Canvas_API/A_basic_ray-caster">A basic ray-caster</a>
+<ul>
+<li>: A good example of how to do animations using keyboard controls.</li>
+</ul></li>
+<li><a href="/en-US/docs/Web/API/Canvas_API/Tutorial/Advanced_animations">Advanced animations</a>
+<ul>
+<li>: We will have a look at some advanced animation techniques and physics in the next chapter.</li>
+</ul></li>
+</ul>
+<p>{{PreviousNext(“Web/API/Canvas_API/Tutorial/Compositing”, “Web/API/Canvas_API/Tutorial/Advanced_animations”)}}</p>

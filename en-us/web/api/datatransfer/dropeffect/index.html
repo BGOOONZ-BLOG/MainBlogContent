@@ -1,0 +1,89 @@
+<p>{{APIRef(“HTML Drag and Drop API”)}}</p>
+<p>The <strong><code>DataTransfer.dropEffect</code></strong> property controls the feedback (typically visual) the user is given during a drag and drop operation. It will affect which cursor is displayed while dragging. For example, when the user hovers over a target drop element, the browser’s cursor may indicate which type of operation will occur.</p>
+<p>When the {{domxref(“DataTransfer”)}} object is created, <code>dropEffect</code> is set to a string value. On getting, it returns its current value. On setting, if the new value is one of the values listed below, then the property’s current value will be set to the new value and other values will be ignored.</p>
+<p>For the {{event(“dragenter”)}} and {{event(“dragover”)}} events, <code>dropEffect</code> will be initialized based on what action the user is requesting. How this is determined is platform specific, but typically the user can press modifier keys such as the alt key to adjust the desired action. Within event handlers for {{event(“dragenter”)}} and {{event(“dragover”)}} events, <code>dropEffect</code> should be modified if a different action is desired than the action that the user is requesting.</p>
+<p>For the {{event(“drop”)}} and {{event(“dragend”)}} events, <code>dropEffect</code> will be set to the action that was desired, which will be the value <code>dropEffect</code> had after the last {{event(“dragenter”)}} or {{event(“dragover”)}} event. In a {{event(“dragend”)}} event, for instance, if the desired dropEffect is “move”, then the data being dragged should be removed from the source.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">dataTransfer</span>.<span class="at">dropEffect</span><span class="op">;</span></a></code></pre></div>
+<h3 id="values">Values</h3>
+<p>A {{domxref(“DOMString”)}} representing the drag operation effect. The possible values are:</p>
+<ul>
+<li><code>copy</code>
+<ul>
+<li>: A copy of the source item is made at the new location.</li>
+</ul></li>
+<li><code>move</code>
+<ul>
+<li>: An item is moved to a new location.</li>
+</ul></li>
+<li><code>link</code>
+<ul>
+<li>: A link is established to the source at the new location.</li>
+</ul></li>
+<li><code>none</code>
+<ul>
+<li>: The item may not be dropped.</li>
+</ul></li>
+</ul>
+<p>Assigning any other value to <code>dropEffect</code> has no effect and the old value is retained.</p>
+<h2 id="example">Example</h2>
+<p>This example shows the use of the <code>dropEffect</code> and {{domxref(“DataTransfer.effectAllowed”,“effectAllowed”)}} properties.</p>
+<h3 id="html-content">HTML Content</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">&lt;div&gt;</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">&lt;p</span><span class="ot"> id=</span><span class="st">&quot;source&quot;</span><span class="ot"> ondragstart=</span><span class="st">&quot;dragstart_handler(event);&quot;</span><span class="ot"> draggable=</span><span class="st">&quot;true&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">    Select this element, drag it to the Drop Zone and then release the selection to move the element.</a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;target&quot;</span><span class="ot"> ondrop=</span><span class="st">&quot;drop_handler(event);&quot;</span><span class="ot"> ondragover=</span><span class="st">&quot;dragover_handler(event);&quot;</span><span class="kw">&gt;</span>Drop Zone<span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<h3 id="css-content">CSS Content</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb3-1" title="1">div {</a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">margin</span>: <span class="dv">0</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="kw">padding</span>: <span class="dv">2</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4">}</a>
+<a class="sourceLine" id="cb3-5" title="5"></a>
+<a class="sourceLine" id="cb3-6" title="6"><span class="pp">#source</span> {</a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="kw">color</span>: <span class="cn">blue</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="kw">border</span>: <span class="dv">1</span><span class="dt">px</span> <span class="dv">solid</span> <span class="cn">black</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">}</a>
+<a class="sourceLine" id="cb3-10" title="10"></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="pp">#target</span> {</a>
+<a class="sourceLine" id="cb3-12" title="12">  <span class="kw">border</span>: <span class="dv">1</span><span class="dt">px</span> <span class="dv">solid</span> <span class="cn">black</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-13" title="13">}</a></code></pre></div>
+<h3 id="javascript-content">JavaScript Content</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">function</span> <span class="at">dragstart_handler</span>(ev) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;dragStart: dropEffect = &quot;</span> <span class="op">+</span> <span class="va">ev</span>.<span class="va">dataTransfer</span>.<span class="at">dropEffect</span> <span class="op">+</span> <span class="st">&quot; ; effectAllowed = &quot;</span> <span class="op">+</span> <span class="va">ev</span>.<span class="va">dataTransfer</span>.<span class="at">effectAllowed</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"></a>
+<a class="sourceLine" id="cb4-4" title="4">  <span class="co">// Add this element&#39;s id to the drag payload so the drop handler will</span></a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="co">// know which element to add to its tree</span></a>
+<a class="sourceLine" id="cb4-6" title="6">  <span class="va">ev</span>.<span class="va">dataTransfer</span>.<span class="at">setData</span>(<span class="st">&quot;text&quot;</span><span class="op">,</span> <span class="va">ev</span>.<span class="va">target</span>.<span class="at">id</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="va">ev</span>.<span class="va">dataTransfer</span>.<span class="at">effectAllowed</span> <span class="op">=</span> <span class="st">&quot;move&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-8" title="8"><span class="op">}</span></a>
+<a class="sourceLine" id="cb4-9" title="9"></a>
+<a class="sourceLine" id="cb4-10" title="10"><span class="kw">function</span> <span class="at">drop_handler</span>(ev) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-11" title="11">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;drop: dropEffect = &quot;</span> <span class="op">+</span> <span class="va">ev</span>.<span class="va">dataTransfer</span>.<span class="at">dropEffect</span> <span class="op">+</span> <span class="st">&quot; ; effectAllowed = &quot;</span> <span class="op">+</span> <span class="va">ev</span>.<span class="va">dataTransfer</span>.<span class="at">effectAllowed</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-12" title="12">  <span class="va">ev</span>.<span class="at">preventDefault</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-13" title="13"></a>
+<a class="sourceLine" id="cb4-14" title="14">  <span class="co">// Get the id of the target and add the moved element to the target&#39;s DOM</span></a>
+<a class="sourceLine" id="cb4-15" title="15">  <span class="kw">var</span> data <span class="op">=</span> <span class="va">ev</span>.<span class="va">dataTransfer</span>.<span class="at">getData</span>(<span class="st">&quot;text&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-16" title="16">  <span class="va">ev</span>.<span class="va">target</span>.<span class="at">appendChild</span>(<span class="va">document</span>.<span class="at">getElementById</span>(data))<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-17" title="17"><span class="op">}</span></a>
+<a class="sourceLine" id="cb4-18" title="18"></a>
+<a class="sourceLine" id="cb4-19" title="19"><span class="kw">function</span> <span class="at">dragover_handler</span>(ev) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-20" title="20">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;dragOver: dropEffect = &quot;</span> <span class="op">+</span> <span class="va">ev</span>.<span class="va">dataTransfer</span>.<span class="at">dropEffect</span> <span class="op">+</span> <span class="st">&quot; ; effectAllowed = &quot;</span> <span class="op">+</span> <span class="va">ev</span>.<span class="va">dataTransfer</span>.<span class="at">effectAllowed</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-21" title="21">  <span class="va">ev</span>.<span class="at">preventDefault</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-22" title="22">  <span class="co">// Set the dropEffect to move</span></a>
+<a class="sourceLine" id="cb4-23" title="23">  <span class="va">ev</span>.<span class="va">dataTransfer</span>.<span class="at">dropEffect</span> <span class="op">=</span> <span class="st">&quot;move&quot;</span></a>
+<a class="sourceLine" id="cb4-24" title="24"><span class="op">}</span></a></code></pre></div>
+<p>{{EmbedLiveSample(‘Example’, 300, 250)}}</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/HTML_Drag_and_Drop_API">Drag and drop</a></li>
+<li><a href="/en-US/docs/Web/API/HTML_Drag_and_Drop_API/Drag_operations">Drag Operations</a></li>
+<li><a href="/en-US/docs/Web/API/HTML_Drag_and_Drop_API/Recommended_drag_types">Recommended Drag Types</a></li>
+<li><a href="/en-US/docs/Web/API/HTML_Drag_and_Drop_API/Multiple_items">Dragging and Dropping Multiple Items</a></li>
+<li><a href="https://codepen.io/tech_query/pen/MqGgap">DataTransfer test - Paste or Drag</a></li>
+</ul>

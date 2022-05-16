@@ -1,0 +1,79 @@
+<p>{{CanvasSidebar}} {{PreviousNext(“Web/API/Canvas_API/Tutorial/Transformations”, “Web/API/Canvas_API/Tutorial/Basic_animations”)}}</p>
+<p>In all of our <a href="/en-US/docs/Web/API/Canvas_API/Tutorial/Transformations">previous examples</a>, shapes were always drawn one on top of the other. This is more than adequate for most situations, but it limits the order in which composite shapes are built. We can, however, change this behavior by setting the <code>globalCompositeOperation</code> property. In addition, the <code>clip</code> property allows us to hide unwanted parts of shapes.</p>
+<h2 id="globalcompositeoperation"><code>globalCompositeOperation</code></h2>
+<p>We can not only draw new shapes behind existing shapes but we can also use it to mask off certain areas, clear sections from the canvas (not limited to rectangles like the {{domxref(“CanvasRenderingContext2D.clearRect”, “clearRect()”)}} method does) and more.</p>
+<ul>
+<li>{{domxref(“CanvasRenderingContext2D.globalCompositeOperation”, “globalCompositeOperation = type”)}}
+<ul>
+<li>: This sets the type of compositing operation to apply when drawing new shapes, where type is a string identifying which of the twelve compositing operations to use.</li>
+</ul></li>
+</ul>
+<p>See <a href="/en-US/docs/Web/API/Canvas_API/Tutorial/Compositing/Example">compositing examples</a> for the code of the following examples.</p>
+<p>{{EmbedLiveSample(“Compositing_example”, 750, 6750, "" ,“Web/API/Canvas_API/Tutorial/Compositing/Example”)}}</p>
+<h2 id="clipping-paths">Clipping paths</h2>
+<p>A clipping path is like a normal canvas shape but it acts as a mask to hide unwanted parts of shapes. This is visualized in the image below. The red star shape is our clipping path. Everything that falls outside of this path won’t get drawn on the canvas.</p>
+<p><img src="canvas_clipping_path.png" /></p>
+<p>If we compare clipping paths to the <code>globalCompositeOperation</code> property we’ve seen above, we see two compositing modes that achieve more or less the same effect in <code>source-in</code> and <code>source-atop</code>. The most important differences between the two are that clipping paths are never actually drawn to the canvas and the clipping path is never affected by adding new shapes. This makes clipping paths ideal for drawing multiple shapes in a restricted area.</p>
+<p>In the chapter about <a href="/en-US/docs/Web/API/Canvas_API/Tutorial/Drawing_shapes">drawing shapes</a> I only mentioned the <code>stroke()</code> and <code>fill()</code> methods, but there’s a third method we can use with paths, called <code>clip()</code>.</p>
+<ul>
+<li>{{domxref(“CanvasRenderingContext2D.clip”, “clip()”)}}
+<ul>
+<li>: Turns the path currently being built into the current clipping path.</li>
+</ul></li>
+</ul>
+<p>You use <code>clip()</code> instead of <code>closePath()</code> to close a path and turn it into a clipping path instead of stroking or filling the path.</p>
+<p>By default the {{HTMLElement(“canvas”)}} element has a clipping path that’s the exact same size as the canvas itself. In other words, no clipping occurs.</p>
+<h3 id="a-clip-example">A <code>clip</code> example</h3>
+<p>In this example, we’ll use a circular clipping path to restrict the drawing of a set of random stars to a particular region.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="kw">var</span> ctx <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;canvas&#39;</span>).<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">150</span><span class="op">,</span> <span class="dv">150</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-4" title="4">  <span class="va">ctx</span>.<span class="at">translate</span>(<span class="dv">75</span><span class="op">,</span> <span class="dv">75</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-5" title="5"></a>
+<a class="sourceLine" id="cb1-6" title="6">  <span class="co">// Create a circular clipping path</span></a>
+<a class="sourceLine" id="cb1-7" title="7">  <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-8" title="8">  <span class="va">ctx</span>.<span class="at">arc</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">60</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">Math</span>.<span class="at">PI</span> <span class="op">*</span> <span class="dv">2</span><span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-9" title="9">  <span class="va">ctx</span>.<span class="at">clip</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-10" title="10"></a>
+<a class="sourceLine" id="cb1-11" title="11">  <span class="co">// draw background</span></a>
+<a class="sourceLine" id="cb1-12" title="12">  <span class="kw">var</span> lingrad <span class="op">=</span> <span class="va">ctx</span>.<span class="at">createLinearGradient</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">-75</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">75</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-13" title="13">  <span class="va">lingrad</span>.<span class="at">addColorStop</span>(<span class="dv">0</span><span class="op">,</span> <span class="st">&#39;#232256&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-14" title="14">  <span class="va">lingrad</span>.<span class="at">addColorStop</span>(<span class="dv">1</span><span class="op">,</span> <span class="st">&#39;#143778&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-15" title="15"></a>
+<a class="sourceLine" id="cb1-16" title="16">  <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> lingrad<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-17" title="17">  <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="op">-</span><span class="dv">75</span><span class="op">,</span> <span class="dv">-75</span><span class="op">,</span> <span class="dv">150</span><span class="op">,</span> <span class="dv">150</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-18" title="18"></a>
+<a class="sourceLine" id="cb1-19" title="19">  <span class="co">// draw stars</span></a>
+<a class="sourceLine" id="cb1-20" title="20">  <span class="cf">for</span> (<span class="kw">var</span> j <span class="op">=</span> <span class="dv">1</span><span class="op">;</span> j <span class="op">&lt;</span> <span class="dv">50</span><span class="op">;</span> j<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-21" title="21">    <span class="va">ctx</span>.<span class="at">save</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-22" title="22">    <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&#39;#fff&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-23" title="23">    <span class="va">ctx</span>.<span class="at">translate</span>(<span class="dv">75</span> <span class="op">-</span> <span class="va">Math</span>.<span class="at">floor</span>(<span class="va">Math</span>.<span class="at">random</span>() <span class="op">*</span> <span class="dv">150</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb1-24" title="24">                  <span class="dv">75</span> <span class="op">-</span> <span class="va">Math</span>.<span class="at">floor</span>(<span class="va">Math</span>.<span class="at">random</span>() <span class="op">*</span> <span class="dv">150</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-25" title="25">    <span class="at">drawStar</span>(ctx<span class="op">,</span> <span class="va">Math</span>.<span class="at">floor</span>(<span class="va">Math</span>.<span class="at">random</span>() <span class="op">*</span> <span class="dv">4</span>) <span class="op">+</span> <span class="dv">2</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-26" title="26">    <span class="va">ctx</span>.<span class="at">restore</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-27" title="27">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-28" title="28"></a>
+<a class="sourceLine" id="cb1-29" title="29"><span class="op">}</span></a>
+<a class="sourceLine" id="cb1-30" title="30"></a>
+<a class="sourceLine" id="cb1-31" title="31"><span class="kw">function</span> <span class="at">drawStar</span>(ctx<span class="op">,</span> r) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-32" title="32">  <span class="va">ctx</span>.<span class="at">save</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-33" title="33">  <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-34" title="34">  <span class="va">ctx</span>.<span class="at">moveTo</span>(r<span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-35" title="35">  <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="dv">9</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-36" title="36">    <span class="va">ctx</span>.<span class="at">rotate</span>(<span class="va">Math</span>.<span class="at">PI</span> / <span class="dv">5</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-37" title="37">    <span class="cf">if</span> (i <span class="op">%</span> <span class="dv">2</span> <span class="op">===</span> <span class="dv">0</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-38" title="38">      <span class="va">ctx</span>.<span class="at">lineTo</span>((r / <span class="fl">0.525731</span>) <span class="op">*</span> <span class="fl">0.200811</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-39" title="39">    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-40" title="40">      <span class="va">ctx</span>.<span class="at">lineTo</span>(r<span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-41" title="41">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-42" title="42">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-43" title="43">  <span class="va">ctx</span>.<span class="at">closePath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-44" title="44">  <span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-45" title="45">  <span class="va">ctx</span>.<span class="at">restore</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-46" title="46"><span class="op">}</span></a></code></pre></div>
+<p><code>html hidden &lt;canvas id="canvas" width="150" height="150"&gt;&lt;/canvas&gt;</code></p>
+<p><code>js hidden draw();</code></p>
+<p>In the first few lines of code, we draw a black rectangle the size of the canvas as a backdrop, then translate the origin to the center. Next, we create the circular clipping path by drawing an arc and calling <code>clip()</code>. Clipping paths are also part of the canvas save state. If we wanted to keep the original clipping path we could have saved the canvas state before creating the new one.</p>
+<p>Everything that’s drawn after creating the clipping path will only appear inside that path. You can see this clearly in the linear gradient that’s drawn next. After this a set of 50 randomly positioned and scaled stars is drawn, using the custom <code>drawStar()</code> function. Again the stars only appear inside the defined clipping path.</p>
+<p>{{EmbedLiveSample(“A_clip_example”, “180”, “180”, “canvas_clip.png”)}}</p>
+<p>{{PreviousNext(“Web/API/Canvas_API/Tutorial/Transformations”, “Web/API/Canvas_API/Tutorial/Basic_animations”)}}</p>

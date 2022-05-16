@@ -1,0 +1,75 @@
+<p>{{APIRef(“DOM”)}}</p>
+<p>The <strong><code>AbortSignal</code></strong> interface represents a signal object that allows you to communicate with a DOM request (such as a fetch request) and abort it if required via an {{domxref(“AbortController”)}} object.</p>
+<h2 id="properties">Properties</h2>
+<p><em>The AbortSignal interface also inherits properties from its parent interface, {{domxref(“EventTarget”)}}.</em></p>
+<ul>
+<li>{{domxref(“AbortSignal.aborted”)}} {{readonlyInline}}
+<ul>
+<li>: A {{Glossary(“Boolean”)}} that indicates whether the request(s) the signal is communicating with is/are aborted (<code>true</code>) or not (<code>false</code>).</li>
+</ul></li>
+<li>{{domxref(“AbortSignal.reason”)}} {{readonlyInline}}
+<ul>
+<li>: A JavaScript value providing the abort reason, once the signal has aborted.</li>
+</ul></li>
+</ul>
+<h2 id="events">Events</h2>
+<p>Listen to this event using <a href="/en-US/docs/Web/API/EventTarget/addEventListener"><code>addEventListener()</code></a> or by assigning an event listener to the <code>oneventname</code> property of this interface.</p>
+<ul>
+<li><a href="/en-US/docs/Web/API/AbortSignal/abort_event"><code>abort</code></a>
+<ul>
+<li>: Invoked when the DOM requests the signal is communicating with is/are aborted. Also available via the <a href="/en-US/docs/Web/API/AbortSignal/onabort"><code>onabort</code></a> property.</li>
+</ul></li>
+</ul>
+<h2 id="methods">Methods</h2>
+<p><em>The <strong><code>AbortSignal</code></strong> interface inherits methods from its parent interface, {{domxref(“EventTarget”)}}.</em></p>
+<ul>
+<li>{{domxref(“AbortSignal.throwIfAborted()”)}}
+<ul>
+<li>: Throws the signal’s abort {{domxref(“AbortSignal.reason”, “reason”)}} if the signal has been aborted; otherwise it does nothing.</li>
+</ul></li>
+</ul>
+<h2 id="static-methods">Static methods</h2>
+<ul>
+<li>{{domxref(“AbortSignal.abort()”)}}
+<ul>
+<li>: Returns an <strong><code>AbortSignal</code></strong> instance that is already set as aborted.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>The following snippet shows how we might use a signal to abort downloading a video using the <a href="/en-US/docs/Web/API/Fetch_API">Fetch API</a>.</p>
+<p>We first create an abort controller using the {{domxref(“AbortController.AbortController”,“AbortController()”)}} constructor, then grab a reference to its associated {{domxref(“AbortSignal”)}} object using the {{domxref(“AbortController.signal”)}} property.</p>
+<p>When the <a href="/en-US/docs/Web/API/fetch">fetch request</a> is initiated, we pass in the <code>AbortSignal</code> as an option inside the request’s options object (the <code>{signal}</code> below). This associates the signal and controller with the fetch request, and allows us to abort it by calling {{domxref(“AbortController.abort()”)}}, as seen below in the second event listener.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> controller <span class="op">=</span> <span class="kw">new</span> <span class="at">AbortController</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">var</span> signal <span class="op">=</span> <span class="va">controller</span>.<span class="at">signal</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="kw">var</span> downloadBtn <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;.download&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="kw">var</span> abortBtn <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;.abort&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-6" title="6"></a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="va">downloadBtn</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> fetchVideo)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-8" title="8"></a>
+<a class="sourceLine" id="cb1-9" title="9"><span class="va">abortBtn</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-10" title="10">  <span class="va">controller</span>.<span class="at">abort</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-11" title="11">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Download aborted&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-12" title="12"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-13" title="13"></a>
+<a class="sourceLine" id="cb1-14" title="14"><span class="kw">function</span> <span class="at">fetchVideo</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-15" title="15">  ...</a>
+<a class="sourceLine" id="cb1-16" title="16">  <span class="at">fetch</span>(url<span class="op">,</span> <span class="op">{</span>signal<span class="op">}</span>).<span class="at">then</span>(<span class="kw">function</span>(response) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-17" title="17">    ...</a>
+<a class="sourceLine" id="cb1-18" title="18">  <span class="op">}</span>).<span class="at">catch</span>(<span class="kw">function</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-19" title="19">    <span class="va">reports</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;Download error: &#39;</span> <span class="op">+</span> <span class="va">e</span>.<span class="at">message</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-20" title="20">  <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb1-21" title="21"><span class="op">}</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> When <code>abort()</code> is called, the <code>fetch()</code> promise rejects with an “<code>AbortError</code>” <code>DOMException</code>.</p>
+</blockquote>
+<p>You can find a <a href="https://github.com/mdn/dom-examples/tree/master/abort-api">full working example on GitHub</a>; you can also see it <a href="https://mdn.github.io/dom-examples/abort-api/">running live</a>.</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Fetch_API">Fetch API</a></li>
+<li><a href="https://developers.google.com/web/updates/2017/09/abortable-fetch">Abortable Fetch</a> by Jake Archibald</li>
+</ul>

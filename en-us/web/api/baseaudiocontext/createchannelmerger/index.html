@@ -1,0 +1,51 @@
+<p>{{ APIRef(“Web Audio API”) }}</p>
+<p>The <code>createChannelMerger()</code> method of the {{domxref(“BaseAudioContext”)}} interface creates a {{domxref(“ChannelMergerNode”)}}, which combines channels from multiple audio streams into a single audio stream.</p>
+<blockquote>
+<p><strong>Note:</strong> The {{domxref(“ChannelMergerNode.ChannelMergerNode”, “ChannelMergerNode()”)}} constructor is the recommended way to create a {{domxref(“ChannelMergerNode”)}}; see <a href="/en-US/docs/Web/API/AudioNode#creating_an_audionode">Creating an AudioNode</a>.</p>
+</blockquote>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="at">createChannelMerger</span>(numberOfInputs)</a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li>numberOfInputs
+<ul>
+<li>: The number of channels in the input audio streams, which the output stream will contain; the default is 6 if this parameter is not specified.</li>
+</ul></li>
+</ul>
+<h3 id="returns">Returns</h3>
+<p>A {{domxref(“ChannelMergerNode”)}}.</p>
+<h2 id="example">Example</h2>
+<p>The following example shows how you could separate a stereo track (say, a piece of music), and process the left and right channel differently. To use them, you need to use the second and third parameters of the {{domxref(“AudioNode/connect”, “AudioNode.connect(AudioNode)”)}} method, which allow you to specify both the index of the channel to connect from and the index of the channel to connect to.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> ac <span class="op">=</span> <span class="kw">new</span> <span class="at">AudioContext</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="va">ac</span>.<span class="at">decodeAudioData</span>(someStereoBuffer<span class="op">,</span> <span class="kw">function</span>(data) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3"> <span class="kw">var</span> source <span class="op">=</span> <span class="va">ac</span>.<span class="at">createBufferSource</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"> <span class="va">source</span>.<span class="at">buffer</span> <span class="op">=</span> data<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"> <span class="kw">var</span> splitter <span class="op">=</span> <span class="va">ac</span>.<span class="at">createChannelSplitter</span>(<span class="dv">2</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6"> <span class="va">source</span>.<span class="at">connect</span>(splitter)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"> <span class="kw">var</span> merger <span class="op">=</span> <span class="va">ac</span>.<span class="at">createChannelMerger</span>(<span class="dv">2</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8"></a>
+<a class="sourceLine" id="cb2-9" title="9"> <span class="co">// Reduce the volume of the left channel only</span></a>
+<a class="sourceLine" id="cb2-10" title="10"> <span class="kw">var</span> gainNode <span class="op">=</span> <span class="va">ac</span>.<span class="at">createGain</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11"> <span class="va">gainNode</span>.<span class="va">gain</span>.<span class="at">setValueAtTime</span>(<span class="fl">0.5</span><span class="op">,</span> <span class="va">ac</span>.<span class="at">currentTime</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12"> <span class="va">splitter</span>.<span class="at">connect</span>(gainNode<span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13"></a>
+<a class="sourceLine" id="cb2-14" title="14"> <span class="co">// Connect the splitter back to the second input of the merger: we</span></a>
+<a class="sourceLine" id="cb2-15" title="15"> <span class="co">// effectively swap the channels, here, reversing the stereo image.</span></a>
+<a class="sourceLine" id="cb2-16" title="16"> <span class="va">gainNode</span>.<span class="at">connect</span>(merger<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">1</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-17" title="17"> <span class="va">splitter</span>.<span class="at">connect</span>(merger<span class="op">,</span> <span class="dv">1</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18"></a>
+<a class="sourceLine" id="cb2-19" title="19"> <span class="kw">var</span> dest <span class="op">=</span> <span class="va">ac</span>.<span class="at">createMediaStreamDestination</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-20" title="20"></a>
+<a class="sourceLine" id="cb2-21" title="21"> <span class="co">// Because we have used a ChannelMergerNode, we now have a stereo</span></a>
+<a class="sourceLine" id="cb2-22" title="22"> <span class="co">// MediaStream we can use to pipe the Web Audio graph to WebRTC,</span></a>
+<a class="sourceLine" id="cb2-23" title="23"> <span class="co">// MediaRecorder, etc.</span></a>
+<a class="sourceLine" id="cb2-24" title="24"> <span class="va">merger</span>.<span class="at">connect</span>(dest)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-25" title="25"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API">Using the Web Audio API</a></li>
+</ul>

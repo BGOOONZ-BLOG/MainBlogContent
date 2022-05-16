@@ -1,0 +1,44 @@
+<p>{{APIRef(“Service Workers API”)}}</p>
+<p>The <strong><code>openWindow()</code></strong> method of the {{domxref(“Clients”)}} interface creates a new top level browsing context and loads a given URL. If the calling script doesn’t have permission to show popups, <code>openWindow()</code> will throw an <code>InvalidAccessError</code>.</p>
+<p>In Firefox, the method is allowed to show popups only when called as the result of a notification click event.</p>
+<p>In Chrome for Android, the method may instead open the URL in an existing browsing context provided by a <a href="/en-US/docs/Web/Progressive_web_apps">standalone web app</a> previously added to the user’s home screen. As of recently, this also works on Chrome for Windows.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">self</span>.<span class="va">clients</span>.<span class="at">openWindow</span>(url).<span class="at">then</span>(<span class="kw">function</span>(windowClient) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="co">// Do something with your WindowClient</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>url</code>
+<ul>
+<li>: A {{domxref(“USVString”)}} representing the URL of the client you want to open in the window. Generally this value must be a URL from the same origin as the calling script.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A {{jsxref(“Promise”)}} that resolves to a {{domxref(“WindowClient”)}} object if the URL is from the same origin as the service worker or a {{Glossary(“null”, “null value”)}} otherwise.</p>
+<h2 id="examples">Examples</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">// Send notification to OS if applicable</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="cf">if</span> (<span class="va">self</span>.<span class="va">Notification</span>.<span class="at">permission</span> <span class="op">===</span> <span class="st">&#39;granted&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="kw">const</span> notificationObject <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">    <span class="dt">body</span><span class="op">:</span> <span class="st">&#39;Click here to view your messages.&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="dt">data</span><span class="op">:</span> <span class="op">{</span> <span class="dt">url</span><span class="op">:</span> <span class="va">self</span>.<span class="va">location</span>.<span class="at">origin</span> <span class="op">+</span> <span class="st">&#39;/some/path&#39;</span> <span class="op">},</span></a>
+<a class="sourceLine" id="cb2-6" title="6">    <span class="co">// data: { url: &#39;http://example.com&#39; },</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="va">self</span>.<span class="va">registration</span>.<span class="at">showNotification</span>(<span class="st">&#39;You</span><span class="sc">\&#39;</span><span class="st">ve got messages!&#39;</span><span class="op">,</span> notificationObject)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-10" title="10"></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="co">// Notification click event listener</span></a>
+<a class="sourceLine" id="cb2-12" title="12"><span class="va">self</span>.<span class="at">addEventListener</span>(<span class="st">&#39;notificationclick&#39;</span><span class="op">,</span> e <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-13" title="13">  <span class="co">// Close the notification popout</span></a>
+<a class="sourceLine" id="cb2-14" title="14">  <span class="va">e</span>.<span class="va">notification</span>.<span class="at">close</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-15" title="15">  <span class="co">// Get all the Window clients</span></a>
+<a class="sourceLine" id="cb2-16" title="16">  <span class="va">e</span>.<span class="at">waitUntil</span>(<span class="va">clients</span>.<span class="at">matchAll</span>(<span class="op">{</span> <span class="dt">type</span><span class="op">:</span> <span class="st">&#39;window&#39;</span> <span class="op">}</span>).<span class="at">then</span>(clientsArr <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-17" title="17">    <span class="co">// If a Window tab matching the targeted URL already exists, focus that;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">    <span class="kw">const</span> hadWindowToFocus <span class="op">=</span> <span class="va">clientsArr</span>.<span class="at">some</span>(windowClient <span class="kw">=&gt;</span> <span class="va">windowClient</span>.<span class="at">url</span> <span class="op">===</span> <span class="va">e</span>.<span class="va">notification</span>.<span class="va">data</span>.<span class="at">url</span> <span class="op">?</span> (<span class="va">windowClient</span>.<span class="at">focus</span>()<span class="op">,</span> <span class="kw">true</span>) : <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-19" title="19">    <span class="co">// Otherwise, open a new tab to the applicable URL and focus it.</span></a>
+<a class="sourceLine" id="cb2-20" title="20">    <span class="cf">if</span> (<span class="op">!</span>hadWindowToFocus) <span class="va">clients</span>.<span class="at">openWindow</span>(<span class="va">e</span>.<span class="va">notification</span>.<span class="va">data</span>.<span class="at">url</span>).<span class="at">then</span>(windowClient <span class="kw">=&gt;</span> windowClient <span class="op">?</span> <span class="va">windowClient</span>.<span class="at">focus</span>() : <span class="kw">null</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-21" title="21">  <span class="op">}</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-22" title="22"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

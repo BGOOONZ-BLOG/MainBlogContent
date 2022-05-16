@@ -1,0 +1,84 @@
+<p>{{ APIRef(“Web Audio API”) }}</p>
+<p>The <code>createMediaStreamSource()</code> method of the {{ domxref(“AudioContext”) }} Interface is used to create a new {{ domxref(“MediaStreamAudioSourceNode”) }} object, given a media stream (say, from a {{ domxref(“MediaDevices.getUserMedia”) }} instance), the audio from which can then be played and manipulated.</p>
+<p>For more details about media stream audio source nodes, check out the {{ domxref(“MediaStreamAudioSourceNode”) }} reference page.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1">audioSourceNode <span class="op">=</span> <span class="va">audioContext</span>.<span class="at">createMediaStreamSource</span>(stream)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>stream</code>
+<ul>
+<li>: A {{domxref(“MediaStream”)}} to serve as an audio source to be fed into an audio processing graph for use and manipulation.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A new {{domxref(“MediaStreamAudioSourceNode”)}} object representing the audio node whose media is obtained from the specified source stream.</p>
+<h2 id="example">Example</h2>
+<p>In this example, we grab a media (audio + video) stream from {{ domxref(“navigator.getUserMedia”) }}, feed the media into a {{ htmlelement(“video”) }} element to play then mute the audio, but then also feed the audio into a {{ domxref(“MediaStreamAudioSourceNode”) }}. Next, we feed this source audio into a low pass {{ domxref(“BiquadFilterNode”) }} (which effectively serves as a bass booster), then a {{domxref(“AudioDestinationNode”) }}.</p>
+<p>The range slider below the {{ htmlelement(“video”) }} element controls the amount of gain given to the lowpass filter — increase the value of the slider to make the audio sound more bass heavy!</p>
+<blockquote>
+<p><strong>Note:</strong> You can see this <a href="https://mdn.github.io/webaudio-examples/stream-source-buffer/">example running live</a>, or <a href="https://github.com/mdn/webaudio-examples/tree/master/stream-source-buffer">view the source</a>.</p>
+</blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> pre <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;pre&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">var</span> video <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;video&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">var</span> myScript <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;script&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="kw">var</span> range <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;input&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="co">// getUserMedia block - grab stream</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="co">// put it into a MediaStreamAudioSourceNode</span></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="co">// also output the visuals into a video element</span></a>
+<a class="sourceLine" id="cb2-9" title="9"></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="cf">if</span> (<span class="va">navigator</span>.<span class="at">mediaDevices</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-11" title="11">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;getUserMedia supported.&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12">    <span class="va">navigator</span>.<span class="va">mediaDevices</span>.<span class="at">getUserMedia</span> (<span class="op">{</span><span class="dt">audio</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span> <span class="dt">video</span><span class="op">:</span> <span class="kw">true</span><span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-13" title="13">    .<span class="at">then</span>(<span class="kw">function</span>(stream) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-14" title="14">        <span class="va">video</span>.<span class="at">srcObject</span> <span class="op">=</span> stream<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-15" title="15">        <span class="va">video</span>.<span class="at">onloadedmetadata</span> <span class="op">=</span> <span class="kw">function</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-16" title="16">            <span class="va">video</span>.<span class="at">play</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-17" title="17">            <span class="va">video</span>.<span class="at">muted</span> <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">        <span class="op">};</span></a>
+<a class="sourceLine" id="cb2-19" title="19"></a>
+<a class="sourceLine" id="cb2-20" title="20">        <span class="co">// Create a MediaStreamAudioSourceNode</span></a>
+<a class="sourceLine" id="cb2-21" title="21">        <span class="co">// Feed the HTMLMediaElement into it</span></a>
+<a class="sourceLine" id="cb2-22" title="22">        <span class="kw">var</span> audioCtx <span class="op">=</span> <span class="kw">new</span> <span class="at">AudioContext</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-23" title="23">        <span class="kw">var</span> source <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createMediaStreamSource</span>(stream)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-24" title="24"></a>
+<a class="sourceLine" id="cb2-25" title="25">        <span class="co">// Create a biquadfilter</span></a>
+<a class="sourceLine" id="cb2-26" title="26">        <span class="kw">var</span> biquadFilter <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createBiquadFilter</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-27" title="27">        <span class="va">biquadFilter</span>.<span class="at">type</span> <span class="op">=</span> <span class="st">&quot;lowshelf&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-28" title="28">        <span class="va">biquadFilter</span>.<span class="va">frequency</span>.<span class="at">value</span> <span class="op">=</span> <span class="dv">1000</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-29" title="29">        <span class="va">biquadFilter</span>.<span class="va">gain</span>.<span class="at">value</span> <span class="op">=</span> <span class="va">range</span>.<span class="at">value</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-30" title="30"></a>
+<a class="sourceLine" id="cb2-31" title="31">        <span class="co">// connect the AudioBufferSourceNode to the gainNode</span></a>
+<a class="sourceLine" id="cb2-32" title="32">        <span class="co">// and the gainNode to the destination, so we can play the</span></a>
+<a class="sourceLine" id="cb2-33" title="33">        <span class="co">// music and adjust the volume using the mouse cursor</span></a>
+<a class="sourceLine" id="cb2-34" title="34">        <span class="va">source</span>.<span class="at">connect</span>(biquadFilter)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-35" title="35">        <span class="va">biquadFilter</span>.<span class="at">connect</span>(<span class="va">audioCtx</span>.<span class="at">destination</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-36" title="36"></a>
+<a class="sourceLine" id="cb2-37" title="37">        <span class="co">// Get new mouse pointer coordinates when mouse is moved</span></a>
+<a class="sourceLine" id="cb2-38" title="38">        <span class="co">// then set new gain value</span></a>
+<a class="sourceLine" id="cb2-39" title="39"></a>
+<a class="sourceLine" id="cb2-40" title="40">        <span class="va">range</span>.<span class="at">oninput</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-41" title="41">            <span class="va">biquadFilter</span>.<span class="va">gain</span>.<span class="at">value</span> <span class="op">=</span> <span class="va">range</span>.<span class="at">value</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-42" title="42">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-43" title="43">    <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-44" title="44">    .<span class="at">catch</span>(<span class="kw">function</span>(err) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-45" title="45">        <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;The following gUM error occurred: &#39;</span> <span class="op">+</span> err)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-46" title="46">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-47" title="47"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-48" title="48">   <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;getUserMedia not supported on your browser!&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-49" title="49"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-50" title="50"></a>
+<a class="sourceLine" id="cb2-51" title="51"><span class="co">// dump script to pre element</span></a>
+<a class="sourceLine" id="cb2-52" title="52"></a>
+<a class="sourceLine" id="cb2-53" title="53"><span class="va">pre</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="va">myScript</span>.<span class="at">innerHTML</span><span class="op">;</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> As a consequence of calling <code>createMediaStreamSource()</code>, audio playback from the media stream will be re-routed into the processing graph of the {{domxref(“AudioContext”)}}. So playing/pausing the stream can still be done through the media element API and the player controls.</p>
+</blockquote>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API">Using the Web Audio API</a></li>
+</ul>

@@ -1,0 +1,98 @@
+<p>{{ APIRef(“Web Audio API”) }}</p>
+<p>The <code>connect()</code> method of the {{ domxref(“AudioNode”) }} interface lets you connect one of the node’s outputs to a target, which may be either another <code>AudioNode</code> (thereby directing the sound data to the specified node) or an {{domxref(“AudioParam”)}}, so that the node’s output data is automatically used to change the value of that parameter over time.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> destinationNode <span class="op">=</span> <span class="va">AudioNode</span>.<span class="at">connect</span>(destination<span class="op">,</span> outputIndex<span class="op">,</span> inputIndex)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="va">AudioNode</span>.<span class="at">connect</span>(destination<span class="op">,</span> outputIndex)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>destination</code>
+<ul>
+<li>: The {{domxref(“AudioNode”)}} or {{domxref(“AudioParam”)}} to which to connect.</li>
+</ul></li>
+<li><code>outputIndex</code> {{optional_inline}}
+<ul>
+<li>: An index specifying which output of the current <code>AudioNode</code> to connect to the destination. The index numbers are defined according to the number of output channels (see <a href="/en-US/docs/Web/API/Web_Audio_API/Basic_concepts_behind_Web_Audio_API#audio_channels">Audio channels</a>). While you can only connect a given output to a given input once (repeated attempts are ignored), you can connect an output to multiple inputs by calling <code>connect()</code> repeatedly. This makes <a href="/en-US/docs/Web/API/Web_Audio_API/Basic_concepts_behind_Web_Audio_API#fan-in_and_fan-out">fan-out</a> possible. The default value is 0.</li>
+</ul></li>
+<li><code>inputIndex</code> {{optional_inline}}
+<ul>
+<li>: An index describing which input of the destination you want to connect the current <code>AudioNode</code> to; the default is 0. The index numbers are defined according to the number of input channels (see <a href="/en-US/docs/Web/API/Web_Audio_API/Basic_concepts_behind_Web_Audio_API#audio_channels">Audio channels</a>). It is possible to connect an <code>AudioNode</code> to another <code>AudioNode</code>, which in turn connects back to the first <code>AudioNode</code>, creating a cycle.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>If the destination is a node, <code>connect()</code> returns a reference to the destination {{domxref(“AudioNode”)}} object, allowing you to chain multiple <code>connect()</code> calls. In some browsers, older implementations of this interface return {{jsxref(“undefined”)}}.</p>
+<p>If the destination is an <code>AudioParam</code>, <code>connect()</code> returns <code>undefined</code>.</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><code>IndexSizeError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the value specified as <code>outputIndex</code> or <code>inputIndex</code> doesn’t correspond to an existing input or output.</li>
+</ul></li>
+<li><code>InvalidAccessError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the destination node is not part of the same audio context as the source node.</li>
+</ul></li>
+<li><code>NotSupportedError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the specified connection would create a cycle (in which the audio loops back through the same nodes repeatedly) and there are no {{domxref(“DelayNode”)}} objects in the cycle to prevent the resulting waveform from getting stuck constructing the same audio frame indefinitely. Also thrown if the <code>inputIndex</code> parameter is used while the destination is an {{domxref(“AudioParam”)}}.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<h3 id="connecting-to-an-audio-input">Connecting to an audio input</h3>
+<p>The most obvious use of the <code>connect()</code> method is to direct the audio output from one node into the audio input of another node for further processing. For example, you might send the audio from a {{domxref(“MediaElementAudioSourceNode”)}}—that is, the audio from an HTML media element such as {{HTMLElement(“audio”)}}—through a band pass filter implemented using a {{domxref(“BiquadFilterNode”)}} to reduce noise before then sending the audio along to the speakers.</p>
+<p>This example creates an oscillator, then links it to a gain node, so that the gain node controls the volume of the oscillator node.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> AudioContext <span class="op">=</span> <span class="va">window</span>.<span class="at">AudioContext</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">webkitAudioContext</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">var</span> audioCtx <span class="op">=</span> <span class="kw">new</span> <span class="at">AudioContext</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="kw">var</span> oscillator <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createOscillator</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="kw">var</span> gainNode <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createGain</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="va">oscillator</span>.<span class="at">connect</span>(gainNode)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="va">gainNode</span>.<span class="at">connect</span>(<span class="va">audioCtx</span>.<span class="at">destination</span>)<span class="op">;</span></a></code></pre></div>
+<h3 id="audioparam-example">AudioParam example</h3>
+<p>In this example, we will be altering the gain value of a {{domxref(“GainNode”)}} using an {{domxref(“OscillatorNode”)}} with a slow frequency value. This technique is know as an <em>LFO</em>-controlled parameter.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">var</span> AudioContext <span class="op">=</span> <span class="va">window</span>.<span class="at">AudioContext</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">webkitAudioContext</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw">var</span> audioCtx <span class="op">=</span> <span class="kw">new</span> <span class="at">AudioContext</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4"></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="co">// create an normal oscillator to make sound</span></a>
+<a class="sourceLine" id="cb3-6" title="6"><span class="kw">var</span> oscillator <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createOscillator</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7"></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="co">// create a second oscillator that will be used as an LFO (Low-frequency</span></a>
+<a class="sourceLine" id="cb3-9" title="9"><span class="co">// oscillator), and will control a parameter</span></a>
+<a class="sourceLine" id="cb3-10" title="10"><span class="kw">var</span> lfo <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createOscillator</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-11" title="11"></a>
+<a class="sourceLine" id="cb3-12" title="12"><span class="co">// set the frequency of the second oscillator to a low number</span></a>
+<a class="sourceLine" id="cb3-13" title="13"><span class="va">lfo</span>.<span class="va">frequency</span>.<span class="at">value</span> <span class="op">=</span> <span class="fl">2.0</span><span class="op">;</span> <span class="co">// 2Hz: two oscillations per second</span></a>
+<a class="sourceLine" id="cb3-14" title="14"></a>
+<a class="sourceLine" id="cb3-15" title="15"><span class="co">// create a gain whose gain AudioParam will be controlled by the LFO</span></a>
+<a class="sourceLine" id="cb3-16" title="16"><span class="kw">var</span> gain <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createGain</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-17" title="17"></a>
+<a class="sourceLine" id="cb3-18" title="18"><span class="co">// connect the LFO to the gain AudioParam. This means the value of the LFO</span></a>
+<a class="sourceLine" id="cb3-19" title="19"><span class="co">// will not produce any audio, but will change the value of the gain instead</span></a>
+<a class="sourceLine" id="cb3-20" title="20"><span class="va">lfo</span>.<span class="at">connect</span>(<span class="va">gain</span>.<span class="at">gain</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-21" title="21"></a>
+<a class="sourceLine" id="cb3-22" title="22"><span class="co">// connect the oscillator that will produce audio to the gain</span></a>
+<a class="sourceLine" id="cb3-23" title="23"><span class="va">oscillator</span>.<span class="at">connect</span>(gain)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-24" title="24"></a>
+<a class="sourceLine" id="cb3-25" title="25"><span class="co">// connect the gain to the destination so we hear sound</span></a>
+<a class="sourceLine" id="cb3-26" title="26"><span class="va">gain</span>.<span class="at">connect</span>(<span class="va">audioCtx</span>.<span class="at">destination</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-27" title="27"></a>
+<a class="sourceLine" id="cb3-28" title="28"><span class="co">// start the oscillator that will produce audio</span></a>
+<a class="sourceLine" id="cb3-29" title="29"><span class="va">oscillator</span>.<span class="at">start</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-30" title="30"></a>
+<a class="sourceLine" id="cb3-31" title="31"><span class="co">// start the oscillator that will modify the gain value</span></a>
+<a class="sourceLine" id="cb3-32" title="32"><span class="va">lfo</span>.<span class="at">start</span>()<span class="op">;</span></a></code></pre></div>
+<h4 id="audioparam-notes">AudioParam notes</h4>
+<p>It is possible to connect an <code>AudioNode</code> output to more than one {{ domxref(“AudioParam”) }}, and more than one AudioNode output to a single {{ domxref(“AudioParam”) }}, with multiple calls to <code>connect()</code>. <a href="/en-US/docs/Web/API/Web_Audio_API/Basic_concepts_behind_Web_Audio_API#fan-in_and_fan-out">Fan-in and fan-out</a> are therefore supported.</p>
+<p>An {{ domxref(“AudioParam”) }} will take the rendered audio data from any <code>AudioNode</code> output connected to it and convert it to mono by <a href="/en-US/docs/Web/API/Web_Audio_API/Basic_concepts_behind_Web_Audio_API#up-mixing_and_down-mixing">down-mixing</a> (if it is not already mono). Next, it will mix it together with any other such outputs, and the intrinsic parameter value (the value the {{ domxref(“AudioParam”) }} would normally have without any audio connections), including any timeline changes scheduled for the parameter.</p>
+<p>Therefore, it is possible to choose the range in which an {{domxref(“AudioParam”)}} will change by setting the value of the {{domxref(“AudioParam”)}} to the central frequency, and to use a {{domxref(“GainNode”)}} between the audio source and the {{domxref(“AudioParam”)}} to adjust the range of the {{domxref(“AudioParam”)}} changes.</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API">Using the Web Audio API</a></li>
+</ul>

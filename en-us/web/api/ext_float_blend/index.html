@@ -1,0 +1,46 @@
+<p>{{APIRef(“WebGL”)}}</p>
+<p>The <a href="/en-US/docs/Web/API/WebGL_API">WebGL API</a>’s <code>EXT_float_blend</code> extension allows blending and draw buffers with 32-bit floating-point components.</p>
+<p>WebGL extensions are available using the {{domxref(“WebGLRenderingContext.getExtension()”)}} method. For more information, see also <a href="/en-US/docs/Web/API/WebGL_API/Using_Extensions">Using Extensions</a> in the <a href="/en-US/docs/Web/API/WebGL_API/Tutorial">WebGL tutorial</a>.</p>
+<blockquote>
+<p><strong>Note:</strong> This extension is available to both, {{domxref(“WebGLRenderingContext”, “WebGL1”, "“, 1)}} and {{domxref(”WebGL2RenderingContext“,”WebGL2“,”“, 1)}} contexts. However, to use it, you need to enable the use of 32-bit floating-point draw buffers by  enabling the extension {{domxref(”WEBGL_color_buffer_float“)}} (for WebGL1) or {{domxref(”EXT_color_buffer_float")}} (for WebGL2). Doing so automatically enables <code>EXT_float_blend</code> as well.</p>
+</blockquote>
+<p>With this extension enabled, calling {{domxref(“WebGLRenderingContext.drawArrays”, “drawArrays()”)}} or {{domxref(“WebGLRenderingContext.drawElements”, “drawElements()”)}} with blending enabled and a draw buffer with 32-bit floating-point components will no longer result in an <code>INVALID_OPERATION</code> error.</p>
+<h2 id="usage-notes">Usage notes</h2>
+<p>On devices that support the <code>EXT_float_blend</code> extension, it is automatically, implicitly, enabled when any one or more of {{domxref(“EXT_color_buffer_float”)}}, {{domxref(“OES_texture_float”)}}, or {{domxref(“WEBGL_color_buffer_float”)}} are enabled. This ensures that content written before <code>EXT_float_blend</code> was exposed by WebGL will function as expected.</p>
+<h2 id="examples">Examples</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> gl <span class="op">=</span> <span class="va">canvas</span>.<span class="at">getContext</span>(<span class="st">&#39;webgl2&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="co">// enable necessary extensions</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="va">gl</span>.<span class="at">getExtension</span>(<span class="st">&#39;EXT_color_buffer_float&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="va">gl</span>.<span class="at">getExtension</span>(<span class="st">&#39;EXT_float_blend&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-6" title="6"></a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="kw">const</span> tex <span class="op">=</span> <span class="va">gl</span>.<span class="at">createTexture</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-8" title="8"><span class="va">gl</span>.<span class="at">bindTexture</span>(<span class="va">gl</span>.<span class="at">TEXTURE_2D</span><span class="op">,</span> tex)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-9" title="9"></a>
+<a class="sourceLine" id="cb1-10" title="10"><span class="co">// use floating point format</span></a>
+<a class="sourceLine" id="cb1-11" title="11"><span class="va">gl</span>.<span class="at">texImage2D</span>(<span class="va">gl</span>.<span class="at">TEXTURE_2D</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">gl</span>.<span class="at">RGBA32F</span><span class="op">,</span> <span class="dv">1</span><span class="op">,</span> <span class="dv">1</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">gl</span>.<span class="at">RGBA</span><span class="op">,</span> <span class="va">gl</span>.<span class="at">FLOAT</span><span class="op">,</span> <span class="kw">null</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-12" title="12"></a>
+<a class="sourceLine" id="cb1-13" title="13"><span class="kw">const</span> fb <span class="op">=</span> <span class="va">gl</span>.<span class="at">createFramebuffer</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-14" title="14"><span class="va">gl</span>.<span class="at">bindFramebuffer</span>(<span class="va">gl</span>.<span class="at">FRAMEBUFFER</span><span class="op">,</span> fb)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-15" title="15"><span class="va">gl</span>.<span class="at">framebufferTexture2D</span>(<span class="va">gl</span>.<span class="at">FRAMEBUFFER</span><span class="op">,</span> <span class="va">gl</span>.<span class="at">COLOR_ATTACHMENT0</span><span class="op">,</span> <span class="va">gl</span>.<span class="at">TEXTURE_2D</span><span class="op">,</span> tex<span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-16" title="16"></a>
+<a class="sourceLine" id="cb1-17" title="17"><span class="co">// enable blending</span></a>
+<a class="sourceLine" id="cb1-18" title="18"><span class="va">gl</span>.<span class="at">enable</span>(<span class="va">gl</span>.<span class="at">BLEND</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-19" title="19"></a>
+<a class="sourceLine" id="cb1-20" title="20"><span class="va">gl</span>.<span class="at">drawArrays</span>(<span class="va">gl</span>.<span class="at">POINTS</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">1</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-21" title="21"><span class="co">// won&#39;t throw gl.INVALID_OPERATION with the extension enabled</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/WebGL_API">WebGL API</a></li>
+<li><a href="/en-US/docs/Web/API/WebGL_API/Using_Extensions">Using WebGL extensions</a></li>
+<li><a href="/en-US/docs/Web/API/WebGL_API/Tutorial">WebGL tutorial</a></li>
+<li>{{domxref(“WebGLRenderingContext.getExtension()”)}}</li>
+<li>{{domxref(“EXT_color_buffer_float”)}}</li>
+<li>{{domxref(“WEBGL_color_buffer_float”)}}</li>
+<li>{{domxref(“WebGLRenderingContext.drawArrays()”)}}</li>
+<li>{{domxref(“WebGLRenderingContext.drawElements()”)}}</li>
+</ul>

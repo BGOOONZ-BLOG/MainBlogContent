@@ -1,0 +1,92 @@
+<p>{{APIRef(“HTML Drag and Drop API”)}}</p>
+<p>When a drag occurs, a translucent image is generated from the drag target (the element the {{event(“dragstart”)}} event is fired at), and follows the mouse pointer during the drag. This image is created automatically, so you do not need to create it yourself. However, if a custom image is desired, the <strong><code>DataTransfer.setDragImage()</code></strong> method can be used to set the custom image to be used. The image will typically be an {{HTMLElement(“image”)}} element but it can also be a {{HTMLElement(“canvas”)}} or any other visible element.</p>
+<p>The method’s <code>x</code> and <code>y</code> coordinates define how the image should appear relative to the mouse pointer. These coordinates define the offset into the image where the mouse cursor should be. For instance, to display the image so that the pointer is at its center, use values that are half the width and height of the image.</p>
+<p>This method must be called in the {{event(“dragstart”)}} event handler.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">void</span> <span class="va">dataTransfer</span>.<span class="at">setDragImage</span>(img <span class="op">|</span> element<span class="op">,</span> xOffset<span class="op">,</span> yOffset)<span class="op">;</span></a></code></pre></div>
+<h3 id="arguments">Arguments</h3>
+<ul>
+<li><p><em>img |</em> element</p>
+<ul>
+<li><p>: An image {{domxref(“Element”)}} element to use for the drag feedback image.</p>
+<p>If {{domxref(“Element”)}} is an img element, then set the drag data store bitmap to the element’s image (at its intrinsic size); otherwise, set the drag data store bitmap to an image generated from the given element (the exact mechanism for doing so is not currently specified).</p>
+<p>Note: If the {{domxref(“Element”)}} is an existing {{domxref(“HTMLElement”)}} it needs to be visible in the viewport in order to be shown as a drag feedback image. Alternatively, you can create a new DOM element that might be off-screen specifically for this purpose.</p></li>
+</ul></li>
+<li><em>xOffset</em>
+<ul>
+<li>: A <code>long</code> indicating the horizontal offset within the image.</li>
+</ul></li>
+<li><em>yOffset</em>
+<ul>
+<li>: A <code>long</code> indicating the vertical offset within the image.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>None.</p>
+<h2 id="example">Example</h2>
+<p>This example shows how to use the <code>setDragImage()</code> method. Note the example refers to an image file named <code>example.gif</code>. If that file is present, it will be used as the drag image and if that file is not present, the browser will use its default drag image.</p>
+<p><a href="https://codepen.io/webgeeker/full/KBzrxE/">demo</a></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="op">&lt;!</span>DOCTYPE html<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="op">&lt;</span>html lang<span class="op">=</span>en<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="op">&lt;</span>title<span class="op">&gt;</span>Example <span class="kw">of</span> <span class="va">DataTransfer</span>.<span class="at">setDragImage</span>()&lt;/title<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="op">&lt;</span>meta name<span class="op">=</span><span class="st">&quot;viewport&quot;</span> content<span class="op">=</span><span class="st">&quot;width=device-width&quot;</span><span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="op">&lt;</span>style<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  div <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-7" title="7">    <span class="dt">margin</span><span class="op">:</span> 0em<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">    <span class="dt">padding</span><span class="op">:</span> 2em<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  #source <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-11" title="11">    <span class="dt">color</span><span class="op">:</span> blue<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12">    <span class="dt">border</span><span class="op">:</span> 1px solid black<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-14" title="14">  #target <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-15" title="15">    <span class="dt">border</span><span class="op">:</span> 1px solid black<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-16" title="16">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-17" title="17">&lt;/style<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb2-18" title="18"><span class="op">&lt;</span>script<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb2-19" title="19"><span class="kw">function</span> <span class="at">dragstart_handler</span>(ev) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-20" title="20"> <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;dragStart&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-21" title="21"> <span class="co">// Set the drag&#39;s format and data. Use the event target&#39;s id for the data</span></a>
+<a class="sourceLine" id="cb2-22" title="22"> <span class="va">ev</span>.<span class="va">dataTransfer</span>.<span class="at">setData</span>(<span class="st">&quot;text/plain&quot;</span><span class="op">,</span> <span class="va">ev</span>.<span class="va">target</span>.<span class="at">id</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-23" title="23"> <span class="co">// Create an image and use it for the drag image</span></a>
+<a class="sourceLine" id="cb2-24" title="24"> <span class="co">// </span><span class="al">NOTE</span><span class="co">: change &quot;example.gif&quot; to an existing image or the image will not</span></a>
+<a class="sourceLine" id="cb2-25" title="25"> <span class="co">// be created and the default drag image will be used.</span></a>
+<a class="sourceLine" id="cb2-26" title="26"> <span class="kw">var</span> img <span class="op">=</span> <span class="kw">new</span> <span class="at">Image</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-27" title="27"> <span class="va">img</span>.<span class="at">src</span> <span class="op">=</span> <span class="st">&#39;example.gif&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-28" title="28"> <span class="va">ev</span>.<span class="va">dataTransfer</span>.<span class="at">setDragImage</span>(img<span class="op">,</span> <span class="dv">10</span><span class="op">,</span> <span class="dv">10</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-29" title="29"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-30" title="30"></a>
+<a class="sourceLine" id="cb2-31" title="31"><span class="kw">function</span> <span class="at">dragover_handler</span>(ev) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-32" title="32"> <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;dragOver&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-33" title="33"> <span class="va">ev</span>.<span class="at">preventDefault</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-34" title="34"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-35" title="35"></a>
+<a class="sourceLine" id="cb2-36" title="36"><span class="kw">function</span> <span class="at">drop_handler</span>(ev) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-37" title="37"> <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Drop&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-38" title="38"> <span class="va">ev</span>.<span class="at">preventDefault</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-39" title="39"> <span class="co">// Get the data, which is the id of the drop target</span></a>
+<a class="sourceLine" id="cb2-40" title="40"> <span class="kw">var</span> data <span class="op">=</span> <span class="va">ev</span>.<span class="va">dataTransfer</span>.<span class="at">getData</span>(<span class="st">&quot;text&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-41" title="41"> <span class="va">ev</span>.<span class="va">target</span>.<span class="at">appendChild</span>(<span class="va">document</span>.<span class="at">getElementById</span>(data))<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-42" title="42"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-43" title="43">&lt;/script<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb2-44" title="44"><span class="op">&lt;</span>body<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb2-45" title="45"><span class="op">&lt;</span>h1<span class="op">&gt;</span>Example <span class="kw">of</span> <span class="op">&lt;</span>code<span class="op">&gt;</span><span class="va">DataTransfer</span>.<span class="at">setDragImage</span>()&lt;/code<span class="op">&gt;</span>&lt;/h1<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb2-46" title="46"> <span class="op">&lt;</span>div<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb2-47" title="47">   <span class="op">&lt;</span>p id<span class="op">=</span><span class="st">&quot;source&quot;</span> ondragstart<span class="op">=</span><span class="st">&quot;dragstart_handler(event);&quot;</span> draggable<span class="op">=</span><span class="st">&quot;true&quot;</span><span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb2-48" title="48">     Select <span class="kw">this</span> element<span class="op">,</span> drag it to the Drop Zone and then release the selection to move the <span class="va">element</span>.&lt;/p<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb2-49" title="49"> &lt;/div<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb2-50" title="50"> <span class="op">&lt;</span>div id<span class="op">=</span><span class="st">&quot;target&quot;</span> ondrop<span class="op">=</span><span class="st">&quot;drop_handler(event);&quot;</span> ondragover<span class="op">=</span><span class="st">&quot;dragover_handler(event);&quot;</span><span class="op">&gt;</span>Drop Zone&lt;/div<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb2-51" title="51">&lt;/body<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb2-52" title="52">&lt;/html<span class="op">&gt;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/HTML_Drag_and_Drop_API">Drag and drop</a></li>
+<li><a href="/en-US/docs/Web/API/HTML_Drag_and_Drop_API/Drag_operations">Drag Operations</a></li>
+<li><a href="/en-US/docs/Web/API/HTML_Drag_and_Drop_API/Recommended_drag_types">Recommended Drag Types</a></li>
+<li><a href="/en-US/docs/Web/API/HTML_Drag_and_Drop_API/Multiple_items">Dragging and Dropping Multiple Items</a></li>
+<li><a href="https://codepen.io/tech_query/pen/MqGgap">DataTransfer test - Paste or Drag</a></li>
+</ul>

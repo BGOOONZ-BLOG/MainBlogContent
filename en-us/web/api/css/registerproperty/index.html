@@ -1,0 +1,91 @@
+<p>{{SeeCompatTable}}</p>
+<p>The <strong><code>CSS.registerProperty()</code></strong> method registers {{cssxref(’–*‘, ’custom properties’)}}, allowing for property type checking, default values, and properties that do or do not inherit their value.</p>
+<p>Registering a custom property allows you to tell the browser how the custom property should behave; what are allowed types, whether the custom property inherits its value, and what the default value of the custom property is.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">CSS</span>.<span class="at">registerProperty</span>(PropertyDefinition)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<p>A <code>PropertyDefinition</code> dictionary object, which can contain the following members:</p>
+<ul>
+<li><code>name</code>
+<ul>
+<li>: A <a href="/en-US/docs/Web/API/DOMString"><code>DOMString</code></a> indicating the name of the property being defined.</li>
+</ul></li>
+<li><code>syntax</code> {{optional_inline}}
+<ul>
+<li>: A <a href="/en-US/docs/Web/API/DOMString"><code>DOMString</code></a> representing the expected syntax of the defined property. Defaults to <code>"*"</code>.</li>
+</ul></li>
+<li><code>inherits</code>
+<ul>
+<li>: A boolean value defining whether the defined property should be inherited (<code>true</code>), or not (<code>false</code>). Defaults to <code>false</code>.</li>
+</ul></li>
+<li><code>initialValue</code> {{optional_inline}}
+<ul>
+<li>: A <a href="/en-US/docs/Web/API/DOMString"><code>DOMString</code></a> representing the initial value of the defined property.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p><code>undefined</code>.</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><code>InvalidModificationError</code>
+<ul>
+<li>: The given <code>name</code> has already been registered.</li>
+</ul></li>
+<li><code>SyntaxError</code>
+<ul>
+<li>: The given <code>name</code> isn’t a valid custom property name (starts with two dashes, e.g. <code>--foo</code>).</li>
+</ul></li>
+<li><code>TypeError</code>
+<ul>
+<li>: The required <code>name</code> and/or <code>inherits</code> dictionary members were not provided.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>The following will register a {{cssxref(’–*‘, ’custom property’)}}, <code>--my-color</code>, using <code>registerProperty()</code>, as a color, give it a default value, and have it not inherit its value:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">window</span>.<span class="va">CSS</span>.<span class="at">registerProperty</span>(<span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;--my-color&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="dt">syntax</span><span class="op">:</span> <span class="st">&#39;&lt;color&gt;&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="dt">inherits</span><span class="op">:</span> <span class="kw">false</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="dt">initialValue</span><span class="op">:</span> <span class="st">&#39;#c0ffee&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>In this example, the custom property <code>--my-color</code> has been registered using the syntax <code>&lt;color&gt;</code> . We can now use that property to transition a gradient on hover or focus. Notice that with the registered property the transition works, but that it doesn’t with the unregistered property!</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb3-1" title="1"><span class="fu">.registered</span> {</a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="va">--my-color</span>: <span class="cn">#c0ffee</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  background-image: <span class="fu">linear-gradient(</span>to <span class="dv">right</span><span class="op">,</span> <span class="cn">#fff</span><span class="op">,</span> var(--my-color<span class="fu">)</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  transition: --my-color <span class="dv">1</span><span class="dt">s</span> <span class="dv">ease-in-out</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">}</a>
+<a class="sourceLine" id="cb3-6" title="6"></a>
+<a class="sourceLine" id="cb3-7" title="7"><span class="fu">.registered</span><span class="in">:hover</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="fu">.registered</span><span class="in">:focus</span> {</a>
+<a class="sourceLine" id="cb3-9" title="9">  <span class="va">--my-color</span>: <span class="cn">#b4d455</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10">}</a>
+<a class="sourceLine" id="cb3-11" title="11"></a>
+<a class="sourceLine" id="cb3-12" title="12"><span class="fu">.unregistered</span> {</a>
+<a class="sourceLine" id="cb3-13" title="13">  <span class="va">--unregistered</span>: <span class="cn">#c0ffee</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-14" title="14">  background-image: <span class="fu">linear-gradient(</span>to <span class="dv">right</span><span class="op">,</span> <span class="cn">#fff</span><span class="op">,</span> var(--unregistered<span class="fu">)</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-15" title="15">  transition: --unregistered <span class="dv">1</span><span class="dt">s</span> <span class="dv">ease-in-out</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-16" title="16">}</a>
+<a class="sourceLine" id="cb3-17" title="17"></a>
+<a class="sourceLine" id="cb3-18" title="18"><span class="fu">.unregistered</span><span class="in">:hover</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-19" title="19"><span class="fu">.unregistered</span><span class="in">:focus</span> {</a>
+<a class="sourceLine" id="cb3-20" title="20">  <span class="va">--unregistered</span>: <span class="cn">#b4d455</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-21" title="21">}</a>
+<a class="sourceLine" id="cb3-22" title="22">button {</a>
+<a class="sourceLine" id="cb3-23" title="23">  <span class="kw">font-size</span>: <span class="dv">3</span><span class="dt">vw</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-24" title="24">}</a></code></pre></div>
+<p>We can add these styles to some buttons:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">&lt;button</span><span class="ot"> class=</span><span class="st">&quot;registered&quot;</span><span class="kw">&gt;</span>Background Registered<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="kw">&lt;button</span><span class="ot"> class=</span><span class="st">&quot;unregistered&quot;</span><span class="kw">&gt;</span>Background Not Registered<span class="kw">&lt;/button&gt;</span></a></code></pre></div>
+<p>{{EmbedLiveSample(“Examples”, 320, 320)}}</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/CSS_Properties_and_Values_API/guide">Using the CSS properties and values API</a></li>
+<li>{{DOMxRef(“CSS”)}}</li>
+<li>{{DOMxRef(“CSS.supports()”)}}</li>
+<li>{{DOMxRef(“CSS.escape()”)}}</li>
+<li>{{DOMxRef(“CSS.factory_functions”, ‘CSS factory functions’)}}</li>
+</ul>

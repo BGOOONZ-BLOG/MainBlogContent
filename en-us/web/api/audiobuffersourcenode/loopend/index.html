@@ -1,0 +1,65 @@
+<p>{{ APIRef(“Web Audio API”) }}</p>
+<p>The <code>loopEnd</code> property of the {{ domxref(“AudioBufferSourceNode”) }} interface specifies is a floating point number specifying, in seconds, at what offset into playing the {{domxref(“AudioBuffer”)}} playback should loop back to the time indicated by the {{domxref(“AudioBufferSourceNode.loopStart”, “loopStart”)}} property. This is only used if the {{domxref(“AudioBufferSourceNode.loop”, “loop”)}} property is <code>true</code>.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">AudioBufferSourceNode</span>.<span class="at">loopEnd</span> <span class="op">=</span> endOffsetInSeconds<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">var</span> endOffsetInSeconds <span class="op">=</span> <span class="va">AudioBufferSourceNode</span>.<span class="at">loopEnd</span><span class="op">;</span></a></code></pre></div>
+<h3 id="value">Value</h3>
+<p>A floating-point number indicating the offset, in seconds, into the audio buffer at which each loop will loop return to the beginning of the loop (that is, the current play time gets reset to {{domxref(“AudioBufferSourceNode.loopStart”)}}). This property is only used if the {{domxref(“AudioBufferSourceNode.loop”, “loop”)}} property is <code>true</code>.</p>
+<p>The default value is 0.</p>
+<h2 id="example">Example</h2>
+<p>In this example, the {{domxref(“BaseAudioContext/decodeAudioData”, “AudioContext.decodeAudioData()”)}} function is used to decode an audio track and put it into an {{domxref(“AudioBufferSourceNode”)}}. Buttons are provided to play and stop the audio playback, and slider controls are used to change the <code>playbackRate</code>, <code>loopStart</code> and <code>loopEnd</code> properties on the fly.</p>
+<p>When the audio is played to the end, it loops, but you can control how long the loops last by altering <code>loopStart</code> and <code>loopEnd</code>. For example, if you set their values to 20 and 25, respectively, then begin playback, the sound will play normally until it reaches the 25 second mark. Then the current play position will loop back to the 20 second mark and continue playing until the 25 second mark, ad infinitum (or at least until {{domxref(“AudioScheduledSourceNode/stop”, “stop()”)}} is called).</p>
+<blockquote>
+<p><strong>Note:</strong> For a full working example, see <a href="https://mdn.github.io/webaudio-examples/decode-audio-data/">this code running live</a>, or <a href="https://github.com/mdn/webaudio-examples/tree/master/decode-audio-data">view the source</a>.</p>
+</blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">function</span> <span class="at">getData</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  source <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createBufferSource</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  request <span class="op">=</span> <span class="kw">new</span> <span class="at">XMLHttpRequest</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="va">request</span>.<span class="at">open</span>(<span class="st">&#39;GET&#39;</span><span class="op">,</span> <span class="st">&#39;viper.ogg&#39;</span><span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6"></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="va">request</span>.<span class="at">responseType</span> <span class="op">=</span> <span class="st">&#39;arraybuffer&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8"></a>
+<a class="sourceLine" id="cb2-9" title="9">  <span class="va">request</span>.<span class="at">onload</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-10" title="10">    <span class="kw">var</span> audioData <span class="op">=</span> <span class="va">request</span>.<span class="at">response</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11"></a>
+<a class="sourceLine" id="cb2-12" title="12">    <span class="va">audioCtx</span>.<span class="at">decodeAudioData</span>(audioData<span class="op">,</span> <span class="kw">function</span>(buffer) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-13" title="13">        myBuffer <span class="op">=</span> buffer<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14">        songLength <span class="op">=</span> <span class="va">buffer</span>.<span class="at">duration</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-15" title="15">        <span class="va">source</span>.<span class="at">buffer</span> <span class="op">=</span> myBuffer<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-16" title="16">        <span class="va">source</span>.<span class="va">playbackRate</span>.<span class="at">value</span> <span class="op">=</span> <span class="va">playbackControl</span>.<span class="at">value</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-17" title="17">        <span class="va">source</span>.<span class="at">connect</span>(<span class="va">audioCtx</span>.<span class="at">destination</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">        <span class="va">source</span>.<span class="at">loop</span> <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-19" title="19"></a>
+<a class="sourceLine" id="cb2-20" title="20">        <span class="va">loopstartControl</span>.<span class="at">setAttribute</span>(<span class="st">&#39;max&#39;</span><span class="op">,</span> <span class="va">Math</span>.<span class="at">floor</span>(songLength))<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-21" title="21">        <span class="va">loopendControl</span>.<span class="at">setAttribute</span>(<span class="st">&#39;max&#39;</span><span class="op">,</span> <span class="va">Math</span>.<span class="at">floor</span>(songLength))<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-22" title="22">      <span class="op">},</span></a>
+<a class="sourceLine" id="cb2-23" title="23"></a>
+<a class="sourceLine" id="cb2-24" title="24">      <span class="kw">function</span>(e)<span class="op">{</span><span class="st">&quot;Error with decoding audio data&quot;</span> <span class="op">+</span> <span class="va">e</span>.<span class="at">err</span><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-25" title="25"></a>
+<a class="sourceLine" id="cb2-26" title="26">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-27" title="27"></a>
+<a class="sourceLine" id="cb2-28" title="28">  <span class="va">request</span>.<span class="at">send</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-29" title="29"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-30" title="30"></a>
+<a class="sourceLine" id="cb2-31" title="31">  ...</a>
+<a class="sourceLine" id="cb2-32" title="32"></a>
+<a class="sourceLine" id="cb2-33" title="33"><span class="va">loopstartControl</span>.<span class="at">oninput</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-34" title="34">  <span class="va">source</span>.<span class="at">loopStart</span> <span class="op">=</span> <span class="va">loopstartControl</span>.<span class="at">value</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-35" title="35">  <span class="va">loopstartValue</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="va">loopstartControl</span>.<span class="at">value</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-36" title="36"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-37" title="37"></a>
+<a class="sourceLine" id="cb2-38" title="38"><span class="va">loopendControl</span>.<span class="at">oninput</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-39" title="39">  <span class="va">source</span>.<span class="at">loopEnd</span> <span class="op">=</span> <span class="va">loopendControl</span>.<span class="at">value</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-40" title="40">  <span class="va">loopendValue</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="va">loopendControl</span>.<span class="at">value</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-41" title="41"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API">Using the Web Audio API</a></li>
+<li><a href="/en-US/docs/Web/API/Web_Audio_API">Web Audio API</a></li>
+</ul>

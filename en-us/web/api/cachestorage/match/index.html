@@ -1,0 +1,70 @@
+<p>{{APIRef(“Service Workers API”)}}</p>
+<p>The <strong><code>match()</code></strong> method of the {{domxref(“CacheStorage”)}} interface checks if a given {{domxref(“Request”)}} or url string is a key for a stored {{domxref(“Response”)}}. This method returns a {{jsxref(“Promise”)}} for a {{domxref(“Response”)}}, or a {{jsxref(“Promise”)}} which resolves to <code>undefined</code> if no match is found.</p>
+<p>You can access <code>CacheStorage</code> through the global {{domxref(“caches”)}} property.</p>
+<p><code>Cache</code> objects are searched in creation order.</p>
+<blockquote>
+<p><strong>Note:</strong> {{domxref(“CacheStorage.match()”, “caches.match()”)}} is a convenience method. Equivalent functionality is to call {{domxref(“cache.match()”)}} on each cache (in the order returned by {{domxref(“CacheStorage.keys()”, “caches.keys()”)}}) until a {{domxref(“Response”)}} is returned.</p>
+</blockquote>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">caches</span>.<span class="at">match</span>(request<span class="op">,</span> options).<span class="at">then</span>(<span class="kw">function</span>(response) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="co">// Do something with the response</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li>request
+<ul>
+<li>: The {{domxref(“Request”)}} you want to match.  This can be a  {{domxref(“Request”)}} object or a URL string.</li>
+</ul></li>
+<li><p>options {{optional_inline}}</p>
+<ul>
+<li><p>: An object whose properties control how matching is done in the <code>match</code> operation. The available options are:</p>
+<ul>
+<li><code>ignoreSearch</code>: A boolean value that specifies whether the matching process should ignore the query string in the url.  For example, if set to <code>true</code>, the <code>?value=bar</code> part of <code>http://foo.com/?value=bar</code> would be ignored when performing a match. It defaults to <code>false</code>.</li>
+<li><code>ignoreMethod</code>: A boolean value that, when set to <code>true</code>, prevents matching operations from validating the {{domxref(“Request”)}} <code>http</code> method (normally only <code>GET</code> and <code>HEAD</code> are allowed.) It defaults to <code>false</code>.</li>
+<li><code>ignoreVary</code>: A boolean value that, when set to <code>true,</code> tells the matching operation not to perform <code>VARY</code> header matching. In other words, if the URL matches you will get a match regardless of whether the {{domxref(“Response”)}} object has a <code>VARY</code> header or not. It defaults to <code>false</code>.</li>
+<li><code>cacheName</code>: A {{domxref(“DOMString”)}} that represents a specific cache to search within.</li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>a {{jsxref(“Promise”)}} that resolves to the matching {{domxref(“Response”)}}. If no matching response to the specified request is found, the promise resolves with <code>undefined</code>.</p>
+<h2 id="examples">Examples</h2>
+<p>This example is from the MDN <a href="https://github.com/mdn/sw-test/">sw-test example</a> (see <a href="https://mdn.github.io/sw-test/">sw-test running live</a>). Here we wait for a {{domxref(“FetchEvent”)}} to fire. We construct a custom response like so:</p>
+<ol type="1">
+<li>Check whether a match for the request is found in the {{domxref(“CacheStorage”)}} using {{domxref(“CacheStorage.match”,“CacheStorage.match()”)}}. If so, serve that.</li>
+<li>If not, open the <code>v1</code> cache using <code>open()</code>, put the default network request in the cache using {{domxref(“Cache.put”,“Cache.put()”)}} and return a clone of the default network request using <code>return response.clone()</code>. The last is necessary because <code>put()</code> consumes the response body.</li>
+<li>If this fails (e.g., because the network is down), return a fallback response.</li>
+</ol>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">self</span>.<span class="at">addEventListener</span>(<span class="st">&#39;fetch&#39;</span><span class="op">,</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="va">event</span>.<span class="at">respondWith</span>(<span class="va">caches</span>.<span class="at">match</span>(<span class="va">event</span>.<span class="at">request</span>).<span class="at">then</span>(<span class="kw">function</span>(response) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3">    <span class="co">// caches.match() always resolves</span></a>
+<a class="sourceLine" id="cb2-4" title="4">    <span class="co">// but in case of success response will have value</span></a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="cf">if</span> (response <span class="op">!==</span> <span class="kw">undefined</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-6" title="6">      <span class="cf">return</span> response<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7">    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-8" title="8">      <span class="cf">return</span> <span class="at">fetch</span>(<span class="va">event</span>.<span class="at">request</span>).<span class="at">then</span>(<span class="kw">function</span> (response) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-9" title="9">        <span class="co">// response may be used only once</span></a>
+<a class="sourceLine" id="cb2-10" title="10">        <span class="co">// we need to save clone to put one copy in cache</span></a>
+<a class="sourceLine" id="cb2-11" title="11">        <span class="co">// and serve second one</span></a>
+<a class="sourceLine" id="cb2-12" title="12">        <span class="kw">let</span> responseClone <span class="op">=</span> <span class="va">response</span>.<span class="at">clone</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13"></a>
+<a class="sourceLine" id="cb2-14" title="14">        <span class="va">caches</span>.<span class="at">open</span>(<span class="st">&#39;v1&#39;</span>).<span class="at">then</span>(<span class="kw">function</span> (cache) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-15" title="15">          <span class="va">cache</span>.<span class="at">put</span>(<span class="va">event</span>.<span class="at">request</span><span class="op">,</span> responseClone)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-16" title="16">        <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-17" title="17">        <span class="cf">return</span> response<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">      <span class="op">}</span>).<span class="at">catch</span>(<span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-19" title="19">        <span class="cf">return</span> <span class="va">caches</span>.<span class="at">match</span>(<span class="st">&#39;/sw-test/gallery/myLittleVader.jpg&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-20" title="20">      <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-21" title="21">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-22" title="22">  <span class="op">}</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-23" title="23"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers">Using Service Workers</a></li>
+<li>{{domxref(“Cache”)}}</li>
+<li>{{domxref(“caches”)}}</li>
+</ul>

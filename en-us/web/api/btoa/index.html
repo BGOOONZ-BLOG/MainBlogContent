@@ -1,0 +1,86 @@
+<p>{{APIRef(“HTML DOM”)}}</p>
+<p>The <strong><code>btoa()</code></strong> method creates a {{glossary(“Base64”)}}-encoded ASCII string from a <a href="/en-US/docs/Web/API/DOMString/Binary">binary string</a> (i.e., a {{jsxref(“String”)}} object in which each character in the string is treated as a byte of binary data).</p>
+<p>You can use this method to encode data which may otherwise cause communication problems, transmit it, then use the {{domxref(“atob”, “atob()”)}} method to decode the data again. For example, you can encode control characters such as ASCII values 0 through 31.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> encodedData <span class="op">=</span> <span class="at">btoa</span>(stringToEncode)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>stringToEncode</code>
+<ul>
+<li>: The <a href="/en-US/docs/Web/API/DOMString/Binary">binary string</a> to encode.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>An ASCII string containing the Base64 representation of <code>stringToEncode</code>.</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><code>InvalidCharacterError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: The string contained a character that did not fit in a single byte. See “Unicode strings” below for more detail.</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> encodedData <span class="op">=</span> <span class="at">btoa</span>(<span class="st">&#39;Hello, world&#39;</span>)<span class="op">;</span> <span class="co">// encode a string</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">const</span> decodedData <span class="op">=</span> <span class="at">atob</span>(encodedData)<span class="op">;</span> <span class="co">// decode the string</span></a></code></pre></div>
+<h2 id="unicode-strings">Unicode strings</h2>
+<p>The <code>btoa()</code> function takes a JavaScript string as a parameter. In JavaScript strings are represented using the UTF-16 character encoding: in this encoding, strings are represented as a sequence of 16-bit (2 byte) units. Every ASCII character fits into the first byte of one of these units, but many other characters don’t.</p>
+<p>Base64, by design, expects binary data as its input. In terms of JavaScript strings, this means strings in which each character occupies only one byte. So if you pass a string into <code>btoa()</code> containing characters that occupy more than one byte, you will get an error, because this is not considered binary data:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> ok <span class="op">=</span> <span class="st">&quot;a&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="va">console</span>.<span class="at">log</span>(<span class="va">ok</span>.<span class="at">codePointAt</span>(<span class="dv">0</span>).<span class="at">toString</span>(<span class="dv">16</span>))<span class="op">;</span> <span class="co">//   61: occupies &lt; 1 byte</span></a>
+<a class="sourceLine" id="cb3-3" title="3"></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="kw">const</span> notOK <span class="op">=</span> <span class="st">&quot;✓&quot;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="va">console</span>.<span class="at">log</span>(<span class="va">notOK</span>.<span class="at">codePointAt</span>(<span class="dv">0</span>).<span class="at">toString</span>(<span class="dv">16</span>))<span class="op">;</span> <span class="co">// 2713: occupies &gt; 1 byte</span></a>
+<a class="sourceLine" id="cb3-6" title="6"></a>
+<a class="sourceLine" id="cb3-7" title="7"><span class="va">console</span>.<span class="at">log</span>(<span class="at">btoa</span>(ok))<span class="op">;</span>    <span class="co">// YQ==</span></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="va">console</span>.<span class="at">log</span>(<span class="at">btoa</span>(notOK))<span class="op">;</span> <span class="co">// error</span></a></code></pre></div>
+<p>If you need to encode Unicode text as ASCII using <code>btoa()</code>, one option is to convert the string such that each 16-bit unit occupies only one byte. For example:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="co">// convert a Unicode string to a string in which</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="co">// each 16-bit unit occupies only one byte</span></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="kw">function</span> <span class="at">toBinary</span>(string) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-4" title="4">  <span class="kw">const</span> codeUnits <span class="op">=</span> <span class="kw">new</span> <span class="at">Uint16Array</span>(<span class="va">string</span>.<span class="at">length</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">codeUnits</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-6" title="6">    codeUnits[i] <span class="op">=</span> <span class="va">string</span>.<span class="at">charCodeAt</span>(i)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-8" title="8">  <span class="kw">const</span> charCodes <span class="op">=</span> <span class="kw">new</span> <span class="at">Uint8Array</span>(<span class="va">codeUnits</span>.<span class="at">buffer</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-9" title="9">  <span class="kw">let</span> result <span class="op">=</span> <span class="st">&#39;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-10" title="10">  <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">charCodes</span>.<span class="at">byteLength</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-11" title="11">    result <span class="op">+=</span> <span class="va">String</span>.<span class="at">fromCharCode</span>(charCodes[i])<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-12" title="12">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-13" title="13">  <span class="cf">return</span> result<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-14" title="14"><span class="op">}</span></a>
+<a class="sourceLine" id="cb4-15" title="15"></a>
+<a class="sourceLine" id="cb4-16" title="16"><span class="co">// a string that contains characters occupying &gt; 1 byte</span></a>
+<a class="sourceLine" id="cb4-17" title="17"><span class="kw">const</span> myString <span class="op">=</span> <span class="st">&quot;☸☹☺☻☼☾☿&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-18" title="18"></a>
+<a class="sourceLine" id="cb4-19" title="19"><span class="kw">const</span> converted <span class="op">=</span> <span class="at">toBinary</span>(myString)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-20" title="20"><span class="kw">const</span> encoded <span class="op">=</span> <span class="at">btoa</span>(converted)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-21" title="21"><span class="va">console</span>.<span class="at">log</span>(encoded)<span class="op">;</span>                 <span class="co">// OCY5JjomOyY8Jj4mPyY=</span></a></code></pre></div>
+<p>If you do this, of course you’ll have to reverse the conversion on the decoded string:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">function</span> <span class="at">fromBinary</span>(binary) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="kw">const</span> bytes <span class="op">=</span> <span class="kw">new</span> <span class="at">Uint8Array</span>(<span class="va">binary</span>.<span class="at">length</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3">  <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">bytes</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-4" title="4">    bytes[i] <span class="op">=</span> <span class="va">binary</span>.<span class="at">charCodeAt</span>(i)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-5" title="5">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-6" title="6">  <span class="kw">const</span> charCodes <span class="op">=</span> <span class="kw">new</span> <span class="at">Uint16Array</span>(<span class="va">bytes</span>.<span class="at">buffer</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-7" title="7">  <span class="kw">let</span> result <span class="op">=</span> <span class="st">&#39;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-8" title="8">  <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">charCodes</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-9" title="9">    result <span class="op">+=</span> <span class="va">String</span>.<span class="at">fromCharCode</span>(charCodes[i])<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-10" title="10">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-11" title="11">  <span class="cf">return</span> result<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-12" title="12"><span class="op">}</span></a>
+<a class="sourceLine" id="cb5-13" title="13"></a>
+<a class="sourceLine" id="cb5-14" title="14"><span class="kw">const</span> decoded <span class="op">=</span> <span class="at">atob</span>(encoded)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-15" title="15"><span class="kw">const</span> original <span class="op">=</span> <span class="at">fromBinary</span>(decoded)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-16" title="16"><span class="va">console</span>.<span class="at">log</span>(original)<span class="op">;</span>                <span class="co">// ☸☹☺☻☼☾☿</span></a></code></pre></div>
+<p>See also the example <code>utf8_to_b64</code> and <code>b64_to_utf8</code> functions in the <a href="https://developer.mozilla.org/en-US/docs/Glossary/Base64#solution_1_%E2%80%93_escaping_the_string_before_encoding_it">Solution #1 – escaping the string before encoding it</a> section of the {{Glossary(“Base64”)}} glossary entry.</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/HTTP/Basics_of_HTTP/Data_URIs"><code>data</code> URIs</a></li>
+<li>{{domxref(“atob”,“atob()”)}}</li>
+<li>{{Glossary(“Base64”)}}</li>
+<li><a href="https://github.com/MaxArt2501/base64-js/blob/master/base64.js">Polyfill</a></li>
+</ul>

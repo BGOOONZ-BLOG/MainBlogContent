@@ -1,0 +1,113 @@
+<p>{{APIRef(“Web Audio API”)}}{{deprecated_header}}</p>
+<p>The <code>createScriptProcessor()</code> method of the {{domxref(“BaseAudioContext”)}} interface creates a {{domxref(“ScriptProcessorNode”)}} used for direct audio processing.</p>
+<blockquote>
+<p><strong>Note:</strong> This feature was replaced by <a href="/en-US/docs/Web/API/AudioWorklet">AudioWorklets</a> and the {{domxref(“AudioWorkletNode”)}} interface.</p>
+</blockquote>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> scriptProcessor <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createScriptProcessor</span>(bufferSize<span class="op">,</span> numberOfInputChannels<span class="op">,</span> numberOfOutputChannels)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><p><code>bufferSize</code></p>
+<ul>
+<li><p>: The buffer size in units of sample-frames. If specified, the bufferSize must be one of the following values: 256, 512, 1024, 2048, 4096, 8192, 16384. If it’s not passed in, or if the value is 0, then the implementation will choose the best buffer size for the given environment, which will be a constant power of 2 throughout the lifetime of the node.</p>
+<p>This value controls how frequently the <code>audioprocess</code> event is dispatched and how many sample-frames need to be processed each call. Lower values for <code>bufferSize</code> will result in a lower (better) latency. Higher values will be necessary to avoid audio breakup and glitches. It is recommended for authors to not specify this buffer size and allow the implementation to pick a good buffer size to balance between latency and audio quality.</p></li>
+</ul></li>
+<li><code>numberOfInputChannels</code>
+<ul>
+<li>: Integer specifying the number of channels for this node’s input, defaults to 2. Values of up to 32 are supported.</li>
+</ul></li>
+<li><code>numberOfOutputChannels</code>
+<ul>
+<li>: Integer specifying the number of channels for this node’s output, defaults to 2. Values of up to 32 are supported.</li>
+</ul></li>
+</ul>
+<blockquote>
+<p><strong>Warning:</strong> Webkit currently (version 31) requires that a valid <code>bufferSize</code> be passed when calling this method.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> It is invalid for both <code>numberOfInputChannels</code> and <code>numberOfOutputChannels</code> to be zero.</p>
+</blockquote>
+<h3 id="returns">Returns</h3>
+<p>A {{domxref(“ScriptProcessorNode”)}}.</p>
+<h2 id="example">Example</h2>
+<p>The following example shows basic usage of a <code>ScriptProcessorNode</code> to take a track loaded via {{domxref(“BaseAudioContext/decodeAudioData”, “AudioContext.decodeAudioData()”)}}, process it, adding a bit of white noise to each audio sample of the input track (buffer) and play it through the {{domxref(“AudioDestinationNode”)}}. For each channel and each sample frame, the <code>scriptNode.onaudioprocess</code> function takes the associated <code>audioProcessingEvent</code> and uses it to loop through each channel of the input buffer, and each sample in each channel, and add a small amount of white noise, before setting that result to be the output sample in each case.</p>
+<blockquote>
+<p><strong>Note:</strong> For a full working example, see our <a href="https://mdn.github.io/webaudio-examples/script-processor-node/">script-processor-node</a> github repo (also view the <a href="https://github.com/mdn/webaudio-examples/blob/master/script-processor-node/index.html">source code</a>.)</p>
+</blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> myScript <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;script&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">var</span> myPre <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;pre&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">var</span> playButton <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;button&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="co">// Create AudioContext and buffer source</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="kw">var</span> audioCtx <span class="op">=</span> <span class="kw">new</span> <span class="at">AudioContext</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7">source <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createBufferSource</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8"></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="co">// Create a ScriptProcessorNode with a bufferSize of 4096 and a single input and output channel</span></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="kw">var</span> scriptNode <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createScriptProcessor</span>(<span class="dv">4096</span><span class="op">,</span> <span class="dv">1</span><span class="op">,</span> <span class="dv">1</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="va">console</span>.<span class="at">log</span>(<span class="va">scriptNode</span>.<span class="at">bufferSize</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12"></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="co">// load in an audio track via XHR and decodeAudioData</span></a>
+<a class="sourceLine" id="cb2-14" title="14"></a>
+<a class="sourceLine" id="cb2-15" title="15"><span class="kw">function</span> <span class="at">getData</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-16" title="16">  request <span class="op">=</span> <span class="kw">new</span> <span class="at">XMLHttpRequest</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-17" title="17">  <span class="va">request</span>.<span class="at">open</span>(<span class="st">&#39;GET&#39;</span><span class="op">,</span> <span class="st">&#39;viper.ogg&#39;</span><span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">  <span class="va">request</span>.<span class="at">responseType</span> <span class="op">=</span> <span class="st">&#39;arraybuffer&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-19" title="19">  <span class="va">request</span>.<span class="at">onload</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-20" title="20">    <span class="kw">var</span> audioData <span class="op">=</span> <span class="va">request</span>.<span class="at">response</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-21" title="21"></a>
+<a class="sourceLine" id="cb2-22" title="22">    <span class="va">audioCtx</span>.<span class="at">decodeAudioData</span>(audioData<span class="op">,</span> <span class="kw">function</span>(buffer) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-23" title="23">      myBuffer <span class="op">=</span> buffer<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-24" title="24">      <span class="va">source</span>.<span class="at">buffer</span> <span class="op">=</span> myBuffer<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-25" title="25">    <span class="op">},</span></a>
+<a class="sourceLine" id="cb2-26" title="26">    <span class="kw">function</span>(e)<span class="op">{</span><span class="st">&quot;Error with decoding audio data&quot;</span> <span class="op">+</span> <span class="va">e</span>.<span class="at">err</span><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-27" title="27">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-28" title="28">  <span class="va">request</span>.<span class="at">send</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-29" title="29"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-30" title="30"></a>
+<a class="sourceLine" id="cb2-31" title="31"><span class="co">// Give the node a function to process audio events</span></a>
+<a class="sourceLine" id="cb2-32" title="32"><span class="va">scriptNode</span>.<span class="at">onaudioprocess</span> <span class="op">=</span> <span class="kw">function</span>(audioProcessingEvent) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-33" title="33">  <span class="co">// The input buffer is the song we loaded earlier</span></a>
+<a class="sourceLine" id="cb2-34" title="34">  <span class="kw">var</span> inputBuffer <span class="op">=</span> <span class="va">audioProcessingEvent</span>.<span class="at">inputBuffer</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-35" title="35"></a>
+<a class="sourceLine" id="cb2-36" title="36">  <span class="co">// The output buffer contains the samples that will be modified and played</span></a>
+<a class="sourceLine" id="cb2-37" title="37">  <span class="kw">var</span> outputBuffer <span class="op">=</span> <span class="va">audioProcessingEvent</span>.<span class="at">outputBuffer</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-38" title="38"></a>
+<a class="sourceLine" id="cb2-39" title="39">  <span class="co">// Loop through the output channels (in this case there is only one)</span></a>
+<a class="sourceLine" id="cb2-40" title="40">  <span class="cf">for</span> (<span class="kw">var</span> channel <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> channel <span class="op">&lt;</span> <span class="va">outputBuffer</span>.<span class="at">numberOfChannels</span><span class="op">;</span> channel<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-41" title="41">    <span class="kw">var</span> inputData <span class="op">=</span> <span class="va">inputBuffer</span>.<span class="at">getChannelData</span>(channel)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-42" title="42">    <span class="kw">var</span> outputData <span class="op">=</span> <span class="va">outputBuffer</span>.<span class="at">getChannelData</span>(channel)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-43" title="43"></a>
+<a class="sourceLine" id="cb2-44" title="44">    <span class="co">// Loop through the 4096 samples</span></a>
+<a class="sourceLine" id="cb2-45" title="45">    <span class="cf">for</span> (<span class="kw">var</span> sample <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> sample <span class="op">&lt;</span> <span class="va">inputBuffer</span>.<span class="at">length</span><span class="op">;</span> sample<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-46" title="46">      <span class="co">// make output equal to the same as the input</span></a>
+<a class="sourceLine" id="cb2-47" title="47">      outputData[sample] <span class="op">=</span> inputData[sample]<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-48" title="48"></a>
+<a class="sourceLine" id="cb2-49" title="49">      <span class="co">// add noise to each output sample</span></a>
+<a class="sourceLine" id="cb2-50" title="50">      outputData[sample] <span class="op">+=</span> ((<span class="va">Math</span>.<span class="at">random</span>() <span class="op">*</span> <span class="dv">2</span>) <span class="op">-</span> <span class="dv">1</span>) <span class="op">*</span> <span class="fl">0.2</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-51" title="51">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-52" title="52">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-53" title="53"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-54" title="54"></a>
+<a class="sourceLine" id="cb2-55" title="55"><span class="at">getData</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-56" title="56"></a>
+<a class="sourceLine" id="cb2-57" title="57"><span class="co">// wire up play button</span></a>
+<a class="sourceLine" id="cb2-58" title="58"><span class="va">playButton</span>.<span class="at">onclick</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-59" title="59">  <span class="va">source</span>.<span class="at">connect</span>(scriptNode)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-60" title="60">  <span class="va">scriptNode</span>.<span class="at">connect</span>(<span class="va">audioCtx</span>.<span class="at">destination</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-61" title="61">  <span class="va">source</span>.<span class="at">start</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-62" title="62"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-63" title="63"></a>
+<a class="sourceLine" id="cb2-64" title="64"><span class="co">// When the buffer source stops playing, disconnect everything</span></a>
+<a class="sourceLine" id="cb2-65" title="65"><span class="va">source</span>.<span class="at">onended</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-66" title="66">  <span class="va">source</span>.<span class="at">disconnect</span>(scriptNode)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-67" title="67">  <span class="va">scriptNode</span>.<span class="at">disconnect</span>(<span class="va">audioCtx</span>.<span class="at">destination</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-68" title="68"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>Since the August 29 2014 <a href="https://webaudio.github.io/web-audio-api/#dom-baseaudiocontext-createscriptprocessor">Web Audio API specification</a> publication, this feature has been deprecated. It is no longer on track to become a standard.</p>
+<p>It was replaced by <a href="/en-US/docs/Web/API/AudioWorklet">AudioWorklets</a> and the {{domxref(“AudioWorkletNode”)}} interface.</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API">Using the Web Audio API</a></li>
+</ul>

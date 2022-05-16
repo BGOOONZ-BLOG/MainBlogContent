@@ -1,0 +1,49 @@
+<p>{{APIRef(“Web Audio API”)}}</p>
+<p>The <strong><code>getOutputTimestamp()</code></strong> property of the {{domxref(“AudioContext”)}} interface returns a new <code>AudioTimestamp</code> object containing two audio timestamp values relating to the current audio context.</p>
+<p>The two values are as follows:</p>
+<ul>
+<li><code>AudioTimestamp.contextTime</code>: The time of the sample frame currently being rendered by the audio output device (i.e., output audio stream position), in the same units and origin as the context’s {{domxref(“BaseAudioContext/currentTime”, “AudioContext.currentTime”)}}. Basically, this is the time after the audio context was first created.</li>
+<li><code>AudioTimestamp.performanceTime</code>: An estimation of the moment when the sample frame corresponding to the stored <code>contextTime</code> value was rendered by the audio output device, in the same units and origin as {{domxref(“performance.now()”)}}. This is the time after the document containing the audio context was first rendered.</li>
+</ul>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> timestamp <span class="op">=</span> <span class="va">context</span>.<span class="at">getOutputTimestamp</span>()</a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<p>None.</p>
+<h3 id="returns">Returns</h3>
+<p>An <code>AudioTimestamp</code> object, which has the following properties.</p>
+<ul>
+<li><code>contextTime</code>: A point in the time coordinate system of the {{domxref(“BaseAudioContext/currentTime”,“currentTime”)}} for the <code>BaseAudioContext</code>; the time after the audio context was first created.</li>
+<li><code>performanceTime</code>: A point in the time coordinate system of a <code>Performance</code> interface; the time after the document containing the audio context was first rendered</li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>In the following code we start to play an audio file after a play button is clicked, and start off a <code>requestAnimationFrame</code> loop running, which constantly outputs the <code>contextTime</code> and <code>performanceTime</code>.</p>
+<p>You can see full code of this <a href="https://github.com/mdn/webaudio-examples/blob/master/output-timestamp/index.html">example at output-timestamp</a> (<a href="https://mdn.github.io/webaudio-examples/output-timestamp/">see it live also</a>).</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">play</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="cf">if</span>(<span class="op">!</span>audioCtx) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3">    audioCtx <span class="op">=</span> <span class="kw">new</span> <span class="va">window</span>.<span class="at">AudioContext</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="at">getData</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="va">source</span>.<span class="at">start</span>(<span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="va">play</span>.<span class="at">setAttribute</span>(<span class="st">&#39;disabled&#39;</span><span class="op">,</span> <span class="st">&#39;disabled&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"></a>
+<a class="sourceLine" id="cb2-10" title="10">  rAF <span class="op">=</span> <span class="at">requestAnimationFrame</span>(outputTimestamps)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12"></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="va">stop</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-14" title="14">  <span class="va">source</span>.<span class="at">stop</span>(<span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-15" title="15">  <span class="va">play</span>.<span class="at">removeAttribute</span>(<span class="st">&#39;disabled&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-16" title="16">  <span class="at">cancelAnimationFrame</span>(rAF)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-17" title="17"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18"></a>
+<a class="sourceLine" id="cb2-19" title="19"><span class="co">// function to output timestamps</span></a>
+<a class="sourceLine" id="cb2-20" title="20"></a>
+<a class="sourceLine" id="cb2-21" title="21"><span class="kw">function</span> <span class="at">outputTimestamps</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-22" title="22">  <span class="kw">let</span> ts <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">getOutputTimestamp</span>()</a>
+<a class="sourceLine" id="cb2-23" title="23">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Context time: &#39;</span> <span class="op">+</span> <span class="va">ts</span>.<span class="at">contextTime</span> <span class="op">+</span> <span class="st">&#39; | Performance time: &#39;</span> <span class="op">+</span> <span class="va">ts</span>.<span class="at">performanceTime</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-24" title="24">  rAF <span class="op">=</span> <span class="at">requestAnimationFrame</span>(outputTimestamps)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-25" title="25"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

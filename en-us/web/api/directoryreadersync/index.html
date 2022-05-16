@@ -1,0 +1,127 @@
+<p>{{APIRef(“File System API”)}}{{Non-standard_header}}</p>
+<p>The <code>DirectoryReaderSync</code> interface of the <a href="/en-US/docs/Web/API/File_and_Directory_Entries_API/Introduction">File System API</a> lets you read the entries in a directory.</p>
+<blockquote>
+<p><strong>Note:</strong> This interface has been abandoned: it was on a standard track and it proves not a good idea. Do not use it anymore.</p>
+</blockquote>
+<h2 id="about-this-document">About this document</h2>
+<p>This document was last updated on March 2, 2012 and follows the <a href="https://www.w3.org/TR/file-system-api/">W3C Specifications (Working Draft)</a> drafted on April 19, 2011.</p>
+<p>This specification is pretty much abandoned, having failed to reach any substantial traction.</p>
+<h2 id="basic-concepts">Basic concepts</h2>
+<p>Before you call the only method in this interface, <a href="/#readEntries()" title="#readEntries()"><code>readEntries()</code></a>, create the <a href="/en-US/docs/Web/API/DirectoryEntrySync"><code>DirectoryEntrySync</code></a> object. But DirectoryEntrySync (as well as <a href="/en-US/docs/Web/API/FileEntrySync">FileEntrySync</a>) is not a data type that you can pass between a calling app and Web Worker thread. It’s not a big deal, because you don’t really need to have the main app and the worker thread see the same JavaScript object; you just need them to access the same files. You can do that by passing a list of  <code>filesystem:</code> URLs—which are just strings—instead of a list of entries. You can also use the <code>filesystem:</code> URL to look up the entry with <a href="/en-US/docs/Web/API/LocalFileSystem#resolvelocalfilesystemurl()"><code>resolveLocalFileSystemURL()</code></a>. That gets you back to a DirectoryEntrySync (as well as FileEntrySync) object.</p>
+<h4 id="example">Example</h4>
+<p>In the following code snippet from <a href="http://www.html5rocks.com/en/tutorials/file/filesystem/">HTML5Rocks</a>, we create Web Workers and pass data from it to the main app.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="co">// Taking care of the browser-specific prefixes.</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="va">window</span>.<span class="at">resolveLocalFileSystemURL</span> <span class="op">=</span> <span class="va">window</span>.<span class="at">resolveLocalFileSystemURL</span> <span class="op">||</span></a>
+<a class="sourceLine" id="cb1-3" title="3">                                     <span class="va">window</span>.<span class="at">webkitResolveLocalFileSystemURL</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-4" title="4"></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="co">// Create web workers</span></a>
+<a class="sourceLine" id="cb1-6" title="6">  <span class="kw">var</span> worker <span class="op">=</span> <span class="kw">new</span> <span class="at">Worker</span>(<span class="st">&#39;worker.js&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-7" title="7">  <span class="va">worker</span>.<span class="at">onmessage</span> <span class="op">=</span> <span class="kw">function</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-8" title="8">    <span class="kw">var</span> urls <span class="op">=</span> <span class="va">e</span>.<span class="va">data</span>.<span class="at">entries</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-9" title="9">    <span class="va">urls</span>.<span class="at">forEach</span>(<span class="kw">function</span>(url<span class="op">,</span> i) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-10" title="10">      <span class="va">window</span>.<span class="at">resolveLocalFileSystemURL</span>(url<span class="op">,</span> <span class="kw">function</span>(fileEntry) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-11" title="11">        <span class="co">// Print out file&#39;s name.</span></a>
+<a class="sourceLine" id="cb1-12" title="12">        <span class="va">console</span>.<span class="at">log</span>(<span class="va">fileEntry</span>.<span class="at">name</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-13" title="13">      <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-14" title="14">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-15" title="15">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb1-16" title="16"></a>
+<a class="sourceLine" id="cb1-17" title="17">  <span class="va">worker</span>.<span class="at">postMessage</span>(<span class="op">{</span><span class="st">&#39;cmd&#39;</span><span class="op">:</span> <span class="st">&#39;list&#39;</span><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>The following is Worker.js code that gets the contents of the directory.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">// Taking care of the browser-specific prefixes.</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="va">self</span>.<span class="at">requestFileSystemSync</span> <span class="op">=</span> <span class="va">self</span>.<span class="at">webkitRequestFileSystemSync</span> <span class="op">||</span></a>
+<a class="sourceLine" id="cb2-3" title="3">                             <span class="va">self</span>.<span class="at">requestFileSystemSync</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="co">// Global for holding the list of entry file system URLs.</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="kw">var</span> paths <span class="op">=</span> []<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="kw">function</span> <span class="at">getAllEntries</span>(dirReader) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-9" title="9">  <span class="kw">var</span> entries <span class="op">=</span> <span class="va">dirReader</span>.<span class="at">readEntries</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10"></a>
+<a class="sourceLine" id="cb2-11" title="11">  <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">,</span> entry<span class="op">;</span> entry <span class="op">=</span> entries[i]<span class="op">;</span> <span class="op">++</span>i) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-12" title="12">    <span class="co">// Stash this entry&#39;s filesystem in URL</span></a>
+<a class="sourceLine" id="cb2-13" title="13">    <span class="va">paths</span>.<span class="at">push</span>(<span class="va">entry</span>.<span class="at">toURL</span>())<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14"></a>
+<a class="sourceLine" id="cb2-15" title="15">    <span class="co">// If this is a directory, traverse.</span></a>
+<a class="sourceLine" id="cb2-16" title="16">    <span class="cf">if</span> (<span class="va">entry</span>.<span class="at">isDirectory</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-17" title="17">      <span class="at">getAllEntries</span>(<span class="va">entry</span>.<span class="at">createReader</span>())<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-19" title="19">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-20" title="20"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-21" title="21"></a>
+<a class="sourceLine" id="cb2-22" title="22"><span class="co">// Forward the error to main app.</span></a>
+<a class="sourceLine" id="cb2-23" title="23"><span class="kw">function</span> <span class="at">onError</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-24" title="24">  <span class="at">postMessage</span>(<span class="st">&#39;ERROR: &#39;</span> <span class="op">+</span> <span class="va">e</span>.<span class="at">toString</span>())<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-25" title="25"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-26" title="26"></a>
+<a class="sourceLine" id="cb2-27" title="27"><span class="va">self</span>.<span class="at">onmessage</span> <span class="op">=</span> <span class="kw">function</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-28" title="28">  <span class="kw">var</span> data <span class="op">=</span> <span class="va">e</span>.<span class="at">data</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-29" title="29"></a>
+<a class="sourceLine" id="cb2-30" title="30">  <span class="co">// Ignore everything else except our &#39;list&#39; command.</span></a>
+<a class="sourceLine" id="cb2-31" title="31">  <span class="cf">if</span> (<span class="op">!</span><span class="va">data</span>.<span class="at">cmd</span> <span class="op">||</span> <span class="va">data</span>.<span class="at">cmd</span> <span class="op">!=</span> <span class="st">&#39;list&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-32" title="32">    <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-33" title="33">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-34" title="34"></a>
+<a class="sourceLine" id="cb2-35" title="35">  <span class="cf">try</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-36" title="36">    <span class="kw">var</span> fs <span class="op">=</span> <span class="at">requestFileSystemSync</span>(TEMPORARY<span class="op">,</span> <span class="dv">1024</span><span class="op">*</span><span class="dv">1024</span> <span class="co">/*1MB*/</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-37" title="37"></a>
+<a class="sourceLine" id="cb2-38" title="38">    <span class="at">getAllEntries</span>(<span class="va">fs</span>.<span class="va">root</span>.<span class="at">createReader</span>())<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-39" title="39"></a>
+<a class="sourceLine" id="cb2-40" title="40">    <span class="va">self</span>.<span class="at">postMessage</span>(<span class="op">{</span><span class="dt">entries</span><span class="op">:</span> paths<span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-41" title="41">  <span class="op">}</span> <span class="cf">catch</span> (e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-42" title="42">    <span class="at">onError</span>(e)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-43" title="43">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-44" title="44"><span class="op">};</span></a></code></pre></div>
+<h2 id="method-overview">Method overview</h2>
+<table class="standard-table">
+<tbody>
+<tr>
+<td>
+<code
+          >EntrySync <a href="#createreader" title="#readEntries">readEntries</a> () raises (<a href="/en-US/docs/Web/API/FileException">FileException</a>);</code
+        >
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="method">Method</h2>
+<h3 id="readentries">readEntries()</h3>
+<p>Returns a lost of entries from a specific directory. Call this method until an empty array is returned.</p>
+<p>EntrySync readEntries ( ) raises (FileException);</p>
+<h5 id="returns">Returns</h5>
+<h5 id="parameter">Parameter</h5>
+<p>None</p>
+<h5 id="exceptions">Exceptions</h5>
+<p>This method can raise a <a href="/en-US/docs/Web/API/FileException">FileException</a> with the following codes:</p>
+<table>
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 81%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Exception</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>NOT_FOUND_ERR</code></td>
+<td>The directory does not exist.</td>
+</tr>
+<tr class="even">
+<td><code>INVALID_STATE_ERR</code></td>
+<td>The directory has been modified since the first call to readEntries was processed.</td>
+</tr>
+<tr class="odd">
+<td><code>SECURITY_ERR</code></td>
+<td>The browser determined that it was not safe to look up the metadata.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<p>Specification: {{ spec(“http://dev.w3.org/2009/dap/file-system/pub/FileSystem/”, “File API: Directories and System Specification”, “WD”) }}</p>
+<p>Reference: <a href="/en-US/docs/Web/API/File_and_Directory_Entries_API/Introduction">File System API</a></p>
+<p>Introduction: <a href="/en-US/docs/Web/API/File_and_Directory_Entries_API/Introduction">Basic Concepts About the File System API</a></p>

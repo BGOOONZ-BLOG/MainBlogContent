@@ -1,0 +1,89 @@
+<p>{{APIRef(“Reporting API”)}}</p>
+<p>The <code>DeprecationReportBody</code> interface of the <a href="/en-US/docs/Web/API/Reporting_API">Reporting API</a> represents the body of a deprecation report.</p>
+<p>A deprecation report is generated when a deprecated feature (for example a deprecated API method) is used on a document being observed by a {{domxref(“ReportingObserver”)}}. In addition to the support of this API, receiving useful deprecation warnings relies on browser vendors adding these warnings for deprecated features.</p>
+<h2 id="constructor">Constructor</h2>
+<p>An instance of <code>DeprecationReportBody</code> is returned as the value of {{domxref(“Report.body”)}} when {{domxref(“Report.Type”)}} is <code>deprecation</code>. The interface has no constructor.</p>
+<h2 id="properties">Properties</h2>
+<p>This interface also inherits properties from {{domxref(“ReportBody”)}}.</p>
+<ul>
+<li>{{domxref(“DeprecationReportBody.id”)}}
+<ul>
+<li>: A string representing the feature or API that is deprecated, for example <code>NavigatorGetUserMedia</code>. This can be used to group reports by deprecated feature.</li>
+</ul></li>
+<li>{{domxref(“DeprecationReportBody.anticipatedRemoval”)}}
+<ul>
+<li>: A {{jsxref(“Date”)}} object (rendered as a string) representing the date when the feature is expected to be removed from the current browser. If the date is not known, this property will return <code>null</code>.</li>
+</ul></li>
+<li>{{domxref(“DeprecationReportBody.message”)}}
+<ul>
+<li>: A string containing a human-readable description of the deprecation, including information such as what newer feature has superseded it, if any. This typically matches the message a browser will display in its DevTools console when a deprecated feature is used, if one is available.</li>
+</ul></li>
+<li>{{domxref(“DeprecationReportBody.sourceFile”)}}
+<ul>
+<li>: A string containing the path to the source file where the deprecated feature was used, if known, or <code>null</code> otherwise.</li>
+</ul></li>
+<li>{{domxref(“DeprecationReportBody.lineNumber”)}}
+<ul>
+<li>: A number representing the line in the source file in which the deprecated feature was used, if known, or <code>null</code> otherwise.</li>
+</ul></li>
+<li>{{domxref(“DeprecationReportBody.columnNumber”)}}
+<ul>
+<li>: A number representing the column in the source file in which the deprecated feature was used, if known, or <code>null</code> otherwise.</li>
+</ul></li>
+</ul>
+<h2 id="methods">Methods</h2>
+<p>This interface also inherits methods from {{domxref(“ReportBody”)}}.</p>
+<ul>
+<li>{{domxref(“DeprecationReportBody.toJSON()”)}}
+<ul>
+<li>: A <em>serializer</em> which returns a JSON representation of the <code>InterventionReportBody</code> object.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>In our <a href="https://mdn.github.io/dom-examples/reporting-api/deprecation_report.html">deprecation_report.html</a> example, we create a simple reporting observer to observe usage of deprecated features on our web page:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">let</span> options <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="dt">types</span><span class="op">:</span> [<span class="st">&#39;deprecation&#39;</span>]<span class="op">,</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="dt">buffered</span><span class="op">:</span> <span class="kw">true</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="op">}</span></a>
+<a class="sourceLine" id="cb1-5" title="5"></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="kw">let</span> observer <span class="op">=</span> <span class="kw">new</span> <span class="at">ReportingObserver</span>(<span class="kw">function</span>(reports<span class="op">,</span> observer) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-7" title="7">  <span class="va">reportBtn</span>.<span class="at">onclick</span> <span class="op">=</span> () <span class="kw">=&gt;</span> <span class="at">displayReports</span>(reports)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-8" title="8"><span class="op">},</span> options)<span class="op">;</span></a></code></pre></div>
+<p>We then tell it to start observing reports using {{domxref(“ReportingObserver.observe()”)}}; this tells the observer to start collecting reports in its report queue, and runs the callback function specified inside the constructor:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">observer</span>.<span class="at">observe</span>()<span class="op">;</span></a></code></pre></div>
+<p>Because of the event handler we set up inside the <code>ReportingObserver()</code> constructor, we can now click the button to display the report details.</p>
+<figure>
+<img src="reporting_api_example.png" alt="image of a jolly bearded man with various stats displayed below it about a deprecated feature" /><figcaption>image of a jolly bearded man with various stats displayed below it about a deprecated feature</figcaption>
+</figure>
+<p>The report details are displayed via the <code>displayReports()</code> fuction, which takes the observer callback’s <code>reports</code> parameter as its parameter:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">function</span> <span class="at">displayReports</span>(reports) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">const</span> outputElem <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;.output&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="kw">const</span> list <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;ul&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="va">outputElem</span>.<span class="at">appendChild</span>(list)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"></a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="cf">for</span>(<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">reports</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-7" title="7">    <span class="kw">let</span> listItem <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;li&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">    <span class="kw">let</span> textNode <span class="op">=</span> <span class="va">document</span>.<span class="at">createTextNode</span>(<span class="st">&#39;Report &#39;</span> <span class="op">+</span> (i <span class="op">+</span> <span class="dv">1</span>) <span class="op">+</span> <span class="st">&#39;, type: &#39;</span> <span class="op">+</span> reports[i].<span class="at">type</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">    <span class="va">listItem</span>.<span class="at">appendChild</span>(textNode)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10">    <span class="kw">let</span> innerList <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;ul&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-11" title="11">    <span class="va">listItem</span>.<span class="at">appendChild</span>(innerList)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-12" title="12">    <span class="va">list</span>.<span class="at">appendChild</span>(listItem)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-13" title="13"></a>
+<a class="sourceLine" id="cb3-14" title="14">    <span class="cf">for</span> (<span class="kw">let</span> key <span class="kw">in</span> reports[i].<span class="at">body</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-15" title="15">      <span class="kw">let</span> innerListItem <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;li&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-16" title="16">      <span class="kw">let</span> keyValue <span class="op">=</span> reports[i].<span class="at">body</span>[key]<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-17" title="17">      <span class="va">innerListItem</span>.<span class="at">textContent</span> <span class="op">=</span> key <span class="op">+</span> <span class="st">&#39;: &#39;</span> <span class="op">+</span> keyValue<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-18" title="18">      <span class="va">innerList</span>.<span class="at">appendChild</span>(innerListItem)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-19" title="19">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-20" title="20">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-21" title="21"><span class="op">}</span></a></code></pre></div>
+<p>The <code>reports</code> parameter contains an array of all the reports in the observer’s report queue. We loop over each report using a basic <a href="/en-US/docs/Web/JavaScript/Reference/Statements/for"><code>for</code></a> loop, then iterate over each entry of in the report’s body (a <code>DeprecationReportBody</code> instance) using a <a href="/en-US/docs/Web/JavaScript/Reference/Statements/for...in"><code>for...in</code></a> structure, displaying each key/value pair inside a list item.</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Reporting_API">Reporting API</a></li>
+<li><a href="https://developers.google.com/web/updates/2018/09/reportingapi">The Reporting API</a></li>
+</ul>

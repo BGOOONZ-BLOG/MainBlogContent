@@ -1,0 +1,151 @@
+<p>{{securecontext_header}}{{DefaultAPISidebar(“File System Access API”)}}</p>
+<p>The File System Access API allows read, write and file management capabilities.</p>
+<h2 id="concepts-and-usage">Concepts and Usage</h2>
+<p>This API allows interaction with files on a user’s local device, or on a user-accessible network file system. Core functionality of this API includes reading files, writing or saving files, and access to directory structure.</p>
+<p>Most of the interaction with files and directories is accomplished through handles. A parent {{domxref(‘FileSystemHandle’)}} class helps define two child classes: {{domxref(‘FileSystemFileHandle’)}} and {{domxref(‘FileSystemDirectoryHandle’)}}, for files and directories respectively.</p>
+<p>These handles represent the file or directory on the user’s system. You must first gain access to them by showing the user a file or directory picker. The methods which allow this are {{domxref(‘window.showOpenFilePicker’)}} and {{domxref(‘window.showDirectoryPicker’)}}. Once these are called, the file picker presents itself and the user selects either a file or directory. Once this happens successfully, a handle is returned. You can also gain access to file handles via the {{domxref(‘DataTransferItem.getAsFileSystemHandle()’)}} method of the {{domxref(‘HTML Drag and Drop API’)}}.</p>
+<p>The handle provides its own functionality and there are a few differences depending on whether a file or directory was selected (see the <a href="#interfaces">interfaces</a> section for specific details). You then can access file data, or information (including children) of the directory selected.</p>
+<p>There is also “save” functionality, using the {{domxref(‘FilesystemWritableFileStream’)}} interface. Once the data you’d like to save is in a format of {{domxref(‘Blob’)}}, {{domxref(‘USVString’)}} or {{jsxref(‘ArrayBuffer’, ‘buffer’)}}, you can open a stream and save the data to a file. This can be the existing file or a new file.</p>
+<p>This API opens up potential functionality the web has been lacking. Still, security has been of utmost concern when designing the API, and access to file/directory data is disallowed unless the user specifically permits it.</p>
+<h2 id="interfaces">Interfaces</h2>
+<ul>
+<li>{{domxref(“FileSystemHandle”)}}
+<ul>
+<li>: The <strong><code>FileSystemHandle</code></strong> interface is an object which represents an entry. Multiple handles can represent the same entry. For the most part you do not work with <code>FileSystemEntry</code> directly but rather it’s child interfaces {{domxref(‘FileSystemFileEntry’)}} and {{domxref(‘FileSystemDirectoryEntry’)}}.</li>
+</ul></li>
+<li>{{domxref(“FileSystemFileHandle”)}}
+<ul>
+<li>: Provides a handle to a file system entry.</li>
+</ul></li>
+<li>{{domxref(“FileSystemDirectoryHandle”)}}
+<ul>
+<li>: provides a handle to a file system directory.</li>
+</ul></li>
+<li>{{domxref(“FileSystemWritableFileStream”)}}
+<ul>
+<li>: is a {{domxref(‘WritableStream’)}} object with additional convenience methods, which operates on a single file on disk.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<h3 id="accessing-files">Accessing files</h3>
+<p>The below code allows the user to choose a file from the file picker and then tests to see whether the handle returned is a file or directory</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="co">// store a reference to our file handle</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">let</span> fileHandle<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="kw">async</span> <span class="kw">function</span> <span class="at">getFile</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-5" title="5">  <span class="co">// open file picker</span></a>
+<a class="sourceLine" id="cb1-6" title="6">  [fileHandle] <span class="op">=</span> <span class="cf">await</span> <span class="va">window</span>.<span class="at">showOpenFilePicker</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-7" title="7"></a>
+<a class="sourceLine" id="cb1-8" title="8">  <span class="cf">if</span> (<span class="va">fileHandle</span>.<span class="at">kind</span> <span class="op">===</span> <span class="st">&#39;file&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-9" title="9">    <span class="co">// run file code</span></a>
+<a class="sourceLine" id="cb1-10" title="10">  <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (<span class="va">fileHandle</span>.<span class="at">kind</span> <span class="op">===</span> <span class="st">&#39;directory&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-11" title="11">    <span class="co">// run directory code</span></a>
+<a class="sourceLine" id="cb1-12" title="12">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-13" title="13"></a>
+<a class="sourceLine" id="cb1-14" title="14"><span class="op">}</span></a></code></pre></div>
+<p>The following asynchronous function presents a file picker and once a file is chosen, uses the <code>getFile()</code> method to retrieve the contents.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> pickerOpts <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="dt">types</span><span class="op">:</span> [</a>
+<a class="sourceLine" id="cb2-3" title="3">    <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">      <span class="dt">description</span><span class="op">:</span> <span class="st">&#39;Images&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-5" title="5">      <span class="dt">accept</span><span class="op">:</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-6" title="6">        <span class="st">&#39;image/*&#39;</span><span class="op">:</span> [<span class="st">&#39;.png&#39;</span><span class="op">,</span> <span class="st">&#39;.gif&#39;</span><span class="op">,</span> <span class="st">&#39;.jpeg&#39;</span><span class="op">,</span> <span class="st">&#39;.jpg&#39;</span>]</a>
+<a class="sourceLine" id="cb2-7" title="7">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-8" title="8">    <span class="op">},</span></a>
+<a class="sourceLine" id="cb2-9" title="9">  ]<span class="op">,</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="dt">excludeAcceptAllOption</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-11" title="11">  <span class="dt">multiple</span><span class="op">:</span> <span class="kw">false</span></a>
+<a class="sourceLine" id="cb2-12" title="12"><span class="op">};</span></a>
+<a class="sourceLine" id="cb2-13" title="13"></a>
+<a class="sourceLine" id="cb2-14" title="14"><span class="kw">async</span> <span class="kw">function</span> <span class="at">getTheFile</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-15" title="15">  <span class="co">// open file picker</span></a>
+<a class="sourceLine" id="cb2-16" title="16">  [fileHandle] <span class="op">=</span> <span class="cf">await</span> <span class="va">window</span>.<span class="at">showOpenFilePicker</span>(pickerOpts)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-17" title="17"></a>
+<a class="sourceLine" id="cb2-18" title="18">  <span class="co">// get file contents</span></a>
+<a class="sourceLine" id="cb2-19" title="19">  <span class="kw">const</span> fileData <span class="op">=</span> <span class="cf">await</span> <span class="va">fileHandle</span>.<span class="at">getFile</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-20" title="20"><span class="op">}</span></a></code></pre></div>
+<h3 id="accessing-directories">Accessing directories</h3>
+<p>The following example returns a directory handle with the specified name. If the directory does not exist, it is created.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> dirName <span class="op">=</span> <span class="st">&#39;directoryToGetName&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="co">// assuming we have a directory handle: &#39;currentDirHandle&#39;</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="kw">const</span> subDir <span class="op">=</span> <span class="va">currentDirHandle</span>.<span class="at">getDirectoryHandle</span>(dirName<span class="op">,</span> <span class="op">{</span><span class="dt">create</span><span class="op">:</span> <span class="kw">true</span><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>The following asynchronous function uses <code>resolve()</code> to find the path to a chosen file, relative to a specified directory handle.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">async</span> <span class="kw">function</span> <span class="at">returnPathDirectories</span>(directoryHandle) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2"></a>
+<a class="sourceLine" id="cb4-3" title="3">  <span class="co">// Get a file handle by showing a file picker:</span></a>
+<a class="sourceLine" id="cb4-4" title="4">  <span class="kw">const</span> [handle] <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>.<span class="at">showOpenFilePicker</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="cf">if</span> (<span class="op">!</span>handle) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-6" title="6">    <span class="co">// User cancelled, or otherwise failed to open a file.</span></a>
+<a class="sourceLine" id="cb4-7" title="7">    <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-8" title="8">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-9" title="9"></a>
+<a class="sourceLine" id="cb4-10" title="10">  <span class="co">// Check if handle exists inside directory our directory handle</span></a>
+<a class="sourceLine" id="cb4-11" title="11">  <span class="kw">const</span> relativePaths <span class="op">=</span> <span class="cf">await</span> <span class="va">directoryHandle</span>.<span class="at">resolve</span>(handle)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-12" title="12"></a>
+<a class="sourceLine" id="cb4-13" title="13">  <span class="cf">if</span> (relativePaths <span class="op">===</span> <span class="kw">null</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-14" title="14">    <span class="co">// Not inside directory handle</span></a>
+<a class="sourceLine" id="cb4-15" title="15">  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-16" title="16">    <span class="co">// relativePaths is an array of names, giving the relative path</span></a>
+<a class="sourceLine" id="cb4-17" title="17"></a>
+<a class="sourceLine" id="cb4-18" title="18">    <span class="cf">for</span> (<span class="kw">const</span> name <span class="kw">of</span> relativePaths) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-19" title="19">      <span class="co">// log each entry</span></a>
+<a class="sourceLine" id="cb4-20" title="20">      <span class="va">console</span>.<span class="at">log</span>(name)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-21" title="21">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-22" title="22">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-23" title="23"><span class="op">}</span></a></code></pre></div>
+<h3 id="writing-to-files">Writing to files</h3>
+<p>The following asynchronous function opens the save file picker, which returns a {{domxref(‘FileSystemFileHandle’)}} once a file is selected. A writable stream is then created using the {{domxref(‘FileSystemFileHandle.createWritable()’)}} method.</p>
+<p>A user defined {{domxref(‘Blob’)}} is then written to the stream which is subsequently closed.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">async</span> <span class="kw">function</span> <span class="at">saveFile</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2"></a>
+<a class="sourceLine" id="cb5-3" title="3">  <span class="co">// create a new handle</span></a>
+<a class="sourceLine" id="cb5-4" title="4">  <span class="kw">const</span> newHandle <span class="op">=</span> <span class="cf">await</span> <span class="va">window</span>.<span class="at">showSaveFilePicker</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-5" title="5"></a>
+<a class="sourceLine" id="cb5-6" title="6">  <span class="co">// create a FileSystemWritableFileStream to write to</span></a>
+<a class="sourceLine" id="cb5-7" title="7">  <span class="kw">const</span> writableStream <span class="op">=</span> <span class="cf">await</span> <span class="va">newHandle</span>.<span class="at">createWritable</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-8" title="8"></a>
+<a class="sourceLine" id="cb5-9" title="9">  <span class="co">// write our file</span></a>
+<a class="sourceLine" id="cb5-10" title="10">  <span class="cf">await</span> <span class="va">writableStream</span>.<span class="at">write</span>(imgBlob)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-11" title="11"></a>
+<a class="sourceLine" id="cb5-12" title="12">  <span class="co">// close the file and write the contents to disk.</span></a>
+<a class="sourceLine" id="cb5-13" title="13">  <span class="cf">await</span> <span class="va">writableStream</span>.<span class="at">close</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-14" title="14"><span class="op">}</span></a></code></pre></div>
+<p>The following show different examples of options that can be passed into the <code>write()</code> method.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="co">// just pass in the data (no options)</span></a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="va">writableStream</span>.<span class="at">write</span>(data)</a>
+<a class="sourceLine" id="cb6-3" title="3"></a>
+<a class="sourceLine" id="cb6-4" title="4"><span class="co">// writes the data to the stream from the determined position</span></a>
+<a class="sourceLine" id="cb6-5" title="5"><span class="va">writableStream</span>.<span class="at">write</span>(<span class="op">{</span> <span class="dt">type</span><span class="op">:</span> <span class="st">&quot;write&quot;</span><span class="op">,</span> <span class="dt">position</span><span class="op">:</span> position<span class="op">,</span> <span class="dt">data</span><span class="op">:</span> data <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb6-6" title="6"></a>
+<a class="sourceLine" id="cb6-7" title="7"><span class="co">// updates the current file cursor offset to the position specified</span></a>
+<a class="sourceLine" id="cb6-8" title="8"><span class="va">writableStream</span>.<span class="at">write</span>(<span class="op">{</span> <span class="dt">type</span><span class="op">:</span> <span class="st">&quot;seek&quot;</span><span class="op">,</span> <span class="dt">position</span><span class="op">:</span> position <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb6-9" title="9"></a>
+<a class="sourceLine" id="cb6-10" title="10"><span class="co">// resizes the file to be size bytes long</span></a>
+<a class="sourceLine" id="cb6-11" title="11"><span class="va">writableStream</span>.<span class="at">write</span>(<span class="op">{</span> <span class="dt">type</span><span class="op">:</span> <span class="st">&quot;truncate&quot;</span><span class="op">,</span> <span class="dt">size</span><span class="op">:</span> size <span class="op">}</span>)</a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<table>
+<colgroup>
+<col style="width: 43%" />
+<col style="width: 40%" />
+<col style="width: 15%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Specification</th>
+<th>Status</th>
+<th>Comment</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>{{SpecName(‘File System Access API’)}}</td>
+<td>{{Spec2(‘File System Access API’)}}</td>
+<td>Initial definition.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="https://web.dev/file-system-access/">The File System Access API: simplifying access to local files</a></li>
+</ul>

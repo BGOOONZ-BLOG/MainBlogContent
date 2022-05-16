@@ -1,0 +1,71 @@
+<p>{{APIRef(“CustomElementRegistry”)}}</p>
+<p>The <strong><code>whenDefined()</code></strong> method of the {{domxref(“CustomElementRegistry”)}} interface returns a {{jsxref(“Promise”)}} that resolves when the named element is defined.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">customElements</span>.<span class="at">whenDefined</span>(name)<span class="op">:</span> Promise<span class="op">&lt;</span>CustomElementConstructor<span class="op">&gt;;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li>name
+<ul>
+<li>: Custom element name.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A {{jsxref(“Promise”)}} that will be fulfilled with the <a href="/en-US/docs/Web/API/Window/customElements">custom element</a>’s constructor when a <a href="/en-US/docs/Web/API/Window/customElements">custom element</a> becomes defined with the given name. (If such a <a href="/en-US/docs/Web/API/Window/customElements">custom element</a> is already defined, the returned promise will be immediately fulfilled.)</p>
+<h3 id="exceptions">Exceptions</h3>
+<table class="no-markdown">
+<thead>
+<tr>
+<th scope="col">
+Exception
+</th>
+<th scope="col">
+Description
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>SyntaxError</code>
+</td>
+<td>
+If the provided name is not a <a
+          href="https://html.spec.whatwg.org/multipage/custom-elements.html#valid-custom-element-name"
+          >valid custom element name</a
+        >, the promise rejects with a <code>SyntaxError</code>.
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="examples">Examples</h2>
+<p>This example uses <code>whenDefined()</code> to detect when the custom elements that make up a menu are defined. The menu displays placeholder content until the actual menu content is ready to display.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">&lt;nav</span><span class="ot"> id=</span><span class="st">&quot;menu-container&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;menu-placeholder&quot;</span><span class="kw">&gt;</span>Loading...<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="kw">&lt;nav</span><span class="er">-menu</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">    <span class="kw">&lt;menu-item&gt;</span>Item 1<span class="kw">&lt;/menu-item&gt;</span></a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="kw">&lt;menu-item&gt;</span>Item 2<span class="kw">&lt;/menu-item&gt;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">     ...</a>
+<a class="sourceLine" id="cb2-7" title="7">    <span class="kw">&lt;menu-item&gt;</span>Item N<span class="kw">&lt;/menu-item&gt;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="kw">&lt;/nav</span><span class="er">-menu</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="kw">&lt;/nav&gt;</span></a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> container <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;menu-container&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">const</span> placeholder <span class="op">=</span> <span class="va">container</span>.<span class="at">querySelector</span>(<span class="st">&#39;.menu-placeholder&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="co">// Fetch all the children of menu that are not yet defined.</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="kw">const</span> undefinedElements <span class="op">=</span> <span class="va">container</span>.<span class="at">querySelectorAll</span>(<span class="st">&#39;:not(:defined)&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"></a>
+<a class="sourceLine" id="cb3-6" title="6"><span class="kw">async</span> <span class="kw">function</span> <span class="at">removePlaceholder</span>()<span class="op">{</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="kw">const</span> promises <span class="op">=</span> [...<span class="at">undefinedElements</span>].<span class="at">map</span>(</a>
+<a class="sourceLine" id="cb3-8" title="8">    button <span class="kw">=&gt;</span> <span class="va">customElements</span>.<span class="at">whenDefined</span>(<span class="va">button</span>.<span class="at">localName</span>)</a>
+<a class="sourceLine" id="cb3-9" title="9">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10"></a>
+<a class="sourceLine" id="cb3-11" title="11">  <span class="co">// Wait for all the children to be upgraded</span></a>
+<a class="sourceLine" id="cb3-12" title="12">  <span class="cf">await</span> <span class="va">Promise</span>.<span class="at">all</span>(promises)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-13" title="13">  <span class="co">// then remove the placeholder</span></a>
+<a class="sourceLine" id="cb3-14" title="14">  <span class="va">container</span>.<span class="at">removeChild</span>(placeholder)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-15" title="15"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-16" title="16"></a>
+<a class="sourceLine" id="cb3-17" title="17"><span class="at">removePlaceholder</span>()<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

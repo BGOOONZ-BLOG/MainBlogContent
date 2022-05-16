@@ -1,0 +1,95 @@
+<p>{{securecontext_header}}{{DefaultAPISidebar(“Contact Picker API”)}}</p>
+<p>The <strong><code>select()</code></strong> method of the {{domxref(“ContactsManager”)}} interface returns a {{jsxref(‘Promise’)}} which, when resolved, presents the user with a contact picker which allows them to select contact(s) they wish to share. This method requires a user gesture for the {{jsxref(‘Promise’)}} to resolve.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> ContactInfo <span class="op">=</span> <span class="va">ContactsManager</span>.<span class="at">select</span>(properties<span class="op">,</span> options)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><p><em>properties</em></p>
+<ul>
+<li><p>: An array of {{jsxref(‘String’, ‘strings’)}} defining what information to retrieve from a contact. Allowed values are as follows:</p>
+<ul>
+<li><code>'name'</code>: The contact’s name.</li>
+<li><code>'tel'</code>: The telephone number(s) of the contact.</li>
+<li><code>'email'</code>: The email address of the contact.</li>
+<li><code>'address'</code>: The contact’s postal address.</li>
+<li><code>'icon'</code>: The avatar of the contact.</li>
+</ul></li>
+</ul></li>
+<li><p><code>options</code> {{optional_inline}}</p>
+<ul>
+<li><p>: Options are as follows:</p>
+<ul>
+<li><code>multiple</code>: A Boolean that allows multiple contacts to be selected. The default is <code>false</code>.</li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>Returns a {{jsxref(‘Promise’)}} that resolves with an array of objects containing contact information. Each object represents a single contact may contain the following properties:</p>
+<ul>
+<li><code>address</code>
+<ul>
+<li>: An {{jsxref(“Array”)}} of {{domxref(“ContactAddress”)}} objects, each containing specifics of a unique physical address.</li>
+</ul></li>
+<li><code>email</code>
+<ul>
+<li>: An array of strings containing email addresses.</li>
+</ul></li>
+<li><code>icon</code>
+<ul>
+<li>: An array of {{domxref(“Blob”)}} objects containing images of an individual.</li>
+</ul></li>
+<li><code>name</code>
+<ul>
+<li>: An array strings, each a unique name of an individual.</li>
+</ul></li>
+<li><code>tel</code>
+<ul>
+<li>: An array strings, each a unique phone number of an individual.</li>
+</ul></li>
+</ul>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><code>InvalidStateError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if the browsing context is not top-level or the contact picker is showing a flag. A flag denotes an already existing contact picker; only one picker can exist at any time.</li>
+</ul></li>
+<li><code>SecurityError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if the method is not triggered by user interaction.</li>
+</ul></li>
+<li><code>TypeError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if <code>properties</code> is empty, or if any of the specified properties are not supported.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<h3 id="basic-example">Basic Example</h3>
+<p>The following example sets an array of properties to be retrieved for each contact, as well as setting an options object to allow for multiple contacts to be selected.</p>
+<p>An asynchronous function is then defined which uses the <code>select()</code> method to present the user with a contact picker interface and handle the chosen results. <code>handleResults()</code> is a developer defined function.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> props <span class="op">=</span> [<span class="st">&#39;name&#39;</span><span class="op">,</span> <span class="st">&#39;email&#39;</span><span class="op">,</span> <span class="st">&#39;tel&#39;</span><span class="op">,</span> <span class="st">&#39;address&#39;</span><span class="op">,</span> <span class="st">&#39;icon&#39;</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">const</span> opts <span class="op">=</span> <span class="op">{</span><span class="dt">multiple</span><span class="op">:</span> <span class="kw">true</span><span class="op">};</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="kw">async</span> <span class="kw">function</span> <span class="at">getContacts</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="cf">try</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-6" title="6">      <span class="kw">const</span> contacts <span class="op">=</span> <span class="cf">await</span> <span class="va">navigator</span>.<span class="va">contacts</span>.<span class="at">select</span>(props<span class="op">,</span> opts)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7">      <span class="at">handleResults</span>(contacts)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="op">}</span> <span class="cf">catch</span> (ex) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-9" title="9">      <span class="co">// Handle any errors here.</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="op">}</span></a></code></pre></div>
+<h3 id="select-using-only-supported-properties">Select Using Only Supported Properties</h3>
+<p>The following example uses {{jsxref(“ContactsManager.getProperties”, “getProperties()”)}} to ensure that only supported properties are passed. Otherwise, <code>select()</code> might throw a {{jsxref(“TypeError”)}}. <code>handleResults()</code> is a developer defined function.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> supportedProperties <span class="op">=</span> <span class="cf">await</span> <span class="va">navigator</span>.<span class="va">contacts</span>.<span class="at">getProperties</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw">async</span> <span class="kw">function</span> <span class="at">getContacts</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="cf">try</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-5" title="5">      <span class="kw">const</span> contacts <span class="op">=</span> <span class="cf">await</span> <span class="va">navigator</span>.<span class="va">contacts</span>.<span class="at">select</span>(supportedProperties)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6">      <span class="at">handleResults</span>(contacts)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="op">}</span> <span class="cf">catch</span> (ex) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-8" title="8">      <span class="co">// Handle any errors here.</span></a>
+<a class="sourceLine" id="cb3-9" title="9">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-10" title="10"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

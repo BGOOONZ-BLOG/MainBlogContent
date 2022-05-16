@@ -1,0 +1,67 @@
+<p>{{APIRef(“CSSOM View”)}} {{SeeCompatTable}}</p>
+<p>The <strong><code>caretPositionFromPoint()</code></strong> property of the {{domxref(“Document”)}} interface returns a {{domxref(‘CaretPosition’)}} object, containing the DOM node, along with the caret and caret’s character offset within that node.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="at">caretPositionFromPoint</span>(x<span class="op">,</span> y)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>x</code>
+<ul>
+<li>: The horizontal coordinate of a point.</li>
+</ul></li>
+<li><code>y</code>
+<ul>
+<li>: The vertical coordinate of a point.</li>
+</ul></li>
+</ul>
+<h3 id="returns">Returns</h3>
+<p>A {{domxref(‘CaretPosition’)}} object.</p>
+<h2 id="example">Example</h2>
+<p>Click anywhere in the <strong>Demo</strong> paragraph below to insert a line break at the point where you click. The code for it is below the demo.</p>
+<h3 id="demo">Demo</h3>
+<p>{{EmbedLiveSample(‘Example’, ‘100%’, ‘100px’)}}</p>
+<p>The code below first checks for {{domxref(“Document.caretRangeFromPoint”, “document.caretRangeFromPoint”)}} support, but if the browser doesn’t support that, the code then checks for <code>document.caretPositionFromPoint</code>, and uses that instead.</p>
+<h3 id="javascript">JavaScript</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">function</span> <span class="at">insertBreakAtPoint</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">let</span> range<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="kw">let</span> textNode<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="kw">let</span> offset<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="cf">if</span> (<span class="va">document</span>.<span class="at">caretRangeFromPoint</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-7" title="7">    range <span class="op">=</span> <span class="va">document</span>.<span class="at">caretRangeFromPoint</span>(<span class="va">e</span>.<span class="at">clientX</span><span class="op">,</span> <span class="va">e</span>.<span class="at">clientY</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">    textNode <span class="op">=</span> <span class="va">range</span>.<span class="at">startContainer</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9">    offset <span class="op">=</span> <span class="va">range</span>.<span class="at">startOffset</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (<span class="va">document</span>.<span class="at">caretPositionFromPoint</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-11" title="11">    range <span class="op">=</span> <span class="va">document</span>.<span class="at">caretPositionFromPoint</span>(<span class="va">e</span>.<span class="at">clientX</span><span class="op">,</span> <span class="va">e</span>.<span class="at">clientY</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12">    textNode <span class="op">=</span> <span class="va">range</span>.<span class="at">offsetNode</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13">    offset <span class="op">=</span> <span class="va">range</span>.<span class="at">offset</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14">  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-15" title="15">    <span class="va">document</span>.<span class="va">body</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&quot;[This browser supports neither&quot;</span></a>
+<a class="sourceLine" id="cb2-16" title="16">      <span class="op">+</span> <span class="st">&quot; document.caretRangeFromPoint&quot;</span></a>
+<a class="sourceLine" id="cb2-17" title="17">      <span class="op">+</span> <span class="st">&quot; nor document.caretPositionFromPoint.]&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">    <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-19" title="19">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-20" title="20">  <span class="co">// Only split TEXT_NODEs</span></a>
+<a class="sourceLine" id="cb2-21" title="21">  <span class="cf">if</span> (textNode <span class="op">&amp;&amp;</span> <span class="va">textNode</span>.<span class="at">nodeType</span> <span class="op">==</span> <span class="dv">3</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-22" title="22">    <span class="kw">let</span> replacement <span class="op">=</span> <span class="va">textNode</span>.<span class="at">splitText</span>(offset)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-23" title="23">    <span class="kw">let</span> br <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;br&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-24" title="24">    <span class="va">textNode</span>.<span class="va">parentNode</span>.<span class="at">insertBefore</span>(br<span class="op">,</span> replacement)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-25" title="25">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-26" title="26"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-27" title="27"></a>
+<a class="sourceLine" id="cb2-28" title="28"><span class="kw">let</span> paragraphs <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementsByTagName</span>(<span class="st">&quot;p&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-29" title="29"><span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">paragraphs</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-30" title="30">  paragraphs[i].<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> insertBreakAtPoint<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-31" title="31"><span class="op">}</span></a></code></pre></div>
+<h3 id="html">HTML</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">&lt;p&gt;</span>Lorem ipsum dolor sit amet, consetetur sadipscing elitr,</a>
+<a class="sourceLine" id="cb3-2" title="2">sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat,</a>
+<a class="sourceLine" id="cb3-3" title="3">sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum.</a>
+<a class="sourceLine" id="cb3-4" title="4">Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.<span class="kw">&lt;/p&gt;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{domxref(‘CaretPosition’)}}</li>
+</ul>

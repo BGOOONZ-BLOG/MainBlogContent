@@ -1,0 +1,62 @@
+<p>{{ APIRef(“Web Audio API”) }}</p>
+<p>The <code>linearRampToValueAtTime()</code> method of the {{ domxref(“AudioParam”) }} Interface schedules a gradual linear change in the value of the <code>AudioParam</code>. The change starts at the time specified for the <em>previous</em> event, follows a linear ramp to the new value given in the <code>value</code> parameter, and reaches the new value at the time given in the <code>endTime</code> parameter.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> AudioParam <span class="op">=</span> <span class="va">AudioParam</span>.<span class="at">linearRampToValueAtTime</span>(value<span class="op">,</span> endTime)</a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li>value
+<ul>
+<li>: A floating point number representing the value the <code>AudioParam</code> will ramp to by the given time.</li>
+</ul></li>
+<li>endTime
+<ul>
+<li>: A double representing the exact time (in seconds) after the ramping starts that the changing of the value will stop.</li>
+</ul></li>
+</ul>
+<h3 id="returns">Returns</h3>
+<p>A reference to this <code>AudioParam</code> object. In some browsers older implementations of this interface return {{jsxref(‘undefined’)}}.</p>
+<h2 id="example">Example</h2>
+<p>In this example, we have a media source with two control buttons (see the <a href="https://github.com/mdn/webaudio-examples/tree/master/audio-param">audio-param repo</a> for the source code, or <a href="https://mdn.github.io/webaudio-examples/audio-param/">view the example live</a>.) When these buttons are pressed, <code>linearRampToValueAtTime()</code> is used to fade the gain value up to 1.0, and down to 0, respectively. This is pretty useful for fade in/fade out effects, although {{ domxref(“AudioParam.exponentialRampToValueAtTime()”) }} is often said to be a bit more natural.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">// create audio context</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">var</span> AudioContext <span class="op">=</span> <span class="va">window</span>.<span class="at">AudioContext</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">webkitAudioContext</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">var</span> audioCtx <span class="op">=</span> <span class="kw">new</span> <span class="at">AudioContext</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="co">// set basic variables for example</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="kw">var</span> myAudio <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;audio&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="kw">var</span> pre <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;pre&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="kw">var</span> myScript <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;script&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="va">pre</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="va">myScript</span>.<span class="at">innerHTML</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11"></a>
+<a class="sourceLine" id="cb2-12" title="12"><span class="kw">var</span> linearRampPlus <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;.linear-ramp-plus&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="kw">var</span> linearRampMinus <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;.linear-ramp-minus&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14"></a>
+<a class="sourceLine" id="cb2-15" title="15"><span class="co">// Create a MediaElementAudioSourceNode</span></a>
+<a class="sourceLine" id="cb2-16" title="16"><span class="co">// Feed the HTMLMediaElement into it</span></a>
+<a class="sourceLine" id="cb2-17" title="17"><span class="kw">var</span> source <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createMediaElementSource</span>(myAudio)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18"></a>
+<a class="sourceLine" id="cb2-19" title="19"><span class="co">// Create a gain node and set it&#39;s gain value to 0.5</span></a>
+<a class="sourceLine" id="cb2-20" title="20"><span class="kw">var</span> gainNode <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createGain</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-21" title="21"></a>
+<a class="sourceLine" id="cb2-22" title="22"><span class="co">// connect the AudioBufferSourceNode to the gainNode</span></a>
+<a class="sourceLine" id="cb2-23" title="23"><span class="co">// and the gainNode to the destination</span></a>
+<a class="sourceLine" id="cb2-24" title="24"><span class="va">gainNode</span>.<span class="va">gain</span>.<span class="at">setValueAtTime</span>(<span class="dv">0</span><span class="op">,</span> <span class="va">audioCtx</span>.<span class="at">currentTime</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-25" title="25"><span class="va">source</span>.<span class="at">connect</span>(gainNode)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-26" title="26"><span class="va">gainNode</span>.<span class="at">connect</span>(<span class="va">audioCtx</span>.<span class="at">destination</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-27" title="27"></a>
+<a class="sourceLine" id="cb2-28" title="28"><span class="co">// set buttons to do something onclick</span></a>
+<a class="sourceLine" id="cb2-29" title="29"><span class="va">linearRampPlus</span>.<span class="at">onclick</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-30" title="30">  <span class="va">gainNode</span>.<span class="va">gain</span>.<span class="at">linearRampToValueAtTime</span>(<span class="fl">1.0</span><span class="op">,</span> <span class="va">audioCtx</span>.<span class="at">currentTime</span> <span class="op">+</span> <span class="dv">2</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-31" title="31"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-32" title="32"></a>
+<a class="sourceLine" id="cb2-33" title="33"><span class="va">linearRampMinus</span>.<span class="at">onclick</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-34" title="34">  <span class="va">gainNode</span>.<span class="va">gain</span>.<span class="at">linearRampToValueAtTime</span>(<span class="dv">0</span><span class="op">,</span> <span class="va">audioCtx</span>.<span class="at">currentTime</span> <span class="op">+</span> <span class="dv">2</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-35" title="35"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API">Using the Web Audio API</a></li>
+</ul>

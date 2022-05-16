@@ -1,0 +1,174 @@
+<p>{{APIRef(“Web Audio API”)}}</p>
+<p>The <strong><code>AnalyserNode</code></strong> interface represents a node able to provide real-time frequency and time-domain analysis information. It is an {{domxref(“AudioNode”)}} that passes the audio stream unchanged from the input to the output, but allows you to take the generated data, process it, and create audio visualizations.</p>
+<p>An <code>AnalyserNode</code> has exactly one input and one output. The node works even if the output is not connected.</p>
+<figure>
+<img src="fttaudiodata_en.svg" alt="Without modifying the audio stream, the node allows to get the frequency and time-domain data associated to it, using a FFT." /><figcaption>Without modifying the audio stream, the node allows to get the frequency and time-domain data associated to it, using a FFT.</figcaption>
+</figure>
+<table class="properties">
+<tbody>
+<tr>
+<th scope="row">
+Number of inputs
+</th>
+<td>
+<code>1</code>
+</td>
+</tr>
+<tr>
+<th scope="row">
+Number of outputs
+</th>
+<td>
+<code>1</code> (but may be left unconnected)
+</td>
+</tr>
+<tr>
+<th scope="row">
+Channel count mode
+</th>
+<td>
+<code>“max”</code>
+</td>
+</tr>
+<tr>
+<th scope="row">
+Channel count
+</th>
+<td>
+<code>2</code>
+</td>
+</tr>
+<tr>
+<th scope="row">
+Channel interpretation
+</th>
+<td>
+<code>“speakers”</code>
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="inheritance">Inheritance</h2>
+<p>This interface inherits from the following parent interfaces:</p>
+<p>{{InheritanceDiagram}}</p>
+<h2 id="constructor">Constructor</h2>
+<ul>
+<li>{{domxref(“AnalyserNode.AnalyserNode”, “AnalyserNode()”)}}
+<ul>
+<li>: Creates a new instance of an <code>AnalyserNode</code> object.</li>
+</ul></li>
+</ul>
+<h2 id="properties">Properties</h2>
+<p><em>Inherits properties from its parent, {{domxref(“AudioNode”)}}</em>.</p>
+<ul>
+<li>{{domxref(“AnalyserNode.fftSize”)}}
+<ul>
+<li>: Is an unsigned long value representing the size of the FFT (<a href="https://en.wikipedia.org/wiki/Fast_Fourier_transform">Fast Fourier Transform</a>) to be used to determine the frequency domain.</li>
+</ul></li>
+<li>{{domxref(“AnalyserNode.frequencyBinCount”)}} {{readonlyInline}}
+<ul>
+<li>: Is an unsigned long value half that of the FFT size. This generally equates to the number of data values you will have to play with for the visualization.</li>
+</ul></li>
+<li>{{domxref(“AnalyserNode.minDecibels”)}}
+<ul>
+<li>: Is a double value representing the minimum power value in the scaling range for the FFT analysis data, for conversion to unsigned byte values — basically, this specifies the minimum value for the range of results when using <code>getByteFrequencyData()</code>.</li>
+</ul></li>
+<li>{{domxref(“AnalyserNode.maxDecibels”)}}
+<ul>
+<li>: Is a double value representing the maximum power value in the scaling range for the FFT analysis data, for conversion to unsigned byte values — basically, this specifies the maximum value for the range of results when using <code>getByteFrequencyData()</code>.</li>
+</ul></li>
+<li>{{domxref(“AnalyserNode.smoothingTimeConstant”)}}
+<ul>
+<li>: Is a double value representing the averaging constant with the last analysis frame — basically, it makes the transition between values over time smoother.</li>
+</ul></li>
+</ul>
+<h2 id="methods">Methods</h2>
+<p><em>Inherits methods from its parent, {{domxref(“AudioNode”)}}</em>.</p>
+<ul>
+<li>{{domxref(“AnalyserNode.getFloatFrequencyData()”)}}
+<ul>
+<li>: Copies the current frequency data into a {{jsxref(“Float32Array”)}} array passed into it.</li>
+</ul></li>
+<li>{{domxref(“AnalyserNode.getByteFrequencyData()”)}}
+<ul>
+<li>: Copies the current frequency data into a {{jsxref(“Uint8Array”)}} (unsigned byte array) passed into it.</li>
+</ul></li>
+<li>{{domxref(“AnalyserNode.getFloatTimeDomainData()”)}}
+<ul>
+<li>: Copies the current waveform, or time-domain, data into a {{jsxref(“Float32Array”)}} array passed into it.</li>
+</ul></li>
+<li>{{domxref(“AnalyserNode.getByteTimeDomainData()”)}}
+<ul>
+<li>: Copies the current waveform, or time-domain, data into a {{jsxref(“Uint8Array”)}} (unsigned byte array) passed into it.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<blockquote>
+<p><strong>Note:</strong> See the guide <a href="/en-US/docs/Web/API/Web_Audio_API/Visualizations_with_Web_Audio_API">Visualizations with Web Audio API</a> for more information on creating audio visualizations.</p>
+</blockquote>
+<h3 id="basic-usage">Basic usage</h3>
+<p>The following example shows basic usage of an {{domxref(“AudioContext”)}} to create an <code>AnalyserNode</code>, then {{domxref(“window.requestAnimationFrame()”,“requestAnimationFrame”)}} and {{htmlelement(“canvas”)}} to collect time domain data repeatedly and draw an “oscilloscope style” output of the current audio input. For more complete applied examples/information, check out our <a href="https://mdn.github.io/voice-change-o-matic/">Voice-change-O-matic</a> demo (see <a href="https://github.com/mdn/voice-change-o-matic/blob/gh-pages/scripts/app.js#L128-L205">app.js lines 128–205</a> for relevant code).</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> audioCtx <span class="op">=</span> <span class="kw">new</span>(<span class="va">window</span>.<span class="at">AudioContext</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">webkitAudioContext</span>)()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="co">// ...</span></a>
+<a class="sourceLine" id="cb1-4" title="4"></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="kw">var</span> analyser <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createAnalyser</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="va">analyser</span>.<span class="at">fftSize</span> <span class="op">=</span> <span class="dv">2048</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-7" title="7"></a>
+<a class="sourceLine" id="cb1-8" title="8"><span class="kw">var</span> bufferLength <span class="op">=</span> <span class="va">analyser</span>.<span class="at">frequencyBinCount</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-9" title="9"><span class="kw">var</span> dataArray <span class="op">=</span> <span class="kw">new</span> <span class="at">Uint8Array</span>(bufferLength)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-10" title="10"><span class="va">analyser</span>.<span class="at">getByteTimeDomainData</span>(dataArray)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-11" title="11"></a>
+<a class="sourceLine" id="cb1-12" title="12"><span class="co">// Connect the source to be analysed</span></a>
+<a class="sourceLine" id="cb1-13" title="13"><span class="va">source</span>.<span class="at">connect</span>(analyser)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-14" title="14"></a>
+<a class="sourceLine" id="cb1-15" title="15"><span class="co">// Get a canvas defined with ID &quot;oscilloscope&quot;</span></a>
+<a class="sourceLine" id="cb1-16" title="16"><span class="kw">var</span> canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;oscilloscope&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-17" title="17"><span class="kw">var</span> canvasCtx <span class="op">=</span> <span class="va">canvas</span>.<span class="at">getContext</span>(<span class="st">&quot;2d&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-18" title="18"></a>
+<a class="sourceLine" id="cb1-19" title="19"><span class="co">// draw an oscilloscope of the current audio source</span></a>
+<a class="sourceLine" id="cb1-20" title="20"></a>
+<a class="sourceLine" id="cb1-21" title="21"><span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-22" title="22"></a>
+<a class="sourceLine" id="cb1-23" title="23">  <span class="at">requestAnimationFrame</span>(draw)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-24" title="24"></a>
+<a class="sourceLine" id="cb1-25" title="25">  <span class="va">analyser</span>.<span class="at">getByteTimeDomainData</span>(dataArray)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-26" title="26"></a>
+<a class="sourceLine" id="cb1-27" title="27">  <span class="va">canvasCtx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&quot;rgb(200, 200, 200)&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-28" title="28">  <span class="va">canvasCtx</span>.<span class="at">fillRect</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">canvas</span>.<span class="at">width</span><span class="op">,</span> <span class="va">canvas</span>.<span class="at">height</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-29" title="29"></a>
+<a class="sourceLine" id="cb1-30" title="30">  <span class="va">canvasCtx</span>.<span class="at">lineWidth</span> <span class="op">=</span> <span class="dv">2</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-31" title="31">  <span class="va">canvasCtx</span>.<span class="at">strokeStyle</span> <span class="op">=</span> <span class="st">&quot;rgb(0, 0, 0)&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-32" title="32"></a>
+<a class="sourceLine" id="cb1-33" title="33">  <span class="va">canvasCtx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-34" title="34"></a>
+<a class="sourceLine" id="cb1-35" title="35">  <span class="kw">var</span> sliceWidth <span class="op">=</span> <span class="va">canvas</span>.<span class="at">width</span> <span class="op">*</span> <span class="fl">1.0</span> / bufferLength<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-36" title="36">  <span class="kw">var</span> x <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-37" title="37"></a>
+<a class="sourceLine" id="cb1-38" title="38">  <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> bufferLength<span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-39" title="39"></a>
+<a class="sourceLine" id="cb1-40" title="40">    <span class="kw">var</span> v <span class="op">=</span> dataArray[i] / <span class="fl">128.0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-41" title="41">    <span class="kw">var</span> y <span class="op">=</span> v <span class="op">*</span> <span class="va">canvas</span>.<span class="at">height</span> / <span class="dv">2</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-42" title="42"></a>
+<a class="sourceLine" id="cb1-43" title="43">    <span class="cf">if</span> (i <span class="op">===</span> <span class="dv">0</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-44" title="44">      <span class="va">canvasCtx</span>.<span class="at">moveTo</span>(x<span class="op">,</span> y)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-45" title="45">    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-46" title="46">      <span class="va">canvasCtx</span>.<span class="at">lineTo</span>(x<span class="op">,</span> y)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-47" title="47">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-48" title="48"></a>
+<a class="sourceLine" id="cb1-49" title="49">    x <span class="op">+=</span> sliceWidth<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-50" title="50">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-51" title="51"></a>
+<a class="sourceLine" id="cb1-52" title="52">  <span class="va">canvasCtx</span>.<span class="at">lineTo</span>(<span class="va">canvas</span>.<span class="at">width</span><span class="op">,</span> <span class="va">canvas</span>.<span class="at">height</span> / <span class="dv">2</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-53" title="53">  <span class="va">canvasCtx</span>.<span class="at">stroke</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-54" title="54"><span class="op">}</span></a>
+<a class="sourceLine" id="cb1-55" title="55"></a>
+<a class="sourceLine" id="cb1-56" title="56"><span class="at">draw</span>()<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API">Using the Web Audio API</a></li>
+</ul>

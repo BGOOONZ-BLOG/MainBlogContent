@@ -1,0 +1,413 @@
+<p>{{CanvasSidebar}} {{PreviousNext(“Web/API/Canvas_API/Tutorial/Basic_usage”, “Web/API/Canvas_API/Tutorial/Applying_styles_and_colors”)}}</p>
+<p>Now that we have set up our <a href="/en-US/docs/Web/API/Canvas_API/Tutorial/Basic_usage">canvas environment</a>, we can get into the details of how to draw on the canvas. By the end of this article, you will have learned how to draw rectangles, triangles, lines, arcs and curves, providing familiarity with some of the basic shapes. Working with paths is essential when drawing objects onto the canvas and we will see how that can be done.</p>
+<h2 id="the-grid">The grid</h2>
+<p>Before we can start drawing, we need to talk about the canvas grid or <strong>coordinate space</strong>. Our HTML skeleton from the previous page had a canvas element 150 pixels wide and 150 pixels high.</p>
+<p><img src="canvas_default_grid.png" /></p>
+<p>Normally 1 unit in the grid corresponds to 1 pixel on the canvas. The origin of this grid is positioned in the <em>top left</em> corner at coordinate (0,0). All elements are placed relative to this origin. So the position of the top left corner of the blue square becomes x pixels from the left and y pixels from the top, at coordinate (x,y). Later in this tutorial we’ll see how we can translate the origin to a different position, rotate the grid and even scale it, but for now we’ll stick to the default.</p>
+<h2 id="drawing-rectangles">Drawing rectangles</h2>
+<p>Unlike {{Glossary(“SVG”)}}, {{HTMLElement(“canvas”)}} only supports two primitive shapes: rectangles and paths (lists of points connected by lines). All other shapes must be created by combining one or more paths. Luckily, we have an assortment of path drawing functions which make it possible to compose very complex shapes.</p>
+<p>First let’s look at the rectangle. There are three functions that draw rectangles on the canvas:</p>
+<ul>
+<li>{{domxref(“CanvasRenderingContext2D.fillRect”, “fillRect(x, y, width, height)”)}}
+<ul>
+<li>: Draws a filled rectangle.</li>
+</ul></li>
+<li>{{domxref(“CanvasRenderingContext2D.strokeRect”, “strokeRect(x, y, width, height)”)}}
+<ul>
+<li>: Draws a rectangular outline.</li>
+</ul></li>
+<li>{{domxref(“CanvasRenderingContext2D.clearRect”, “clearRect(x, y, width, height)”)}}
+<ul>
+<li>: Clears the specified rectangular area, making it fully transparent.</li>
+</ul></li>
+</ul>
+<p>Each of these three functions takes the same parameters. <code>x</code> and <code>y</code> specify the position on the canvas (relative to the origin) of the top-left corner of the rectangle. <code>width</code> and <code>height</code> provide the rectangle’s size.</p>
+<p>Below is the <code>draw()</code> function from the previous page, but now it is making use of these three functions.</p>
+<h3 id="rectangular-shape-example">Rectangular shape example</h3>
+<p><code>html hidden &lt;html&gt;  &lt;body onload="draw();"&gt;    &lt;canvas id="canvas" width="150" height="150"&gt;&lt;/canvas&gt;  &lt;/body&gt; &lt;/html&gt;</code></p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="kw">var</span> canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;canvas&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="cf">if</span> (<span class="va">canvas</span>.<span class="at">getContext</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-4" title="4">    <span class="kw">var</span> ctx <span class="op">=</span> <span class="va">canvas</span>.<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-5" title="5"></a>
+<a class="sourceLine" id="cb1-6" title="6">    <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="dv">25</span><span class="op">,</span> <span class="dv">25</span><span class="op">,</span> <span class="dv">100</span><span class="op">,</span> <span class="dv">100</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-7" title="7">    <span class="va">ctx</span>.<span class="at">clearRect</span>(<span class="dv">45</span><span class="op">,</span> <span class="dv">45</span><span class="op">,</span> <span class="dv">60</span><span class="op">,</span> <span class="dv">60</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-8" title="8">    <span class="va">ctx</span>.<span class="at">strokeRect</span>(<span class="dv">50</span><span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="dv">50</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-9" title="9">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-10" title="10"><span class="op">}</span></a></code></pre></div>
+<p>This example’s output is shown below.</p>
+<p>{{EmbedLiveSample(“Rectangular_shape_example”, 160, 160, “canvas_rect.png”)}}</p>
+<p>The <code>fillRect()</code> function draws a large black square 100 pixels on each side. The <code>clearRect()</code> function then erases a 60x60 pixel square from the center, and then <code>strokeRect()</code> is called to create a rectangular outline 50x50 pixels within the cleared square.</p>
+<p>In upcoming pages we’ll see two alternative methods for <code>clearRect()</code>, and we’ll also see how to change the color and stroke style of the rendered shapes.</p>
+<p>Unlike the path functions we’ll see in the next section, all three rectangle functions draw immediately to the canvas.</p>
+<h2 id="drawing-paths">Drawing paths</h2>
+<p>Now let’s look at paths. A path is a list of points, connected by segments of lines that can be of different shapes, curved or not, of different width and of different color. A path, or even a subpath, can be closed. To make shapes using paths, we take some extra steps:</p>
+<ol type="1">
+<li>First, you create the path.</li>
+<li>Then you use <a href="/en-US/docs/Web/API/CanvasRenderingContext2D#paths">drawing commands</a> to draw into the path.</li>
+<li>Once the path has been created, you can stroke or fill the path to render it.</li>
+</ol>
+<p>Here are the functions used to perform these steps:</p>
+<ul>
+<li>{{domxref(“CanvasRenderingContext2D.beginPath”, “beginPath()”)}}
+<ul>
+<li>: Creates a new path. Once created, future drawing commands are directed into the path and used to build the path up.</li>
+</ul></li>
+<li><a href="/en-US/docs/Web/API/CanvasRenderingContext2D#paths">Path methods</a>
+<ul>
+<li>: Methods to set different paths for objects.</li>
+</ul></li>
+<li>{{domxref(“CanvasRenderingContext2D.closePath”, “closePath()”)}}
+<ul>
+<li>: Adds a straight line to the path, going to the start of the current sub-path.</li>
+</ul></li>
+<li>{{domxref(“CanvasRenderingContext2D.stroke”, “stroke()”)}}
+<ul>
+<li>: Draws the shape by stroking its outline.</li>
+</ul></li>
+<li>{{domxref(“CanvasRenderingContext2D.fill”, “fill()”)}}
+<ul>
+<li>: Draws a solid shape by filling the path’s content area.</li>
+</ul></li>
+</ul>
+<p>The first step to create a path is to call the <code>beginPath()</code>. Internally, paths are stored as a list of sub-paths (lines, arcs, etc) which together form a shape. Every time this method is called, the list is reset and we can start drawing new shapes.</p>
+<blockquote>
+<p><strong>Note:</strong> When the current path is empty, such as immediately after calling <code>beginPath()</code>, or on a newly created canvas, the first path construction command is always treated as a <code>moveTo()</code>, regardless of what it actually is. For that reason, you will almost always want to specifically set your starting position after resetting a path.</p>
+</blockquote>
+<p>The second step is calling the methods that actually specify the paths to be drawn. We’ll see these shortly.</p>
+<p>The third, and an optional step, is to call <code>closePath()</code>. This method tries to close the shape by drawing a straight line from the current point to the start. If the shape has already been closed or there’s only one point in the list, this function does nothing.</p>
+<blockquote>
+<p><strong>Note:</strong> When you call <code>fill()</code>, any open shapes are closed automatically, so you don’t have to call <code>closePath()</code>. This is <strong>not</strong> the case when you call <code>stroke()</code>.</p>
+</blockquote>
+<h3 id="drawing-a-triangle">Drawing a triangle</h3>
+<p>For example, the code for drawing a triangle would look something like this:</p>
+<p><code>html hidden &lt;html&gt;  &lt;body onload="draw();"&gt;    &lt;canvas id="canvas" width="100" height="100"&gt;&lt;/canvas&gt;  &lt;/body&gt; &lt;/html&gt;</code></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">var</span> canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;canvas&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="cf">if</span> (<span class="va">canvas</span>.<span class="at">getContext</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">    <span class="kw">var</span> ctx <span class="op">=</span> <span class="va">canvas</span>.<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6">    <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7">    <span class="va">ctx</span>.<span class="at">moveTo</span>(<span class="dv">75</span><span class="op">,</span> <span class="dv">50</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">    <span class="va">ctx</span>.<span class="at">lineTo</span>(<span class="dv">100</span><span class="op">,</span> <span class="dv">75</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9">    <span class="va">ctx</span>.<span class="at">lineTo</span>(<span class="dv">100</span><span class="op">,</span> <span class="dv">25</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10">    <span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-12" title="12"><span class="op">}</span></a></code></pre></div>
+<p>The result looks like this:</p>
+<p>{{EmbedLiveSample(“Drawing_a_triangle”, 110, 110, “triangle.png”)}}</p>
+<h3 id="moving-the-pen">Moving the pen</h3>
+<p>One very useful function, which doesn’t actually draw anything but becomes part of the path list described above, is the <code>moveTo()</code> function. You can probably best think of this as lifting a pen or pencil from one spot on a piece of paper and placing it on the next.</p>
+<ul>
+<li>{{domxref(“CanvasRenderingContext2D.moveTo”, “moveTo(x, y)”)}}
+<ul>
+<li>: Moves the pen to the coordinates specified by <code>x</code> and <code>y</code>.</li>
+</ul></li>
+</ul>
+<p>When the canvas is initialized or <code>beginPath()</code> is called, you typically will want to use the <code>moveTo()</code> function to place the starting point somewhere else. We could also use <code>moveTo()</code> to draw unconnected paths. Take a look at the smiley face below.</p>
+<p>To try this for yourself, you can use the code snippet below. Just paste it into the <code>draw()</code> function we saw earlier.</p>
+<p><code>html hidden &lt;html&gt;  &lt;body onload="draw();"&gt;    &lt;canvas id="canvas" width="150" height="150"&gt;&lt;/canvas&gt;  &lt;/body&gt; &lt;/html&gt;</code></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">var</span> canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;canvas&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="cf">if</span> (<span class="va">canvas</span>.<span class="at">getContext</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">     <span class="kw">var</span> ctx <span class="op">=</span> <span class="va">canvas</span>.<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"></a>
+<a class="sourceLine" id="cb3-6" title="6">    <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">    <span class="va">ctx</span>.<span class="at">arc</span>(<span class="dv">75</span><span class="op">,</span> <span class="dv">75</span><span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">Math</span>.<span class="at">PI</span> <span class="op">*</span> <span class="dv">2</span><span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span> <span class="co">// Outer circle</span></a>
+<a class="sourceLine" id="cb3-8" title="8">    <span class="va">ctx</span>.<span class="at">moveTo</span>(<span class="dv">110</span><span class="op">,</span> <span class="dv">75</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">    <span class="va">ctx</span>.<span class="at">arc</span>(<span class="dv">75</span><span class="op">,</span> <span class="dv">75</span><span class="op">,</span> <span class="dv">35</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">Math</span>.<span class="at">PI</span><span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span>  <span class="co">// Mouth (clockwise)</span></a>
+<a class="sourceLine" id="cb3-10" title="10">    <span class="va">ctx</span>.<span class="at">moveTo</span>(<span class="dv">65</span><span class="op">,</span> <span class="dv">65</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-11" title="11">    <span class="va">ctx</span>.<span class="at">arc</span>(<span class="dv">60</span><span class="op">,</span> <span class="dv">65</span><span class="op">,</span> <span class="dv">5</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">Math</span>.<span class="at">PI</span> <span class="op">*</span> <span class="dv">2</span><span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span>  <span class="co">// Left eye</span></a>
+<a class="sourceLine" id="cb3-12" title="12">    <span class="va">ctx</span>.<span class="at">moveTo</span>(<span class="dv">95</span><span class="op">,</span> <span class="dv">65</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-13" title="13">    <span class="va">ctx</span>.<span class="at">arc</span>(<span class="dv">90</span><span class="op">,</span> <span class="dv">65</span><span class="op">,</span> <span class="dv">5</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">Math</span>.<span class="at">PI</span> <span class="op">*</span> <span class="dv">2</span><span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span>  <span class="co">// Right eye</span></a>
+<a class="sourceLine" id="cb3-14" title="14">    <span class="va">ctx</span>.<span class="at">stroke</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-15" title="15">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-16" title="16"><span class="op">}</span></a></code></pre></div>
+<p>The result looks like this:</p>
+<p>{{EmbedLiveSample(“Moving_the_pen”, 160, 160, “canvas_smiley.png”)}}</p>
+<p>If you’d like to see the connecting lines, you can remove the lines that call <code>moveTo()</code>.</p>
+<blockquote>
+<p><strong>Note:</strong> To learn more about the <code>arc()</code> function, see the {{anch(“Arcs”)}} section below.</p>
+</blockquote>
+<h3 id="lines">Lines</h3>
+<p>For drawing straight lines, use the <code>lineTo()</code> method.</p>
+<ul>
+<li>{{domxref(“CanvasRenderingContext2D.lineTo”, “lineTo(x, y)”)}}
+<ul>
+<li>: Draws a line from the current drawing position to the position specified by <code>x</code> and <code>y</code>.</li>
+</ul></li>
+</ul>
+<p>This method takes two arguments, <code>x</code> and <code>y</code>, which are the coordinates of the line’s end point. The starting point is dependent on previously drawn paths, where the end point of the previous path is the starting point for the following, etc. The starting point can also be changed by using the <code>moveTo()</code> method.</p>
+<p>The example below draws two triangles, one filled and one outlined.</p>
+<p><code>html hidden &lt;html&gt;  &lt;body onload="draw();"&gt;    &lt;canvas id="canvas" width="150" height="150"&gt;&lt;/canvas&gt;  &lt;/body&gt; &lt;/html&gt;</code></p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="kw">var</span> canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;canvas&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3">  <span class="cf">if</span> (<span class="va">canvas</span>.<span class="at">getContext</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-4" title="4">    <span class="kw">var</span> ctx <span class="op">=</span> <span class="va">canvas</span>.<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5"></a>
+<a class="sourceLine" id="cb4-6" title="6">    <span class="co">// Filled triangle</span></a>
+<a class="sourceLine" id="cb4-7" title="7">    <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-8" title="8">    <span class="va">ctx</span>.<span class="at">moveTo</span>(<span class="dv">25</span><span class="op">,</span> <span class="dv">25</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-9" title="9">    <span class="va">ctx</span>.<span class="at">lineTo</span>(<span class="dv">105</span><span class="op">,</span> <span class="dv">25</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-10" title="10">    <span class="va">ctx</span>.<span class="at">lineTo</span>(<span class="dv">25</span><span class="op">,</span> <span class="dv">105</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-11" title="11">    <span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-12" title="12"></a>
+<a class="sourceLine" id="cb4-13" title="13">    <span class="co">// Stroked triangle</span></a>
+<a class="sourceLine" id="cb4-14" title="14">    <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-15" title="15">    <span class="va">ctx</span>.<span class="at">moveTo</span>(<span class="dv">125</span><span class="op">,</span> <span class="dv">125</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-16" title="16">    <span class="va">ctx</span>.<span class="at">lineTo</span>(<span class="dv">125</span><span class="op">,</span> <span class="dv">45</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-17" title="17">    <span class="va">ctx</span>.<span class="at">lineTo</span>(<span class="dv">45</span><span class="op">,</span> <span class="dv">125</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-18" title="18">    <span class="va">ctx</span>.<span class="at">closePath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-19" title="19">    <span class="va">ctx</span>.<span class="at">stroke</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-20" title="20">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-21" title="21"><span class="op">}</span></a></code></pre></div>
+<p>This starts by calling <code>beginPath()</code> to start a new shape path. We then use the <code>moveTo()</code> method to move the starting point to the desired position. Below this, two lines are drawn which make up two sides of the triangle.</p>
+<p>{{EmbedLiveSample(“Lines”, 160, 160, “canvas_lineto.png”)}}</p>
+<p>You’ll notice the difference between the filled and stroked triangle. This is, as mentioned above, because shapes are automatically closed when a path is filled, but not when they are stroked. If we left out the <code>closePath()</code> for the stroked triangle, only two lines would have been drawn, not a complete triangle.</p>
+<h3 id="arcs">Arcs</h3>
+<p>To draw arcs or circles, we use the <code>arc()</code> or <code>arcTo()</code> methods.</p>
+<ul>
+<li>{{domxref(“CanvasRenderingContext2D.arc”, “arc(x, y, radius, startAngle, endAngle, counterclockwise)”)}}
+<ul>
+<li>: Draws an arc which is centered at <em>(x, y)</em> position with radius <em>r</em> starting at <em>startAngle</em> and ending at <em>endAngle</em> going in the given direction indicated by <em>counterclockwise</em> (defaulting to clockwise).</li>
+</ul></li>
+<li>{{domxref(“CanvasRenderingContext2D.arcTo”, “arcTo(x1, y1, x2, y2, radius)”)}}
+<ul>
+<li>: Draws an arc with the given control points and radius, connected to the previous point by a straight line.</li>
+</ul></li>
+</ul>
+<p>Let’s have a more detailed look at the <code>arc</code> method, which takes six parameters: <code>x</code> and <code>y</code> are the coordinates of the center of the circle on which the arc should be drawn. <code>radius</code> is self-explanatory. The <code>startAngle</code> and <code>endAngle</code> parameters define the start and end points of the arc in radians, along the curve of the circle. These are measured from the x axis. The <code>counterclockwise</code> parameter is a Boolean value which, when <code>true</code>, draws the arc counterclockwise; otherwise, the arc is drawn clockwise.</p>
+<blockquote>
+<p><strong>Note:</strong> Angles in the <code>arc</code> function are measured in radians, not degrees. To convert degrees to radians you can use the following JavaScript expression: <code>radians = (Math.PI/180)*degrees</code>.</p>
+</blockquote>
+<p>The following example is a little more complex than the ones we’ve seen above. It draws 12 different arcs all with different angles and fills.</p>
+<p>The two <a href="/en-US/docs/Web/JavaScript/Reference/Statements/for"><code>for</code> loops</a> are for looping through the rows and columns of arcs. For each arc, we start a new path by calling <code>beginPath()</code>. In the code, each of the parameters for the arc is in a variable for clarity, but you wouldn’t necessarily do that in real life.</p>
+<p>The <code>x</code> and <code>y</code> coordinates should be clear enough. <code>radius</code> and <code>startAngle</code> are fixed. The <code>endAngle</code> starts at 180 degrees (half a circle) in the first column and is increased by steps of 90 degrees, culminating in a complete circle in the last column.</p>
+<p>The statement for the <code>clockwise</code> parameter results in the first and third row being drawn as clockwise arcs and the second and fourth row as counterclockwise arcs. Finally, the <code>if</code> statement makes the top half stroked arcs and the bottom half filled arcs.</p>
+<blockquote>
+<p><strong>Note:</strong> This example requires a slightly larger canvas than the others on this page: 150 x 200 pixels.</p>
+</blockquote>
+<p><code>html hidden &lt;html&gt;  &lt;body onload="draw();"&gt;    &lt;canvas id="canvas" width="150" height="200"&gt;&lt;/canvas&gt;  &lt;/body&gt; &lt;/html&gt;</code></p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="kw">var</span> canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;canvas&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3">  <span class="cf">if</span> (<span class="va">canvas</span>.<span class="at">getContext</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-4" title="4">    <span class="kw">var</span> ctx <span class="op">=</span> <span class="va">canvas</span>.<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-5" title="5"></a>
+<a class="sourceLine" id="cb5-6" title="6">    <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="dv">4</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-7" title="7">      <span class="cf">for</span> (<span class="kw">var</span> j <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> j <span class="op">&lt;</span> <span class="dv">3</span><span class="op">;</span> j<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-8" title="8">        <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-9" title="9">        <span class="kw">var</span> x <span class="op">=</span> <span class="dv">25</span> <span class="op">+</span> j <span class="op">*</span> <span class="dv">50</span><span class="op">;</span> <span class="co">// x coordinate</span></a>
+<a class="sourceLine" id="cb5-10" title="10">        <span class="kw">var</span> y <span class="op">=</span> <span class="dv">25</span> <span class="op">+</span> i <span class="op">*</span> <span class="dv">50</span><span class="op">;</span> <span class="co">// y coordinate</span></a>
+<a class="sourceLine" id="cb5-11" title="11">        <span class="kw">var</span> radius <span class="op">=</span> <span class="dv">20</span><span class="op">;</span> <span class="co">// Arc radius</span></a>
+<a class="sourceLine" id="cb5-12" title="12">        <span class="kw">var</span> startAngle <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> <span class="co">// Starting point on circle</span></a>
+<a class="sourceLine" id="cb5-13" title="13">        <span class="kw">var</span> endAngle <span class="op">=</span> <span class="va">Math</span>.<span class="at">PI</span> <span class="op">+</span> (<span class="va">Math</span>.<span class="at">PI</span> <span class="op">*</span> j) / <span class="dv">2</span><span class="op">;</span> <span class="co">// End point on circle</span></a>
+<a class="sourceLine" id="cb5-14" title="14">        <span class="kw">var</span> counterclockwise <span class="op">=</span> i <span class="op">%</span> <span class="dv">2</span> <span class="op">!==</span> <span class="dv">0</span><span class="op">;</span> <span class="co">// clockwise or counterclockwise</span></a>
+<a class="sourceLine" id="cb5-15" title="15"></a>
+<a class="sourceLine" id="cb5-16" title="16">        <span class="va">ctx</span>.<span class="at">arc</span>(x<span class="op">,</span> y<span class="op">,</span> radius<span class="op">,</span> startAngle<span class="op">,</span> endAngle<span class="op">,</span> counterclockwise)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-17" title="17"></a>
+<a class="sourceLine" id="cb5-18" title="18">        <span class="cf">if</span> (i <span class="op">&gt;</span> <span class="dv">1</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-19" title="19">          <span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-20" title="20">        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-21" title="21">          <span class="va">ctx</span>.<span class="at">stroke</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-22" title="22">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-23" title="23">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-24" title="24">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-25" title="25">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-26" title="26"><span class="op">}</span></a></code></pre></div>
+<p>{{EmbedLiveSample(“Arcs”, 160, 210, “canvas_arc.png”)}}</p>
+<h3 id="bezier-and-quadratic-curves">Bezier and quadratic curves</h3>
+<p>The next type of paths available are <a href="/en-US/docs/Glossary/Bézier_curve">Bézier curves</a>, available in both cubic and quadratic varieties. These are generally used to draw complex organic shapes.</p>
+<ul>
+<li>{{domxref(“CanvasRenderingContext2D.quadraticCurveTo”, “quadraticCurveTo(cp1x, cp1y, x, y)”)}}
+<ul>
+<li>: Draws a quadratic Bézier curve from the current pen position to the end point specified by <code>x</code> and <code>y</code>, using the control point specified by <code>cp1x</code> and <code>cp1y</code>.</li>
+</ul></li>
+<li>{{domxref(“CanvasRenderingContext2D.bezierCurveTo”, “bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y)”)}}
+<ul>
+<li>: Draws a cubic Bézier curve from the current pen position to the end point specified by <code>x</code> and <code>y</code>, using the control points specified by (<code>cp1x</code>, <code>cp1y</code>) and (cp2x, cp2y).</li>
+</ul></li>
+</ul>
+<p>The difference between these is that a quadratic Bézier curve has a start and an end point (blue dots) and just one <strong>control point</strong> (indicated by the red dot) while a cubic Bézier curve uses two control points. <img src="canvas_curves.png" /></p>
+<p>The <code>x</code> and <code>y</code> parameters in both of these methods are the coordinates of the end point. <code>cp1x</code> and <code>cp1y</code> are the coordinates of the first control point, and <code>cp2x</code> and <code>cp2y</code> are the coordinates of the second control point.</p>
+<p>Using quadratic and cubic Bézier curves can be quite challenging, because unlike vector drawing software like Adobe Illustrator, we don’t have direct visual feedback as to what we’re doing. This makes it pretty hard to draw complex shapes. In the following example, we’ll be drawing some simple organic shapes, but if you have the time and, most of all, the patience, much more complex shapes can be created.</p>
+<p>There’s nothing very difficult in these examples. In both cases we see a succession of curves being drawn which finally result in a complete shape.</p>
+<h4 id="quadratic-bezier-curves">Quadratic Bezier curves</h4>
+<p>This example uses multiple quadratic Bézier curves to render a speech balloon.</p>
+<p><code>html hidden &lt;html&gt;  &lt;body onload="draw();"&gt;    &lt;canvas id="canvas" width="150" height="150"&gt;&lt;/canvas&gt;  &lt;/body&gt; &lt;/html&gt;</code></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="kw">var</span> canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;canvas&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-3" title="3">  <span class="cf">if</span> (<span class="va">canvas</span>.<span class="at">getContext</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-4" title="4">    <span class="kw">var</span> ctx <span class="op">=</span> <span class="va">canvas</span>.<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-5" title="5"></a>
+<a class="sourceLine" id="cb6-6" title="6">    <span class="co">// Quadratric curves example</span></a>
+<a class="sourceLine" id="cb6-7" title="7">    <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-8" title="8">    <span class="va">ctx</span>.<span class="at">moveTo</span>(<span class="dv">75</span><span class="op">,</span> <span class="dv">25</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-9" title="9">    <span class="va">ctx</span>.<span class="at">quadraticCurveTo</span>(<span class="dv">25</span><span class="op">,</span> <span class="dv">25</span><span class="op">,</span> <span class="dv">25</span><span class="op">,</span> <span class="fl">62.5</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-10" title="10">    <span class="va">ctx</span>.<span class="at">quadraticCurveTo</span>(<span class="dv">25</span><span class="op">,</span> <span class="dv">100</span><span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="dv">100</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-11" title="11">    <span class="va">ctx</span>.<span class="at">quadraticCurveTo</span>(<span class="dv">50</span><span class="op">,</span> <span class="dv">120</span><span class="op">,</span> <span class="dv">30</span><span class="op">,</span> <span class="dv">125</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-12" title="12">    <span class="va">ctx</span>.<span class="at">quadraticCurveTo</span>(<span class="dv">60</span><span class="op">,</span> <span class="dv">120</span><span class="op">,</span> <span class="dv">65</span><span class="op">,</span> <span class="dv">100</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-13" title="13">    <span class="va">ctx</span>.<span class="at">quadraticCurveTo</span>(<span class="dv">125</span><span class="op">,</span> <span class="dv">100</span><span class="op">,</span> <span class="dv">125</span><span class="op">,</span> <span class="fl">62.5</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-14" title="14">    <span class="va">ctx</span>.<span class="at">quadraticCurveTo</span>(<span class="dv">125</span><span class="op">,</span> <span class="dv">25</span><span class="op">,</span> <span class="dv">75</span><span class="op">,</span> <span class="dv">25</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-15" title="15">    <span class="va">ctx</span>.<span class="at">stroke</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-16" title="16">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-17" title="17"><span class="op">}</span></a></code></pre></div>
+<p>{{EmbedLiveSample(“Quadratic_Bezier_curves”, 160, 160, “canvas_quadratic.png”)}}</p>
+<h4 id="cubic-bezier-curves">Cubic Bezier curves</h4>
+<p>This example draws a heart using cubic Bézier curves.</p>
+<p><code>html hidden &lt;html&gt;  &lt;body onload="draw();"&gt;    &lt;canvas id="canvas" width="150" height="150"&gt;&lt;/canvas&gt;  &lt;/body&gt; &lt;/html&gt;</code></p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="kw">var</span> canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;canvas&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-3" title="3">  <span class="cf">if</span> (<span class="va">canvas</span>.<span class="at">getContext</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-4" title="4">    <span class="kw">var</span> ctx <span class="op">=</span> <span class="va">canvas</span>.<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-5" title="5"></a>
+<a class="sourceLine" id="cb7-6" title="6">    <span class="co">// Cubic curves example</span></a>
+<a class="sourceLine" id="cb7-7" title="7">    <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-8" title="8">    <span class="va">ctx</span>.<span class="at">moveTo</span>(<span class="dv">75</span><span class="op">,</span> <span class="dv">40</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-9" title="9">    <span class="va">ctx</span>.<span class="at">bezierCurveTo</span>(<span class="dv">75</span><span class="op">,</span> <span class="dv">37</span><span class="op">,</span> <span class="dv">70</span><span class="op">,</span> <span class="dv">25</span><span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="dv">25</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-10" title="10">    <span class="va">ctx</span>.<span class="at">bezierCurveTo</span>(<span class="dv">20</span><span class="op">,</span> <span class="dv">25</span><span class="op">,</span> <span class="dv">20</span><span class="op">,</span> <span class="fl">62.5</span><span class="op">,</span> <span class="dv">20</span><span class="op">,</span> <span class="fl">62.5</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-11" title="11">    <span class="va">ctx</span>.<span class="at">bezierCurveTo</span>(<span class="dv">20</span><span class="op">,</span> <span class="dv">80</span><span class="op">,</span> <span class="dv">40</span><span class="op">,</span> <span class="dv">102</span><span class="op">,</span> <span class="dv">75</span><span class="op">,</span> <span class="dv">120</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-12" title="12">    <span class="va">ctx</span>.<span class="at">bezierCurveTo</span>(<span class="dv">110</span><span class="op">,</span> <span class="dv">102</span><span class="op">,</span> <span class="dv">130</span><span class="op">,</span> <span class="dv">80</span><span class="op">,</span> <span class="dv">130</span><span class="op">,</span> <span class="fl">62.5</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-13" title="13">    <span class="va">ctx</span>.<span class="at">bezierCurveTo</span>(<span class="dv">130</span><span class="op">,</span> <span class="fl">62.5</span><span class="op">,</span> <span class="dv">130</span><span class="op">,</span> <span class="dv">25</span><span class="op">,</span> <span class="dv">100</span><span class="op">,</span> <span class="dv">25</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-14" title="14">    <span class="va">ctx</span>.<span class="at">bezierCurveTo</span>(<span class="dv">85</span><span class="op">,</span> <span class="dv">25</span><span class="op">,</span> <span class="dv">75</span><span class="op">,</span> <span class="dv">37</span><span class="op">,</span> <span class="dv">75</span><span class="op">,</span> <span class="dv">40</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-15" title="15">    <span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-16" title="16">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb7-17" title="17"><span class="op">}</span></a></code></pre></div>
+<p>{{EmbedLiveSample(“Cubic_Bezier_curves”, 160, 160, “canvas_bezier.png”)}}</p>
+<h3 id="rectangles">Rectangles</h3>
+<p>In addition to the three methods we saw in {{anch(“Drawing rectangles”)}}, which draw rectangular shapes directly to the canvas, there’s also the <code>rect()</code> method, which adds a rectangular path to a currently open path.</p>
+<ul>
+<li>{{domxref(“CanvasRenderingContext2D.rect”, “rect(x, y, width, height)”)}}
+<ul>
+<li>: Draws a rectangle whose top-left corner is specified by (<code>x</code>, <code>y</code>) with the specified <code>width</code> and <code>height</code>.</li>
+</ul></li>
+</ul>
+<p>Before this method is executed, the <code>moveTo()</code> method is automatically called with the parameters (x,y). In other words, the current pen position is automatically reset to the default coordinates.</p>
+<h3 id="making-combinations">Making combinations</h3>
+<p>So far, each example on this page has used only one type of path function per shape. However, there’s no limitation to the number or types of paths you can use to create a shape. So in this final example, let’s combine all of the path functions to make a set of very famous game characters.</p>
+<p><code>html hidden &lt;html&gt;  &lt;body onload="draw();"&gt;    &lt;canvas id="canvas" width="150" height="150"&gt;&lt;/canvas&gt;  &lt;/body&gt; &lt;/html&gt;</code></p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-2" title="2">  <span class="kw">var</span> canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;canvas&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-3" title="3">  <span class="cf">if</span> (<span class="va">canvas</span>.<span class="at">getContext</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-4" title="4">    <span class="kw">var</span> ctx <span class="op">=</span> <span class="va">canvas</span>.<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-5" title="5"></a>
+<a class="sourceLine" id="cb8-6" title="6">    <span class="at">roundedRect</span>(ctx<span class="op">,</span> <span class="dv">12</span><span class="op">,</span> <span class="dv">12</span><span class="op">,</span> <span class="dv">150</span><span class="op">,</span> <span class="dv">150</span><span class="op">,</span> <span class="dv">15</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-7" title="7">    <span class="at">roundedRect</span>(ctx<span class="op">,</span> <span class="dv">19</span><span class="op">,</span> <span class="dv">19</span><span class="op">,</span> <span class="dv">150</span><span class="op">,</span> <span class="dv">150</span><span class="op">,</span> <span class="dv">9</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-8" title="8">    <span class="at">roundedRect</span>(ctx<span class="op">,</span> <span class="dv">53</span><span class="op">,</span> <span class="dv">53</span><span class="op">,</span> <span class="dv">49</span><span class="op">,</span> <span class="dv">33</span><span class="op">,</span> <span class="dv">10</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-9" title="9">    <span class="at">roundedRect</span>(ctx<span class="op">,</span> <span class="dv">53</span><span class="op">,</span> <span class="dv">119</span><span class="op">,</span> <span class="dv">49</span><span class="op">,</span> <span class="dv">16</span><span class="op">,</span> <span class="dv">6</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-10" title="10">    <span class="at">roundedRect</span>(ctx<span class="op">,</span> <span class="dv">135</span><span class="op">,</span> <span class="dv">53</span><span class="op">,</span> <span class="dv">49</span><span class="op">,</span> <span class="dv">33</span><span class="op">,</span> <span class="dv">10</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-11" title="11">    <span class="at">roundedRect</span>(ctx<span class="op">,</span> <span class="dv">135</span><span class="op">,</span> <span class="dv">119</span><span class="op">,</span> <span class="dv">25</span><span class="op">,</span> <span class="dv">49</span><span class="op">,</span> <span class="dv">10</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-12" title="12"></a>
+<a class="sourceLine" id="cb8-13" title="13">    <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-14" title="14">    <span class="va">ctx</span>.<span class="at">arc</span>(<span class="dv">37</span><span class="op">,</span> <span class="dv">37</span><span class="op">,</span> <span class="dv">13</span><span class="op">,</span> <span class="va">Math</span>.<span class="at">PI</span> / <span class="dv">7</span><span class="op">,</span> <span class="op">-</span><span class="va">Math</span>.<span class="at">PI</span> / <span class="dv">7</span><span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-15" title="15">    <span class="va">ctx</span>.<span class="at">lineTo</span>(<span class="dv">31</span><span class="op">,</span> <span class="dv">37</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-16" title="16">    <span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-17" title="17"></a>
+<a class="sourceLine" id="cb8-18" title="18">    <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="dv">8</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-19" title="19">      <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="dv">51</span> <span class="op">+</span> i <span class="op">*</span> <span class="dv">16</span><span class="op">,</span> <span class="dv">35</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">4</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-20" title="20">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb8-21" title="21"></a>
+<a class="sourceLine" id="cb8-22" title="22">    <span class="cf">for</span> (i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="dv">6</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-23" title="23">      <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="dv">115</span><span class="op">,</span> <span class="dv">51</span> <span class="op">+</span> i <span class="op">*</span> <span class="dv">16</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">4</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-24" title="24">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb8-25" title="25"></a>
+<a class="sourceLine" id="cb8-26" title="26">    <span class="cf">for</span> (i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="dv">8</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-27" title="27">      <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="dv">51</span> <span class="op">+</span> i <span class="op">*</span> <span class="dv">16</span><span class="op">,</span> <span class="dv">99</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">4</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-28" title="28">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb8-29" title="29"></a>
+<a class="sourceLine" id="cb8-30" title="30">    <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-31" title="31">    <span class="va">ctx</span>.<span class="at">moveTo</span>(<span class="dv">83</span><span class="op">,</span> <span class="dv">116</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-32" title="32">    <span class="va">ctx</span>.<span class="at">lineTo</span>(<span class="dv">83</span><span class="op">,</span> <span class="dv">102</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-33" title="33">    <span class="va">ctx</span>.<span class="at">bezierCurveTo</span>(<span class="dv">83</span><span class="op">,</span> <span class="dv">94</span><span class="op">,</span> <span class="dv">89</span><span class="op">,</span> <span class="dv">88</span><span class="op">,</span> <span class="dv">97</span><span class="op">,</span> <span class="dv">88</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-34" title="34">    <span class="va">ctx</span>.<span class="at">bezierCurveTo</span>(<span class="dv">105</span><span class="op">,</span> <span class="dv">88</span><span class="op">,</span> <span class="dv">111</span><span class="op">,</span> <span class="dv">94</span><span class="op">,</span> <span class="dv">111</span><span class="op">,</span> <span class="dv">102</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-35" title="35">    <span class="va">ctx</span>.<span class="at">lineTo</span>(<span class="dv">111</span><span class="op">,</span> <span class="dv">116</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-36" title="36">    <span class="va">ctx</span>.<span class="at">lineTo</span>(<span class="fl">106.333</span><span class="op">,</span> <span class="fl">111.333</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-37" title="37">    <span class="va">ctx</span>.<span class="at">lineTo</span>(<span class="fl">101.666</span><span class="op">,</span> <span class="dv">116</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-38" title="38">    <span class="va">ctx</span>.<span class="at">lineTo</span>(<span class="dv">97</span><span class="op">,</span> <span class="fl">111.333</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-39" title="39">    <span class="va">ctx</span>.<span class="at">lineTo</span>(<span class="fl">92.333</span><span class="op">,</span> <span class="dv">116</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-40" title="40">    <span class="va">ctx</span>.<span class="at">lineTo</span>(<span class="fl">87.666</span><span class="op">,</span> <span class="fl">111.333</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-41" title="41">    <span class="va">ctx</span>.<span class="at">lineTo</span>(<span class="dv">83</span><span class="op">,</span> <span class="dv">116</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-42" title="42">    <span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-43" title="43"></a>
+<a class="sourceLine" id="cb8-44" title="44">    <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&#39;white&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-45" title="45">    <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-46" title="46">    <span class="va">ctx</span>.<span class="at">moveTo</span>(<span class="dv">91</span><span class="op">,</span> <span class="dv">96</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-47" title="47">    <span class="va">ctx</span>.<span class="at">bezierCurveTo</span>(<span class="dv">88</span><span class="op">,</span> <span class="dv">96</span><span class="op">,</span> <span class="dv">87</span><span class="op">,</span> <span class="dv">99</span><span class="op">,</span> <span class="dv">87</span><span class="op">,</span> <span class="dv">101</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-48" title="48">    <span class="va">ctx</span>.<span class="at">bezierCurveTo</span>(<span class="dv">87</span><span class="op">,</span> <span class="dv">103</span><span class="op">,</span> <span class="dv">88</span><span class="op">,</span> <span class="dv">106</span><span class="op">,</span> <span class="dv">91</span><span class="op">,</span> <span class="dv">106</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-49" title="49">    <span class="va">ctx</span>.<span class="at">bezierCurveTo</span>(<span class="dv">94</span><span class="op">,</span> <span class="dv">106</span><span class="op">,</span> <span class="dv">95</span><span class="op">,</span> <span class="dv">103</span><span class="op">,</span> <span class="dv">95</span><span class="op">,</span> <span class="dv">101</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-50" title="50">    <span class="va">ctx</span>.<span class="at">bezierCurveTo</span>(<span class="dv">95</span><span class="op">,</span> <span class="dv">99</span><span class="op">,</span> <span class="dv">94</span><span class="op">,</span> <span class="dv">96</span><span class="op">,</span> <span class="dv">91</span><span class="op">,</span> <span class="dv">96</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-51" title="51">    <span class="va">ctx</span>.<span class="at">moveTo</span>(<span class="dv">103</span><span class="op">,</span> <span class="dv">96</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-52" title="52">    <span class="va">ctx</span>.<span class="at">bezierCurveTo</span>(<span class="dv">100</span><span class="op">,</span> <span class="dv">96</span><span class="op">,</span> <span class="dv">99</span><span class="op">,</span> <span class="dv">99</span><span class="op">,</span> <span class="dv">99</span><span class="op">,</span> <span class="dv">101</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-53" title="53">    <span class="va">ctx</span>.<span class="at">bezierCurveTo</span>(<span class="dv">99</span><span class="op">,</span> <span class="dv">103</span><span class="op">,</span> <span class="dv">100</span><span class="op">,</span> <span class="dv">106</span><span class="op">,</span> <span class="dv">103</span><span class="op">,</span> <span class="dv">106</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-54" title="54">    <span class="va">ctx</span>.<span class="at">bezierCurveTo</span>(<span class="dv">106</span><span class="op">,</span> <span class="dv">106</span><span class="op">,</span> <span class="dv">107</span><span class="op">,</span> <span class="dv">103</span><span class="op">,</span> <span class="dv">107</span><span class="op">,</span> <span class="dv">101</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-55" title="55">    <span class="va">ctx</span>.<span class="at">bezierCurveTo</span>(<span class="dv">107</span><span class="op">,</span> <span class="dv">99</span><span class="op">,</span> <span class="dv">106</span><span class="op">,</span> <span class="dv">96</span><span class="op">,</span> <span class="dv">103</span><span class="op">,</span> <span class="dv">96</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-56" title="56">    <span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-57" title="57"></a>
+<a class="sourceLine" id="cb8-58" title="58">    <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&#39;black&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-59" title="59">    <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-60" title="60">    <span class="va">ctx</span>.<span class="at">arc</span>(<span class="dv">101</span><span class="op">,</span> <span class="dv">102</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">Math</span>.<span class="at">PI</span> <span class="op">*</span> <span class="dv">2</span><span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-61" title="61">    <span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-62" title="62"></a>
+<a class="sourceLine" id="cb8-63" title="63">    <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-64" title="64">    <span class="va">ctx</span>.<span class="at">arc</span>(<span class="dv">89</span><span class="op">,</span> <span class="dv">102</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">Math</span>.<span class="at">PI</span> <span class="op">*</span> <span class="dv">2</span><span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-65" title="65">    <span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-66" title="66">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb8-67" title="67"><span class="op">}</span></a>
+<a class="sourceLine" id="cb8-68" title="68"></a>
+<a class="sourceLine" id="cb8-69" title="69"><span class="co">// A utility function to draw a rectangle with rounded corners.</span></a>
+<a class="sourceLine" id="cb8-70" title="70"></a>
+<a class="sourceLine" id="cb8-71" title="71"><span class="kw">function</span> <span class="at">roundedRect</span>(ctx<span class="op">,</span> x<span class="op">,</span> y<span class="op">,</span> width<span class="op">,</span> height<span class="op">,</span> radius) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-72" title="72">  <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-73" title="73">  <span class="va">ctx</span>.<span class="at">moveTo</span>(x<span class="op">,</span> y <span class="op">+</span> radius)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-74" title="74">  <span class="va">ctx</span>.<span class="at">arcTo</span>(x<span class="op">,</span> y <span class="op">+</span> height<span class="op">,</span> x <span class="op">+</span> radius<span class="op">,</span> y <span class="op">+</span> height<span class="op">,</span> radius)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-75" title="75">  <span class="va">ctx</span>.<span class="at">arcTo</span>(x <span class="op">+</span> width<span class="op">,</span> y <span class="op">+</span> height<span class="op">,</span> x <span class="op">+</span> width<span class="op">,</span> y <span class="op">+</span> height <span class="op">-</span> radius<span class="op">,</span> radius)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-76" title="76">  <span class="va">ctx</span>.<span class="at">arcTo</span>(x <span class="op">+</span> width<span class="op">,</span> y<span class="op">,</span> x <span class="op">+</span> width <span class="op">-</span> radius<span class="op">,</span> y<span class="op">,</span> radius)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-77" title="77">  <span class="va">ctx</span>.<span class="at">arcTo</span>(x<span class="op">,</span> y<span class="op">,</span> x<span class="op">,</span> y <span class="op">+</span> radius<span class="op">,</span> radius)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-78" title="78">  <span class="va">ctx</span>.<span class="at">stroke</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-79" title="79"><span class="op">}</span></a></code></pre></div>
+<p>The resulting image looks like this:</p>
+<p>{{EmbedLiveSample(“Making_combinations”, 160, 160, “combinations.png”)}}</p>
+<p>We won’t go over this in detail, since it’s actually surprisingly simple. The most important things to note are the use of the <code>fillStyle</code> property on the drawing context, and the use of a utility function (in this case <code>roundedRect()</code>). Using utility functions for bits of drawing you do often can be very helpful and reduce the amount of code you need, as well as its complexity.</p>
+<p>We’ll take another look at <code>fillStyle</code>, in more detail, later in this tutorial. Here, all we’re doing is using it to change the fill color for paths from the default color of black to white, and then back again.</p>
+<h2 id="path2d-objects">Path2D objects</h2>
+<p>As we have seen in the last example, there can be a series of paths and drawing commands to draw objects onto your canvas. To simplify the code and to improve performance, the {{domxref(“Path2D”)}} object, available in recent versions of browsers, lets you cache or record these drawing commands. You are able to play back your paths quickly. Let’s see how we can construct a <code>Path2D</code> object:</p>
+<ul>
+<li>{{domxref(“Path2D.Path2D”, “Path2D()”)}}
+<ul>
+<li>: The <strong><code>Path2D()</code></strong> constructor returns a newly instantiated <code>Path2D</code> object, optionally with another path as an argument (creates a copy), or optionally with a string consisting of <a href="/en-US/docs/Web/SVG/Tutorial/Paths">SVG path</a> data.</li>
+</ul></li>
+</ul>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">new</span> <span class="at">Path2D</span>()<span class="op">;</span>     <span class="co">// empty path object</span></a>
+<a class="sourceLine" id="cb9-2" title="2"><span class="kw">new</span> <span class="at">Path2D</span>(path)<span class="op">;</span> <span class="co">// copy from another Path2D object</span></a>
+<a class="sourceLine" id="cb9-3" title="3"><span class="kw">new</span> <span class="at">Path2D</span>(d)<span class="op">;</span>    <span class="co">// path from SVG path data</span></a></code></pre></div>
+<p>All <a href="/en-US/docs/Web/API/CanvasRenderingContext2D#paths">path methods</a> like <code>moveTo</code>, <code>rect</code>, <code>arc</code> or <code>quadraticCurveTo</code>, etc., which we got to know above, are available on <code>Path2D</code> objects.</p>
+<p>The <code>Path2D</code> API also adds a way to combine paths using the <code>addPath</code> method. This can be useful when you want to build objects from several components, for example.</p>
+<ul>
+<li>{{domxref(“Path2D.addPath”, “Path2D.addPath(path [, transform])”)}}
+<ul>
+<li>: Adds a path to the current path with an optional transformation matrix.</li>
+</ul></li>
+</ul>
+<h3 id="path2d-example">Path2D example</h3>
+<p>In this example, we are creating a rectangle and a circle. Both are stored as a <code>Path2D</code> object, so that they are available for later usage. With the new <code>Path2D</code> API, several methods got updated to optionally accept a <code>Path2D</code> object to use instead of the current path. Here, <code>stroke</code> and <code>fill</code> are used with a path argument to draw both objects onto the canvas, for example.</p>
+<p><code>html hidden &lt;html&gt;  &lt;body onload="draw();"&gt;    &lt;canvas id="canvas" width="130" height="100"&gt;&lt;/canvas&gt;  &lt;/body&gt; &lt;/html&gt;</code></p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-2" title="2">  <span class="kw">var</span> canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;canvas&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-3" title="3">  <span class="cf">if</span> (<span class="va">canvas</span>.<span class="at">getContext</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-4" title="4">    <span class="kw">var</span> ctx <span class="op">=</span> <span class="va">canvas</span>.<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-5" title="5"></a>
+<a class="sourceLine" id="cb10-6" title="6">    <span class="kw">var</span> rectangle <span class="op">=</span> <span class="kw">new</span> <span class="at">Path2D</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-7" title="7">    <span class="va">rectangle</span>.<span class="at">rect</span>(<span class="dv">10</span><span class="op">,</span> <span class="dv">10</span><span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="dv">50</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-8" title="8"></a>
+<a class="sourceLine" id="cb10-9" title="9">    <span class="kw">var</span> circle <span class="op">=</span> <span class="kw">new</span> <span class="at">Path2D</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-10" title="10">    <span class="va">circle</span>.<span class="at">arc</span>(<span class="dv">100</span><span class="op">,</span> <span class="dv">35</span><span class="op">,</span> <span class="dv">25</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">2</span> <span class="op">*</span> <span class="va">Math</span>.<span class="at">PI</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-11" title="11"></a>
+<a class="sourceLine" id="cb10-12" title="12">    <span class="va">ctx</span>.<span class="at">stroke</span>(rectangle)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-13" title="13">    <span class="va">ctx</span>.<span class="at">fill</span>(circle)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-14" title="14">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-15" title="15"><span class="op">}</span></a></code></pre></div>
+<p>{{EmbedLiveSample(“Path2D_example”, 130, 110, “path2d.png”)}}</p>
+<h3 id="using-svg-paths">Using SVG paths</h3>
+<p>Another powerful feature of the new canvas <code>Path2D</code> API is using <a href="/en-US/docs/Web/SVG/Tutorial/Paths">SVG path data</a> to initialize paths on your canvas. This might allow you to pass around path data and re-use them in both, SVG and canvas.</p>
+<p>The path will move to point (<code>M10 10</code>) and then move horizontally 80 points to the right (<code>h 80</code>), then 80 points down (<code>v 80</code>), then 80 points to the left (<code>h -80</code>), and then back to the start (<code>z</code>). You can see this example on the <a href="/en-US/docs/Web/API/Path2D/Path2D#using_svg_paths"><code>Path2D</code> constructor</a> page.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1"><span class="kw">var</span> p <span class="op">=</span> <span class="kw">new</span> <span class="at">Path2D</span>(<span class="st">&#39;M10 10 h 80 v 80 h -80 Z&#39;</span>)<span class="op">;</span></a></code></pre></div>
+<p>{{PreviousNext(“Web/API/Canvas_API/Tutorial/Basic_usage”, “Web/API/Canvas_API/Tutorial/Applying_styles_and_colors”)}}</p>

@@ -1,0 +1,411 @@
+<p>{{APIRef(“File API”)}}</p>
+<p>Using the File API, which was added to the DOM in HTML5, it’s now possible for web content to ask the user to select local files and then read the contents of those files. This selection can be done by either using an HTML <code>{{HTMLElement("input/file", '&amp;lt;input type="file"&amp;gt;')}}</code> element or by drag and drop.</p>
+<p>If you want to use the DOM File API from extensions or other browser chrome code, you can; however, note there are some additional features to be aware of. See <a href="/en-US/docs/Extensions/Using_the_DOM_File_API_in_chrome_code">Using the DOM File API in chrome code</a> for details.</p>
+<h2 id="accessing-selected-files">Accessing selected file(s)</h2>
+<p>Consider this HTML:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;file&quot;</span><span class="ot"> id=</span><span class="st">&quot;input&quot;</span><span class="ot"> multiple</span><span class="kw">&gt;</span></a></code></pre></div>
+<p>The File API makes it possible to access a {{DOMxRef(“FileList”)}} containing {{DOMxRef(“File”)}} objects representing the files selected by the user.</p>
+<p>The <code>multiple</code> attribute on the <code>input</code> element allows the user to select multiple files.</p>
+<p>Accessing the first selected file using a classical DOM selector:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> selectedFile <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;input&#39;</span>).<span class="at">files</span>[<span class="dv">0</span>]<span class="op">;</span></a></code></pre></div>
+<h3 id="accessing-selected-files-on-a-change-event">Accessing selected file(s) on a change event</h3>
+<p>It is also possible (but not mandatory) to access the {{DOMxRef(“FileList”)}} through the <code>change</code> event. You need to use {{DOMxRef(“EventTarget.addEventListener()”)}} to add the <code>change</code> event listener, like this:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> inputElement <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;input&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="va">inputElement</span>.<span class="at">addEventListener</span>(<span class="st">&quot;change&quot;</span><span class="op">,</span> handleFiles<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw">function</span> <span class="at">handleFiles</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="kw">const</span> fileList <span class="op">=</span> <span class="kw">this</span>.<span class="at">files</span><span class="op">;</span> <span class="co">/* now you can work with the file list */</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="op">}</span></a></code></pre></div>
+<h2 id="getting-information-about-selected-files">Getting information about selected file(s)</h2>
+<p>The {{DOMxRef(“FileList”)}} object provided by the DOM lists all of the files selected by the user, each specified as a {{DOMxRef(“File”)}} object. You can determine how many files the user selected by checking the value of the file list’s <code>length</code> attribute:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">const</span> numFiles <span class="op">=</span> <span class="va">fileList</span>.<span class="at">length</span><span class="op">;</span></a></code></pre></div>
+<p>Individual {{DOMxRef(“File”)}} objects can be retrieved by accessing the list as an array:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">,</span> numFiles <span class="op">=</span> <span class="va">fileList</span>.<span class="at">length</span><span class="op">;</span> i <span class="op">&lt;</span> numFiles<span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="kw">const</span> file <span class="op">=</span> fileList[i]<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3">  <span class="co">// ...</span></a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="op">}</span></a></code></pre></div>
+<p>This loop iterates over all the files in the file list.</p>
+<p>There are three attributes provided by the {{DOMxRef(“File”)}} object that contain useful information about the file.</p>
+<ul>
+<li><code>name</code>
+<ul>
+<li>: The file’s name as a read-only string. This is just the file name, and does not include any path information.</li>
+</ul></li>
+<li><code>size</code>
+<ul>
+<li>: The size of the file in bytes as a read-only 64-bit integer.</li>
+</ul></li>
+<li><code>type</code>
+<ul>
+<li>: The MIME type of the file as a read-only string or <code>""</code> if the type couldn’t be determined.</li>
+</ul></li>
+</ul>
+<h3 id="example-showing-files-size">Example: Showing file(s) size</h3>
+<p>The following example shows a possible use of the <code>size</code> property:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb6-1" title="1"><span class="dt">&lt;!DOCTYPE </span>html<span class="dt">&gt;</span></a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="kw">&lt;html&gt;</span></a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="kw">&lt;head&gt;</span></a>
+<a class="sourceLine" id="cb6-4" title="4">  <span class="kw">&lt;meta</span><span class="ot"> charset=</span><span class="st">&quot;UTF-8&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb6-5" title="5">  <span class="kw">&lt;title&gt;</span>File(s) size<span class="kw">&lt;/title&gt;</span></a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="kw">&lt;/head&gt;</span></a>
+<a class="sourceLine" id="cb6-7" title="7"></a>
+<a class="sourceLine" id="cb6-8" title="8"><span class="kw">&lt;body&gt;</span></a>
+<a class="sourceLine" id="cb6-9" title="9">  <span class="kw">&lt;form</span><span class="ot"> name=</span><span class="st">&quot;uploadForm&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb6-10" title="10">    <span class="kw">&lt;div&gt;</span></a>
+<a class="sourceLine" id="cb6-11" title="11">      <span class="kw">&lt;input</span><span class="ot"> id=</span><span class="st">&quot;uploadInput&quot;</span><span class="ot"> type=</span><span class="st">&quot;file&quot;</span><span class="ot"> name=</span><span class="st">&quot;myFiles&quot;</span><span class="ot"> multiple</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb6-12" title="12">      selected files: <span class="kw">&lt;span</span><span class="ot"> id=</span><span class="st">&quot;fileNum&quot;</span><span class="kw">&gt;</span>0<span class="kw">&lt;/span&gt;</span>;</a>
+<a class="sourceLine" id="cb6-13" title="13">      total size: <span class="kw">&lt;span</span><span class="ot"> id=</span><span class="st">&quot;fileSize&quot;</span><span class="kw">&gt;</span>0<span class="kw">&lt;/span&gt;</span></a>
+<a class="sourceLine" id="cb6-14" title="14">    <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb6-15" title="15">    <span class="kw">&lt;div&gt;&lt;input</span><span class="ot"> type=</span><span class="st">&quot;submit&quot;</span><span class="ot"> value=</span><span class="st">&quot;Send file&quot;</span><span class="kw">&gt;&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb6-16" title="16">  <span class="kw">&lt;/form&gt;</span></a>
+<a class="sourceLine" id="cb6-17" title="17"></a>
+<a class="sourceLine" id="cb6-18" title="18">  <span class="kw">&lt;script&gt;</span></a>
+<a class="sourceLine" id="cb6-19" title="19">  <span class="kw">function</span> <span class="at">updateSize</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-20" title="20">    <span class="kw">let</span> nBytes <span class="op">=</span> <span class="dv">0</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb6-21" title="21">        oFiles <span class="op">=</span> <span class="kw">this</span>.<span class="at">files</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb6-22" title="22">        nFiles <span class="op">=</span> <span class="va">oFiles</span>.<span class="at">length</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-23" title="23">    <span class="cf">for</span> (<span class="kw">let</span> nFileId <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> nFileId <span class="op">&lt;</span> nFiles<span class="op">;</span> nFileId<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-24" title="24">      nBytes <span class="op">+=</span> oFiles[nFileId].<span class="at">size</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-25" title="25">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-26" title="26">    <span class="kw">let</span> sOutput <span class="op">=</span> nBytes <span class="op">+</span> <span class="st">&quot; bytes&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-27" title="27">    <span class="co">// optional code for multiples approximation</span></a>
+<a class="sourceLine" id="cb6-28" title="28">    <span class="kw">const</span> aMultiples <span class="op">=</span> [<span class="st">&quot;KiB&quot;</span><span class="op">,</span> <span class="st">&quot;MiB&quot;</span><span class="op">,</span> <span class="st">&quot;GiB&quot;</span><span class="op">,</span> <span class="st">&quot;TiB&quot;</span><span class="op">,</span> <span class="st">&quot;PiB&quot;</span><span class="op">,</span> <span class="st">&quot;EiB&quot;</span><span class="op">,</span> <span class="st">&quot;ZiB&quot;</span><span class="op">,</span> <span class="st">&quot;YiB&quot;</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-29" title="29">    <span class="cf">for</span> (nMultiple <span class="op">=</span> <span class="dv">0</span><span class="op">,</span> nApprox <span class="op">=</span> nBytes / <span class="dv">1024</span><span class="op">;</span> nApprox <span class="op">&gt;</span> <span class="dv">1</span><span class="op">;</span> nApprox /<span class="op">=</span> <span class="dv">1024</span><span class="op">,</span> nMultiple<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-30" title="30">      sOutput <span class="op">=</span> <span class="va">nApprox</span>.<span class="at">toFixed</span>(<span class="dv">3</span>) <span class="op">+</span> <span class="st">&quot; &quot;</span> <span class="op">+</span> aMultiples[nMultiple] <span class="op">+</span> <span class="st">&quot; (&quot;</span> <span class="op">+</span> nBytes <span class="op">+</span> <span class="st">&quot; bytes)&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-31" title="31">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-32" title="32">    <span class="co">// end of optional code</span></a>
+<a class="sourceLine" id="cb6-33" title="33">    <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;fileNum&quot;</span>).<span class="at">innerHTML</span> <span class="op">=</span> nFiles<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-34" title="34">    <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;fileSize&quot;</span>).<span class="at">innerHTML</span> <span class="op">=</span> sOutput<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-35" title="35">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-36" title="36"></a>
+<a class="sourceLine" id="cb6-37" title="37">  <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;uploadInput&quot;</span>).<span class="at">addEventListener</span>(<span class="st">&quot;change&quot;</span><span class="op">,</span> updateSize<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-38" title="38">  <span class="kw">&lt;/script&gt;</span></a>
+<a class="sourceLine" id="cb6-39" title="39"><span class="kw">&lt;/body&gt;</span></a>
+<a class="sourceLine" id="cb6-40" title="40"><span class="kw">&lt;/html&gt;</span></a></code></pre></div>
+<h2 id="using-hidden-file-input-elements-using-the-click-method">Using hidden file input elements using the click() method</h2>
+<p>You can hide the admittedly ugly file {{HTMLElement(“input”)}} element and present your own interface for opening the file picker and displaying which file or files the user has selected. You can do this by styling the input element with <code>display:none</code> and calling the {{DOMxRef(“HTMLElement.click”,“click()”)}} method on the {{HTMLElement(“input”)}} element.</p>
+<p>Consider this HTML:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;file&quot;</span><span class="ot"> id=</span><span class="st">&quot;fileElem&quot;</span><span class="ot"> multiple accept=</span><span class="st">&quot;image/*&quot;</span><span class="ot"> style=</span><span class="st">&quot;display:none&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb7-2" title="2"><span class="kw">&lt;button</span><span class="ot"> id=</span><span class="st">&quot;fileSelect&quot;</span><span class="kw">&gt;</span>Select some files<span class="kw">&lt;/button&gt;</span></a></code></pre></div>
+<p>The code that handles the <code>click</code> event can look like this:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">const</span> fileSelect <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;fileSelect&quot;</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb8-2" title="2">  fileElem <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;fileElem&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-3" title="3"></a>
+<a class="sourceLine" id="cb8-4" title="4"><span class="va">fileSelect</span>.<span class="at">addEventListener</span>(<span class="st">&quot;click&quot;</span><span class="op">,</span> <span class="kw">function</span> (e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-5" title="5">  <span class="cf">if</span> (fileElem) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-6" title="6">    <span class="va">fileElem</span>.<span class="at">click</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-7" title="7">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb8-8" title="8"><span class="op">},</span> <span class="kw">false</span>)<span class="op">;</span></a></code></pre></div>
+<p>You can style the new button for opening the file picker as you wish.</p>
+<h2 id="using-a-label-element-to-trigger-a-hidden-file-input-element">Using a label element to trigger a hidden file input element</h2>
+<p>To allow opening the file picker without using JavaScript (the click() method), a {{HTMLElement(“label”)}} element can be used. Note that in this case the input element must not be hidden using <code>display: none</code> (nor <code>visibility: hidden</code>), otherwise the label would not be keyboard-accessible. Use the <a href="https://a11yproject.com/posts/how-to-hide-content/">visually-hidden technique</a> instead.</p>
+<p>Consider this HTML:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;file&quot;</span><span class="ot"> id=</span><span class="st">&quot;fileElem&quot;</span><span class="ot"> multiple accept=</span><span class="st">&quot;image/*&quot;</span><span class="ot"> class=</span><span class="st">&quot;visually-hidden&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb9-2" title="2"><span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;fileElem&quot;</span><span class="kw">&gt;</span>Select some files<span class="kw">&lt;/label&gt;</span></a></code></pre></div>
+<p>and this CSS:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb10-1" title="1"><span class="fu">.visually-hidden</span> {</a>
+<a class="sourceLine" id="cb10-2" title="2">  <span class="kw">position</span>: <span class="dv">absolute</span> <span class="at">!important</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-3" title="3">  <span class="kw">height</span>: <span class="dv">1</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-4" title="4">  <span class="kw">width</span>: <span class="dv">1</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-5" title="5">  <span class="kw">overflow</span>: <span class="dv">hidden</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-6" title="6">  <span class="kw">clip</span>: <span class="fu">rect(</span><span class="dv">1</span><span class="dt">px</span><span class="op">,</span> <span class="dv">1</span><span class="dt">px</span><span class="op">,</span> <span class="dv">1</span><span class="dt">px</span><span class="op">,</span> <span class="dv">1</span><span class="dt">px</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-7" title="7">}</a>
+<a class="sourceLine" id="cb10-8" title="8"></a>
+<a class="sourceLine" id="cb10-9" title="9"><span class="co">/* Separate rule for compatibility, :focus-within is required on modern Firefox and Chrome */</span></a>
+<a class="sourceLine" id="cb10-10" title="10">input<span class="fu">.visually-hidden</span><span class="in">:focus</span> <span class="op">+</span> label {</a>
+<a class="sourceLine" id="cb10-11" title="11">  <span class="kw">outline</span>: <span class="dv">thin</span> <span class="dv">dotted</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-12" title="12">}</a>
+<a class="sourceLine" id="cb10-13" title="13">input<span class="fu">.visually-hidden</span><span class="in">:focus-within</span> <span class="op">+</span> label {</a>
+<a class="sourceLine" id="cb10-14" title="14">  <span class="kw">outline</span>: <span class="dv">thin</span> <span class="dv">dotted</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-15" title="15">}</a></code></pre></div>
+<p>There is no need to add JavaScript code to call <code>fileElem.click()</code>. Also in this case you can style the label element as you wish. You need to provide a visual cue for the focus status of the hidden input field on its label, be it an outline as shown above, or background-color or box-shadow. (As of time of writing, Firefox doesn’t show this visual cue for <code>&lt;input type="file"&gt;</code> elements.)</p>
+<h2 id="selecting-files-using-drag-and-drop">Selecting files using drag and drop</h2>
+<p>You can also let the user drag and drop files into your web application.</p>
+<p>The first step is to establish a drop zone. Exactly what part of your content will accept drops may vary depending on the design of your application, but making an element receive drop events is easy:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1"><span class="kw">let</span> dropbox<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-2" title="2"></a>
+<a class="sourceLine" id="cb11-3" title="3">dropbox <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;dropbox&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-4" title="4"><span class="va">dropbox</span>.<span class="at">addEventListener</span>(<span class="st">&quot;dragenter&quot;</span><span class="op">,</span> dragenter<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-5" title="5"><span class="va">dropbox</span>.<span class="at">addEventListener</span>(<span class="st">&quot;dragover&quot;</span><span class="op">,</span> dragover<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-6" title="6"><span class="va">dropbox</span>.<span class="at">addEventListener</span>(<span class="st">&quot;drop&quot;</span><span class="op">,</span> drop<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a></code></pre></div>
+<p>In this example, we’re turning the element with the ID <code>dropbox</code> into our drop zone. This is done by adding listeners for the {{event(‘dragenter’)}}, {{event(‘dragover’)}}, and {{event(‘drop’)}} events.</p>
+<p>We don’t actually need to do anything with the <code>dragenter</code> and <code>dragover</code> events in our case, so these functions are both simple. They just stop propagation of the event and prevent the default action from occurring:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb12-1" title="1"><span class="kw">function</span> <span class="at">dragenter</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb12-2" title="2">  <span class="va">e</span>.<span class="at">stopPropagation</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-3" title="3">  <span class="va">e</span>.<span class="at">preventDefault</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-4" title="4"><span class="op">}</span></a>
+<a class="sourceLine" id="cb12-5" title="5"></a>
+<a class="sourceLine" id="cb12-6" title="6"><span class="kw">function</span> <span class="at">dragover</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb12-7" title="7">  <span class="va">e</span>.<span class="at">stopPropagation</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-8" title="8">  <span class="va">e</span>.<span class="at">preventDefault</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-9" title="9"><span class="op">}</span></a></code></pre></div>
+<p>The real magic happens in the <code>drop()</code> function:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb13-1" title="1"><span class="kw">function</span> <span class="at">drop</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-2" title="2">  <span class="va">e</span>.<span class="at">stopPropagation</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-3" title="3">  <span class="va">e</span>.<span class="at">preventDefault</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-4" title="4"></a>
+<a class="sourceLine" id="cb13-5" title="5">  <span class="kw">const</span> dt <span class="op">=</span> <span class="va">e</span>.<span class="at">dataTransfer</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb13-6" title="6">  <span class="kw">const</span> files <span class="op">=</span> <span class="va">dt</span>.<span class="at">files</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb13-7" title="7"></a>
+<a class="sourceLine" id="cb13-8" title="8">  <span class="at">handleFiles</span>(files)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-9" title="9"><span class="op">}</span></a></code></pre></div>
+<p>Here, we retrieve the <code>dataTransfer</code> field from the event, pull the file list out of it, and then pass that to <code>handleFiles()</code>. From this point on, handling the files is the same whether the user used the <code>input</code> element or drag and drop.</p>
+<h2 id="example-showing-thumbnails-of-user-selected-images">Example: Showing thumbnails of user-selected images</h2>
+<p>Let’s say you’re developing the next great photo-sharing website and want to use HTML to display thumbnail previews of images before the user actually uploads them. You can establish your input element or drop zone as discussed previously and have them call a function such as the <code>handleFiles()</code> function below.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb14-1" title="1"><span class="kw">function</span> <span class="at">handleFiles</span>(files) <span class="op">{</span></a>
+<a class="sourceLine" id="cb14-2" title="2">  <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">files</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb14-3" title="3">    <span class="kw">const</span> file <span class="op">=</span> files[i]<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-4" title="4"></a>
+<a class="sourceLine" id="cb14-5" title="5">    <span class="cf">if</span> (<span class="op">!</span><span class="va">file</span>.<span class="va">type</span>.<span class="at">startsWith</span>(<span class="st">&#39;image/&#39;</span>))<span class="op">{</span> <span class="cf">continue</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb14-6" title="6"></a>
+<a class="sourceLine" id="cb14-7" title="7">    <span class="kw">const</span> img <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;img&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-8" title="8">    <span class="va">img</span>.<span class="va">classList</span>.<span class="at">add</span>(<span class="st">&quot;obj&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-9" title="9">    <span class="va">img</span>.<span class="at">file</span> <span class="op">=</span> file<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-10" title="10">    <span class="va">preview</span>.<span class="at">appendChild</span>(img)<span class="op">;</span> <span class="co">// Assuming that &quot;preview&quot; is the div output where the content will be displayed.</span></a>
+<a class="sourceLine" id="cb14-11" title="11"></a>
+<a class="sourceLine" id="cb14-12" title="12">    <span class="kw">const</span> reader <span class="op">=</span> <span class="kw">new</span> <span class="at">FileReader</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-13" title="13">    <span class="va">reader</span>.<span class="at">onload</span> <span class="op">=</span> (<span class="kw">function</span>(aImg) <span class="op">{</span> <span class="cf">return</span> <span class="kw">function</span>(e) <span class="op">{</span> <span class="va">aImg</span>.<span class="at">src</span> <span class="op">=</span> <span class="va">e</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span> <span class="op">};</span> <span class="op">}</span>)(img)<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-14" title="14">    <span class="va">reader</span>.<span class="at">readAsDataURL</span>(file)<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-15" title="15">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb14-16" title="16"><span class="op">}</span></a></code></pre></div>
+<p>Here our loop handling the user-selected files looks at each file’s <code>type</code> attribute to see if its MIME type begins with the string “<code>image/</code>”). For each file that is an image, we create a new <code>img</code> element. CSS can be used to establish any pretty borders or shadows and to specify the size of the image, so that doesn’t need to be done here.</p>
+<p>Each image has the CSS class <code>obj</code> added to it, making it easy to find in the DOM tree. We also add a <code>file</code> attribute to each image specifying the {{DOMxRef(“File”)}} for the image; this will let us fetch the images for actual upload later. We use {{DOMxRef(“Node.appendChild()”)}} to add the new thumbnail to the preview area of our document.</p>
+<p>Next, we establish the {{DOMxRef(“FileReader”)}} to handle asynchronously loading the image and attaching it to the <code>img</code> element. After creating the new <code>FileReader</code> object, we set up its <code>onload</code> function and then call <code>readAsDataURL()</code> to start the read operation in the background. When the entire contents of the image file are loaded, they are converted into a <code>data:</code> URL which is passed to the <code>onload</code> callback. Our implementation of this routine sets the <code>img</code> element’s <code>src</code> attribute to the loaded image which results in the image appearing in the thumbnail on the user’s screen.</p>
+<h2 id="using-object-urls">Using object URLs</h2>
+<p>The DOM {{DOMxRef(“URL.createObjectURL()”)}} and {{DOMxRef(“URL.revokeObjectURL()”)}} methods let you create simple URL strings that can be used to reference any data that can be referred to using a DOM {{DOMxRef(“File”)}} object, including local files on the user’s computer.</p>
+<p>When you have a {{DOMxRef(“File”)}} object you’d like to reference by URL from HTML, you can create an object URL for it like this:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb15-1" title="1"><span class="kw">const</span> objectURL <span class="op">=</span> <span class="va">window</span>.<span class="va">URL</span>.<span class="at">createObjectURL</span>(fileObj)<span class="op">;</span></a></code></pre></div>
+<p>The object URL is a string identifying the {{DOMxRef(“File”)}} object. Each time you call {{DOMxRef(“URL.createObjectURL()”)}}, a unique object URL is created even if you’ve created an object URL for that file already. Each of these must be released. While they are released automatically when the document is unloaded, if your page uses them dynamically you should release them explicitly by calling {{DOMxRef(“URL.revokeObjectURL()”)}}:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb16-1" title="1"><span class="va">URL</span>.<span class="at">revokeObjectURL</span>(objectURL)<span class="op">;</span></a></code></pre></div>
+<h2 id="example-using-object-urls-to-display-images">Example: Using object URLs to display images</h2>
+<p>This example uses object URLs to display image thumbnails. In addition, it displays other file information including their names and sizes.</p>
+<p>The HTML that presents the interface looks like this:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb17-1" title="1"><span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;file&quot;</span><span class="ot"> id=</span><span class="st">&quot;fileElem&quot;</span><span class="ot"> multiple accept=</span><span class="st">&quot;image/*&quot;</span><span class="ot"> style=</span><span class="st">&quot;display:none&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb17-2" title="2"><span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;#&quot;</span><span class="ot"> id=</span><span class="st">&quot;fileSelect&quot;</span><span class="kw">&gt;</span>Select some files<span class="kw">&lt;/a&gt;</span></a>
+<a class="sourceLine" id="cb17-3" title="3"><span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;fileList&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb17-4" title="4">  <span class="kw">&lt;p&gt;</span>No files selected!<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb17-5" title="5"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<p>This establishes our file {{HTMLElement(“input”)}} element as well as a link that invokes the file picker (since we keep the file input hidden to prevent that less-than-attractive user interface from being displayed). This is explained in the section {{anch(“Using hidden file input elements using the click() method”)}}, as is the method that invokes the file picker.</p>
+<p>The <code>handleFiles()</code> method follows:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb18-1" title="1"><span class="kw">const</span> fileSelect <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;fileSelect&quot;</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb18-2" title="2">    fileElem <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;fileElem&quot;</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb18-3" title="3">    fileList <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;fileList&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-4" title="4"></a>
+<a class="sourceLine" id="cb18-5" title="5"><span class="va">fileSelect</span>.<span class="at">addEventListener</span>(<span class="st">&quot;click&quot;</span><span class="op">,</span> <span class="kw">function</span> (e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb18-6" title="6">  <span class="cf">if</span> (fileElem) <span class="op">{</span></a>
+<a class="sourceLine" id="cb18-7" title="7">    <span class="va">fileElem</span>.<span class="at">click</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-8" title="8">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb18-9" title="9">  <span class="va">e</span>.<span class="at">preventDefault</span>()<span class="op">;</span> <span class="co">// prevent navigation to &quot;#&quot;</span></a>
+<a class="sourceLine" id="cb18-10" title="10"><span class="op">},</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-11" title="11"></a>
+<a class="sourceLine" id="cb18-12" title="12"><span class="va">fileElem</span>.<span class="at">addEventListener</span>(<span class="st">&quot;change&quot;</span><span class="op">,</span> handleFiles<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-13" title="13"></a>
+<a class="sourceLine" id="cb18-14" title="14"><span class="kw">function</span> <span class="at">handleFiles</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb18-15" title="15">  <span class="cf">if</span> (<span class="op">!</span><span class="kw">this</span>.<span class="va">files</span>.<span class="at">length</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb18-16" title="16">    <span class="va">fileList</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="st">&quot;&lt;p&gt;No files selected!&lt;/p&gt;&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb18-17" title="17">  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb18-18" title="18">    <span class="va">fileList</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="st">&quot;&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb18-19" title="19">    <span class="kw">const</span> list <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;ul&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-20" title="20">    <span class="va">fileList</span>.<span class="at">appendChild</span>(list)<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-21" title="21">    <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="kw">this</span>.<span class="va">files</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb18-22" title="22">      <span class="kw">const</span> li <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;li&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-23" title="23">      <span class="va">list</span>.<span class="at">appendChild</span>(li)<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-24" title="24"></a>
+<a class="sourceLine" id="cb18-25" title="25">      <span class="kw">const</span> img <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;img&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-26" title="26">      <span class="va">img</span>.<span class="at">src</span> <span class="op">=</span> <span class="va">URL</span>.<span class="at">createObjectURL</span>(<span class="kw">this</span>.<span class="at">files</span>[i])<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-27" title="27">      <span class="va">img</span>.<span class="at">height</span> <span class="op">=</span> <span class="dv">60</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb18-28" title="28">      <span class="va">img</span>.<span class="at">onload</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb18-29" title="29">        <span class="va">URL</span>.<span class="at">revokeObjectURL</span>(<span class="kw">this</span>.<span class="at">src</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-30" title="30">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb18-31" title="31">      <span class="va">li</span>.<span class="at">appendChild</span>(img)<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-32" title="32">      <span class="kw">const</span> info <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;span&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-33" title="33">      <span class="va">info</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="kw">this</span>.<span class="at">files</span>[i].<span class="at">name</span> <span class="op">+</span> <span class="st">&quot;: &quot;</span> <span class="op">+</span> <span class="kw">this</span>.<span class="at">files</span>[i].<span class="at">size</span> <span class="op">+</span> <span class="st">&quot; bytes&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb18-34" title="34">      <span class="va">li</span>.<span class="at">appendChild</span>(info)<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-35" title="35">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb18-36" title="36">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb18-37" title="37"><span class="op">}</span></a></code></pre></div>
+<p>This starts by fetching the URL of the {{HTMLElement(“div”)}} with the ID <code>fileList</code>. This is the block into which we’ll insert our file list, including thumbnails.</p>
+<p>If the {{DOMxRef(“FileList”)}} object passed to <code>handleFiles()</code> is <code>null</code>, we set the inner HTML of the block to display “No files selected!”. Otherwise, we start building our file list, as follows:</p>
+<ol type="1">
+<li>A new unordered list ({{HTMLElement(“ul”)}}) element is created.</li>
+<li>The new list element is inserted into the {{HTMLElement(“div”)}} block by calling its {{DOMxRef(“Node.appendChild()”)}} method.</li>
+<li><p>For each {{DOMxRef(“File”)}} in the {{DOMxRef(“FileList”)}} represented by <code>files</code>:</p>
+<ol type="1">
+<li>Create a new list item ({{HTMLElement(“li”)}}) element and insert it into the list.</li>
+<li>Create a new image ({{HTMLElement(“img”)}}) element.</li>
+<li>Set the image’s source to a new object URL representing the file, using {{DOMxRef(“URL.createObjectURL()”)}} to create the blob URL.</li>
+<li>Set the image’s height to 60 pixels.</li>
+<li>Set up the image’s load event handler to release the object URL since it’s no longer needed once the image has been loaded. This is done by calling the {{DOMxRef(“URL.revokeObjectURL()”)}} method and passing in the object URL string as specified by <code>img.src</code>.</li>
+<li>Append the new list item to the list.</li>
+</ol></li>
+</ol>
+<p>Here is a live demo of the code above:</p>
+<p>{{EmbedLiveSample(‘Example_Using_object_URLs_to_display_images’, ‘100%’, ‘300px’)}}</p>
+<h2 id="example-uploading-a-user-selected-file">Example: Uploading a user-selected file</h2>
+<p>Another thing you might want to do is let the user upload the selected file or files (such as the images selected using the previous example) to a server. This can be done asynchronously very easily.</p>
+<h3 id="creating-the-upload-tasks">Creating the upload tasks</h3>
+<p>Continuing with the code that built the thumbnails in the previous example, recall that every thumbnail image is in the CSS class <code>obj</code> with the corresponding {{DOMxRef(“File”)}} attached in a <code>file</code> attribute. This allows us to select all of the images the user has chosen for uploading using {{DOMxRef(“Document.querySelectorAll()”)}}, like this:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb19-1" title="1"><span class="kw">function</span> <span class="at">sendFiles</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb19-2" title="2">  <span class="kw">const</span> imgs <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelectorAll</span>(<span class="st">&quot;.obj&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb19-3" title="3"></a>
+<a class="sourceLine" id="cb19-4" title="4">  <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">imgs</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb19-5" title="5">    <span class="kw">new</span> <span class="at">FileUpload</span>(imgs[i]<span class="op">,</span> imgs[i].<span class="at">file</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb19-6" title="6">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb19-7" title="7"><span class="op">}</span></a></code></pre></div>
+<p>Line 2 fetches a {{DOMxRef(“NodeList”)}}, called <code>imgs</code>, of all the elements in the document with the CSS class <code>obj</code>. In our case, these will be all of the image thumbnails. Once we have that list, it’s trivial to go through it and create a new <code>FileUpload</code> instance for each. Each of these handles uploading the corresponding file.</p>
+<h3 id="handling-the-upload-process-for-a-file">Handling the upload process for a file</h3>
+<p>The <code>FileUpload</code> function accepts two inputs: an image element and a file from which to read the image data.</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb20-1" title="1"><span class="kw">function</span> <span class="at">FileUpload</span>(img<span class="op">,</span> file) <span class="op">{</span></a>
+<a class="sourceLine" id="cb20-2" title="2">  <span class="kw">const</span> reader <span class="op">=</span> <span class="kw">new</span> <span class="at">FileReader</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb20-3" title="3">  <span class="kw">this</span>.<span class="at">ctrl</span> <span class="op">=</span> <span class="at">createThrobber</span>(img)<span class="op">;</span></a>
+<a class="sourceLine" id="cb20-4" title="4">  <span class="kw">const</span> xhr <span class="op">=</span> <span class="kw">new</span> <span class="at">XMLHttpRequest</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb20-5" title="5">  <span class="kw">this</span>.<span class="at">xhr</span> <span class="op">=</span> xhr<span class="op">;</span></a>
+<a class="sourceLine" id="cb20-6" title="6"></a>
+<a class="sourceLine" id="cb20-7" title="7">  <span class="kw">const</span> self <span class="op">=</span> <span class="kw">this</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb20-8" title="8">  <span class="kw">this</span>.<span class="va">xhr</span>.<span class="va">upload</span>.<span class="at">addEventListener</span>(<span class="st">&quot;progress&quot;</span><span class="op">,</span> <span class="kw">function</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb20-9" title="9">        <span class="cf">if</span> (<span class="va">e</span>.<span class="at">lengthComputable</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb20-10" title="10">          <span class="kw">const</span> percentage <span class="op">=</span> <span class="va">Math</span>.<span class="at">round</span>((<span class="va">e</span>.<span class="at">loaded</span> <span class="op">*</span> <span class="dv">100</span>) / <span class="va">e</span>.<span class="at">total</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb20-11" title="11">          <span class="va">self</span>.<span class="va">ctrl</span>.<span class="at">update</span>(percentage)<span class="op">;</span></a>
+<a class="sourceLine" id="cb20-12" title="12">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb20-13" title="13">      <span class="op">},</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb20-14" title="14"></a>
+<a class="sourceLine" id="cb20-15" title="15">  <span class="va">xhr</span>.<span class="va">upload</span>.<span class="at">addEventListener</span>(<span class="st">&quot;load&quot;</span><span class="op">,</span> <span class="kw">function</span>(e)<span class="op">{</span></a>
+<a class="sourceLine" id="cb20-16" title="16">          <span class="va">self</span>.<span class="va">ctrl</span>.<span class="at">update</span>(<span class="dv">100</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb20-17" title="17">          <span class="kw">const</span> canvas <span class="op">=</span> <span class="va">self</span>.<span class="va">ctrl</span>.<span class="va">ctx</span>.<span class="at">canvas</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb20-18" title="18">          <span class="va">canvas</span>.<span class="va">parentNode</span>.<span class="at">removeChild</span>(canvas)<span class="op">;</span></a>
+<a class="sourceLine" id="cb20-19" title="19">      <span class="op">},</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb20-20" title="20">  <span class="va">xhr</span>.<span class="at">open</span>(<span class="st">&quot;POST&quot;</span><span class="op">,</span> <span class="st">&quot;http://demos.hacks.mozilla.org/paul/demos/resources/webservices/devnull.php&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb20-21" title="21">  <span class="va">xhr</span>.<span class="at">overrideMimeType</span>(<span class="st">&#39;text/plain; charset=x-user-defined-binary&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb20-22" title="22">  <span class="va">reader</span>.<span class="at">onload</span> <span class="op">=</span> <span class="kw">function</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb20-23" title="23">    <span class="va">xhr</span>.<span class="at">send</span>(<span class="va">evt</span>.<span class="va">target</span>.<span class="at">result</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb20-24" title="24">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb20-25" title="25">  <span class="va">reader</span>.<span class="at">readAsBinaryString</span>(file)<span class="op">;</span></a>
+<a class="sourceLine" id="cb20-26" title="26"><span class="op">}</span></a></code></pre></div>
+<p>The <code>FileUpload()</code> function shown above creates a throbber, which is used to display progress information, and then creates an {{DOMxRef(“XMLHttpRequest”)}} to handle uploading the data.</p>
+<p>Before actually transferring the data, several preparatory steps are taken:</p>
+<ol type="1">
+<li>The <code>XMLHttpRequest</code>’s upload <code>progress</code> listener is set to update the throbber with new percentage information so that as the upload progresses the throbber will be updated based on the latest information.</li>
+<li>The <code>XMLHttpRequest</code>’s upload <code>load</code> event handler is set to update the throbber progress information to 100% to ensure the progress indicator actually reaches 100% (in case of granularity quirks during the process). It then removes the throbber since it’s no longer needed. This causes the throbber to disappear once the upload is complete.</li>
+<li>The request to upload the image file is opened by calling <code>XMLHttpRequest</code>’s <code>open()</code> method to start generating a POST request.</li>
+<li>The MIME type for the upload is set by calling the <code>XMLHttpRequest</code> function <code>overrideMimeType()</code>. In this case, we’re using a generic MIME type; you may or may not need to set the MIME type at all depending on your use case.</li>
+<li>The <code>FileReader</code> object is used to convert the file to a binary string.</li>
+<li>Finally, when the content is loaded the <code>XMLHttpRequest</code> function <code>send()</code> is called to upload the file’s content.</li>
+</ol>
+<h3 id="asynchronously-handling-the-file-upload-process">Asynchronously handling the file upload process</h3>
+<p>This example, which uses PHP on the server side and JavaScript on the client side, demonstrates asynchronous uploading of a file.</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb21-1" title="1"><span class="op">&lt;?</span>php</a>
+<a class="sourceLine" id="cb21-2" title="2"><span class="cf">if</span> (<span class="at">isset</span>($_FILES[<span class="st">&#39;myFile&#39;</span>])) <span class="op">{</span></a>
+<a class="sourceLine" id="cb21-3" title="3">    <span class="co">// Example:</span></a>
+<a class="sourceLine" id="cb21-4" title="4">    <span class="at">move_uploaded_file</span>($_FILES[<span class="st">&#39;myFile&#39;</span>][<span class="st">&#39;tmp_name&#39;</span>]<span class="op">,</span> <span class="st">&quot;uploads/&quot;</span> . <span class="at">$_FILES</span>[<span class="st">&#39;myFile&#39;</span>][<span class="st">&#39;name&#39;</span>])<span class="op">;</span></a>
+<a class="sourceLine" id="cb21-5" title="5">    exit<span class="op">;</span></a>
+<a class="sourceLine" id="cb21-6" title="6"><span class="op">}</span></a>
+<a class="sourceLine" id="cb21-7" title="7"><span class="op">?&gt;&lt;!</span>DOCTYPE html<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb21-8" title="8"><span class="op">&lt;</span>html<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb21-9" title="9"><span class="op">&lt;</span>head<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb21-10" title="10">    <span class="op">&lt;</span>title<span class="op">&gt;</span>dnd binary upload&lt;/title<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb21-11" title="11">    <span class="op">&lt;</span>meta http<span class="op">-</span>equiv<span class="op">=</span><span class="st">&quot;Content-Type&quot;</span> content<span class="op">=</span><span class="st">&quot;text/html; charset=UTF-8&quot;</span><span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb21-12" title="12">    <span class="op">&lt;</span>script type<span class="op">=</span><span class="st">&quot;application/javascript&quot;</span><span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb21-13" title="13">        <span class="kw">function</span> <span class="at">sendFile</span>(file) <span class="op">{</span></a>
+<a class="sourceLine" id="cb21-14" title="14">            <span class="kw">const</span> uri <span class="op">=</span> <span class="st">&quot;/index.php&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb21-15" title="15">            <span class="kw">const</span> xhr <span class="op">=</span> <span class="kw">new</span> <span class="at">XMLHttpRequest</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb21-16" title="16">            <span class="kw">const</span> fd <span class="op">=</span> <span class="kw">new</span> <span class="at">FormData</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb21-17" title="17"></a>
+<a class="sourceLine" id="cb21-18" title="18">            <span class="va">xhr</span>.<span class="at">open</span>(<span class="st">&quot;POST&quot;</span><span class="op">,</span> uri<span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb21-19" title="19">            <span class="va">xhr</span>.<span class="at">onreadystatechange</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb21-20" title="20">                <span class="cf">if</span> (<span class="va">xhr</span>.<span class="at">readyState</span> <span class="op">==</span> <span class="dv">4</span> <span class="op">&amp;&amp;</span> <span class="va">xhr</span>.<span class="at">status</span> <span class="op">==</span> <span class="dv">200</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb21-21" title="21">                    <span class="at">alert</span>(<span class="va">xhr</span>.<span class="at">responseText</span>)<span class="op">;</span> <span class="co">// handle response.</span></a>
+<a class="sourceLine" id="cb21-22" title="22">                <span class="op">}</span></a>
+<a class="sourceLine" id="cb21-23" title="23">            <span class="op">};</span></a>
+<a class="sourceLine" id="cb21-24" title="24">            <span class="va">fd</span>.<span class="at">append</span>(<span class="st">&#39;myFile&#39;</span><span class="op">,</span> file)<span class="op">;</span></a>
+<a class="sourceLine" id="cb21-25" title="25">            <span class="co">// Initiate a multipart/form-data upload</span></a>
+<a class="sourceLine" id="cb21-26" title="26">            <span class="va">xhr</span>.<span class="at">send</span>(fd)<span class="op">;</span></a>
+<a class="sourceLine" id="cb21-27" title="27">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb21-28" title="28"></a>
+<a class="sourceLine" id="cb21-29" title="29">        <span class="va">window</span>.<span class="at">onload</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb21-30" title="30">            <span class="kw">const</span> dropzone <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;dropzone&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb21-31" title="31">            <span class="va">dropzone</span>.<span class="at">ondragover</span> <span class="op">=</span> <span class="va">dropzone</span>.<span class="at">ondragenter</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb21-32" title="32">                <span class="va">event</span>.<span class="at">stopPropagation</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb21-33" title="33">                <span class="va">event</span>.<span class="at">preventDefault</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb21-34" title="34">            <span class="op">}</span></a>
+<a class="sourceLine" id="cb21-35" title="35"></a>
+<a class="sourceLine" id="cb21-36" title="36">            <span class="va">dropzone</span>.<span class="at">ondrop</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb21-37" title="37">                <span class="va">event</span>.<span class="at">stopPropagation</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb21-38" title="38">                <span class="va">event</span>.<span class="at">preventDefault</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb21-39" title="39"></a>
+<a class="sourceLine" id="cb21-40" title="40">                <span class="kw">const</span> filesArray <span class="op">=</span> <span class="va">event</span>.<span class="va">dataTransfer</span>.<span class="at">files</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb21-41" title="41">                <span class="cf">for</span> (<span class="kw">let</span> i<span class="op">=</span><span class="dv">0</span><span class="op">;</span> i<span class="op">&lt;</span><span class="va">filesArray</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb21-42" title="42">                    <span class="at">sendFile</span>(filesArray[i])<span class="op">;</span></a>
+<a class="sourceLine" id="cb21-43" title="43">                <span class="op">}</span></a>
+<a class="sourceLine" id="cb21-44" title="44">            <span class="op">}</span></a>
+<a class="sourceLine" id="cb21-45" title="45">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb21-46" title="46">    &lt;/script<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb21-47" title="47">&lt;/head<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb21-48" title="48"><span class="op">&lt;</span>body<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb21-49" title="49">    <span class="op">&lt;</span>div<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb21-50" title="50">        <span class="op">&lt;</span>div id<span class="op">=</span><span class="st">&quot;dropzone&quot;</span> style<span class="op">=</span><span class="st">&quot;margin:30px; width:500px; height:300px; border:1px dotted grey;&quot;</span><span class="op">&gt;</span>Drag <span class="op">&amp;</span> drop your file <span class="va">here</span>...&lt;/div<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb21-51" title="51">    &lt;/div<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb21-52" title="52">&lt;/body<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb21-53" title="53">&lt;/html<span class="op">&gt;</span></a></code></pre></div>
+<h2 id="example-using-object-urls-to-display-pdf">Example: Using object URLs to display PDF</h2>
+<p>Object URLs can be used for other things than just images! They can be used to display embedded PDF files or any other resources that can be displayed by the browser.</p>
+<p>In Firefox, to have the PDF appear embedded in the iframe (rather than proposed as a downloaded file), the preference <code>pdfjs.disabled</code> must be set to <code>false</code> {{non-standard_inline()}}.</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb22-1" title="1"><span class="kw">&lt;iframe</span><span class="ot"> id=</span><span class="st">&quot;viewer&quot;</span><span class="kw">&gt;</span></a></code></pre></div>
+<p>And here is the change of the <code>src</code> attribute:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb23-1" title="1"><span class="kw">const</span> obj_url <span class="op">=</span> <span class="va">URL</span>.<span class="at">createObjectURL</span>(blob)<span class="op">;</span></a>
+<a class="sourceLine" id="cb23-2" title="2"><span class="kw">const</span> iframe <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;viewer&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb23-3" title="3"><span class="va">iframe</span>.<span class="at">setAttribute</span>(<span class="st">&#39;src&#39;</span><span class="op">,</span> obj_url)<span class="op">;</span></a>
+<a class="sourceLine" id="cb23-4" title="4"><span class="va">URL</span>.<span class="at">revokeObjectURL</span>(obj_url)<span class="op">;</span></a></code></pre></div>
+<h2 id="example-using-object-urls-with-other-file-types">Example: Using object URLs with other file types</h2>
+<p>You can manipulate files of other formats the same way. Here is how to preview uploaded video:</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb24-1" title="1"><span class="kw">const</span> video <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;video&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb24-2" title="2"><span class="kw">const</span> obj_url <span class="op">=</span> <span class="va">URL</span>.<span class="at">createObjectURL</span>(blob)<span class="op">;</span></a>
+<a class="sourceLine" id="cb24-3" title="3"><span class="va">video</span>.<span class="at">src</span> <span class="op">=</span> obj_url<span class="op">;</span></a>
+<a class="sourceLine" id="cb24-4" title="4"><span class="va">video</span>.<span class="at">play</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb24-5" title="5"><span class="va">URL</span>.<span class="at">revokeObjectURL</span>(obj_url)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<table class="no-markdown">
+<thead>
+<tr>
+<th scope="col">
+Specification
+</th>
+<th scope="col">
+Status
+</th>
+<th scope="col">
+Comment
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+{{SpecName(‘HTML WHATWG’, ‘number-state.html#concept-input-type-file-selected’, ‘File upload state’)}}
+</td>
+<td>
+{{Spec2(‘HTML WHATWG’)}}
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+{{SpecName(‘File API’)}}
+</td>
+<td>
+{{Spec2(‘File API’)}}
+</td>
+<td>
+Initial definition
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{DOMxRef(“File”)}}</li>
+<li>{{DOMxRef(“FileList”)}}</li>
+<li>{{DOMxRef(“FileReader”)}}</li>
+<li>{{DOMxRef(“URL”)}}</li>
+<li>{{DOMxRef(“XMLHttpRequest”)}}</li>
+<li><a href="/en-US/docs/Web/API/XMLHttpRequest/Using_XMLHttpRequest">Using XMLHttpRequest</a></li>
+</ul>

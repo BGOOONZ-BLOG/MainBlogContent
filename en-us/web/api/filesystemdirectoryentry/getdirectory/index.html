@@ -1,0 +1,139 @@
+<p>{{APIRef(“File and Directory Entries API”)}}</p>
+<p>The {{domxref(“FileSystemDirectoryEntry”)}} interface’s method <strong><code>getDirectory()</code></strong> returns a {{domxref(“FileSystemDirectoryEntry”)}} object corresponding to a directory contained somewhere within the directory subtree rooted at the directory on which it’s called.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">FileSystemDirectoryEntry</span>.<span class="at">getDirectory</span>([path][<span class="op">,</span> options][<span class="op">,</span> successCallback][<span class="op">,</span> errorCallback])<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>path</code> {{optional_inline}}
+<ul>
+<li>: A {{domxref(“USVString”)}} representing an absolute path or a path relative to the directory on which the method is called, describing which directory entry to return. Absolute paths may not be able to be used, for security reasons.</li>
+</ul></li>
+<li><code>options</code> {{optional_inline}}
+<ul>
+<li>: An object which allows you to specify whether or not to create the entry if it’s missing and if it’s an error if the file already exists. These options are currently not useful in Web contexts. See the {{anch(“options parameter”)}} section for more details.</li>
+</ul></li>
+<li><code>successCallback</code> {{optional_inline}}
+<ul>
+<li>: A method to be called once the {{domxref(“FileSystemDirectoryEntry”)}} has been created. The method receives a single parameter: the <code>FileSystemDirectoryEntry</code> object representing the directory in question.</li>
+</ul></li>
+<li><code>errorCallback</code> {{optional_inline}}
+<ul>
+<li>: A method to be called if an error occurs. Receives as its sole input parameter a {{domxref(“DomException”)}} object describing the error which occurred.</li>
+</ul></li>
+</ul>
+<h4 id="options-parameter"><code>options</code> parameter</h4>
+<p>The <code>options</code> parameter object accepts the following parameters:</p>
+<ul>
+<li><code>create</code> {{optional_inline}}
+<ul>
+<li>: If this property is <code>true</code>, and the requested directory doesn’t exist, the user agent should create it. The default is <code>false</code>. The parent directory must already exist.</li>
+</ul></li>
+<li><code>exclusive</code> {{optional_inline}}
+<ul>
+<li>: If <code>true</code>, and the <code>create</code> option is also <code>true</code>, the directory must not exist prior to issuing the call. Instead, it must be possible for it to be created newly at call time. The default is <code>false</code>. This parameter is ignored if <code>create</code> is <code>false</code>.</li>
+</ul></li>
+</ul>
+<p>The table below describes the result of each possible combination of these flags depending on whether or not the target directory path already exists.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th><code>create</code> option</th>
+<th><code>exclusive</code> option</th>
+<th>Path condition</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>false</code></td>
+<td><em>Ignored</em></td>
+<td>Path exists and is a directory</td>
+<td>The <code>successCallback</code> is called with a {{domxref(“FileSystemDirectoryEntry”)}}.</td>
+</tr>
+<tr class="even">
+<td><code>false</code></td>
+<td><em>Ignored</em></td>
+<td>Path exists but is a file</td>
+<td>The <code>errorCallback</code> is called with an appropriate error code (if the callback was provided).</td>
+</tr>
+<tr class="odd">
+<td><code>true</code></td>
+<td><code>false</code></td>
+<td>Path exists</td>
+<td>The existing directory is removed and replaced with a new one, then the <code>successCallback</code> is called with a {{domxref(“FileSystemDirectoryEntry”)}}.</td>
+</tr>
+<tr class="even">
+<td><code>true</code></td>
+<td><code>false</code></td>
+<td>Path doesn’t exist</td>
+<td>The directory is created, then a {{domxref(“FileSystemDirectoryEntry”)}} is passed to the <code>successCallback</code>.</td>
+</tr>
+<tr class="odd">
+<td><code>true</code></td>
+<td><code>true</code></td>
+<td>Path exists</td>
+<td>The <code>errorCallback</code> is called with an appropriate error, such as <code>FileError.PATH_EXISTS_ERR</code>.</td>
+</tr>
+<tr class="even">
+<td><code>true</code></td>
+<td><code>true</code></td>
+<td>Path doesn’t exist</td>
+<td>The directory is created, then a {{domxref(“FileSystemDirectoryEntry”)}} is passed to the <code>successCallback</code>.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="return-value">Return value</h3>
+<p>None.</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><code>NotFoundError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the <code>create</code> option was not specified (or was specified as <code>false</code>), and the directory doesn’t exist.</li>
+</ul></li>
+<li><code>SecurityError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the request to access the directory was denied for security reasons.</li>
+</ul></li>
+<li><code>TypeMismatchError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the path specified is not a directory; it’s probably a file, but might be an unsupported file descriptor such as a pipe; this depends on the user agent to some extent.</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<p>In this example, a function is presented whose job it is to locate within a user’s app data directory a JSON file containing a user dictionary for a specified language, then load that dictionary.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">let</span> dictionary <span class="op">=</span> <span class="kw">null</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">function</span> <span class="at">loadDictionaryForLanguage</span>(appDataDirEntry<span class="op">,</span> lang) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  dictionary <span class="op">=</span> <span class="kw">null</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="va">appDataDirEntry</span>.<span class="at">getDirectory</span>(<span class="st">&quot;Dictionaries&quot;</span><span class="op">,</span> <span class="op">{},</span> <span class="kw">function</span>(dirEntry) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-7" title="7">    <span class="va">dirEntry</span>.<span class="at">getFile</span>(lang <span class="op">+</span> <span class="st">&quot;-dict.json&quot;</span><span class="op">,</span> <span class="op">{},</span> <span class="kw">function</span>(fileEntry) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-8" title="8">      <span class="va">fileEntry</span>.<span class="at">file</span>(<span class="kw">function</span>(dictFile) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-9" title="9">        <span class="kw">let</span> reader <span class="op">=</span> <span class="kw">new</span> <span class="at">FileReader</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10"></a>
+<a class="sourceLine" id="cb2-11" title="11">        <span class="va">reader</span>.<span class="at">addEventListener</span>(<span class="st">&quot;loadend&quot;</span><span class="op">,</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-12" title="12">          dictionary <span class="op">=</span> <span class="va">JSON</span>.<span class="at">parse</span>(<span class="va">reader</span>.<span class="at">result</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13">        <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14"></a>
+<a class="sourceLine" id="cb2-15" title="15">        <span class="va">reader</span>.<span class="at">readAsText</span>(dictFile)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-16" title="16">      <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-17" title="17">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-19" title="19"><span class="op">}</span></a></code></pre></div>
+<p>The <code>loadDictionaryForLanguage()</code> function starts by using <code>getDirectory()</code> to obtain the {{domxref(“FileSystemDirectoryEntry”)}} object representing a subfolder named “Dictionaries” located inside the specified app data directory. The success callback for this takes the resulting directory entry object and calls {{domxref(“FileSystemDirectoryEntry.getFile”, “getFile()”)}} to get a {{domxref(“FileSystemFileEntry”)}} object representing the dictionary file; the success callback for this, in turn, creates a new {{domxref(“FileReader”)}} and uses it to load the contents of the file. When that is loaded successfully (as indicated by the {{event(“loadend”)}} event being fired), the loaded text is passed into {{jsxref(“JSON.parse()”)}} to be reconstituted into a JavaScript object.</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/File_and_Directory_Entries_API">File and Directory Entries API</a></li>
+<li><a href="/en-US/docs/Web/API/File_and_Directory_Entries_API/Introduction">Introduction to the File System API</a></li>
+<li>{{domxref(“FileSystemDirectoryEntry”)}}</li>
+</ul>

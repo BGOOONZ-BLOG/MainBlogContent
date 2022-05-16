@@ -1,0 +1,66 @@
+<p>{{APIRef(“Web Animations”)}}{{SeeCompatTable}}</p>
+<p>The <strong><code>Animation.playState</code></strong> property of the <a href="/en-US/docs/Web/API/Web_Animations_API">Web Animations API</a> returns and sets an enumerated value describing the playback state of an animation.</p>
+<blockquote>
+<p><strong>Note:</strong> This property is read-only for CSS Animations and Transitions.</p>
+</blockquote>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> currentPlayState <span class="op">=</span> <span class="va">Animation</span>.<span class="at">playState</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="va">Animation</span>.<span class="at">playState</span> <span class="op">=</span> newState<span class="op">;</span></a></code></pre></div>
+<h3 id="value">Value</h3>
+<ul>
+<li><code>idle</code>
+<ul>
+<li>: The current time of the animation is unresolved and there are no pending tasks.</li>
+</ul></li>
+<li><code>running</code>
+<ul>
+<li>: The animation is running.</li>
+</ul></li>
+<li><code>paused</code>
+<ul>
+<li>: The animation was suspended and the {{domxref(“Animation.currentTime”)}} property is not updating.</li>
+</ul></li>
+<li><code>finished</code>
+<ul>
+<li>: The animation has reached one of its boundaries and the {{domxref(“Animation.currentTime”)}} property is not updating.</li>
+</ul></li>
+</ul>
+<p>Previously, Web Animations defined a <strong><code>pending</code></strong> value to indicate that some asynchronous operation such as initiating playback was yet to complete. This is now indicated by the separate {{domxref(“Animation.pending”)}} property.</p>
+<h2 id="example">Example</h2>
+<p>In the <a href="http://codepen.io/rachelnabors/pen/PNYGZQ?editors=0010">Growing/Shrinking Alice Game</a> example, players can get an ending with <a href="http://codepen.io/rachelnabors/pen/EPJdJx?editors=0010">Alice crying into a pool of tears</a>. In the game, for performance reasons, the tears should only be animating when they’re visible. So they must be paused as soon as they are animated like so:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">// Setting up the tear animations</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="va">tears</span>.<span class="at">forEach</span>(<span class="kw">function</span>(el) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="va">el</span>.<span class="at">animate</span>(</a>
+<a class="sourceLine" id="cb2-5" title="5">    tearsFalling<span class="op">,</span></a>
+<a class="sourceLine" id="cb2-6" title="6">    <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-7" title="7">      <span class="dt">delay</span><span class="op">:</span> <span class="at">getRandomMsRange</span>(<span class="op">-</span><span class="dv">1000</span><span class="op">,</span> <span class="dv">1000</span>)<span class="op">,</span> <span class="co">// randomized for each tear</span></a>
+<a class="sourceLine" id="cb2-8" title="8">      <span class="dt">duration</span><span class="op">:</span> <span class="at">getRandomMsRange</span>(<span class="dv">2000</span><span class="op">,</span> <span class="dv">6000</span>)<span class="op">,</span> <span class="co">// randomized for each tear</span></a>
+<a class="sourceLine" id="cb2-9" title="9">      <span class="dt">iterations</span><span class="op">:</span> <span class="kw">Infinity</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-10" title="10">      <span class="dt">easing</span><span class="op">:</span> <span class="st">&#39;cubic-bezier(0.6, 0.04, 0.98, 0.335)&#39;</span></a>
+<a class="sourceLine" id="cb2-11" title="11">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12">  <span class="va">el</span>.<span class="at">pause</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14"></a>
+<a class="sourceLine" id="cb2-15" title="15"><span class="co">// Play the tears falling when the ending needs to be shown.</span></a>
+<a class="sourceLine" id="cb2-16" title="16"></a>
+<a class="sourceLine" id="cb2-17" title="17"><span class="va">tears</span>.<span class="at">forEach</span>(<span class="kw">function</span>(el) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-18" title="18">  <span class="va">el</span>.<span class="at">play</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-19" title="19"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-20" title="20"></a>
+<a class="sourceLine" id="cb2-21" title="21"><span class="co">// Reset the crying tears animations and pause them.</span></a>
+<a class="sourceLine" id="cb2-22" title="22"></a>
+<a class="sourceLine" id="cb2-23" title="23"><span class="va">tears</span>.<span class="at">forEach</span>(<span class="kw">function</span>(el) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-24" title="24">  <span class="va">el</span>.<span class="at">pause</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-25" title="25">  <span class="va">el</span>.<span class="at">currentTime</span> <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-26" title="26"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Web_Animations_API">Web Animations API</a></li>
+<li>{{domxref(“Animation”)}} for other methods and properties you can use to control web page animation.</li>
+</ul>

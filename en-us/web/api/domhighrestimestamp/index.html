@@ -1,0 +1,59 @@
+<p>{{APIRef(“High Resolution Time”)}}</p>
+<p>The <strong><code>DOMHighResTimeStamp</code></strong> type is a <code>double</code> and is used to store a time value in milliseconds.</p>
+<p>This type can be used to describe a discrete point in time or a time interval (the difference in time between two discrete points in time).</p>
+<p>The time, given in milliseconds, should be accurate to 5 µs (microseconds), with the fractional part of the number indicating fractions of a millisecond. However, if the browser is unable to provide a time value accurate to 5 µs (due, for example, to hardware or software constraints), the browser can represent the value as a time in milliseconds accurate to a millisecond. Also note the section below on reduced time precision controlled by browser preferences to avoid timing attacks and fingerprinting.</p>
+<p>Further, if the device or operating system the user agent is running on doesn’t have a clock accurate to the microsecond level, they may only be accurate to the millisecond.</p>
+<h2 id="reduced-time-precision">Reduced time precision</h2>
+<p>To offer protection against timing attacks and fingerprinting, the precision of time stamps might get rounded depending on browser settings. In Firefox, the <code>privacy.reduceTimerPrecision</code> preference is enabled by default and defaults to 20 µs in Firefox 59; in 60 it will be 2ms.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="co">// reduced time precision (2ms) in Firefox 60</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="va">event</span>.<span class="at">timeStamp</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="co">// 1519211809934</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="co">// 1519211810362</span></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="co">// 1519211811670</span></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="co">// ...</span></a>
+<a class="sourceLine" id="cb1-7" title="7"></a>
+<a class="sourceLine" id="cb1-8" title="8"><span class="co">// reduced time precision with `privacy.resistFingerprinting` enabled</span></a>
+<a class="sourceLine" id="cb1-9" title="9"><span class="va">event</span>.<span class="at">timeStamp</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-10" title="10"><span class="co">// 1519129853500</span></a>
+<a class="sourceLine" id="cb1-11" title="11"><span class="co">// 1519129858900</span></a>
+<a class="sourceLine" id="cb1-12" title="12"><span class="co">// 1519129864400</span></a>
+<a class="sourceLine" id="cb1-13" title="13"><span class="co">// ...</span></a></code></pre></div>
+<p>In Firefox, you can also enable <code>privacy.resistFingerprinting</code>, the precision will be 100ms or the value of <code>privacy.resistFingerprinting.reduceTimerPrecision.microseconds</code>, whichever is larger.</p>
+<h2 id="properties">Properties</h2>
+<p><em>This type has no properties. It is a double-precision floating-point value.</em></p>
+<h3 id="value">Value</h3>
+<p>The value of a <code>DOMHighResTimeStamp</code> is a double-precision floating-point number which describes the number of milliseconds (accurate to within 5 microseconds if the device supports it) elapsed between two points in time. The starting time can be either a specific time determined by the script for a site or app, or the <strong>time origin</strong>.</p>
+<h4 id="the-time-origin">The time origin</h4>
+<p>The <strong>time origin</strong> is a standard time which is considered to be the beginning of the current document’s lifetime. It’s calculated like this:</p>
+<ul>
+<li><p>If the script’s {{Glossary(“global object”)}} is a {{domxref(“Window”)}}, the time origin is determined as follows:</p>
+<ul>
+<li>If the current {{domxref(“Document”)}} is the first one loaded in the <code>Window</code>, the time origin is the time at which the browser context was created.</li>
+<li>If during the process of unloading the previous document which was loaded in the window, a confirmation dialog was displayed to let the user confirm whether or not to leave the previous page, the time origin is the time at which the user confirmed that navigating to the new page was acceptable.</li>
+<li>If neither of the above determines the time origin, then the time origin is the time at which the navigation responsible for creating the window’s current <code>Document</code> took place.</li>
+</ul></li>
+<li>If the script’s global object is a {{domxref(“WorkerGlobalScope”)}} (that is, the script is running as a web worker), the time origin is the moment at which the worker was created.</li>
+<li><p>In all other cases, the time origin is undefined.</p></li>
+</ul>
+<h2 id="methods">Methods</h2>
+<p><em>This type has no methods.</em></p>
+<h2 id="usage-notes">Usage notes</h2>
+<p>You can get the current timestamp value—the time that has elapsed since the context was created—by calling the {{domxref(“performance”)}} method {{domxref(“performance.now”, “now()”)}}. This method is available in both {{domxref(“Window”)}} and {{domxref(“Worker”)}} contexts.</p>
+<h2 id="example">Example</h2>
+<p>To determine how much time has elapsed since a particular point in your code, you can do something like this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">let</span> startTime <span class="op">=</span> <span class="va">performance</span>.<span class="at">now</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="co">/* ... do things for a while ... */</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="kw">let</span> elapsedTime <span class="op">=</span> <span class="va">performance</span>.<span class="at">now</span>() <span class="op">-</span> startTime<span class="op">;</span></a></code></pre></div>
+<p>Upon completion, the value of <code>elapsedTime</code> is the number of milliseconds that have elapsed since you recorded the starting time in line 1.</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Navigation_timing_API">Navigation Timing API</a></li>
+<li>{{domxref(“Performance”)}}</li>
+<li><a href="/en-US/docs/Web/API/Performance/now"><code>performance.now()</code></a></li>
+</ul>

@@ -1,0 +1,76 @@
+<p>{{APIRef(“Web Audio API”)}}</p>
+<p>The <strong><code>AudioWorkletProcessor()</code></strong> constructor creates a new {{domxref(“AudioWorkletProcessor”)}} object, which represents an underlying audio processing mechanism of an {{domxref(“AudioWorkletNode”)}}.</p>
+<h2 id="syntax">Syntax</h2>
+<blockquote>
+<p><strong>Note:</strong> The <code>AudioWorkletProcessor</code> and classes that derive from it cannot be instantiated directly from a user-supplied code. Instead, they are created only internally by the creation of an associated {{domxref(“AudioWorkletNode”)}}s.</p>
+</blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">new</span> <span class="at">AudioWorkletProcessor</span>(options)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><p><code>options</code></p>
+<ul>
+<li><p>: An object that is passed as <em>options</em> parameter to the {{domxref(“AudioWorkletNode.AudioWorkletNode”, “AudioWorkletNode constructor”)}} and passed through <a href="/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm">the structured clone algorithm</a>. Available properties are as follows:</p>
+<!-- The specification refers to this object as: AudioWorkletNodeOptions -->
+<ul>
+<li><code>numberOfInputs</code> {{optional_inline}}
+<ul>
+<li>: The value to initialize the {{domxref(“AudioNode.numberOfInputs”, “numberOfInputs”)}} property to. Defaults to 1.</li>
+</ul></li>
+<li><code>numberOfOutputs</code> {{optional_inline}}
+<ul>
+<li>: The value to initialize the {{domxref(“AudioNode.numberOfOutputs”, “numberOfOutputs”)}} property to. Defaults to 1.</li>
+</ul></li>
+<li><code>outputChannelCount</code> {{optional_inline}}
+<ul>
+<li>: An <strong>array</strong> defining the number of channels for each output. For example, <em>outputChannelCount: [n, m]</em> specifies the number of channels in the first output to be <em>n</em> and the second output to be <em>m</em>. The array length must match <code>numberOfOutputs</code>.</li>
+</ul></li>
+<li><code>parameterData</code> {{optional_inline}}
+<ul>
+<li>: An object containing the initial values of custom {{domxref(“AudioParam”)}} objects on this node (in its {{domxref(“AudioWorkletNode.parameters”, “parameters”)}} property), with <code>key</code> being the name of a custom parameter and <code>value</code> being its initial value.</li>
+</ul></li>
+<li><code>processorOptions</code> {{optional_inline}}
+<ul>
+<li>: Any additional data that can be used for custom initialization of the underlying {{domxref(“AudioWorkletProcessor”)}}.</li>
+</ul></li>
+</ul>
+<p>Note that there are default values for the first two properties, so even if there are no <em>options</em> object passed to the {{domxref(“AudioWorkletNode.AudioWorkletNode”, “AudioWorkletNode constructor”)}}, the <em>options</em> object passed by the node to the <code>AudioWorkletProcessor</code> constructor will exist and at minimum have <code>numberOfInputs</code> and <code>numberOfOutputs</code>.</p></li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>The newly constructed {{domxref(“AudioWorkletProcessor”)}} instance.</p>
+<h2 id="example">Example</h2>
+<p>In this example we pass custom options to the {{domxref(“AudioWorkletNode.AudioWorkletNode”, “AudioWorkletNode constructor”)}} and observe how a <a href="/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm">structured clone</a> of them gets passed to our <code>AudioWorkletProcessor</code> constructor.</p>
+<p>First, we need to define a custom {{domxref(“AudioWorkletProcessor”)}} and register it. Note that this should be done in a separate file.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">// test-processor.js</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">class</span> TestProcessor <span class="kw">extends</span> AudioWorkletProcessor <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="at">constructor</span> (options) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">    <span class="kw">super</span>()</a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="va">console</span>.<span class="at">log</span>(<span class="va">options</span>.<span class="at">numberOfInputs</span>)</a>
+<a class="sourceLine" id="cb2-6" title="6">    <span class="va">console</span>.<span class="at">log</span>(<span class="va">options</span>.<span class="va">processorOptions</span>.<span class="at">someUsefulVariable</span>)</a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="at">process</span> (inputs<span class="op">,</span> outputs<span class="op">,</span> parameters) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-9" title="9">    <span class="cf">return</span> <span class="kw">true</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-12" title="12"></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="at">registerProcessor</span>(<span class="st">&#39;test-processor&#39;</span><span class="op">,</span> TestProcessor)</a></code></pre></div>
+<p>Next, in our main script file we’ll load the processor, create an instance of <code>AudioWorkletNode</code> passing it the name of the processor and <em>options</em> object.</p>
+<p>In the <em>options</em> object we pass <code>processorOptions</code> with a {{jsxref(“Map”)}} instance under <code>someUsefulVariable</code> key. We don’t pass <code>numberOfInputs</code> and see how it gets its default value.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> audioContext <span class="op">=</span> <span class="kw">new</span> <span class="at">AudioContext</span>()</a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="cf">await</span> <span class="va">audioContext</span>.<span class="va">audioWorklet</span>.<span class="at">addModule</span>(<span class="st">&#39;test-processor.js&#39;</span>)</a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw">const</span> testNode <span class="op">=</span> <span class="kw">new</span> <span class="at">AudioWorkletNode</span>(audioContext<span class="op">,</span> <span class="st">&#39;test-processor&#39;</span><span class="op">,</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="dt">processorOptions</span><span class="op">:</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-5" title="5">    <span class="dt">someUsefulVariable</span><span class="op">:</span> <span class="kw">new</span> <span class="at">Map</span>([[<span class="dv">1</span><span class="op">,</span> <span class="st">&#39;one&#39;</span>]<span class="op">,</span> [<span class="dv">2</span><span class="op">,</span> <span class="st">&#39;two&#39;</span>]])</a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-7" title="7"><span class="op">}</span>)</a></code></pre></div>
+<p>The console output will be as follows:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="op">&gt;</span> <span class="dv">1</span> <span class="co">// AudioWorkletNode options.numberOfInputs set to default</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="op">&gt;</span> <span class="at">Map</span>(<span class="dv">2</span>) <span class="op">{</span><span class="dv">1</span> <span class="kw">=&gt;</span> <span class="st">&quot;one&quot;</span><span class="op">,</span> <span class="dv">2</span> <span class="kw">=&gt;</span> <span class="st">&quot;two&quot;</span><span class="op">}</span> <span class="co">// A cloned map under someUsefulVariable</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{domxref(“AudioWorkletNode”, “AudioWorkletNode”)}} interface</li>
+</ul>

@@ -1,0 +1,120 @@
+<p>{{draft}}</p>
+<p>This page describes how to use the <a href="https://www.w3.org/TR/DOM-Level-3-Core">DOM Core</a> API in JavaScript to create and modify DOM objects. It applies to all Gecko-based applications (such as Firefox) both in privileged (extensions) and unprivileged (web pages) code.</p>
+<h3 id="dynamically-creating-a-dom-tree">Dynamically creating a DOM tree</h3>
+<p>Consider the following XML document:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode xml"><code class="sourceCode xml"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">&lt;?xml</span> version=&quot;1.0&quot;<span class="kw">?&gt;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">&lt;people&gt;</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="kw">&lt;person</span><span class="ot"> first-name=</span><span class="st">&quot;eric&quot;</span><span class="ot"> middle-initial=</span><span class="st">&quot;H&quot;</span><span class="ot"> last-name=</span><span class="st">&quot;jung&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb1-4" title="4">    <span class="kw">&lt;address</span><span class="ot"> street=</span><span class="st">&quot;321 south st&quot;</span><span class="ot"> city=</span><span class="st">&quot;denver&quot;</span><span class="ot"> state=</span><span class="st">&quot;co&quot;</span><span class="ot"> country=</span><span class="st">&quot;usa&quot;</span><span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb1-5" title="5">    <span class="kw">&lt;address</span><span class="ot"> street=</span><span class="st">&quot;123 main st&quot;</span><span class="ot"> city=</span><span class="st">&quot;arlington&quot;</span><span class="ot"> state=</span><span class="st">&quot;ma&quot;</span><span class="ot"> country=</span><span class="st">&quot;usa&quot;</span><span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb1-6" title="6">  <span class="kw">&lt;/person&gt;</span></a>
+<a class="sourceLine" id="cb1-7" title="7"></a>
+<a class="sourceLine" id="cb1-8" title="8">  <span class="kw">&lt;person</span><span class="ot"> first-name=</span><span class="st">&quot;jed&quot;</span><span class="ot"> last-name=</span><span class="st">&quot;brown&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb1-9" title="9">    <span class="kw">&lt;address</span><span class="ot"> street=</span><span class="st">&quot;321 north st&quot;</span><span class="ot"> city=</span><span class="st">&quot;atlanta&quot;</span><span class="ot"> state=</span><span class="st">&quot;ga&quot;</span><span class="ot"> country=</span><span class="st">&quot;usa&quot;</span><span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb1-10" title="10">    <span class="kw">&lt;address</span><span class="ot"> street=</span><span class="st">&quot;123 west st&quot;</span><span class="ot"> city=</span><span class="st">&quot;seattle&quot;</span><span class="ot"> state=</span><span class="st">&quot;wa&quot;</span><span class="ot"> country=</span><span class="st">&quot;usa&quot;</span><span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb1-11" title="11">    <span class="kw">&lt;address</span><span class="ot"> street=</span><span class="st">&quot;321 south avenue&quot;</span><span class="ot"> city=</span><span class="st">&quot;denver&quot;</span><span class="ot"> state=</span><span class="st">&quot;co&quot;</span><span class="ot"> country=</span><span class="st">&quot;usa&quot;</span><span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb1-12" title="12">  <span class="kw">&lt;/person&gt;</span></a>
+<a class="sourceLine" id="cb1-13" title="13"><span class="kw">&lt;/people&gt;</span></a></code></pre></div>
+<p>The W3C DOM API, supported by Mozilla, can be used to create an in-memory representation of this document like so:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> doc <span class="op">=</span> <span class="va">document</span>.<span class="va">implementation</span>.<span class="at">createDocument</span>(<span class="st">&quot;&quot;</span><span class="op">,</span> <span class="st">&quot;&quot;</span><span class="op">,</span> <span class="kw">null</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">var</span> peopleElem <span class="op">=</span> <span class="va">doc</span>.<span class="at">createElement</span>(<span class="st">&quot;people&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="kw">var</span> personElem1 <span class="op">=</span> <span class="va">doc</span>.<span class="at">createElement</span>(<span class="st">&quot;person&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="va">personElem1</span>.<span class="at">setAttribute</span>(<span class="st">&quot;first-name&quot;</span><span class="op">,</span> <span class="st">&quot;eric&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="va">personElem1</span>.<span class="at">setAttribute</span>(<span class="st">&quot;middle-initial&quot;</span><span class="op">,</span> <span class="st">&quot;h&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="va">personElem1</span>.<span class="at">setAttribute</span>(<span class="st">&quot;last-name&quot;</span><span class="op">,</span> <span class="st">&quot;jung&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8"></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="kw">var</span> addressElem1 <span class="op">=</span> <span class="va">doc</span>.<span class="at">createElement</span>(<span class="st">&quot;address&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="va">addressElem1</span>.<span class="at">setAttribute</span>(<span class="st">&quot;street&quot;</span><span class="op">,</span> <span class="st">&quot;321 south st&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="va">addressElem1</span>.<span class="at">setAttribute</span>(<span class="st">&quot;city&quot;</span><span class="op">,</span> <span class="st">&quot;denver&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12"><span class="va">addressElem1</span>.<span class="at">setAttribute</span>(<span class="st">&quot;state&quot;</span><span class="op">,</span> <span class="st">&quot;co&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="va">addressElem1</span>.<span class="at">setAttribute</span>(<span class="st">&quot;country&quot;</span><span class="op">,</span> <span class="st">&quot;usa&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14"><span class="va">personElem1</span>.<span class="at">appendChild</span>(addressElem1)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-15" title="15"></a>
+<a class="sourceLine" id="cb2-16" title="16"><span class="kw">var</span> addressElem2 <span class="op">=</span> <span class="va">doc</span>.<span class="at">createElement</span>(<span class="st">&quot;address&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-17" title="17"><span class="va">addressElem2</span>.<span class="at">setAttribute</span>(<span class="st">&quot;street&quot;</span><span class="op">,</span> <span class="st">&quot;123 main st&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18"><span class="va">addressElem2</span>.<span class="at">setAttribute</span>(<span class="st">&quot;city&quot;</span><span class="op">,</span> <span class="st">&quot;arlington&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-19" title="19"><span class="va">addressElem2</span>.<span class="at">setAttribute</span>(<span class="st">&quot;state&quot;</span><span class="op">,</span> <span class="st">&quot;ma&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-20" title="20"><span class="va">addressElem2</span>.<span class="at">setAttribute</span>(<span class="st">&quot;country&quot;</span><span class="op">,</span> <span class="st">&quot;usa&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-21" title="21"><span class="va">personElem1</span>.<span class="at">appendChild</span>(addressElem2)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-22" title="22"></a>
+<a class="sourceLine" id="cb2-23" title="23"><span class="kw">var</span> personElem2 <span class="op">=</span> <span class="va">doc</span>.<span class="at">createElement</span>(<span class="st">&quot;person&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-24" title="24"><span class="va">personElem2</span>.<span class="at">setAttribute</span>(<span class="st">&quot;first-name&quot;</span><span class="op">,</span> <span class="st">&quot;jed&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-25" title="25"><span class="va">personElem2</span>.<span class="at">setAttribute</span>(<span class="st">&quot;last-name&quot;</span><span class="op">,</span> <span class="st">&quot;brown&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-26" title="26"></a>
+<a class="sourceLine" id="cb2-27" title="27"><span class="kw">var</span> addressElem3 <span class="op">=</span> <span class="va">doc</span>.<span class="at">createElement</span>(<span class="st">&quot;address&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-28" title="28"><span class="va">addressElem3</span>.<span class="at">setAttribute</span>(<span class="st">&quot;street&quot;</span><span class="op">,</span> <span class="st">&quot;321 north st&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-29" title="29"><span class="va">addressElem3</span>.<span class="at">setAttribute</span>(<span class="st">&quot;city&quot;</span><span class="op">,</span> <span class="st">&quot;atlanta&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-30" title="30"><span class="va">addressElem3</span>.<span class="at">setAttribute</span>(<span class="st">&quot;state&quot;</span><span class="op">,</span> <span class="st">&quot;ga&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-31" title="31"><span class="va">addressElem3</span>.<span class="at">setAttribute</span>(<span class="st">&quot;country&quot;</span><span class="op">,</span> <span class="st">&quot;usa&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-32" title="32"><span class="va">personElem2</span>.<span class="at">appendChild</span>(addressElem3)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-33" title="33"></a>
+<a class="sourceLine" id="cb2-34" title="34"><span class="kw">var</span> addressElem4 <span class="op">=</span> <span class="va">doc</span>.<span class="at">createElement</span>(<span class="st">&quot;address&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-35" title="35"><span class="va">addressElem4</span>.<span class="at">setAttribute</span>(<span class="st">&quot;street&quot;</span><span class="op">,</span> <span class="st">&quot;123 west st&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-36" title="36"><span class="va">addressElem4</span>.<span class="at">setAttribute</span>(<span class="st">&quot;city&quot;</span><span class="op">,</span> <span class="st">&quot;seattle&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-37" title="37"><span class="va">addressElem4</span>.<span class="at">setAttribute</span>(<span class="st">&quot;state&quot;</span><span class="op">,</span> <span class="st">&quot;wa&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-38" title="38"><span class="va">addressElem4</span>.<span class="at">setAttribute</span>(<span class="st">&quot;country&quot;</span><span class="op">,</span> <span class="st">&quot;usa&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-39" title="39"><span class="va">personElem2</span>.<span class="at">appendChild</span>(addressElem4)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-40" title="40"></a>
+<a class="sourceLine" id="cb2-41" title="41"><span class="kw">var</span> addressElem5 <span class="op">=</span> <span class="va">doc</span>.<span class="at">createElement</span>(<span class="st">&quot;address&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-42" title="42"><span class="va">addressElem5</span>.<span class="at">setAttribute</span>(<span class="st">&quot;street&quot;</span><span class="op">,</span> <span class="st">&quot;321 south avenue&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-43" title="43"><span class="va">addressElem5</span>.<span class="at">setAttribute</span>(<span class="st">&quot;city&quot;</span><span class="op">,</span> <span class="st">&quot;denver&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-44" title="44"><span class="va">addressElem5</span>.<span class="at">setAttribute</span>(<span class="st">&quot;state&quot;</span><span class="op">,</span> <span class="st">&quot;co&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-45" title="45"><span class="va">addressElem5</span>.<span class="at">setAttribute</span>(<span class="st">&quot;country&quot;</span><span class="op">,</span> <span class="st">&quot;usa&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-46" title="46"><span class="va">personElem2</span>.<span class="at">appendChild</span>(addressElem5)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-47" title="47"></a>
+<a class="sourceLine" id="cb2-48" title="48"><span class="va">peopleElem</span>.<span class="at">appendChild</span>(personElem1)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-49" title="49"><span class="va">peopleElem</span>.<span class="at">appendChild</span>(personElem2)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-50" title="50"><span class="va">doc</span>.<span class="at">appendChild</span>(peopleElem)<span class="op">;</span></a></code></pre></div>
+<p>See also the <a href="/en-US/docs/XUL_Tutorial/Document_Object_Model">DOM chapter of the XUL Tutorial</a>.</p>
+<p>You can automate the creation of a DOM tree using a <a href="/en-US/docs/JXON#JXON_reverse_algorithms">JXON reverse algorithm</a> in association with the following JSON representation:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="st">&quot;people&quot;</span><span class="op">:</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="st">&quot;person&quot;</span><span class="op">:</span> [<span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">      <span class="st">&quot;address&quot;</span><span class="op">:</span> [<span class="op">{</span></a>
+<a class="sourceLine" id="cb3-5" title="5">        <span class="st">&quot;@street&quot;</span><span class="op">:</span> <span class="st">&quot;321 south st&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-6" title="6">        <span class="st">&quot;@city&quot;</span><span class="op">:</span> <span class="st">&quot;denver&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-7" title="7">        <span class="st">&quot;@state&quot;</span><span class="op">:</span> <span class="st">&quot;co&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-8" title="8">        <span class="st">&quot;@country&quot;</span><span class="op">:</span> <span class="st">&quot;usa&quot;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">      <span class="op">},</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-10" title="10">        <span class="st">&quot;@street&quot;</span><span class="op">:</span> <span class="st">&quot;123 main st&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-11" title="11">        <span class="st">&quot;@city&quot;</span><span class="op">:</span> <span class="st">&quot;arlington&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-12" title="12">        <span class="st">&quot;@state&quot;</span><span class="op">:</span> <span class="st">&quot;ma&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-13" title="13">        <span class="st">&quot;@country&quot;</span><span class="op">:</span> <span class="st">&quot;usa&quot;</span></a>
+<a class="sourceLine" id="cb3-14" title="14">      <span class="op">}</span>]<span class="op">,</span></a>
+<a class="sourceLine" id="cb3-15" title="15">      <span class="st">&quot;@first-name&quot;</span><span class="op">:</span> <span class="st">&quot;eric&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-16" title="16">      <span class="st">&quot;@middle-initial&quot;</span><span class="op">:</span> <span class="st">&quot;H&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-17" title="17">      <span class="st">&quot;@last-name&quot;</span><span class="op">:</span> <span class="st">&quot;jung&quot;</span></a>
+<a class="sourceLine" id="cb3-18" title="18">    <span class="op">},</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-19" title="19">      <span class="st">&quot;address&quot;</span><span class="op">:</span> [<span class="op">{</span></a>
+<a class="sourceLine" id="cb3-20" title="20">        <span class="st">&quot;@street&quot;</span><span class="op">:</span> <span class="st">&quot;321 north st&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-21" title="21">        <span class="st">&quot;@city&quot;</span><span class="op">:</span> <span class="st">&quot;atlanta&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-22" title="22">        <span class="st">&quot;@state&quot;</span><span class="op">:</span> <span class="st">&quot;ga&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-23" title="23">        <span class="st">&quot;@country&quot;</span><span class="op">:</span> <span class="st">&quot;usa&quot;</span></a>
+<a class="sourceLine" id="cb3-24" title="24">      <span class="op">},</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-25" title="25">        <span class="st">&quot;@street&quot;</span><span class="op">:</span> <span class="st">&quot;123 west st&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-26" title="26">        <span class="st">&quot;@city&quot;</span><span class="op">:</span> <span class="st">&quot;seattle&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-27" title="27">        <span class="st">&quot;@state&quot;</span><span class="op">:</span> <span class="st">&quot;wa&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-28" title="28">        <span class="st">&quot;@country&quot;</span><span class="op">:</span> <span class="st">&quot;usa&quot;</span></a>
+<a class="sourceLine" id="cb3-29" title="29">      <span class="op">},</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-30" title="30">        <span class="st">&quot;@street&quot;</span><span class="op">:</span> <span class="st">&quot;321 south avenue&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-31" title="31">        <span class="st">&quot;@city&quot;</span><span class="op">:</span> <span class="st">&quot;denver&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-32" title="32">        <span class="st">&quot;@state&quot;</span><span class="op">:</span> <span class="st">&quot;co&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-33" title="33">        <span class="st">&quot;@country&quot;</span><span class="op">:</span> <span class="st">&quot;usa&quot;</span></a>
+<a class="sourceLine" id="cb3-34" title="34">      <span class="op">}</span>]<span class="op">,</span></a>
+<a class="sourceLine" id="cb3-35" title="35">      <span class="st">&quot;@first-name&quot;</span><span class="op">:</span> <span class="st">&quot;jed&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-36" title="36">      <span class="st">&quot;@last-name&quot;</span><span class="op">:</span> <span class="st">&quot;brown&quot;</span></a>
+<a class="sourceLine" id="cb3-37" title="37">    <span class="op">}</span>]</a>
+<a class="sourceLine" id="cb3-38" title="38">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-39" title="39"><span class="op">}</span></a></code></pre></div>
+<h3 id="so-what">So what?</h3>
+<p>DOM trees can be <a href="/en-US/docs/Web/XPath/Introduction_to_using_XPath_in_JavaScript">queried using XPath expressions</a>, converted to strings or written to a local or remote files using <a href="/en-US/docs/Web/Guide/Parsing_and_serializing_XML">XMLSerializer</a> (without having to first convert to a string), <a href="/en-US/docs/Web/API/XMLHttpRequest">POSTed to a web server</a> (via <code>XMLHttpRequest</code>), transformed using <a href="/en-US/docs/Web/XSLT">XSLT</a>, <a href="/en-US/docs/Glossary/XLink">XLink</a>, converted to a JavaScript object through a <a href="/en-US/docs/JXON">JXON algorithm</a>, etc.</p>
+<p>You can use DOM trees to model data which isn’t well-suited for RDF (or perhaps you just don’t like RDF). Another application is that, since XUL is XML, the UI of your application can be dynamically manipulated, downloaded, uploaded, saved, loaded, converted, or transformed quite easily.</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/XML">XML</a></li>
+<li><a href="/en-US/docs/JXON">JXON</a></li>
+<li><a href="/en-US/docs/Web/XPath">XPath</a></li>
+<li><a href="/en-US/docs/Web/Guide/Parsing_and_serializing_XML">Parsing and serializing XML</a></li>
+<li><a href="/en-US/docs/Web/API/XMLHttpRequest">XMLHttpRequest</a></li>
+</ul>

@@ -1,0 +1,73 @@
+<p>{{APIRef(“Canvas API”)}}</p>
+<p>The <strong><code>createImageBitmap()</code></strong> method creates a bitmap from a given source, optionally cropped to contain only a portion of that source. The method exists on the global scope in both windows and workers. It accepts a variety of different image sources, and returns a {{jsxref(“Promise”)}} which resolves to an {{domxref(“ImageBitmap”)}}.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> imageBitmapPromise <span class="op">=</span> <span class="at">createImageBitmap</span>(image[<span class="op">,</span> options])<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">const</span> imageBitmapPromise <span class="op">=</span> <span class="at">createImageBitmap</span>(image<span class="op">,</span> sx<span class="op">,</span> sy<span class="op">,</span> sw<span class="op">,</span> sh[<span class="op">,</span> options])<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>image</code>
+<ul>
+<li>: An image source, which can be an {{HTMLElement(“img”)}}, SVG {{SVGElement(“image”)}}, {{HTMLElement(“video”)}}, {{HTMLElement(“canvas”)}}, {{domxref(“HTMLImageElement”)}}, {{domxref(“SVGImageElement”)}}, {{domxref(“HTMLVideoElement”)}}, {{domxref(“HTMLCanvasElement”)}}, {{domxref(“Blob”)}}, {{domxref(“ImageData”)}}, {{domxref(“ImageBitmap”)}}, or {{domxref(“OffscreenCanvas”)}} object.</li>
+</ul></li>
+<li><code>sx</code>
+<ul>
+<li>: The x coordinate of the reference point of the rectangle from which the <code>ImageBitmap</code> will be extracted.</li>
+</ul></li>
+<li><code>sy</code>
+<ul>
+<li>: The y coordinate of the reference point of the rectangle from which the <code>ImageBitmap</code> will be extracted.</li>
+</ul></li>
+<li><code>sw</code>
+<ul>
+<li>: The width of the rectangle from which the <code>ImageBitmap</code> will be extracted. This value can be negative.</li>
+</ul></li>
+<li><code>sh</code>
+<ul>
+<li>: The height of the rectangle from which the <code>ImageBitmap</code> will be extracted. This value can be negative.</li>
+</ul></li>
+<li><p><code>options</code> {{optional_inline}}</p>
+<ul>
+<li><p>: An object that sets options for the image’s extraction. The available options are:</p>
+<ul>
+<li><code>imageOrientation</code>: Specifies whether the image should be presented as is or flipped vertically. Either <code>none</code> (default) or <code>flipY</code>.</li>
+<li><code>premultiplyAlpha</code>: Specifies whether the bitmap’s color channels should be premultiplied by the alpha channel. One of <code>none</code>, <code>premultiply</code>, or <code>default</code> (default).</li>
+<li><code>colorSpaceConversion</code>: Specifies whether the image should be decoded using color space conversion. Either <code>none</code> or <code>default</code> (default). The value <code>default</code> indicates that implementation-specific behavior is used.</li>
+<li><code>resizeWidth</code>: A long integer that indicates the output width.</li>
+<li><code>resizeHeight</code>: A long integer that indicates the output height.</li>
+<li><code>resizeQuality</code>: Specifies the algorithm to be used for resizing the input to match the output dimensions. One of <code>pixelated</code>, <code>low</code> (default), <code>medium</code>, or <code>high</code>.</li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A {{jsxref(“Promise”)}} which resolves to an {{domxref(“ImageBitmap”)}} object containing bitmap data from the given rectangle.</p>
+<h2 id="example">Example</h2>
+<h3 id="creating-sprites-from-a-sprite-sheet">Creating sprites from a sprite sheet</h3>
+<p>This example loads a sprite sheet, extracts individual sprites, and then renders each sprite to the canvas. A sprite sheet is an image containing multiple smaller images, each of which you want to be able to render separately.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;myCanvas&#39;</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb2-2" title="2">ctx <span class="op">=</span> <span class="va">canvas</span>.<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb2-3" title="3">image <span class="op">=</span> <span class="kw">new</span> <span class="at">Image</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="co">// Wait for the sprite sheet to load</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="va">image</span>.<span class="at">onload</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="va">Promise</span>.<span class="at">all</span>([</a>
+<a class="sourceLine" id="cb2-8" title="8">    <span class="co">// Cut out two sprites from the sprite sheet</span></a>
+<a class="sourceLine" id="cb2-9" title="9">    <span class="at">createImageBitmap</span>(image<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">32</span><span class="op">,</span> <span class="dv">32</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb2-10" title="10">    <span class="at">createImageBitmap</span>(image<span class="op">,</span> <span class="dv">32</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">32</span><span class="op">,</span> <span class="dv">32</span>)</a>
+<a class="sourceLine" id="cb2-11" title="11">  ]).<span class="at">then</span>(<span class="kw">function</span>(sprites) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-12" title="12">    <span class="co">// Draw each sprite onto the canvas</span></a>
+<a class="sourceLine" id="cb2-13" title="13">    <span class="va">ctx</span>.<span class="at">drawImage</span>(sprites[<span class="dv">0</span>]<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14">    <span class="va">ctx</span>.<span class="at">drawImage</span>(sprites[<span class="dv">1</span>]<span class="op">,</span> <span class="dv">32</span><span class="op">,</span> <span class="dv">32</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-15" title="15">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-16" title="16"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-17" title="17"></a>
+<a class="sourceLine" id="cb2-18" title="18"><span class="co">// Load the sprite sheet from an image file</span></a>
+<a class="sourceLine" id="cb2-19" title="19"><span class="va">image</span>.<span class="at">src</span> <span class="op">=</span> <span class="st">&#39;sprites.png&#39;</span><span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{domxref(“CanvasRenderingContext2D.drawImage()”)}}</li>
+<li>{{domxref(“ImageData”)}}</li>
+</ul>

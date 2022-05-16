@@ -1,0 +1,286 @@
+<p>{{APIRef}}</p>
+<p>The <strong><code>DOMContentLoaded</code></strong> event fires when the initial HTML document has been completely loaded and parsed, without waiting for stylesheets, images, and subframes to finish loading.</p>
+<table class="properties">
+<tbody>
+<tr>
+<th scope="row">
+Bubbles
+</th>
+<td>
+Yes
+</td>
+</tr>
+<tr>
+<th scope="row">
+Cancelable
+</th>
+<td>
+No
+</td>
+</tr>
+<tr>
+<th scope="row">
+Interface
+</th>
+<td>
+{{domxref(“Event”)}}
+</td>
+</tr>
+<tr>
+<th scope="row">
+Event handler property
+</th>
+<td>
+None
+</td>
+</tr>
+</tbody>
+</table>
+<p>A different event, {{domxref(“Window/load_event”, “load”)}}, should be used only to detect a fully-loaded page. It is a common mistake to use <code>load</code> where <code>DOMContentLoaded</code> would be more appropriate.</p>
+<p>Synchronous JavaScript pauses parsing of the DOM. If you want the DOM to get parsed as fast as possible after the user has requested the page, you can make your <a href="/en-US/docs/Web/API/XMLHttpRequest/Synchronous_and_Asynchronous_Requests">JavaScript asynchronous</a> and <a href="https://developers.google.com/speed/docs/insights/OptimizeCSSDelivery">optimize loading of stylesheets</a>. If loaded as usual, stylesheets slow down DOM parsing as they’re loaded in parallel, “stealing” traffic from the main HTML document.</p>
+<h2 id="polyfill">Polyfill</h2>
+<p>The following code ports the functionality of the <code>DOMContentLoaded</code> event all the way back to IE6+, with a fallback to <code>window.onload</code> that works everywhere.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="co">// Usage: DOMContentLoaded(function(e) { console.log(e); /* your code here */});</span></a>
+<a class="sourceLine" id="cb1-2" title="2"></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">function</span> <span class="at">DOMContentLoaded</span>() <span class="op">{</span> <span class="st">&quot;use strict&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-4" title="4"></a>
+<a class="sourceLine" id="cb1-5" title="5">    <span class="kw">var</span> ael <span class="op">=</span> <span class="st">&#39;addEventListener&#39;</span><span class="op">,</span> rel <span class="op">=</span> <span class="st">&#39;removeEventListener&#39;</span><span class="op">,</span> aev <span class="op">=</span> <span class="st">&#39;attachEvent&#39;</span><span class="op">,</span> dev <span class="op">=</span> <span class="st">&#39;detachEvent&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-6" title="6">    <span class="kw">var</span> alreadyRun <span class="op">=</span> <span class="kw">false</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb1-7" title="7">        funcs <span class="op">=</span> <span class="kw">arguments</span><span class="op">;</span> <span class="co">// for use in the idempotent function `ready()`, defined later.</span></a>
+<a class="sourceLine" id="cb1-8" title="8"></a>
+<a class="sourceLine" id="cb1-9" title="9">    <span class="kw">function</span> <span class="at">microtime</span>() <span class="op">{</span> <span class="cf">return</span> <span class="op">+</span> <span class="kw">new</span> <span class="at">Date</span>() <span class="op">}</span> <span class="co">// new Date().valueOf();</span></a>
+<a class="sourceLine" id="cb1-10" title="10"></a>
+<a class="sourceLine" id="cb1-11" title="11">    <span class="co">/* The vast majority of browsers currently in use now support both addEventListener</span></a>
+<a class="sourceLine" id="cb1-12" title="12"><span class="co">       and DOMContentLoaded. However, 2% is still a significant portion of the web, and</span></a>
+<a class="sourceLine" id="cb1-13" title="13"><span class="co">       graceful degradation is still the best design approach.</span></a>
+<a class="sourceLine" id="cb1-14" title="14"></a>
+<a class="sourceLine" id="cb1-15" title="15"><span class="co">       `document.readyState === &#39;complete&#39;` is functionally equivalent to `window.onload`.</span></a>
+<a class="sourceLine" id="cb1-16" title="16"><span class="co">       The events fire within a few tenths of a second, and reported correctly in every</span></a>
+<a class="sourceLine" id="cb1-17" title="17"><span class="co">       browser that was tested, including IE6. But IE6 to 10 did not correctly return the other</span></a>
+<a class="sourceLine" id="cb1-18" title="18"><span class="co">       readyState values as per the spec:</span></a>
+<a class="sourceLine" id="cb1-19" title="19"><span class="co">       In IE6-10, readyState was sometimes &#39;interactive&#39;, even when the DOM wasn&#39;t accessible,</span></a>
+<a class="sourceLine" id="cb1-20" title="20"><span class="co">       so it&#39;s safe to assume that listening to the `onreadystatechange` event</span></a>
+<a class="sourceLine" id="cb1-21" title="21"><span class="co">       in legacy browsers is unstable. Should readyState be undefined, accessing undefined properties</span></a>
+<a class="sourceLine" id="cb1-22" title="22"><span class="co">       of a defined object (document) will not throw.</span></a>
+<a class="sourceLine" id="cb1-23" title="23"></a>
+<a class="sourceLine" id="cb1-24" title="24"><span class="co">       The following statement checks for IE &lt; 11 via conditional compilation.</span></a>
+<a class="sourceLine" id="cb1-25" title="25"><span class="co">       `@_jscript_version` is a special String variable defined only in IE conditional comments,</span></a>
+<a class="sourceLine" id="cb1-26" title="26"><span class="co">       which themselves only appear as regular comments to other browsers.</span></a>
+<a class="sourceLine" id="cb1-27" title="27"><span class="co">       Browsers not named IE interpret the following code as</span></a>
+<a class="sourceLine" id="cb1-28" title="28"><span class="co">       `Number( new Function(&quot;&quot;)() )` =&gt; `Number(undefined)` =&gt; `NaN`.</span></a>
+<a class="sourceLine" id="cb1-29" title="29"><span class="co">       `NaN` is neither &gt;, &lt;, nor = to any other value.</span></a>
+<a class="sourceLine" id="cb1-30" title="30"><span class="co">       Values: IE5: 5?, IE5.5: 5.5?, IE6/7: 5.6/5.7, IE8: 5.8, IE9: 9, IE10: 10,</span></a>
+<a class="sourceLine" id="cb1-31" title="31"><span class="co">       (IE11 older doc mode*): 11, IE11 / NOT IE: undefined</span></a>
+<a class="sourceLine" id="cb1-32" title="32"><span class="co">    */</span></a>
+<a class="sourceLine" id="cb1-33" title="33"></a>
+<a class="sourceLine" id="cb1-34" title="34">    <span class="kw">var</span> jscript_version <span class="op">=</span> <span class="at">Number</span>( <span class="kw">new</span> <span class="at">Function</span>(<span class="st">&quot;/*@cc_on return @_jscript_version; @*</span><span class="sc">\/</span><span class="st">&quot;</span>)() )<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-35" title="35"></a>
+<a class="sourceLine" id="cb1-36" title="36">    <span class="co">// check if the DOM has already loaded</span></a>
+<a class="sourceLine" id="cb1-37" title="37">    <span class="co">// If it has, send null as the readyTime, since we don&#39;t know when the DOM became ready.</span></a>
+<a class="sourceLine" id="cb1-38" title="38"></a>
+<a class="sourceLine" id="cb1-39" title="39">    <span class="cf">if</span> (<span class="va">document</span>.<span class="at">readyState</span> <span class="op">===</span> <span class="st">&#39;complete&#39;</span>) <span class="op">{</span> <span class="at">ready</span>(<span class="kw">null</span>)<span class="op">;</span> <span class="cf">return</span><span class="op">;</span> <span class="op">}</span> <span class="co">// execute ready()</span></a>
+<a class="sourceLine" id="cb1-40" title="40"></a>
+<a class="sourceLine" id="cb1-41" title="41">    <span class="co">// For IE&lt;9 poll document.documentElement.doScroll(), no further actions are needed.</span></a>
+<a class="sourceLine" id="cb1-42" title="42">    <span class="cf">if</span> (jscript_version <span class="op">&lt;</span> <span class="dv">9</span>) <span class="op">{</span> <span class="at">doIEScrollCheck</span>()<span class="op">;</span> <span class="cf">return</span><span class="op">;</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-43" title="43"></a>
+<a class="sourceLine" id="cb1-44" title="44">    <span class="co">// ael: addEventListener, rel: removeEventListener, aev: attachEvent, dev: detachEvent</span></a>
+<a class="sourceLine" id="cb1-45" title="45"></a>
+<a class="sourceLine" id="cb1-46" title="46">    <span class="cf">if</span> (document[ael]) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-47" title="47">        document[ael](<span class="st">&quot;DOMContentLoaded&quot;</span><span class="op">,</span> ready<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-48" title="48"></a>
+<a class="sourceLine" id="cb1-49" title="49">        <span class="co">// fallback to the universal load event in case DOMContentLoaded isn&#39;t supported.</span></a>
+<a class="sourceLine" id="cb1-50" title="50">        window[ael](<span class="st">&quot;load&quot;</span><span class="op">,</span> ready<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-51" title="51">    <span class="op">}</span> <span class="cf">else</span></a>
+<a class="sourceLine" id="cb1-52" title="52">    <span class="cf">if</span> (aev <span class="kw">in</span> window) <span class="op">{</span> window[aev](<span class="st">&#39;onload&#39;</span><span class="op">,</span> ready)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-53" title="53">        <span class="co">// Old Opera has a default of window.attachEvent being falsy, so we use the in operator instead.</span></a>
+<a class="sourceLine" id="cb1-54" title="54">        <span class="co">// https://dev.opera.com/blog/window-event-attachevent-detachevent-script-onreadystatechange/</span></a>
+<a class="sourceLine" id="cb1-55" title="55">    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-56" title="56">        <span class="co">// fallback to window.onload that will always work.</span></a>
+<a class="sourceLine" id="cb1-57" title="57">        <span class="at">addOnload</span>(ready)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-58" title="58">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-59" title="59"></a>
+<a class="sourceLine" id="cb1-60" title="60">    <span class="co">// addOnload: Allows us to preserve any original `window.onload` handlers,</span></a>
+<a class="sourceLine" id="cb1-61" title="61">    <span class="co">// in ancient (prehistoric?) browsers where this is even necessary, while providing the</span></a>
+<a class="sourceLine" id="cb1-62" title="62">    <span class="co">// option to chain onloads, and dequeue them later.</span></a>
+<a class="sourceLine" id="cb1-63" title="63"></a>
+<a class="sourceLine" id="cb1-64" title="64">    <span class="kw">function</span> <span class="at">addOnload</span>(fn) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-65" title="65"></a>
+<a class="sourceLine" id="cb1-66" title="66">        <span class="kw">var</span> prev <span class="op">=</span> <span class="va">window</span>.<span class="at">onload</span><span class="op">;</span> <span class="co">// old `window.onload`, which could be set by this function, or elsewhere.</span></a>
+<a class="sourceLine" id="cb1-67" title="67"></a>
+<a class="sourceLine" id="cb1-68" title="68">        <span class="co">// Here we add a function queue list to allow for dequeueing.</span></a>
+<a class="sourceLine" id="cb1-69" title="69">        <span class="co">// Should we have to use window.onload, `addOnload.queue` is the queue of functions</span></a>
+<a class="sourceLine" id="cb1-70" title="70">        <span class="co">// that we will run when the DOM is ready.</span></a>
+<a class="sourceLine" id="cb1-71" title="71"></a>
+<a class="sourceLine" id="cb1-72" title="72">        <span class="cf">if</span> ( <span class="kw">typeof</span> <span class="va">addOnload</span>.<span class="at">queue</span> <span class="op">!==</span> <span class="st">&#39;object&#39;</span>) <span class="op">{</span> <span class="co">// allow loose comparison of arrays</span></a>
+<a class="sourceLine" id="cb1-73" title="73">            <span class="va">addOnload</span>.<span class="at">queue</span> <span class="op">=</span> []<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-74" title="74">            <span class="cf">if</span> (<span class="kw">typeof</span> prev <span class="op">===</span> <span class="st">&#39;function&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-75" title="75">                <span class="va">addOnload</span>.<span class="va">queue</span>.<span class="at">push</span>( prev )<span class="op">;</span> <span class="co">// add the previously defined event handler, if any.</span></a>
+<a class="sourceLine" id="cb1-76" title="76">            <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-77" title="77">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-78" title="78"></a>
+<a class="sourceLine" id="cb1-79" title="79">        <span class="cf">if</span> (<span class="kw">typeof</span> fn <span class="op">===</span> <span class="st">&#39;function&#39;</span>) <span class="op">{</span> <span class="va">addOnload</span>.<span class="va">queue</span>.<span class="at">push</span>(fn) <span class="op">}</span> <span class="co">// add the new function</span></a>
+<a class="sourceLine" id="cb1-80" title="80"></a>
+<a class="sourceLine" id="cb1-81" title="81">        <span class="va">window</span>.<span class="at">onload</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span> <span class="co">// iterate through the queued functions</span></a>
+<a class="sourceLine" id="cb1-82" title="82">            <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">addOnload</span>.<span class="va">queue</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span> <span class="va">addOnload</span>.<span class="at">queue</span>[i]() <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-83" title="83">        <span class="op">};</span></a>
+<a class="sourceLine" id="cb1-84" title="84">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-85" title="85"></a>
+<a class="sourceLine" id="cb1-86" title="86">    <span class="co">// dequeueOnload: remove a queued `addOnload` function from the chain.</span></a>
+<a class="sourceLine" id="cb1-87" title="87"></a>
+<a class="sourceLine" id="cb1-88" title="88">    <span class="kw">function</span> <span class="at">dequeueOnload</span>(fn<span class="op">,</span> all) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-89" title="89"></a>
+<a class="sourceLine" id="cb1-90" title="90">        <span class="co">// Sort backwards through the queued functions in `addOnload.queue` (if it&#39;s defined)</span></a>
+<a class="sourceLine" id="cb1-91" title="91">        <span class="co">// until we find `fn`, and then remove `fn` from its place in the array.</span></a>
+<a class="sourceLine" id="cb1-92" title="92"></a>
+<a class="sourceLine" id="cb1-93" title="93">        <span class="cf">if</span> (<span class="kw">typeof</span> <span class="va">addOnload</span>.<span class="at">queue</span> <span class="op">===</span> <span class="st">&#39;object&#39;</span>) <span class="op">{</span> <span class="co">// array</span></a>
+<a class="sourceLine" id="cb1-94" title="94">            <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="va">addOnload</span>.<span class="va">queue</span>.<span class="at">length</span><span class="dv">-1</span><span class="op">;</span> i <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">;</span> i<span class="op">--</span>) <span class="op">{</span> <span class="co">// iterate backwards</span></a>
+<a class="sourceLine" id="cb1-95" title="95">                <span class="cf">if</span> (fn <span class="op">===</span> <span class="va">addOnload</span>.<span class="at">queue</span>[i]) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-96" title="96">                    <span class="va">addOnload</span>.<span class="va">queue</span>.<span class="at">splice</span>(i<span class="op">,</span><span class="dv">1</span>)<span class="op">;</span> <span class="cf">if</span> (<span class="op">!</span>all) <span class="op">{</span><span class="cf">break</span><span class="op">}</span></a>
+<a class="sourceLine" id="cb1-97" title="97">                <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-98" title="98">            <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-99" title="99">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-100" title="100">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-101" title="101"></a>
+<a class="sourceLine" id="cb1-102" title="102">    <span class="co">// ready: idempotent event handler function</span></a>
+<a class="sourceLine" id="cb1-103" title="103"></a>
+<a class="sourceLine" id="cb1-104" title="104">    <span class="kw">function</span> <span class="at">ready</span>(ev) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-105" title="105">        <span class="cf">if</span> (alreadyRun) <span class="op">{</span><span class="cf">return</span><span class="op">}</span> alreadyRun <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-106" title="106"></a>
+<a class="sourceLine" id="cb1-107" title="107">        <span class="co">// This time is when the DOM has loaded, or, if all else fails,</span></a>
+<a class="sourceLine" id="cb1-108" title="108">        <span class="co">// when it was actually possible to inference that the DOM has loaded via a &#39;load&#39; event.</span></a>
+<a class="sourceLine" id="cb1-109" title="109"></a>
+<a class="sourceLine" id="cb1-110" title="110">        <span class="kw">var</span> readyTime <span class="op">=</span> <span class="at">microtime</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-111" title="111"></a>
+<a class="sourceLine" id="cb1-112" title="112">        <span class="at">detach</span>()<span class="op">;</span> <span class="co">// detach any event handlers</span></a>
+<a class="sourceLine" id="cb1-113" title="113"></a>
+<a class="sourceLine" id="cb1-114" title="114">        <span class="co">// run the functions (`funcs` is arguments of DOMContentLoaded)</span></a>
+<a class="sourceLine" id="cb1-115" title="115">        <span class="cf">for</span> (<span class="kw">var</span> i<span class="op">=</span><span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">funcs</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-116" title="116"></a>
+<a class="sourceLine" id="cb1-117" title="117">            <span class="kw">var</span> func <span class="op">=</span> funcs[i]<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-118" title="118"></a>
+<a class="sourceLine" id="cb1-119" title="119">            <span class="cf">if</span> (<span class="kw">typeof</span> func <span class="op">===</span> <span class="st">&#39;function&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-120" title="120"></a>
+<a class="sourceLine" id="cb1-121" title="121">                <span class="co">// force set `this` to `document`, for consistency.</span></a>
+<a class="sourceLine" id="cb1-122" title="122">                <span class="va">func</span>.<span class="at">call</span>(document<span class="op">,</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-123" title="123">                  <span class="st">&#39;readyTime&#39;</span><span class="op">:</span> (ev <span class="op">===</span> <span class="kw">null</span> <span class="op">?</span> <span class="kw">null</span> : readyTime)<span class="op">,</span></a>
+<a class="sourceLine" id="cb1-124" title="124">                  <span class="st">&#39;funcExecuteTime&#39;</span><span class="op">:</span> <span class="at">microtime</span>()<span class="op">,</span></a>
+<a class="sourceLine" id="cb1-125" title="125">                  <span class="st">&#39;currentFunction&#39;</span><span class="op">:</span> func</a>
+<a class="sourceLine" id="cb1-126" title="126">                <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-127" title="127">            <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-128" title="128">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-129" title="129">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-130" title="130"></a>
+<a class="sourceLine" id="cb1-131" title="131">    <span class="co">// detach: detach all the currently registered events.</span></a>
+<a class="sourceLine" id="cb1-132" title="132"></a>
+<a class="sourceLine" id="cb1-133" title="133">    <span class="kw">function</span> <span class="at">detach</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-134" title="134">        <span class="cf">if</span> (document[rel]) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-135" title="135">            document[rel](<span class="st">&quot;DOMContentLoaded&quot;</span><span class="op">,</span> ready)<span class="op">;</span> window[rel](<span class="st">&quot;load&quot;</span><span class="op">,</span> ready)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-136" title="136">        <span class="op">}</span> <span class="cf">else</span></a>
+<a class="sourceLine" id="cb1-137" title="137">        <span class="cf">if</span> (dev <span class="kw">in</span> window) <span class="op">{</span> window[dev](<span class="st">&quot;onload&quot;</span><span class="op">,</span> ready)<span class="op">;</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-138" title="138">        <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-139" title="139">            <span class="at">dequeueOnload</span>(ready)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-140" title="140">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-141" title="141">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-142" title="142"></a>
+<a class="sourceLine" id="cb1-143" title="143">    <span class="co">// doIEScrollCheck: poll document.documentElement.doScroll until it no longer throws.</span></a>
+<a class="sourceLine" id="cb1-144" title="144"></a>
+<a class="sourceLine" id="cb1-145" title="145">    <span class="kw">function</span> <span class="at">doIEScrollCheck</span>() <span class="op">{</span> <span class="co">// for use in IE &lt; 9 only.</span></a>
+<a class="sourceLine" id="cb1-146" title="146">        <span class="cf">if</span> ( <span class="va">window</span>.<span class="at">frameElement</span> ) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-147" title="147">            <span class="co">/* We&#39;re in an `iframe` or similar.</span></a>
+<a class="sourceLine" id="cb1-148" title="148"><span class="co">               The `document.documentElement.doScroll` technique does not work if we&#39;re not</span></a>
+<a class="sourceLine" id="cb1-149" title="149"><span class="co">               at the top-level (parent document).</span></a>
+<a class="sourceLine" id="cb1-150" title="150"><span class="co">               Attach to onload if we&#39;re in an &lt;iframe&gt; in IE as there&#39;s no way to tell otherwise</span></a>
+<a class="sourceLine" id="cb1-151" title="151"><span class="co">            */</span></a>
+<a class="sourceLine" id="cb1-152" title="152">            <span class="cf">try</span> <span class="op">{</span> <span class="va">window</span>.<span class="at">attachEvent</span>(<span class="st">&quot;onload&quot;</span><span class="op">,</span> ready)<span class="op">;</span> <span class="op">}</span> <span class="cf">catch</span> (e) <span class="op">{</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-153" title="153">            <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-154" title="154">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-155" title="155">        <span class="co">// if we get here, we&#39;re not in an `iframe`.</span></a>
+<a class="sourceLine" id="cb1-156" title="156">        <span class="cf">try</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-157" title="157">            <span class="co">// when this statement no longer throws, the DOM is accessible in old IE</span></a>
+<a class="sourceLine" id="cb1-158" title="158">            <span class="va">document</span>.<span class="va">documentElement</span>.<span class="at">doScroll</span>(<span class="st">&#39;left&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-159" title="159">        <span class="op">}</span> <span class="cf">catch</span>(error) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-160" title="160">            <span class="at">setTimeout</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-161" title="161">              <span class="at"> </span> (<span class="va">document</span>.<span class="at">readyState</span> <span class="op">===</span> <span class="st">&#39;complete&#39;</span>) <span class="op">?</span> <span class="at">ready</span>() : <span class="at">doIEScrollCheck</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-162" title="162">            <span class="op">},</span> <span class="dv">50</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-163" title="163">            <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-164" title="164">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-165" title="165">        <span class="at">ready</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-166" title="166">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-167" title="167"><span class="op">}</span></a>
+<a class="sourceLine" id="cb1-168" title="168"></a>
+<a class="sourceLine" id="cb1-169" title="169"><span class="co">// Tested via BrowserStack.</span></a></code></pre></div>
+<h2 id="examples">Examples</h2>
+<h3 id="basic-usage">Basic usage</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">document</span>.<span class="at">addEventListener</span>(<span class="st">&#39;DOMContentLoaded&#39;</span><span class="op">,</span> (event) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;DOM fully loaded and parsed&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h3 id="delaying-domcontentloaded">Delaying DOMContentLoaded</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">&lt;script&gt;</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="va">document</span>.<span class="at">addEventListener</span>(<span class="st">&#39;DOMContentLoaded&#39;</span><span class="op">,</span> (event) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;DOM fully loaded and parsed&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"></a>
+<a class="sourceLine" id="cb3-6" title="6"><span class="cf">for</span>( <span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="dv">1000000000</span><span class="op">;</span> i<span class="op">++</span>)</a>
+<a class="sourceLine" id="cb3-7" title="7"><span class="op">{}</span> <span class="co">// This synchronous script is going to delay parsing of the DOM,</span></a>
+<a class="sourceLine" id="cb3-8" title="8">   <span class="co">// so the DOMContentLoaded event is going to launch later.</span></a>
+<a class="sourceLine" id="cb3-9" title="9"><span class="kw">&lt;/script&gt;</span></a></code></pre></div>
+<h3 id="checking-whether-loading-is-already-complete">Checking whether loading is already complete</h3>
+<p><code>DOMContentLoaded</code> may fire before your script has a chance to run, so it is wise to check before adding a listener.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">function</span> <span class="at">doSomething</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="va">console</span>.<span class="at">info</span>(<span class="st">&#39;DOM loaded&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="op">}</span></a>
+<a class="sourceLine" id="cb4-4" title="4"></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="cf">if</span> (<span class="va">document</span>.<span class="at">readyState</span> <span class="op">===</span> <span class="st">&#39;loading&#39;</span>) <span class="op">{</span>  <span class="co">// Loading hasn&#39;t finished yet</span></a>
+<a class="sourceLine" id="cb4-6" title="6">  <span class="va">document</span>.<span class="at">addEventListener</span>(<span class="st">&#39;DOMContentLoaded&#39;</span><span class="op">,</span> doSomething)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-7" title="7"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span>  <span class="co">// `DOMContentLoaded` has already fired</span></a>
+<a class="sourceLine" id="cb4-8" title="8">  <span class="at">doSomething</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-9" title="9"><span class="op">}</span></a></code></pre></div>
+<h3 id="live-example">Live example</h3>
+<h4 id="html">HTML</h4>
+<div class="sourceCode" id="cb5"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;controls&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="kw">&lt;button</span><span class="ot"> id=</span><span class="st">&quot;reload&quot;</span><span class="ot"> type=</span><span class="st">&quot;button&quot;</span><span class="kw">&gt;</span>Reload<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb5-4" title="4"></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;event-log&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb5-6" title="6">  <span class="kw">&lt;label&gt;</span>Event log:<span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb5-7" title="7">  <span class="kw">&lt;textarea</span><span class="ot"> readonly class=</span><span class="st">&quot;event-log-contents&quot;</span><span class="ot"> rows=</span><span class="st">&quot;8&quot;</span><span class="ot"> cols=</span><span class="st">&quot;30&quot;</span><span class="kw">&gt;&lt;/textarea&gt;</span></a>
+<a class="sourceLine" id="cb5-8" title="8"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<p>```css hidden body { display: grid; grid-template-areas: “control log”; }</p>
+<p>.controls { grid-area: control; display: flex; align-items: center; justify-content: center; }</p>
+<p>.event-log { grid-area: log; }</p>
+<p>.event-log-contents { resize: none; }</p>
+<p>label, button { display: block; }</p>
+<p>#reload { height: 2rem; } ```</p>
+<h4 id="js">JS</h4>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">const</span> log <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;.event-log-contents&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="kw">const</span> reload <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#reload&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-3" title="3"></a>
+<a class="sourceLine" id="cb6-4" title="4"><span class="va">reload</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-5" title="5">  <span class="va">log</span>.<span class="at">textContent</span> <span class="op">=</span><span class="st">&#39;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-6" title="6">  <span class="va">window</span>.<span class="at">setTimeout</span>(() <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-7" title="7">      <span class="va">window</span>.<span class="va">location</span>.<span class="at">reload</span>(<span class="kw">true</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-8" title="8">  <span class="op">},</span> <span class="dv">200</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-9" title="9"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-10" title="10"></a>
+<a class="sourceLine" id="cb6-11" title="11"><span class="va">window</span>.<span class="at">addEventListener</span>(<span class="st">&#39;load&#39;</span><span class="op">,</span> (event) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-12" title="12">    <span class="va">log</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="va">log</span>.<span class="at">textContent</span> <span class="op">+</span> <span class="st">&#39;load</span><span class="sc">\n</span><span class="st">&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-13" title="13"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-14" title="14"></a>
+<a class="sourceLine" id="cb6-15" title="15"><span class="va">document</span>.<span class="at">addEventListener</span>(<span class="st">&#39;readystatechange&#39;</span><span class="op">,</span> (event) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-16" title="16">    <span class="va">log</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="va">log</span>.<span class="at">textContent</span> <span class="op">+</span> <span class="vs">`readystate: </span><span class="sc">${</span><span class="va">document</span>.<span class="at">readyState</span><span class="sc">}\n</span><span class="vs">`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-17" title="17"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-18" title="18"></a>
+<a class="sourceLine" id="cb6-19" title="19"><span class="va">document</span>.<span class="at">addEventListener</span>(<span class="st">&#39;DOMContentLoaded&#39;</span><span class="op">,</span> (event) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-20" title="20">    <span class="va">log</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="va">log</span>.<span class="at">textContent</span> <span class="op">+</span> <span class="vs">`DOMContentLoaded</span><span class="sc">\n</span><span class="vs">`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-21" title="21"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h4 id="result">Result</h4>
+<p>{{ EmbedLiveSample(‘Live_example’, ‘100%’, ‘160px’) }}</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>Related events: {{domxref(“Window/load_event”, “load”)}}, {{domxref(“Document/readystatechange_event”, “readystatechange”)}}, {{domxref(“Window/beforeunload_event”, “beforeunload”)}}, {{domxref(“Window/unload_event”, “unload”)}}</li>
+<li>This event on {{domxref(“Window”)}} targets: {{domxref(“Window/DOMContentLoaded_event”, “DOMContentLoaded”)}}</li>
+</ul>

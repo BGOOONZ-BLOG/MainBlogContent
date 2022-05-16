@@ -1,0 +1,53 @@
+<p>{{APIRef(“DOM”)}}</p>
+<p>The <strong><code>getAttributeNames()</code></strong> method of the {{domxref(“Element”)}} interface returns the attribute names of the element as an {{jsxref(“Array”)}} of strings. If the element has no attributes it returns an empty array.</p>
+<p>Using <code>getAttributeNames()</code> along with {{domxref(“Element.getAttribute”,“getAttribute()”)}}, is a memory-efficient and performant alternative to accessing {{domxref(“Element.attributes”)}}.</p>
+<p>The names returned by <strong><code>getAttributeNames()</code></strong> are <em>qualified</em> attribute names, meaning that attributes with a namespace prefix have their names returned with that namespace prefix (<em>not</em> the actual namespace), followed by a colon, followed by the attribute name (for example, <strong><code>xlink:href</code></strong>), while any attributes which have no namespace prefix have their names returned as-is (for example, <strong><code>href</code></strong>).</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">let</span> attributeNames <span class="op">=</span> <span class="va">element</span>.<span class="at">getAttributeNames</span>()<span class="op">;</span></a></code></pre></div>
+<h2 id="example">Example</h2>
+<p>The following example shows how:</p>
+<ul>
+<li>For an attribute which has a namespace prefix, <code>getAttributeNames()</code> returns that namespace prefix along with the attribute name.</li>
+<li>For an attribute which has no namespace prefix, <code>getAttributeNames()</code> returns just the attribute name, as-is.</li>
+</ul>
+<p>It’s important to understand that:</p>
+<ol type="1">
+<li>An attribute can be present in the DOM with a namespace but lacking a namespace prefix.</li>
+<li>For an attribute in the DOM that has a namespace but lacks a namespace prefix, <code>getAttributeNames()</code> will return just the attribute name, with no indication that the attribute is in a namespace.</li>
+</ol>
+<p>The example below includes such a “namespaced but without a namespace prefix” case.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> element <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;a&#39;</span>)</a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="co">// set &quot;href&quot; attribute with no namespace and no namespace prefix</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="va">element</span>.<span class="at">setAttribute</span>(<span class="st">&#39;href&#39;</span><span class="op">,</span> <span class="st">&#39;https://example.com&#39;</span>)</a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="co">// set &quot;href&quot; attribute with namespace and also &quot;xlink&quot; namespace prefix</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="va">element</span>.<span class="at">setAttributeNS</span>(<span class="st">&#39;http://www.w3.org/1999/xlink&#39;</span><span class="op">,</span> <span class="st">&#39;xlink:href&#39;</span><span class="op">,</span> <span class="st">&#39;https://example.com&#39;</span>)</a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="co">// set &quot;show&quot; attribute with namespace but no namespace prefix</span></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="va">element</span>.<span class="at">setAttributeNS</span>(<span class="st">&#39;http://www.w3.org/1999/xlink&#39;</span><span class="op">,</span> <span class="st">&#39;show&#39;</span><span class="op">,</span> <span class="st">&#39;new&#39;</span>)</a>
+<a class="sourceLine" id="cb2-9" title="9"></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="co">// Iterate over element&#39;s attributes</span></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="cf">for</span> (<span class="kw">let</span> name <span class="kw">of</span> <span class="va">element</span>.<span class="at">getAttributeNames</span>()) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-12" title="12">  <span class="kw">let</span> value <span class="op">=</span> <span class="va">element</span>.<span class="at">getAttribute</span>(name)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13">  <span class="va">console</span>.<span class="at">log</span>(name<span class="op">,</span> value)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-15" title="15"></a>
+<a class="sourceLine" id="cb2-16" title="16"><span class="co">// logs:</span></a>
+<a class="sourceLine" id="cb2-17" title="17"><span class="co">// href https://example.com</span></a>
+<a class="sourceLine" id="cb2-18" title="18"><span class="co">// xlink:href https://example.com</span></a>
+<a class="sourceLine" id="cb2-19" title="19"><span class="co">// show new</span></a></code></pre></div>
+<h2 id="polyfill">Polyfill</h2>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="cf">if</span> (<span class="va">Element</span>.<span class="va">prototype</span>.<span class="at">getAttributeNames</span> <span class="op">==</span> <span class="kw">undefined</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="va">Element</span>.<span class="va">prototype</span>.<span class="at">getAttributeNames</span> <span class="op">=</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="kw">var</span> attributes <span class="op">=</span> <span class="kw">this</span>.<span class="at">attributes</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="kw">var</span> length <span class="op">=</span> <span class="va">attributes</span>.<span class="at">length</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">    <span class="kw">var</span> result <span class="op">=</span> <span class="kw">new</span> <span class="at">Array</span>(length)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6">    <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> length<span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-7" title="7">      result[i] <span class="op">=</span> attributes[i].<span class="at">name</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-9" title="9">    <span class="cf">return</span> result<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

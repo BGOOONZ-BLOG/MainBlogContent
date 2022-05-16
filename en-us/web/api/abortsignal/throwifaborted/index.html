@@ -1,0 +1,66 @@
+<p>{{APIRef(“DOM”)}} {{SeeCompatTable}}</p>
+<p>The <strong><code>throwIfAborted()</code></strong> method throws the signal’s abort {{domxref(“AbortSignal.reason”, “reason”)}} if the signal has been aborted; otherwise it does nothing.</p>
+<p>An API that needs to support aborting can accept an {{domxref(“AbortSignal”)}} object and use <strong><code>throwIfAborted()</code></strong> to test and throw when the <code>abort</code> event is signalled. This method can also be used to abort operations at particular points in code, rather than passing to functions that take a signal.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="at">throwIfAborted</span>()</a></code></pre></div>
+<h3 id="return-value">Return value</h3>
+<p>{{jsxref(‘undefined’)}}</p>
+<h2 id="examples">Examples</h2>
+<p>The examples below come from the specification.</p>
+<h3 id="aborting-a-polling-operation">Aborting a polling operation</h3>
+<p>This example demonstrates how you can use <code>throwIfAborted()</code> to abort a polling operation.</p>
+<p>Consider an aysnchronous <code>waitForCondition()</code> function that is called with another asynchronous function “<code>func</code>”, a target value "<code>targetValue</code>, and an <code>AbortSignal</code>. The method compares the result of <code>func</code> with <code>targetValue</code> in a loop, returning when they match.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">async</span> <span class="kw">function</span> <span class="at">waitForCondition</span>(func<span class="op">,</span> targetValue<span class="op">,</span> <span class="op">{</span> signal <span class="op">}</span> <span class="op">=</span> <span class="op">{}</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="cf">while</span> (<span class="kw">true</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3">    signal<span class="op">?</span>.<span class="at">throwIfAborted</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="kw">const</span> result <span class="op">=</span> <span class="cf">await</span> <span class="at">func</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">    <span class="cf">if</span> (result <span class="op">===</span> targetValue) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-7" title="7">      <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-9" title="9">  }</a>
+<a class="sourceLine" id="cb2-10" title="10">}</a></code></pre></div>
+<p>On each iteration of the loop, we use <code>throwIfAborted()</code> to throw the signal’s <code>reason</code> if the operation has been aborted (and otherwise do nothing). If the signal is aborted, this will cause the <code>waitForCondition()</code> promise to be rejected .</p>
+<h3 id="implementing-an-abortable-api">Implementing an abortable API</h3>
+<p>An API that needs to support aborting can accept an <code>AbortSignal</code> object, and use its state to trigger abort signal handling when needed.</p>
+<p>A {{domxref(“Promise”)}}-based API should should respond to the abort signal by rejecting any unsettled promise with the <code>AbortSignal</code> abort {{domxref(“AbortSignal.reason”, “reason”)}}. For example, consider the following <code>myCoolPromiseAPI</code>, which takes a signal and returns a promise. The promise is rejected immediately if the signal is already aborted, or if the abort event is detected. Otherwise it completes normally and then resolves the promise.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">function</span> <span class="at">myCoolPromiseAPI</span>(...<span class="op">,</span> <span class="op">{</span>signal<span class="op">}</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="cf">return</span> <span class="kw">new</span> <span class="at">Promise</span>((resolve<span class="op">,</span> reject) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="co">//If the signal is already aborted, immediately throw in order to reject the promise.</span></a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="va">signal</span>.<span class="at">throwIfAborted</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"></a>
+<a class="sourceLine" id="cb3-6" title="6">    <span class="co">// Perform the main purpose of the API</span></a>
+<a class="sourceLine" id="cb3-7" title="7">    <span class="co">// Call resolve(result) when done.</span></a>
+<a class="sourceLine" id="cb3-8" title="8"></a>
+<a class="sourceLine" id="cb3-9" title="9">    <span class="co">// Watch for &#39;abort&#39; signals</span></a>
+<a class="sourceLine" id="cb3-10" title="10">    <span class="va">signal</span>.<span class="at">addEventListener</span>(<span class="st">&#39;abort&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-11" title="11">      <span class="co">// Stop the main operation</span></a>
+<a class="sourceLine" id="cb3-12" title="12">      <span class="co">// Reject the promise wth the abort reason.</span></a>
+<a class="sourceLine" id="cb3-13" title="13">      <span class="at">reject</span>(<span class="va">signal</span>.<span class="at">reason</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-14" title="14">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-15" title="15">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-16" title="16"><span class="op">}</span></a></code></pre></div>
+<p>The API might then be used as shown. Note that {{domxref(“AbortController.abort()”)}} is called to abort the operation.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">const</span> controller <span class="op">=</span> <span class="kw">new</span> <span class="at">AbortController</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="kw">const</span> signal <span class="op">=</span> <span class="va">controller</span>.<span class="at">signal</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="at">startSpinner</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5"></a>
+<a class="sourceLine" id="cb4-6" title="6"><span class="at">myCoolPromiseAPI</span>(<span class="op">{</span> ...<span class="op">,</span> signal <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb4-7" title="7">  .<span class="at">then</span>(result <span class="kw">=&gt;</span> ...)</a>
+<a class="sourceLine" id="cb4-8" title="8">  .<span class="at">catch</span>(err <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-9" title="9">    <span class="cf">if</span> (<span class="va">err</span>.<span class="at">name</span> <span class="op">==</span> <span class="st">&#39;AbortError&#39;</span>) <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-10" title="10">    <span class="at">showUserErrorMessage</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-11" title="11">  <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb4-12" title="12">  .<span class="at">then</span>(() <span class="kw">=&gt;</span> <span class="at">stopSpinner</span>())<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-13" title="13"></a>
+<a class="sourceLine" id="cb4-14" title="14"><span class="va">controller</span>.<span class="at">abort</span>()<span class="op">;</span></a></code></pre></div>
+<p>APIs that do not return promises might react in a similar manner. In some cases it may make sense to absorb the signal.</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Fetch_API">Fetch API</a></li>
+</ul>

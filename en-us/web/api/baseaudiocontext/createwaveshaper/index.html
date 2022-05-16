@@ -1,0 +1,45 @@
+<p>{{ APIRef(“Web Audio API”) }}</p>
+<p>The <code>createWaveShaper()</code> method of the {{ domxref(“BaseAudioContext”) }} interface creates a {{ domxref(“WaveShaperNode”) }}, which represents a non-linear distortion. It is used to apply distortion effects to your audio.</p>
+<blockquote>
+<p><strong>Note:</strong> The {{domxref(“WaveShaperNode.WaveShaperNode”, “WaveShaperNode()”)}} constructor is the recommended way to create a {{domxref(“WaveShaperNode”)}}; see <a href="/en-US/docs/Web/API/AudioNode#creating_an_audionode">Creating an AudioNode</a>.</p>
+</blockquote>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">baseAudioCtx</span>.<span class="at">createWaveShaper</span>()<span class="op">;</span></a></code></pre></div>
+<h3 id="returns">Returns</h3>
+<p>A {{domxref(“WaveShaperNode”)}}.</p>
+<h2 id="example">Example</h2>
+<p>The following example shows basic usage of an AudioContext to create a wave shaper node. For applied examples/information, check out our <a href="https://mdn.github.io/voice-change-o-matic/">Voice-change-O-matic</a> <a href="https://mdn.github.io/voice-change-o-matic/">demo</a> (<a href="https://github.com/mdn/voice-change-o-matic/blob/gh-pages/scripts/app.js">see app.js</a> for relevant code).</p>
+<blockquote>
+<p><strong>Note:</strong> Sigmoid functions are commonly used for distortion curves because of their natural properties. Their S-shape, for instance, helps create a smoother sounding result. We found the below distortion curve code on <a href="http://stackoverflow.com/questions/22312841/waveshaper-node-in-webaudio-how-to-emulate-distortion">Stack Overflow</a>.</p>
+</blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> audioCtx <span class="op">=</span> <span class="kw">new</span> (<span class="va">window</span>.<span class="at">AudioContext</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">webkitAudioContext</span>)()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">var</span> distortion <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createWaveShaper</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4">  ...</a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="kw">function</span> <span class="at">makeDistortionCurve</span>(amount) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="kw">var</span> k <span class="op">=</span> <span class="kw">typeof</span> amount <span class="op">===</span> <span class="st">&#39;number&#39;</span> <span class="op">?</span> amount : <span class="dv">50</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-8" title="8">    n_samples <span class="op">=</span> <span class="dv">44100</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-9" title="9">    curve <span class="op">=</span> <span class="kw">new</span> <span class="at">Float32Array</span>(n_samples)<span class="op">,</span></a>
+<a class="sourceLine" id="cb2-10" title="10">    deg <span class="op">=</span> <span class="va">Math</span>.<span class="at">PI</span> / <span class="dv">180</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-11" title="11">    i <span class="op">=</span> <span class="dv">0</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-12" title="12">    x<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13">  <span class="cf">for</span> ( <span class="op">;</span> i <span class="op">&lt;</span> n_samples<span class="op">;</span> <span class="op">++</span>i ) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-14" title="14">    x <span class="op">=</span> i <span class="op">*</span> <span class="dv">2</span> / n_samples <span class="op">-</span> <span class="dv">1</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-15" title="15">    curve[i] <span class="op">=</span> ( <span class="dv">3</span> <span class="op">+</span> k ) <span class="op">*</span> x <span class="op">*</span> <span class="dv">20</span> <span class="op">*</span> deg / ( <span class="va">Math</span>.<span class="at">PI</span> <span class="op">+</span> k <span class="op">*</span> <span class="va">Math</span>.<span class="at">abs</span>(x) )<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-16" title="16">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-17" title="17">  <span class="cf">return</span> curve<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18"><span class="op">};</span></a>
+<a class="sourceLine" id="cb2-19" title="19"></a>
+<a class="sourceLine" id="cb2-20" title="20">  ...</a>
+<a class="sourceLine" id="cb2-21" title="21"></a>
+<a class="sourceLine" id="cb2-22" title="22"><span class="va">distortion</span>.<span class="at">curve</span> <span class="op">=</span> <span class="at">makeDistortionCurve</span>(<span class="dv">400</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-23" title="23"><span class="va">distortion</span>.<span class="at">oversample</span> <span class="op">=</span> <span class="st">&#39;4x&#39;</span><span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API">Using the Web Audio API</a></li>
+</ul>

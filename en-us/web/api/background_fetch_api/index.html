@@ -1,0 +1,67 @@
+<p>{{DefaultAPISidebar(“Background Fetch API”)}}</p>
+<p>The <strong>Background Fetch API</strong> provides a method for managing downloads that may take a significant amount of time such as movies, audio files, and software.</p>
+<h2 id="concepts-and-usage">Concepts and Usage</h2>
+<p>When a web application requires the user to download large files, this often presents a problem in that the user needs to stay connected to the page for the download to complete. If they lose connectivity, close the tab or navigate away from the page the download stops.</p>
+<p>The {{domxref(“Background Sync API”)}} provides a way for service workers to defer processing until a user is connected; however it can’t be used for long running tasks such as downloading a large file. Background Sync requires that the service worker stays alive until the fetch is completed, and to conserve battery life and to prevent unwanted tasks happening in the background the browser will at some point terminate the task.</p>
+<p>The Background Fetch API solves this problem. It creates a way for a web developer to tell the browser to perform some fetches in the background, for example when the user clicks a button to download a video file. The browser then performs the fetches in a user-visible way, displaying progress to the user and giving them a method to cancel the download. Once the download is complete the browser then opens the service worker, at which point your application can do something with the response if required.</p>
+<p>The Background Fetch API will enable the fetch to happen if the user starts the process while offline. Once they are connected it will begin. If the user goes off line, the process pauses until the user is on again.</p>
+<h2 id="interfaces">Interfaces</h2>
+<ul>
+<li>{{domxref(“BackgroundFetchManager”)}}
+<ul>
+<li>: A map where the keys are background fetch IDs and the values are {{domxref(“BackgroundFetchRegistration”)}} objects.</li>
+</ul></li>
+<li>{{domxref(“BackgroundFetchRegistration”)}}
+<ul>
+<li>: Represents a Background Fetch.</li>
+</ul></li>
+<li>{{domxref(“BackgroundFetchRecord”)}}
+<ul>
+<li>: Represents an individual fetch request and response.</li>
+</ul></li>
+<li>{{domxref(“BackgroundFetchEvent”)}}
+<ul>
+<li>: The event type passed to <code>onbackgroundfetchabort</code> and <code>onbackgroundfetchclick</code>.</li>
+</ul></li>
+<li>{{domxref(“BackgroundFetchUpdateUIEvent”)}}
+<ul>
+<li>: The event type passed to <code>onbackgroundfetchsuccess</code> and <code>onbackgroundfetchfail</code>.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>Before using Background Fetch, check for browser support.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb1-1" title="1">if (!(&#39;BackgroundFetchManager&#39; in self)) {</a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="er">// Provide fallback downloading.</span></a>
+<a class="sourceLine" id="cb1-3" title="3">}</a></code></pre></div>
+<p>Using Background Fetch requires a registered service worker. Then call <code>backgroundFetch.fetch()</code> to perform a fetch. This returns a promise that resolves with a {{domxref(“BackgroundFetchRegistration”)}}.</p>
+<p>A background fetch may fetch a number of files. In our example the fetch requests an MP3 and a JPEG. This enables a package of files that the user sees as one item (for example a podcast and artwork) to be downloaded at once.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">navigator</span>.<span class="va">serviceWorker</span>.<span class="va">ready</span>.<span class="at">then</span>(<span class="kw">async</span> (swReg) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">const</span> bgFetch <span class="op">=</span> <span class="cf">await</span> <span class="va">swReg</span>.<span class="va">backgroundFetch</span>.<span class="at">fetch</span>(<span class="st">&#39;my-fetch&#39;</span><span class="op">,</span> [<span class="st">&#39;/ep-5.mp3&#39;</span><span class="op">,</span> <span class="st">&#39;ep-5-artwork.jpg&#39;</span>]<span class="op">,</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3">    <span class="dt">title</span><span class="op">:</span> <span class="st">&#39;Episode 5: Interesting things.&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-4" title="4">    <span class="dt">icons</span><span class="op">:</span> [<span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">      <span class="dt">sizes</span><span class="op">:</span> <span class="st">&#39;300x300&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-6" title="6">      <span class="dt">src</span><span class="op">:</span> <span class="st">&#39;/ep-5-icon.png&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-7" title="7">      <span class="dt">type</span><span class="op">:</span> <span class="st">&#39;image/png&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-8" title="8">    <span class="op">}</span>]<span class="op">,</span></a>
+<a class="sourceLine" id="cb2-9" title="9">    <span class="dt">downloadTotal</span><span class="op">:</span> <span class="dv">60</span> <span class="op">*</span> <span class="dv">1024</span> <span class="op">*</span> <span class="dv">1024</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>You can find a demo application which implements Background Fetch <a href="https://glitch.com/edit/#!/bgfetch-http203?path=public%2Fclient.js%3A191%3A45">here</a>.</p>
+<h2 id="specifications">Specifications</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="https://wicg.github.io/background-fetch/">Background Fetch</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="https://developers.google.com/web/updates/2018/12/background-fetch">Introducing Background Fetch</a></li>
+<li><a href="https://www.youtube.com/watch?v=cElAoxhQz6w">Background Fetch - HTTP 203</a></li>
+</ul>

@@ -1,0 +1,118 @@
+<p>{{DefaultAPISidebar(“CSS Painting API”)}}</p>
+<p>The CSS Painting API — part of the <a href="/en-US/docs/Web/Houdini">CSS Houdini</a> umbrella of APIs — allows developers to write JavaScript functions that can draw directly into an element’s background, border, or content.</p>
+<h2 id="concepts-and-usage">Concepts and usage</h2>
+<p>Essentially, the CSS Painting API contains functionality allowing developers to create custom values for {{cssxref(‘paint()’, ‘paint()’)}}, a CSS <a href="/en-US/docs/Web/CSS/image"><code>&lt;image&gt;</code></a> function. You can then apply these values to properties like {{cssxref(“background-image”)}} to set complex custom backgrounds on an element.</p>
+<p>For example:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb1-1" title="1">aside {</a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="kw">background-image</span>: paint<span class="fu">(</span>myPaintedImage<span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3">}</a></code></pre></div>
+<p>The API defines {{domxref(‘PaintWorklet’)}}, a {{domxref(‘worklet’)}} that can be used to programmatically generate an image that responds to computed style changes. To find out more about how this is used, consult <a href="/en-US/docs/Web/API/CSS_Painting_API/Guide">Using the CSS Painting API</a>.</p>
+<h2 id="interfaces">Interfaces</h2>
+<ul>
+<li>{{domxref(‘PaintWorklet’)}}
+<ul>
+<li>: Programmatically generates an image where a CSS property expects a file. Access this interface through <a href="/en-US/docs/Web/API/CSS/paintWorklet" title="paintWorklet is a static, read-only property of the CSS interface that provides access to the PaintWorklet, which programmatically generates an image where a CSS property expects a file."><code>CSS.paintWorklet</code></a>.</li>
+</ul></li>
+<li>{{domxref(‘PaintWorkletGlobalScope’)}}
+<ul>
+<li>: The global execution context of the <code>paintWorklet</code>.</li>
+</ul></li>
+<li>{{domxref(‘PaintRenderingContext2D’)}}
+<ul>
+<li>: Implements a subset of the <a href="/en-US/docs/Web/API/CanvasRenderingContext2D">CanvasRenderingContext2D API</a>. It has an output bitmap that is the size of the object it is rendering to.</li>
+</ul></li>
+<li>{{domxref(‘PaintSize’)}}
+<ul>
+<li>: Returns the read-only values of the output bitmap’s width and height.</li>
+</ul></li>
+</ul>
+<h2 id="dictionaries">Dictionaries</h2>
+<ul>
+<li>{{domxref(‘PaintRenderingContext2DSettings’)}}
+<ul>
+<li>: A dictionary providing a subset of <a href="/en-US/docs/Web/API/CanvasRenderingContext2D">CanvasRenderingContext2D</a> settings.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>The following example creates a list of items with a background image that rotates between three different colors and three widths. In a supporting browser you will see something like the image below.</p>
+<figure>
+<img src="Guide/boxbg.png" alt="The width and color of the background image changes based on the custom properties" /><figcaption>The width and color of the background image changes based on the custom properties</figcaption>
+</figure>
+<p>To achieve this we’ll define two custom CSS properties, <code>--boxColor</code> and <code>--widthSubtractor</code>.</p>
+<h3 id="the-paint-worklet">The paint worklet</h3>
+<p>In our worklet, we can reference these custom properties.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="at">registerPaint</span>(<span class="st">&#39;boxbg&#39;</span><span class="op">,</span> <span class="kw">class</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">static</span> get <span class="at">contextOptions</span>() <span class="op">{</span> <span class="cf">return</span> <span class="op">{</span><span class="dt">alpha</span><span class="op">:</span> <span class="kw">true</span><span class="op">};</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="co">/*</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="co">     use this function to retrieve any custom properties (or regular properties, such as &#39;height&#39;)</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="co">     defined for the element, return them in the specified array</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="co">  */</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="kw">static</span> get <span class="at">inputProperties</span>() <span class="op">{</span> <span class="cf">return</span> [<span class="st">&#39;--boxColor&#39;</span><span class="op">,</span> <span class="st">&#39;--widthSubtractor&#39;</span>]<span class="op">;</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-9" title="9"></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="at">paint</span>(ctx<span class="op">,</span> size<span class="op">,</span> props) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-11" title="11">    <span class="co">/*</span></a>
+<a class="sourceLine" id="cb2-12" title="12"><span class="co">       ctx -&gt; drawing context</span></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="co">       size -&gt; paintSize: width and height</span></a>
+<a class="sourceLine" id="cb2-14" title="14"><span class="co">       props -&gt; properties: get() method</span></a>
+<a class="sourceLine" id="cb2-15" title="15"><span class="co">    */</span></a>
+<a class="sourceLine" id="cb2-16" title="16"></a>
+<a class="sourceLine" id="cb2-17" title="17">    <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="va">props</span>.<span class="at">get</span>(<span class="st">&#39;--boxColor&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">    <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="dv">0</span><span class="op">,</span> <span class="va">size</span>.<span class="at">height</span>/<span class="dv">3</span><span class="op">,</span> <span class="va">size</span>.<span class="at">width</span><span class="op">*</span><span class="fl">0.4</span> <span class="op">-</span> <span class="va">props</span>.<span class="at">get</span>(<span class="st">&#39;--widthSubtractor&#39;</span>)<span class="op">,</span> <span class="va">size</span>.<span class="at">height</span><span class="op">*</span><span class="fl">0.6</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-19" title="19">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-20" title="20"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>We used the <code>inputProperties()</code> method in the <code>registerPaint()</code> class to get the values of two custom properties set on an element that has <code>boxbg</code> applied to it and then used those within our <code>paint()</code> function. The <code>inputProperties()</code> method can return all properties affecting the element, not just custom properties.</p>
+<h3 id="using-the-paint-worklet">Using the paint worklet</h3>
+<h4 id="html">HTML</h4>
+<div class="sourceCode" id="cb3"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">&lt;ul&gt;</span></a>
+<a class="sourceLine" id="cb3-2" title="2">    <span class="kw">&lt;li&gt;</span>item 1<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="kw">&lt;li&gt;</span>item 2<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="kw">&lt;li&gt;</span>item 3<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">    <span class="kw">&lt;li&gt;</span>item 4<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb3-6" title="6">    <span class="kw">&lt;li&gt;</span>item 5<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">    <span class="kw">&lt;li&gt;</span>item 6<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">    <span class="kw">&lt;li&gt;</span>item 7<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">    <span class="kw">&lt;li&gt;</span>item 8<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb3-10" title="10">    <span class="kw">&lt;li&gt;</span>item 9<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb3-11" title="11">    <span class="kw">&lt;li&gt;</span>item 10<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb3-12" title="12">    <span class="kw">&lt;li&gt;</span>item 11<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb3-13" title="13">    <span class="kw">&lt;li&gt;</span>item 12<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb3-14" title="14">    <span class="kw">&lt;li&gt;</span>item 13<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb3-15" title="15">    <span class="kw">&lt;li&gt;</span>item 14<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb3-16" title="16">    <span class="kw">&lt;li&gt;</span>item 15<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb3-17" title="17">    <span class="kw">&lt;li&gt;</span>item 16<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb3-18" title="18">    <span class="kw">&lt;li&gt;</span>item 17<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb3-19" title="19">    <span class="kw">&lt;li&gt;</span>item<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb3-20" title="20"><span class="kw">&lt;/ul&gt;</span></a></code></pre></div>
+<h4 id="css">CSS</h4>
+<p>In our CSS, we define the <code>--boxColor</code> and <code>--widthSubtractor</code> custom properties.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb4-1" title="1">li {</a>
+<a class="sourceLine" id="cb4-2" title="2">   <span class="kw">background-image</span>: paint<span class="fu">(</span>boxbg<span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3">   <span class="va">--boxColor</span>: <span class="fu">hsla(</span><span class="dv">55</span><span class="op">,</span> <span class="dv">90</span><span class="dt">%</span><span class="op">,</span> <span class="dv">60</span><span class="dt">%</span><span class="op">,</span> <span class="dv">1.0</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-4" title="4">}</a>
+<a class="sourceLine" id="cb4-5" title="5"></a>
+<a class="sourceLine" id="cb4-6" title="6">li<span class="in">:nth-of-type(3n)</span> {</a>
+<a class="sourceLine" id="cb4-7" title="7">   <span class="va">--boxColor</span>: <span class="fu">hsla(</span><span class="dv">155</span><span class="op">,</span> <span class="dv">90</span><span class="dt">%</span><span class="op">,</span> <span class="dv">60</span><span class="dt">%</span><span class="op">,</span> <span class="dv">1.0</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-8" title="8">   <span class="va">--widthSubtractor</span>: <span class="dv">20</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-9" title="9">}</a>
+<a class="sourceLine" id="cb4-10" title="10"></a>
+<a class="sourceLine" id="cb4-11" title="11">li<span class="in">:nth-of-type(3n+1)</span> {</a>
+<a class="sourceLine" id="cb4-12" title="12">   <span class="va">--boxColor</span>: <span class="fu">hsla(</span><span class="dv">255</span><span class="op">,</span> <span class="dv">90</span><span class="dt">%</span><span class="op">,</span> <span class="dv">60</span><span class="dt">%</span><span class="op">,</span> <span class="dv">1.0</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-13" title="13">   <span class="va">--widthSubtractor</span>: <span class="dv">40</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-14" title="14">}</a></code></pre></div>
+<h4 id="javascript">JavaScript</h4>
+<p>In our <code>&lt;script&gt;</code> we register the worklet:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="va">CSS</span>.<span class="va">paintWorklet</span>.<span class="at">addModule</span>(<span class="st">&#39;boxbg.js&#39;</span>)<span class="op">;</span></a></code></pre></div>
+<h4 id="result">Result</h4>
+<p>While you can’t play with the worklet’s script, you can alter the custom property values in DevTools to change the colors and width of the background image.</p>
+<p>{{EmbedGHLiveSample(“css-examples/houdini/css_painting_api/example-boxbg.html”, ‘100%’, 400)}}</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications(“api.PaintWorkletGlobalScope”)}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>See the browser compatibility data for each CSS Painting API Interface.</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/CSS_Painting_API/Guide">Using the CSS Painting API</a></li>
+<li><a href="/en-US/docs/Web/API/CSS_Typed_OM_API">CSS Typed Object Model API</a></li>
+<li><a href="/en-US/docs/Web/Houdini">CSS Houdini</a></li>
+</ul>

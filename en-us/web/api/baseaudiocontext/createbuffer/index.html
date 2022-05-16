@@ -1,0 +1,86 @@
+<p>{{ APIRef(“Web Audio API”) }}</p>
+<p>The <code>createBuffer()</code> method of the {{ domxref(“BaseAudioContext”) }} Interface is used to create a new, empty {{ domxref(“AudioBuffer”) }} object, which can then be populated by data, and played via an {{ domxref(“AudioBufferSourceNode”) }}</p>
+<p>For more details about audio buffers, check out the {{ domxref(“AudioBuffer”) }} reference page.</p>
+<blockquote>
+<p><strong>Note:</strong> <code>createBuffer()</code> used to be able to take compressed data and give back decoded samples, but this ability was removed from the specification, because all the decoding was done on the main thread, so <code>createBuffer()</code> was blocking other code execution. The asynchronous method <code>decodeAudioData()</code> does the same thing — takes compressed audio, such as an MP3 file, and directly gives you back an {{ domxref(“AudioBuffer”) }} that you can then play via an {{ domxref(“AudioBufferSourceNode”) }}. For simple use cases like playing an MP3, <code>decodeAudioData()</code> is what you should be using.</p>
+</blockquote>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> buffer <span class="op">=</span> <span class="va">baseAudioContext</span>.<span class="at">createBuffer</span>(numOfchannels<span class="op">,</span> length<span class="op">,</span> sampleRate)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<blockquote>
+<p><strong>Note:</strong> For an in-depth explanation of how audio buffers work, and what these parameters mean, read <a href="/en-US/docs/Web/API/Web_Audio_API/Basic_concepts_behind_Web_Audio_API#audio_buffers.3a_frames.2c_samples_and_channels">Audio buffers: frames, samples and channels</a> from our Basic concepts guide.</p>
+</blockquote>
+<ul>
+<li><code>numOfChannels</code>
+<ul>
+<li>: An integer representing the number of channels this buffer should have. The default value is 1, and all user agents must support at least 32 channels.</li>
+</ul></li>
+<li><code>length</code>
+<ul>
+<li>: An integer representing the size of the buffer in sample-frames (where each sample-frame is the size of a sample in bytes multiplied by <code>numOfChannels</code>). To determine the <code>length</code> to use for a specific number of seconds of audio, use <code>numSeconds * sampleRate</code>.</li>
+</ul></li>
+<li><code>sampleRate</code>
+<ul>
+<li>: The sample rate of the linear audio data in sample-frames per second. All browsers must support sample rates in at least the range 8,000 Hz to 96,000 Hz.</li>
+</ul></li>
+</ul>
+<h3 id="returns">Returns</h3>
+<p>An {{domxref(“AudioBuffer”)}} configured based on the specified options.</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><code>NotSupportedError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if one or more of the options are negative or otherwise has an invalid value (such as <code>numberOfChannels</code> being higher than supported, or a <code>sampleRate</code> outside the nominal range).</li>
+</ul></li>
+<li><code>RangeError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if there isn’t enough memory available to allocate the buffer.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>First, a couple of simple trivial examples, to help explain how the parameters are used:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> audioCtx <span class="op">=</span> <span class="kw">new</span> <span class="at">AudioContext</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">var</span> buffer <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createBuffer</span>(<span class="dv">2</span><span class="op">,</span> <span class="dv">22050</span><span class="op">,</span> <span class="dv">44100</span>)<span class="op">;</span></a></code></pre></div>
+<p>If you use this call, you will get a stereo buffer (two channels), that, when played back on an AudioContext running at 44100Hz (very common, most normal sound cards run at this rate), will last for 0.5 seconds: 22050 frames / 44100Hz = 0.5 seconds.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">var</span> audioCtx <span class="op">=</span> <span class="kw">new</span> <span class="at">AudioContext</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">var</span> buffer <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createBuffer</span>(<span class="dv">1</span><span class="op">,</span> <span class="dv">22050</span><span class="op">,</span> <span class="dv">22050</span>)<span class="op">;</span></a></code></pre></div>
+<p>If you use this call, you will get a mono buffer (one channel), that, when played back on an <code>AudioContext</code> running at 44100Hz, will be automatically *resampled* to 44100Hz (and therefore yield 44100 frames), and last for 1.0 second: 44100 frames / 44100Hz = 1 second.</p>
+<blockquote>
+<p><strong>Note:</strong> audio resampling is very similar to image resizing: say you’ve got a 16 x 16 image, but you want it to fill a 32x32 area: you resize (resample) it. the result has less quality (it can be blurry or edgy, depending on the resizing algorithm), but it works, and the resized image takes up less space. Resampled audio is exactly the same — you save space, but in practice you will be unable to properly reproduce high frequency content (treble sound).</p>
+</blockquote>
+<p>Now let’s look at a more complex <code>createBuffer()</code> example, in which we create a three-second buffer, fill it with white noise, and then play it via an {{ domxref(“AudioBufferSourceNode”) }}. The comment should clearly explain what is going on. You can also <a href="https://mdn.github.io/webaudio-examples/audio-buffer/">run the code live</a>, or <a href="https://github.com/mdn/webaudio-examples/blob/master/audio-buffer/index.html">view the source</a>.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">var</span> audioCtx <span class="op">=</span> <span class="kw">new</span> (<span class="va">window</span>.<span class="at">AudioContext</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">webkitAudioContext</span>)()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="co">// Create an empty three-second stereo buffer at the sample rate of the AudioContext</span></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="kw">var</span> myArrayBuffer <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createBuffer</span>(<span class="dv">2</span><span class="op">,</span> <span class="va">audioCtx</span>.<span class="at">sampleRate</span> <span class="op">*</span> <span class="dv">3</span><span class="op">,</span> <span class="va">audioCtx</span>.<span class="at">sampleRate</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5"></a>
+<a class="sourceLine" id="cb4-6" title="6"><span class="co">// Fill the buffer with white noise;</span></a>
+<a class="sourceLine" id="cb4-7" title="7"><span class="co">// just random values between -1.0 and 1.0</span></a>
+<a class="sourceLine" id="cb4-8" title="8"><span class="cf">for</span> (<span class="kw">var</span> channel <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> channel <span class="op">&lt;</span> <span class="va">myArrayBuffer</span>.<span class="at">numberOfChannels</span><span class="op">;</span> channel<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-9" title="9">  <span class="co">// This gives us the actual ArrayBuffer that contains the data</span></a>
+<a class="sourceLine" id="cb4-10" title="10">  <span class="kw">var</span> nowBuffering <span class="op">=</span> <span class="va">myArrayBuffer</span>.<span class="at">getChannelData</span>(channel)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-11" title="11">  <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">myArrayBuffer</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-12" title="12">    <span class="co">// Math.random() is in [0; 1.0]</span></a>
+<a class="sourceLine" id="cb4-13" title="13">    <span class="co">// audio needs to be in [-1.0; 1.0]</span></a>
+<a class="sourceLine" id="cb4-14" title="14">    nowBuffering[i] <span class="op">=</span> <span class="va">Math</span>.<span class="at">random</span>() <span class="op">*</span> <span class="dv">2</span> <span class="op">-</span> <span class="dv">1</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-15" title="15">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-16" title="16"><span class="op">}</span></a>
+<a class="sourceLine" id="cb4-17" title="17"></a>
+<a class="sourceLine" id="cb4-18" title="18"><span class="co">// Get an AudioBufferSourceNode.</span></a>
+<a class="sourceLine" id="cb4-19" title="19"><span class="co">// This is the AudioNode to use when we want to play an AudioBuffer</span></a>
+<a class="sourceLine" id="cb4-20" title="20"><span class="kw">var</span> source <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createBufferSource</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-21" title="21"><span class="co">// set the buffer in the AudioBufferSourceNode</span></a>
+<a class="sourceLine" id="cb4-22" title="22"><span class="va">source</span>.<span class="at">buffer</span> <span class="op">=</span> myArrayBuffer<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-23" title="23"><span class="co">// connect the AudioBufferSourceNode to the</span></a>
+<a class="sourceLine" id="cb4-24" title="24"><span class="co">// destination so we can hear the sound</span></a>
+<a class="sourceLine" id="cb4-25" title="25"><span class="va">source</span>.<span class="at">connect</span>(<span class="va">audioCtx</span>.<span class="at">destination</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-26" title="26"><span class="co">// start the source playing</span></a>
+<a class="sourceLine" id="cb4-27" title="27"><span class="va">source</span>.<span class="at">start</span>()<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API">Using the Web Audio API</a></li>
+</ul>

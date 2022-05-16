@@ -1,0 +1,309 @@
+<p>{{APIRef(“Fetch API”)}}</p>
+<p>The global <strong><code>fetch()</code></strong> method starts the process of fetching a resource from the network, returning a promise which is fulfilled once the response is available.</p>
+<p>The promise resolves to the {{domxref(“Response”)}} object representing the response to your request.</p>
+<p>A {{domxref(“fetch()”)}} promise only rejects when a network error is encountered (which is usually when there’s a permissions issue or similar). A {{domxref(“fetch()”)}} promise <em>does not</em> reject on HTTP errors (<code>404</code>, etc.). Instead, a <code>then()</code> handler must check the {{domxref(“Response.ok”)}} and/or {{domxref(“Response.status”)}} properties.</p>
+<p><code>WindowOrWorkerGlobalScope</code> is implemented by both {{domxref(“Window”)}} and {{domxref(“WorkerGlobalScope”)}}, which means that the <code>fetch()</code> method is available in pretty much any context in which you might want to fetch resources.</p>
+<p>The <code>fetch()</code> method is controlled by the <code>connect-src</code> directive of <a href="/en-US/docs/Web/HTTP/Headers/Content-Security-Policy">Content Security Policy</a> rather than the directive of the resources it’s retrieving.</p>
+<blockquote>
+<p><strong>Note:</strong> The <code>fetch()</code> method’s parameters are identical to those of the {{domxref(“Request.Request”,“Request()”)}} constructor.</p>
+</blockquote>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> fetchResponsePromise <span class="op">=</span> <span class="at">fetch</span>(resource [<span class="op">,</span> init])</a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><p><code>resource</code></p>
+<ul>
+<li><p>: This defines the resource that you wish to fetch. This can either be:</p>
+<ul>
+<li>A string or any other object with a {{Glossary(“stringifier”)}} — including a {{domxref(“URL”)}} object — that provides the URL of the resource you want to fetch.</li>
+<li>A {{domxref(“Request”)}} object.</li>
+</ul></li>
+</ul></li>
+<li><p><code>init</code> {{optional_inline}}</p>
+<ul>
+<li><p>: An object containing any custom settings that you want to apply to the request. The possible options are:</p>
+<ul>
+<li><code>method</code>
+<ul>
+<li>: The request method, e.g., <code>GET</code>, <code>POST</code>. Note that the {{httpheader(“Origin”)}} header is not set on Fetch requests with a method of {{HTTPMethod(“HEAD”)}} or {{HTTPMethod(“GET”)}}. (This behavior was corrected in Firefox 65 — see {{bug(1508661)}}).</li>
+</ul></li>
+<li><code>headers</code>
+<ul>
+<li>: Any headers you want to add to your request, contained within a {{domxref(“Headers”)}} object or an object literal with {{jsxref(“String”)}} values. Note that <a href="/en-US/docs/Glossary/Forbidden_header_name">some names are forbidden</a>.</li>
+</ul></li>
+<li><code>body</code>
+<ul>
+<li>: Any body that you want to add to your request: this can be a {{domxref(“Blob”)}}, {{domxref(“BufferSource”)}}, {{domxref(“FormData”)}}, {{domxref(“URLSearchParams”)}}, {{domxref(“USVString”)}}, or {{domxref(“ReadableStream”)}} object. Note that a request using the <code>GET</code> or <code>HEAD</code> method cannot have a body.</li>
+</ul></li>
+<li><code>mode</code>
+<ul>
+<li>: The mode you want to use for the request, e.g., <code>cors</code>, <code>no-cors</code>, or <code>same-origin</code>.</li>
+</ul></li>
+<li><p><code>credentials</code></p>
+<ul>
+<li><p>: Controls what browsers do with credentials (<a href="/en-US/docs/Web/HTTP/Cookies">cookies</a>, <a href="/en-US/docs/Web/HTTP/Authentication">HTTP authentication</a> entries, and TLS client certificates). Must be one of the following strings:</p>
+<ul>
+<li><code>omit</code>
+<ul>
+<li>: Tells browsers to exclude credentials from the request, and ignore any credentials sent back in the response (e.g., any {{HTTPHeader(“Set-Cookie”)}} header).</li>
+</ul></li>
+<li><code>same-origin</code>
+<ul>
+<li>: Tells browsers to include credentials with requests to same-origin URLs, and use any credentials sent back in responses from same-origin URLs.</li>
+</ul></li>
+<li><p><code>include</code></p>
+<ul>
+<li><p>: Tells browsers to include credentials in both same- and cross-origin requests, and always use any credentials sent back in responses.</p>
+<blockquote>
+<p><strong>Note:</strong> Credentials may be included in simple and “final” cross-origin requests, but should not be included in <a href="/en-US/docs/Web/HTTP/CORS#preflight_requests_and_credentials">CORS preflight requests</a>.</p>
+</blockquote></li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li><code>cache</code>
+<ul>
+<li>: A string indicating how the request will interact with the browser’s <a href="/en-US/docs/Web/HTTP/Caching">HTTP cache</a>. The possible values, <code>default</code>, <code>no-store</code>, <code>reload</code>, <code>no-cache</code>, <code>force-cache</code>, and <code>only-if-cached</code>, are documented in the article for the {{domxref(“Request/cache”, “cache”)}} property of the {{domxref(“Request”)}} object.</li>
+</ul></li>
+<li><p><code>redirect</code></p>
+<ul>
+<li><p>: How to handle a <code>redirect</code> response:</p>
+<ul>
+<li><code>follow</code>: Automatically follow redirects. Unless otherwise stated the redirect mode is set to <code>follow</code></li>
+<li><code>error</code>: Abort with an error if a redirect occurs.</li>
+<li><code>manual</code>: Caller intends to process the response in another context. See <a href="https://fetch.spec.whatwg.org/#requests">WHATWG fetch standard</a> for more information.</li>
+</ul></li>
+</ul></li>
+<li><code>referrer</code>
+<ul>
+<li>: A {{domxref(“USVString”)}} specifying the referrer of the request. This can be a same-origin URL, <code>about:client</code>, or an empty string.</li>
+</ul></li>
+<li><code>referrerPolicy</code>
+<ul>
+<li>: Specifies the <a href="https://w3c.github.io/webappsec-referrer-policy/#referrer-policies">referrer policy</a> to use for the request. May be one of <code>no-referrer</code>, <code>no-referrer-when-downgrade</code>, <code>same-origin</code>, <code>origin</code>, <code>strict-origin</code>, <code>origin-when-cross-origin</code>, <code>strict-origin-when-cross-origin</code>, or <code>unsafe-url</code>.</li>
+</ul></li>
+<li><code>integrity</code>
+<ul>
+<li>: Contains the <a href="/en-US/docs/Web/Security/Subresource_Integrity">subresource integrity</a> value of the request (e.g., <code>sha256-BpfBw7ivV8q2jLiT13fxDYAe2tJllusRSZ273h2nFSE=</code>).</li>
+</ul></li>
+<li><code>keepalive</code>
+<ul>
+<li>: The <code>keepalive</code> option can be used to allow the request to outlive the page. Fetch with the <code>keepalive</code> flag is a replacement for the {{domxref(“Navigator.sendBeacon()”)}} API.</li>
+</ul></li>
+<li><code>signal</code>
+<ul>
+<li>: An {{domxref(“AbortSignal”)}} object instance; allows you to communicate with a fetch request and abort it if desired via an {{domxref(“AbortController”)}}.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A {{jsxref(“Promise”)}} that resolves to a {{domxref(“Response”)}} object.</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><code>AbortError</code>
+<ul>
+<li>: The request was aborted due to a call to the {{domxref(“AbortController”)}} {{domxref(“AbortController.abort”, “abort()”)}} method.</li>
+</ul></li>
+<li><code>TypeError</code>
+<ul>
+<li>: Can occur for the following reasons:</li>
+</ul></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th scope="col">
+Reason
+</th>
+<th scope="col">
+Failing examples
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+Invalid header name
+</td>
+<td>
+<pre>
+// space in "C ontent-Type"
+const headers = {
+    "C ontent-Type": "text/xml",
+    "Breaking-Bad": "<3"
+};
+fetch('https://example.com/', { headers });
+        </pre>
+</td>
+</tr>
+<tr>
+<td>
+Invalid header value. The header object must contain exactly two elements.
+</td>
+<td>
+<pre>
+const headers = [
+    ["Content-Type", "text/html", "extra"],
+    ["Accept"],
+];
+fetch('https://example.com/', { headers });
+        </pre>
+</td>
+</tr>
+<tr>
+<td>
+Invalid URL or scheme, or using a scheme that fetch does not support, or using a scheme that is not supported for a particular request mode.
+</td>
+<td>
+<pre>
+fetch('blob://example.com/', { mode: 'cors' })
+        </pre>
+</td>
+</tr>
+<td>
+URL includes credentials
+</td>
+<td>
+<pre>
+fetch('https://user:password@example.com/')
+        </pre>
+</td>
+<tr>
+<td>
+Invalid referrer URL
+</td>
+<td>
+<pre>
+fetch('https://example.com/', {
+  referrer: './abc\u0000df'
+})
+        </pre>
+</td>
+</tr>
+<tr>
+<td>
+Invalid modes (<code>navigate</code> and <code>websocket</code>)
+</td>
+<td>
+<pre>
+fetch('https://example.com/', { mode: 'navigate' })
+        </pre>
+</td>
+</tr>
+<tr>
+<td>
+If the request cache mode is “only-if-cached” and the request mode is other than “same-origin”.
+</td>
+<td>
+<pre>
+fetch('https://example.com/', {
+  cache: 'only-if-cached',
+  mode: 'no-cors'
+})
+        </pre>
+</td>
+</tr>
+<tr>
+<td>
+If the request method is an invalid name token or one of forbidden headers. CONNECT, TRACE or TRACK
+</td>
+<td>
+<pre>
+fetch('https://example.com/', { method: 'CONNECT' })
+        </pre>
+</td>
+</tr>
+<tr>
+<td>
+If the request mode is “no-cors” and the request method is not a CORS-safe-listed method (GET, HEAD, or POST)
+</td>
+<td>
+<pre>
+fetch('https://example.com/', {
+  method: 'CONNECT',
+  mode: 'no-cors'
+})
+        </pre>
+</td>
+</tr>
+<tr>
+<td>
+If the request method is GET or HEAD and the body is non-null or not undefined.
+</td>
+<td>
+<pre>
+fetch('https://example.com/', {
+  method: 'GET',
+  body: new FormData()
+})
+        </pre>
+</td>
+</tr>
+<tr>
+<td>
+If fetch throws a network error.
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="examples">Examples</h2>
+<p>In our <a href="https://github.com/mdn/fetch-examples/tree/master/fetch-request">Fetch Request example</a> (see <a href="https://mdn.github.io/fetch-examples/fetch-request/">Fetch Request live</a>) we create a new {{domxref(“Request”)}} object using the relevant constructor, then fetch it using a <code>fetch()</code> call. Since we are fetching an image, we run {{domxref(“Response.blob()”)}} on the response to give it the proper MIME type so it will be handled properly, then create an Object URL of it and display it in an {{htmlelement(“img”)}} element.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> myImage <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;img&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">let</span> myRequest <span class="op">=</span> <span class="kw">new</span> <span class="at">Request</span>(<span class="st">&#39;flowers.jpg&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="at">fetch</span>(myRequest)</a>
+<a class="sourceLine" id="cb2-6" title="6">.<span class="at">then</span>(<span class="kw">function</span>(response) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="cf">if</span> (<span class="op">!</span><span class="va">response</span>.<span class="at">ok</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-8" title="8">    <span class="cf">throw</span> <span class="kw">new</span> <span class="at">Error</span>(<span class="vs">`HTTP error! status: </span><span class="sc">${</span><span class="va">response</span>.<span class="at">status</span><span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="cf">return</span> <span class="va">response</span>.<span class="at">blob</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-12" title="12">.<span class="at">then</span>(<span class="kw">function</span>(response) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-13" title="13">  <span class="kw">let</span> objectURL <span class="op">=</span> <span class="va">URL</span>.<span class="at">createObjectURL</span>(response)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14">  <span class="va">myImage</span>.<span class="at">src</span> <span class="op">=</span> objectURL<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-15" title="15"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>In the <a href="https://github.com/mdn/fetch-examples/blob/master/fetch-with-init-then-request/index.html">Fetch with init then Request example</a> (see <a href="https://mdn.github.io/fetch-examples/fetch-with-init-then-request/">Fetch Request init live</a>), we do the same thing except that we pass in an <code>init</code> object when we invoke <code>fetch()</code>:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> myImage <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;img&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw">let</span> myHeaders <span class="op">=</span> <span class="kw">new</span> <span class="at">Headers</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="va">myHeaders</span>.<span class="at">append</span>(<span class="st">&#39;Accept&#39;</span><span class="op">,</span> <span class="st">&#39;image/jpeg&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"></a>
+<a class="sourceLine" id="cb3-6" title="6"><span class="kw">const</span> myInit <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="dt">method</span><span class="op">:</span> <span class="st">&#39;GET&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="dt">headers</span><span class="op">:</span> myHeaders<span class="op">,</span></a>
+<a class="sourceLine" id="cb3-9" title="9">  <span class="dt">mode</span><span class="op">:</span> <span class="st">&#39;cors&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-10" title="10">  <span class="dt">cache</span><span class="op">:</span> <span class="st">&#39;default&#39;</span></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="op">};</span></a>
+<a class="sourceLine" id="cb3-12" title="12"></a>
+<a class="sourceLine" id="cb3-13" title="13"><span class="kw">let</span> myRequest <span class="op">=</span> <span class="kw">new</span> <span class="at">Request</span>(<span class="st">&#39;flowers.jpg&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-14" title="14"></a>
+<a class="sourceLine" id="cb3-15" title="15"><span class="at">fetch</span>(myRequest<span class="op">,</span> myInit).<span class="at">then</span>(<span class="kw">function</span>(response) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-16" title="16">  <span class="co">// ...</span></a>
+<a class="sourceLine" id="cb3-17" title="17"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>You could also pass the <code>init</code> object in with the <code>Request</code> constructor to get the same effect:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">let</span> myRequest <span class="op">=</span> <span class="kw">new</span> <span class="at">Request</span>(<span class="st">&#39;flowers.jpg&#39;</span><span class="op">,</span> myInit)<span class="op">;</span></a></code></pre></div>
+<p>You can also use an object literal as <code>headers</code> in <code>init</code>.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">const</span> myInit <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="dt">method</span><span class="op">:</span> <span class="st">&#39;GET&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb5-3" title="3">  <span class="dt">headers</span><span class="op">:</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-4" title="4">    <span class="st">&#39;Accept&#39;</span><span class="op">:</span> <span class="st">&#39;image/jpeg&#39;</span></a>
+<a class="sourceLine" id="cb5-5" title="5">  <span class="op">},</span></a>
+<a class="sourceLine" id="cb5-6" title="6">  <span class="dt">mode</span><span class="op">:</span> <span class="st">&#39;cors&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb5-7" title="7">  <span class="dt">cache</span><span class="op">:</span> <span class="st">&#39;default&#39;</span></a>
+<a class="sourceLine" id="cb5-8" title="8"><span class="op">};</span></a>
+<a class="sourceLine" id="cb5-9" title="9"></a>
+<a class="sourceLine" id="cb5-10" title="10"><span class="kw">let</span> myRequest <span class="op">=</span> <span class="kw">new</span> <span class="at">Request</span>(<span class="st">&#39;flowers.jpg&#39;</span><span class="op">,</span> myInit)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Fetch_API">Fetch API</a></li>
+<li><a href="/en-US/docs/Web/API/Service_Worker_API">ServiceWorker API</a></li>
+<li><a href="/en-US/docs/Web/HTTP/CORS">HTTP access control (CORS)</a></li>
+<li><a href="/en-US/docs/Web/HTTP">HTTP</a></li>
+</ul>

@@ -1,0 +1,63 @@
+<p>{{ APIRef(“IndexedDB”) }}</p>
+<p>The <code>includes()</code> method of the {{domxref(“IDBKeyRange”)}} interface returns a boolean indicating whether a specified key is inside the key range.</p>
+<p>{{AvailableInWorkers}}</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> isIncluded <span class="op">=</span> <span class="va">myKeyRange</span>.<span class="at">includes</span>(key)</a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<p><em>key</em> The key you want to check for in your key range. This can be any type.</p>
+<h3 id="return-value">Return value</h3>
+<p>A boolean value.</p>
+<h3 id="exceptions">Exceptions</h3>
+<p>This method may raise a {{domxref(“DOMException”)}} of the following type:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Attribute</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="/en-US/docs/Web/API/DOMError"><code>DataError</code></a></td>
+<td>The supplied key was not a valid key.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="example">Example</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> keyRangeValue <span class="op">=</span> <span class="va">IDBKeyRange</span>.<span class="at">bound</span>(<span class="st">&#39;A&#39;</span><span class="op">,</span> <span class="st">&#39;K&#39;</span><span class="op">,</span> <span class="kw">false</span><span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">var</span> myResult <span class="op">=</span> <span class="va">keyRangeValue</span>.<span class="at">includes</span>(<span class="st">&#39;F&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="co">// Returns true</span></a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="kw">var</span> myResult <span class="op">=</span> <span class="va">keyRangeValue</span>.<span class="at">includes</span>(<span class="st">&#39;W&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="co">// Returns false</span></a></code></pre></div>
+<h2 id="polyfill">Polyfill</h2>
+<p>The <code>includes()</code> method was added in the second edition of the Indexed DB specification. For browsers that do not support it, the following polyfill can be used.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="va">IDBKeyRange</span>.<span class="va">prototype</span>.<span class="at">includes</span> <span class="op">=</span> <span class="va">IDBKeyRange</span>.<span class="va">prototype</span>.<span class="at">includes</span> <span class="op">||</span> <span class="kw">function</span>(key) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">var</span> r <span class="op">=</span> <span class="kw">this</span><span class="op">,</span> c<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="cf">if</span> (<span class="va">r</span>.<span class="at">lower</span> <span class="op">!==</span> <span class="kw">undefined</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">    c <span class="op">=</span> <span class="va">indexedDB</span>.<span class="at">cmp</span>(key<span class="op">,</span> <span class="va">r</span>.<span class="at">lower</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">    <span class="cf">if</span> (<span class="va">r</span>.<span class="at">lowerOpen</span> <span class="op">&amp;&amp;</span> c <span class="op">&lt;=</span> <span class="dv">0</span>) <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6">    <span class="cf">if</span> (<span class="op">!</span><span class="va">r</span>.<span class="at">lowerOpen</span> <span class="op">&amp;&amp;</span> c <span class="op">&lt;</span> <span class="dv">0</span>) <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="cf">if</span> (<span class="va">r</span>.<span class="at">upper</span> <span class="op">!==</span> <span class="kw">undefined</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-9" title="9">    c <span class="op">=</span> <span class="va">indexedDB</span>.<span class="at">cmp</span>(key<span class="op">,</span> <span class="va">r</span>.<span class="at">upper</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10">    <span class="cf">if</span> (<span class="va">r</span>.<span class="at">upperOpen</span> <span class="op">&amp;&amp;</span> c <span class="op">&gt;=</span> <span class="dv">0</span>) <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-11" title="11">    <span class="cf">if</span> (<span class="op">!</span><span class="va">r</span>.<span class="at">upperOpen</span> <span class="op">&amp;&amp;</span> c <span class="op">&gt;</span> <span class="dv">0</span>) <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-12" title="12">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-13" title="13">  <span class="cf">return</span> <span class="kw">true</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-14" title="14"><span class="op">};</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/IndexedDB_API/Using_IndexedDB">Using IndexedDB</a></li>
+<li>Starting transactions: {{domxref(“IDBDatabase”)}}</li>
+<li>Using transactions: {{domxref(“IDBTransaction”)}}</li>
+<li>Setting a range of keys: {{domxref(“IDBKeyRange”)}}</li>
+<li>Retrieving and making changes to your data: {{domxref(“IDBObjectStore”)}}</li>
+<li>Using cursors: {{domxref(“IDBCursor”)}}</li>
+<li>Reference example: <a href="https://github.com/mdn/to-do-notifications/tree/gh-pages">To-do Notifications</a> (<a href="https://mdn.github.io/to-do-notifications/">view example live</a>.)</li>
+</ul>

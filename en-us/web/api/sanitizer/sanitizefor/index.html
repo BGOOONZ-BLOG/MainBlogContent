@@ -1,0 +1,54 @@
+<p>{{SeeCompatTable}}{{securecontext_header}}{{DefaultAPISidebar(“HTML Sanitizer API”)}}</p>
+<p>The <strong><code>sanitizeFor()</code></strong> method of the {{domxref(“Sanitizer”)}} interface is used to parse and sanitize a string of HTML for insertion into the DOM at some later point.</p>
+<p>The method accepts the tag name of the eventual destination HTML element as a parameter, and returns an HTML element object (of that type) that contains the sanitized subtree as its child. This context is needed because the result of parsing an HTML string depends on where it is used. For example, {{HTMLElement(“td”)}} elements are valid nodes when inserted into a {{HTMLElement(“table”)}} but will be skipped/ignored when parsed into a {{HTMLElement(“div”)}}.</p>
+<p>The subtree <strong>must</strong> be inserted into an element of the same type as the returned object (and the original <code>element</code> parameter). If the caller extracts the sanitized subtree from the object, for example by using <code>innerHTML</code>, it is their responsibility to ensure the correct context is used when it is inserted in the DOM.</p>
+<p>The default <code>Sanitizer()</code> configuration strips out XSS-relevant input by default, including {{HTMLElement(“script”)}} tags, custom elements, and comments. The sanitizer configuration may be customized using {{domxref(“Sanitizer.Sanitizer”,“Sanitizer()”)}} constructor options.</p>
+<blockquote>
+<p><strong>Note:</strong> Use {{domxref(“Element.setHTML()”)}} instead of this method if the target element is available for immediate update.</p>
+</blockquote>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="at">sanitizeFor</span>(element<span class="op">,</span> input)</a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>element</code>
+<ul>
+<li>: A string indicating the HTML tag of the element into which the <code>input</code> is to be inserted. For example <code>"div"</code>, <code>"table"</code>, <code>"p"</code>, and so on.</li>
+</ul></li>
+<li><code>input</code>
+<ul>
+<li>: A string of HTML to be sanitized.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>An HTML element corresponding to the tag specified in the <code>element</code> parameter, containing the parsed and sanitized <code>input</code> string as a DOM subtree.</p>
+<p>For example, if the <code>input</code> was <code>"div"</code> then the return value would be a {{domxref(“HTMLDivElement”)}}.</p>
+<h3 id="exceptions">Exceptions</h3>
+<p>None.</p>
+<h2 id="examples">Examples</h2>
+<p>The code below demonstrates how to sanitize a string of HTML into a <code>div</code> element.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> unsanitized_string <span class="op">=</span> <span class="st">&quot;abc &lt;script&gt;alert(1)&lt;/script&gt; def&quot;</span><span class="op">;</span>  <span class="co">// Unsanitized string of HTML</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">const</span> sanitizer <span class="op">=</span> <span class="kw">new</span> <span class="at">Sanitizer</span>()<span class="op">;</span>  <span class="co">// Default sanitizer;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="co">// Sanitize the string</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="kw">let</span> sanitizedDiv <span class="op">=</span> <span class="va">sanitizer</span>.<span class="at">sanitizeFor</span>(<span class="st">&quot;div&quot;</span><span class="op">,</span> unsanitized_string)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6"></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="co">//We can verify the returned element type, and view sanitized HTML in string form:</span></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="va">console</span>.<span class="at">log</span>( (sanitizedDiv <span class="kw">instanceof</span> HTMLDivElement) )<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="co">// true</span></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="va">console</span>.<span class="at">log</span>(<span class="va">sanitizedDiv</span>.<span class="at">innerHTML</span>)</a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="co">// &quot;abc  def&quot;</span></a>
+<a class="sourceLine" id="cb2-12" title="12"></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="co">// At some point later ...</span></a>
+<a class="sourceLine" id="cb2-14" title="14"></a>
+<a class="sourceLine" id="cb2-15" title="15"><span class="co">// Get the element to update. This must be a div to match our sanitizeFor() context.</span></a>
+<a class="sourceLine" id="cb2-16" title="16"><span class="co">// Set its content to be the children of our sanitized element. </span></a>
+<a class="sourceLine" id="cb2-17" title="17"><span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;div#target&quot;</span>).<span class="at">replaceChildren</span>(<span class="va">sanitizedDiv</span>.<span class="at">children</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{domxref(“Element.setHTML()”)}}</li>
+<li>{{domxref(‘HTML Sanitizer API’)}}</li>
+</ul>

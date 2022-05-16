@@ -1,0 +1,210 @@
+<p>{{APIRef(“Sensor API”)}}</p>
+<p>The <strong>Sensor APIs</strong> are a set of interfaces built to a common design that expose device sensors in a consistent way to the web platform.</p>
+<h2 id="sensor-apis-concepts-and-usage">Sensor APIs concepts and usage</h2>
+<p>Although the Generic Sensor API specification defines a {{domxref(‘Sensor’)}} interface, as a web developer you will never use it. Instead you’ll use one of its subclasses to retrieve specific kinds of sensor data. For example, the {{domxref(‘accelerometer’)}} interface returns the acceleration of the device along all three axes at the time it is read.</p>
+<p>Sensors may or may not correspond exactly to a physical device sensor. For example, the {{domxref(‘Gyroscope’)}} interface corresponds exactly to a physical device interface. Alternatively, the {{domxref(‘AbsoluteOrientationSensor’)}} interface provides information that is algorithmically agregated from two or more device sensors. These sensor types are referred to as <em>low-level</em> and <em>high-level</em> respectively. The latter type of sensor is also called a fusion sensor (alternatively, virtual or synthetic sensors).</p>
+<h3 id="feature-detection">Feature detection</h3>
+<p>Sensor interfaces are only proxies for the underlying device sensors. Consequently, feature detection is more complicated for sensors than it is for other APIs. The presence of a sensor API does not tell you whether that API is connected to a real hardware sensor, whether that sensor works, if it’s still connected, or even whether the user has granted access to it. Making all this information consistently available is costly to performance and battery life.</p>
+<p>Therefore, feature detection for sensor APIs must include both detection of the APIs themselves and <a href="#defensive_programming">defensive programming strategies (see below)</a>.</p>
+<p>The examples below show three methods for detecting sensor APIs. Additionally you can put object instantiation inside a {{jsxref(‘statements/try…catch’, ‘try…catch’)}} block. Notice that detection through the {{domxref(‘Navigator’)}} interface is not one of the available options.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="cf">if</span> (<span class="kw">typeof</span> Gyroscope <span class="op">===</span> <span class="st">&quot;function&quot;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">    <span class="co">// run in circles...</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="op">}</span></a>
+<a class="sourceLine" id="cb1-4" title="4"></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="cf">if</span> (<span class="st">&quot;ProximitySensor&quot;</span> <span class="kw">in</span> window) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-6" title="6">    <span class="co">// watch out!</span></a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="op">}</span></a>
+<a class="sourceLine" id="cb1-8" title="8"></a>
+<a class="sourceLine" id="cb1-9" title="9"><span class="cf">if</span> (<span class="va">window</span>.<span class="at">AmbientLightSensor</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-10" title="10">    <span class="co">// go dark...</span></a>
+<a class="sourceLine" id="cb1-11" title="11"><span class="op">}</span></a></code></pre></div>
+<h3 id="defensive-programming">Defensive programming</h3>
+<p>As stated in Feature Detection, checking for a particular sensor API is insufficient for feature detection. The existence of an actual sensor must be confirmed as well. This is where defensive programming is needed. Defensive programming requires three strategies.</p>
+<ul>
+<li>Checking for thrown errors when instantiating a sensor object.</li>
+<li>Listening for errors thrown during its use.</li>
+<li>Handling the errors gracefully so that the user experience is enhanced rather than degraded.</li>
+</ul>
+<p>The code example below illustrates these principles. The {{jsxref(‘statements/try…catch’, ‘try…catch’)}} block catches errors thrown during sensor instantiation. It implements a handler for {{domxref(‘Sensor.onerror’)}} to catch errors thrown during use. The only time anything is shown to the user is when <a href="/en-US/docs/Web/API/Permissions_API">permissions</a> need to be requested and when the sensor type isn’t supported by the device.</p>
+<blockquote>
+<p><strong>Note:</strong> If a feature policy blocks use of a feature it is because your code is inconsistent with the policies set on your server. This is not something that would ever be shown to a user. The {{httpheader(‘Feature-Policy’)}} HTTP header article contains implementation instructions.</p>
+</blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">let</span> accelerometer <span class="op">=</span> <span class="kw">null</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="cf">try</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3">    accelerometer <span class="op">=</span> <span class="kw">new</span> <span class="at">Accelerometer</span>(<span class="op">{</span> <span class="dt">referenceFrame</span><span class="op">:</span> <span class="st">&#39;device&#39;</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">    <span class="va">accelerometer</span>.<span class="at">addEventListener</span>(<span class="st">&#39;error&#39;</span><span class="op">,</span> event <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">        <span class="co">// Handle runtime errors.</span></a>
+<a class="sourceLine" id="cb2-6" title="6">        <span class="cf">if</span> (<span class="va">event</span>.<span class="va">error</span>.<span class="at">name</span> <span class="op">===</span> <span class="st">&#39;NotAllowedError&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-7" title="7">            <span class="co">// Branch to code for requesting permission.</span></a>
+<a class="sourceLine" id="cb2-8" title="8">        <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (<span class="va">event</span>.<span class="va">error</span>.<span class="at">name</span> <span class="op">===</span> <span class="st">&#39;NotReadableError&#39;</span> ) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-9" title="9">            <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Cannot connect to the sensor.&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-11" title="11">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12">    <span class="va">accelerometer</span>.<span class="at">addEventListener</span>(<span class="st">&#39;reading&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> <span class="at">reloadOnShake</span>(accelerometer))<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13">    <span class="va">accelerometer</span>.<span class="at">start</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14"><span class="op">}</span> <span class="cf">catch</span> (error) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-15" title="15">    <span class="co">// Handle construction errors.</span></a>
+<a class="sourceLine" id="cb2-16" title="16">    <span class="cf">if</span> (<span class="va">error</span>.<span class="at">name</span> <span class="op">===</span> <span class="st">&#39;SecurityError&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-17" title="17">        <span class="co">// See the note above about feature policy.</span></a>
+<a class="sourceLine" id="cb2-18" title="18">        <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Sensor construction was blocked by a feature policy.&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-19" title="19">    <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (<span class="va">error</span>.<span class="at">name</span> <span class="op">===</span> <span class="st">&#39;ReferenceError&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-20" title="20">        <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Sensor is not supported by the User Agent.&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-21" title="21">    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-22" title="22">        <span class="cf">throw</span> error<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-23" title="23">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-24" title="24"><span class="op">}</span></a></code></pre></div>
+<h3 id="permissions-and-feature-policy">Permissions and Feature Policy</h3>
+<p>Sensor readings may not be taken unless the user grants permission to a specific sensor type. Do this using the <a href="/en-US/docs/Web/API/Permissions_API">Permissions API</a>. A brief example, shown below, requests permission before attempting to use the sensor.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="va">navigator</span>.<span class="va">permissions</span>.<span class="at">query</span>(<span class="op">{</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;accelerometer&#39;</span> <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb3-2" title="2">.<span class="at">then</span>(result <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="cf">if</span> (<span class="va">result</span>.<span class="at">state</span> <span class="op">===</span> <span class="st">&#39;denied&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Permission to use accelerometer sensor is denied.&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">    <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="co">// Use the sensor.</span></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>An alternative approach is to attempt to use the error and listen for the <code>SecurityError</code>.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">const</span> sensor <span class="op">=</span> <span class="kw">new</span> <span class="at">AbsoluteOrientationSensor</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="va">sensor</span>.<span class="at">start</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="va">sensor</span>.<span class="at">onerror</span> <span class="op">=</span> event <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-4" title="4">  <span class="cf">if</span> (<span class="va">event</span>.<span class="va">error</span>.<span class="at">name</span> <span class="op">===</span> <span class="st">&#39;SecurityError&#39;</span>)</a>
+<a class="sourceLine" id="cb4-5" title="5">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;No permissions to use AbsoluteOrientationSensor.&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-6" title="6"><span class="op">};</span></a></code></pre></div>
+<p>The following table describes for each sensor type, the name required for the Permissions API, the {{HTMLElement(‘iframe’)}} element’s <code>allow</code> attribute and the {{httpheader(‘Feature-Policy’)}} directive.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 66%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Sensor</th>
+<th>Permission/Feature Policy Name</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>AbsoluteOrientationSensor</code></td>
+<td><code>'accelerometer'</code>, <code>'gyroscope'</code>, and <code>'magnetometer'</code></td>
+</tr>
+<tr class="even">
+<td><code>Accelerometer</code></td>
+<td><code>'accelerometer'</code></td>
+</tr>
+<tr class="odd">
+<td><code>AmbientLightSensor</code></td>
+<td><code>'ambient-light-sensor'</code></td>
+</tr>
+<tr class="even">
+<td><code>GravitySensor</code></td>
+<td><code>'accelerometer'</code></td>
+</tr>
+<tr class="odd">
+<td><code>Gyroscope</code></td>
+<td><code>'gyroscope'</code></td>
+</tr>
+<tr class="even">
+<td><code>LinearAccelerationSensor</code></td>
+<td><code>'accelerometer'</code></td>
+</tr>
+<tr class="odd">
+<td><code>Magnetometer</code></td>
+<td><code>'magnetometer'</code></td>
+</tr>
+<tr class="even">
+<td><code>RelativeOrientationSensor</code></td>
+<td><code>'accelerometer'</code>, and <code>'gyroscope'</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="readings">Readings</h3>
+<p>Sensor readings are received through the {{domxref(‘Sensor.onreading’)}} callback which is inherited by all sensor types. Reading frequency is decided by you, accomplished with an option passed to a sensor’s constructor. The option is a number that specifies the number of readings per second. A whole number or decimal may be used, the latter for frequencies less than a second. The actual reading frequency depends device hardware and consequently may be less than requested.</p>
+<p>The following example illustrates this using the {{domxref(‘Magnetometer’)}} sensor.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">let</span> magSensor <span class="op">=</span> <span class="kw">new</span> <span class="at">Magnetometer</span>(<span class="op">{</span><span class="dt">frequency</span><span class="op">:</span> <span class="dv">60</span><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-2" title="2"></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="va">magSensor</span>.<span class="at">addEventListener</span>(<span class="st">&#39;reading&#39;</span><span class="op">,</span> e <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-4" title="4">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Magnetic field along the X-axis &quot;</span> <span class="op">+</span> <span class="va">magSensor</span>.<span class="at">x</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-5" title="5">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Magnetic field along the Y-axis &quot;</span> <span class="op">+</span> <span class="va">magSensor</span>.<span class="at">y</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-6" title="6">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Magnetic field along the Z-axis &quot;</span> <span class="op">+</span> <span class="va">magSensor</span>.<span class="at">z</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-7" title="7"><span class="op">}</span>)</a>
+<a class="sourceLine" id="cb5-8" title="8"><span class="va">magSensor</span>.<span class="at">addEventListener</span>(<span class="st">&#39;error&#39;</span><span class="op">,</span> event <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-9" title="9">  <span class="va">console</span>.<span class="at">log</span>(<span class="va">event</span>.<span class="va">error</span>.<span class="at">name</span><span class="op">,</span> <span class="va">event</span>.<span class="va">error</span>.<span class="at">message</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-10" title="10"><span class="op">}</span>)</a>
+<a class="sourceLine" id="cb5-11" title="11"><span class="va">magSensor</span>.<span class="at">start</span>()<span class="op">;</span></a></code></pre></div>
+<h2 id="interfaces">Interfaces</h2>
+<ul>
+<li>{{domxref(‘AbsoluteOrientationSensor’)}}{{securecontext_inline}}
+<ul>
+<li>: Describes the device’s physical orientation in relation to the Earth’s reference coordinate system.</li>
+</ul></li>
+<li>{{domxref(‘Accelerometer’)}}{{securecontext_inline}}
+<ul>
+<li>: Provides the acceleration applied to the device along all three axes.</li>
+</ul></li>
+<li>{{domxref(‘AmbientLightSensor’)}}{{securecontext_inline}}
+<ul>
+<li>: Returns the current light level or illuminance of the ambient light around the hosting device.</li>
+</ul></li>
+<li>{{domxref(‘GravitySensor’)}}{{securecontext_inline}}
+<ul>
+<li>: Provides the gravity applied to the device along all three axes.</li>
+</ul></li>
+<li>{{domxref(‘Gyroscope’)}}{{securecontext_inline}}
+<ul>
+<li>: Provides the angular velocity of the device along all three axes.</li>
+</ul></li>
+<li>{{domxref(‘LinearAccelerationSensor’)}}{{securecontext_inline}}
+<ul>
+<li>: Provides the acceleration applied to the device along all three axes, but without the contribution of gravity.</li>
+</ul></li>
+<li>{{domxref(‘Magnetometer’)}}{{securecontext_inline}}
+<ul>
+<li>: Provides information about the magnetic field as detected by the device’s primary magnetometer sensor.</li>
+</ul></li>
+<li>{{domxref(‘OrientationSensor’)}}{{securecontext_inline}}
+<ul>
+<li>: The base class for the {{domxref(‘AbsoluteOrientationSensor’)}}. This interface cannot be used directly, instead it provides properties and methods accessed by interfaces that inherit from it.</li>
+</ul></li>
+<li>{{domxref(‘RelativeOrientationSensor’)}}{{securecontext_inline}}
+<ul>
+<li>: Describes the device’s physical orientation without regard to the Earth’s reference coordinate system.</li>
+</ul></li>
+<li>{{domxref(‘Sensor’)}}{{securecontext_inline}}
+<ul>
+<li>: The base class for all the other sensor interfaces. This interface cannot be used directly. Instead it provides properties, event handlers, and methods accessed by interfaces that inherit from it.</li>
+</ul></li>
+<li>{{domxref(‘SensorErrorEvent’)}}{{securecontext_inline}}
+<ul>
+<li>: Provides information about errors thrown by a {{domxref(‘Sensor’)}} or related interface.</li>
+</ul></li>
+</ul>
+<h2 id="specifications">Specifications</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="https://w3c.github.io/sensors/">Generic Sensor API</a></td>
+</tr>
+<tr class="even">
+<td><a href="https://w3c.github.io/accelerometer/">Accelerometer</a></td>
+</tr>
+<tr class="odd">
+<td><a href="https://w3c.github.io/ambient-light/">Ambient Light Sensor</a></td>
+</tr>
+<tr class="even">
+<td><a href="https://w3c.github.io/gyroscope/">Gyroscope</a></td>
+</tr>
+<tr class="odd">
+<td><a href="https://w3c.github.io/magnetometer/">Magnetometer</a></td>
+</tr>
+<tr class="even">
+<td><a href="https://w3c.github.io/orientation-sensor/">Orientation Sensor</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat(“api.Sensor”)}}</p>

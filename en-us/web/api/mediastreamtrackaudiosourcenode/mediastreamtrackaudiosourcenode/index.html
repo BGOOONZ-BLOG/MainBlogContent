@@ -1,0 +1,61 @@
+<p>{{APIRef(“Web Audio API”)}}</p>
+<p>The <a href="/en-US/docs/Web/API/Web_Audio_API">Web Audio API</a>’s <strong><code>MediaStreamTrackAudioSourceNode()</code></strong> constructor creates and returns a new {{domxref(“MediaStreamTrackAudioSourceNode”)}} object whose audio is taken from the {{domxref(“MediaStreamTrack”)}} specified in the given options object.</p>
+<p>Another way to create a <code>MediaStreamTrackAudioSourceNode</code> is to call the{{domxref(“AudioContext.createMediaStreamTrackSource()”)}} method, specifying the {{domxref(“MediaStreamTrack”)}} from which you want to obtain audio.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">new</span> <span class="at">MediaStreamTrackAudioSourceNode</span>(context<span class="op">,</span> options)</a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>context</code>
+<ul>
+<li>: An {{domxref(“AudioContext”)}} representing the audio context you want the node to be associated with.</li>
+</ul></li>
+<li><p><code>options</code></p>
+<ul>
+<li><p>: An object defining the properties you want the <code>MediaStreamTrackAudioSourceNode</code> to have:</p>
+<ul>
+<li><code>mediaStreamTrack</code>
+<ul>
+<li>: The {{domxref(“MediaStreamTrack”)}} from which to take audio data for this node’s output.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A new {{domxref(“MediaStreamTrackAudioSourceNode”)}} object representing the audio node whose media is obtained from the specified media track.</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><code>NotSupportedError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the specified <code>context</code> is not an {{domxref(“AudioContext”)}}.</li>
+</ul></li>
+<li><code>InvalidStateError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the specified {{domxref(“MediaStreamTrack”)}} isn’t an audio track (that is, its {{domxref(“MediaStreamTrack.kind”, “kind”)}} property isn’t <code>audio</code>.</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<p>This example uses {{domxref(“MediaDevices.getUserMedia”, “getUserMedia()”)}} to obtain access to the user’s camera, then creates a new {{domxref(“MediaStreamAudioSourceNode”)}} from the first audio track provided by the device.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">let</span> audioCtx <span class="op">=</span> <span class="kw">new</span> (<span class="va">window</span>.<span class="at">AudioContext</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">webkitAudioContext</span>)()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="cf">if</span> (<span class="va">navigator</span>.<span class="va">mediaDevices</span>.<span class="at">getUserMedia</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="va">navigator</span>.<span class="va">mediaDevices</span>.<span class="at">getUserMedia</span> (</a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-6" title="6">      <span class="dt">audio</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-7" title="7">      <span class="dt">video</span><span class="op">:</span> <span class="kw">false</span></a>
+<a class="sourceLine" id="cb2-8" title="8">    <span class="op">}</span>).<span class="at">then</span>(<span class="kw">function</span>(stream) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-9" title="9">      <span class="kw">let</span> options <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-10" title="10">        <span class="dt">mediaStreamTrack</span><span class="op">:</span> <span class="va">stream</span>.<span class="at">getAudioTracks</span>()[<span class="dv">0</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-12" title="12"></a>
+<a class="sourceLine" id="cb2-13" title="13">      <span class="kw">let</span> source <span class="op">=</span> <span class="kw">new</span> <span class="at">MediaStreamTrackAudioSourceNode</span>(audioCtx<span class="op">,</span> options)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14">      <span class="va">source</span>.<span class="at">connect</span>(<span class="va">audioCtx</span>.<span class="at">destination</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-15" title="15">    <span class="op">}</span>).<span class="at">catch</span>(<span class="kw">function</span>(err) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-16" title="16">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;The following gUM error occurred: &#39;</span> <span class="op">+</span> err)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-17" title="17">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-19" title="19">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;new getUserMedia not supported on your browser!&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-20" title="20"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

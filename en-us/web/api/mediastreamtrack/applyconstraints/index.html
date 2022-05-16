@@ -1,0 +1,44 @@
+<p>{{APIRef(“Media Capture and Streams”)}}</p>
+<p>The <strong><code>applyConstraints()</code></strong> method of the {{domxref(“MediaStreamTrack”)}} interface applies a set of constraints to the track; these constraints let the Web site or app establish ideal values and acceptable ranges of values for the constrainable properties of the track, such as frame rate, dimensions, echo cancelation, and so forth.</p>
+<p>Constraints can be used to ensure that the media meets certain guidelines you prefer. For example, you may prefer high-density video but require that the frame rate be a little low to help keep the data rate low enough not overtax the network. Constraints can also specify ideal and/or acceptable sizes or ranges of sizes. See <a href="/en-US/docs/Web/API/Media_Streams_API/Constraints#applying_constraints">Applying constraints</a> in <a href="/en-US/docs/Web/API/Media_Streams_API/Constraints">Capabilities, constraints, and settings</a> for more information on how to apply your preferred constraints.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> appliedPromise <span class="op">=</span> <span class="va">track</span>.<span class="at">applyConstraints</span>([constraints])</a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>constraints</code> {{optional_inline}}
+<ul>
+<li>: A {{domxref(“MediaTrackConstraints”)}} object listing the constraints to apply to the track’s constrainable properties; any existing constraints are replaced with the new values specified, and any constrainable properties not included are restored to their default constraints. If this parameter is omitted, all currently set custom constraints are cleared. This object represents the basic set of constraints that must apply for the {{jsxref(“Promise”)}} to resolve. The object may contain an advanced property containing an array of additional <code>MediaTrackConstraints</code> objects, which are treated as exact requires.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A {{jsxref(“Promise”)}} which resolves when the constraints have been successfully applied. If the constraints cannot be applied, the promise is rejected with a {{domxref(“MediaStreamError”)}} whose name is <code>OverconstrainedError</code>, to indicate that the constraints could not be met. This can happen if the specified constraints are too strict to find a match when attempting to configure the track.</p>
+<h2 id="examples">Examples</h2>
+<p>The following shows how to specify a basic and advanced set of constraints. It specifies that the page or web app needs a width between 640 and 1280 and a height between 480 and 720, with the later number in each pair being preferred. The advanced property further specifies that an image size of 1920 by 1280 is the preferred or an aspect ratio of 1.333 if that is not available. Note that these constraints also illustrate what the spec refers to as a <em>backoff strategy</em>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> constraints <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="dt">width</span><span class="op">:</span> <span class="op">{</span><span class="dt">min</span><span class="op">:</span> <span class="dv">640</span><span class="op">,</span> <span class="dt">ideal</span><span class="op">:</span> <span class="dv">1280</span><span class="op">},</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="dt">height</span><span class="op">:</span> <span class="op">{</span><span class="dt">min</span><span class="op">:</span> <span class="dv">480</span><span class="op">,</span> <span class="dt">ideal</span><span class="op">:</span> <span class="dv">720</span><span class="op">},</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="dt">advanced</span><span class="op">:</span> [</a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="op">{</span><span class="dt">width</span><span class="op">:</span> <span class="dv">1920</span><span class="op">,</span> <span class="dt">height</span><span class="op">:</span> <span class="dv">1280</span><span class="op">},</span></a>
+<a class="sourceLine" id="cb2-6" title="6">    <span class="op">{</span><span class="dt">aspectRatio</span><span class="op">:</span> <span class="fl">1.333</span><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  ]</a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="op">};</span></a>
+<a class="sourceLine" id="cb2-9" title="9"></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="va">navigator</span>.<span class="va">mediaDevices</span>.<span class="at">getUserMedia</span>(<span class="op">{</span> <span class="dt">video</span><span class="op">:</span> <span class="kw">true</span> <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-11" title="11">.<span class="at">then</span>(mediaStream <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-12" title="12">  <span class="kw">const</span> track <span class="op">=</span> <span class="va">mediaStream</span>.<span class="at">getVideoTracks</span>()[<span class="dv">0</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13">  <span class="va">track</span>.<span class="at">applyConstraints</span>(constraints)</a>
+<a class="sourceLine" id="cb2-14" title="14"><span class="va"> </span> .<span class="at">then</span>(() <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-15" title="15">    <span class="co">// Do something with the track such as using the Image Capture API.</span></a>
+<a class="sourceLine" id="cb2-16" title="16">  <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-17" title="17"><span class="va"> </span> .<span class="at">catch</span>(e <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-18" title="18">    <span class="co">// The constraints could not be satisfied by the available devices.</span></a>
+<a class="sourceLine" id="cb2-19" title="19">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-20" title="20"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/MediaStream_Image_Capture_API">MediaStream Image Capture API</a></li>
+</ul>

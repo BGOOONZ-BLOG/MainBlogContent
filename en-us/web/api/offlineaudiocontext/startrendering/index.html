@@ -1,0 +1,83 @@
+<p>{{ APIRef(“Web Audio API”) }}</p>
+<p>The <code>startRendering()</code> method of the {{ domxref(“OfflineAudioContext”) }} Interface starts rendering the audio graph, taking into account the current connections and the current scheduled changes.</p>
+<p>The {{event(“complete”)}} event (of type {{domxref(“OfflineAudioCompletionEvent”)}}) is raised when the rendering is finished, containing the resulting {{domxref(“AudioBuffer”)}} in its <code>renderedBuffer</code> property.</p>
+<p>Browsers currently support two versions of the <code>startRendering()</code> method — an older event-based version and a newer promise-based version. The former will eventually be removed, but currently both mechanisms are provided for legacy reasons.</p>
+<h2 id="syntax">Syntax</h2>
+<p>Event-based version:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">offlineAudioCtx</span>.<span class="at">startRendering</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="va">offlineAudioCtx</span>.<span class="at">oncomplete</span> <span class="op">=</span> <span class="kw">function</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="co">// e.renderedBuffer contains the output buffer</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="op">}</span></a></code></pre></div>
+<p>Promise-based version:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">offlineAudioCtx</span>.<span class="at">startRendering</span>().<span class="at">then</span>(<span class="kw">function</span>(buffer) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="co">// buffer contains the output buffer</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<p>None.</p>
+<h3 id="returns">Returns</h3>
+<p>{{jsxref(‘undefined’)}}.</p>
+<h2 id="example">Example</h2>
+<p>In this simple example, we declare both an {{domxref(“AudioContext”)}} and an <code>OfflineAudioContext</code> object. We use the <code>AudioContext</code> to load an audio track via XHR ({{domxref(“BaseAudioContext.decodeAudioData”)}}), then the <code>OfflineAudioContext</code> to render the audio into an {{domxref(“AudioBufferSourceNode”)}} and play the track through. After the offline audio graph is set up, you need to render it to an {{domxref(“AudioBuffer”)}} using {{domxref(“OfflineAudioContext.startRendering”)}}.</p>
+<p>When the <code>startRendering()</code> promise resolves, rendering has completed and the output <code>AudioBuffer</code> is returned out of the promise.</p>
+<p>At this point we create another audio context, create an {{domxref(“AudioBufferSourceNode”)}} inside it, and set its buffer to be equal to the promise <code>AudioBuffer</code>. This is then played as part of a simple standard audio graph.</p>
+<blockquote>
+<p><strong>Note:</strong> For a working example, see our <a href="https://mdn.github.io/webaudio-examples/offline-audio-context-promise/">offline-audio-context-promise</a> Github repo (see the <a href="https://github.com/mdn/webaudio-examples">source code</a> too.)</p>
+</blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="co">// define online and offline audio context</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw">var</span> audioCtx <span class="op">=</span> <span class="kw">new</span> <span class="at">AudioContext</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="kw">var</span> offlineCtx <span class="op">=</span> <span class="kw">new</span> <span class="at">OfflineAudioContext</span>(<span class="dv">2</span><span class="op">,</span><span class="dv">44100</span><span class="op">*</span><span class="dv">40</span><span class="op">,</span><span class="dv">44100</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"></a>
+<a class="sourceLine" id="cb3-6" title="6">source <span class="op">=</span> <span class="va">offlineCtx</span>.<span class="at">createBufferSource</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7"></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="co">// use XHR to load an audio track, and</span></a>
+<a class="sourceLine" id="cb3-9" title="9"><span class="co">// decodeAudioData to decode it and OfflineAudioContext to render it</span></a>
+<a class="sourceLine" id="cb3-10" title="10"></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="kw">function</span> <span class="at">getData</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-12" title="12">  request <span class="op">=</span> <span class="kw">new</span> <span class="at">XMLHttpRequest</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-13" title="13"></a>
+<a class="sourceLine" id="cb3-14" title="14">  <span class="va">request</span>.<span class="at">open</span>(<span class="st">&#39;GET&#39;</span><span class="op">,</span> <span class="st">&#39;viper.ogg&#39;</span><span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-15" title="15"></a>
+<a class="sourceLine" id="cb3-16" title="16">  <span class="va">request</span>.<span class="at">responseType</span> <span class="op">=</span> <span class="st">&#39;arraybuffer&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-17" title="17"></a>
+<a class="sourceLine" id="cb3-18" title="18">  <span class="va">request</span>.<span class="at">onload</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-19" title="19">    <span class="kw">var</span> audioData <span class="op">=</span> <span class="va">request</span>.<span class="at">response</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-20" title="20"></a>
+<a class="sourceLine" id="cb3-21" title="21">    <span class="va">audioCtx</span>.<span class="at">decodeAudioData</span>(audioData<span class="op">,</span> <span class="kw">function</span>(buffer) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-22" title="22">      myBuffer <span class="op">=</span> buffer<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-23" title="23">      <span class="va">source</span>.<span class="at">buffer</span> <span class="op">=</span> myBuffer<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-24" title="24">      <span class="va">source</span>.<span class="at">connect</span>(<span class="va">offlineCtx</span>.<span class="at">destination</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-25" title="25">      <span class="va">source</span>.<span class="at">start</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-26" title="26">      <span class="co">//source.loop = true;</span></a>
+<a class="sourceLine" id="cb3-27" title="27">      <span class="va">offlineCtx</span>.<span class="at">startRendering</span>().<span class="at">then</span>(<span class="kw">function</span>(renderedBuffer) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-28" title="28">        <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Rendering completed successfully&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-29" title="29">        <span class="kw">var</span> audioCtx <span class="op">=</span> <span class="kw">new</span> (<span class="va">window</span>.<span class="at">AudioContext</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">webkitAudioContext</span>)()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-30" title="30">        <span class="kw">var</span> song <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createBufferSource</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-31" title="31">        <span class="va">song</span>.<span class="at">buffer</span> <span class="op">=</span> renderedBuffer<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-32" title="32"></a>
+<a class="sourceLine" id="cb3-33" title="33">        <span class="va">song</span>.<span class="at">connect</span>(<span class="va">audioCtx</span>.<span class="at">destination</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-34" title="34"></a>
+<a class="sourceLine" id="cb3-35" title="35">        <span class="va">play</span>.<span class="at">onclick</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-36" title="36">          <span class="va">song</span>.<span class="at">start</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-37" title="37">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-38" title="38">      <span class="op">}</span>).<span class="at">catch</span>(<span class="kw">function</span>(err) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-39" title="39">          <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Rendering failed: &#39;</span> <span class="op">+</span> err)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-40" title="40">          <span class="co">// Note: The promise should reject when startRendering is called a second time on an OfflineAudioContext</span></a>
+<a class="sourceLine" id="cb3-41" title="41">      <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-42" title="42">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-43" title="43">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-44" title="44"></a>
+<a class="sourceLine" id="cb3-45" title="45">  <span class="va">request</span>.<span class="at">send</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-46" title="46"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-47" title="47"></a>
+<a class="sourceLine" id="cb3-48" title="48"><span class="co">// Run getData to start the process off</span></a>
+<a class="sourceLine" id="cb3-49" title="49"></a>
+<a class="sourceLine" id="cb3-50" title="50"><span class="at">getData</span>()<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API">Using the Web Audio API</a></li>
+</ul>

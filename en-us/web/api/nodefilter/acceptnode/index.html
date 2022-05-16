@@ -1,0 +1,87 @@
+<p>{{APIRef(“DOM”)}}</p>
+<p>The <strong><code>NodeFilter.acceptNode()</code></strong> method returns an <code>unsigned short</code> that will be used to tell if a given {{domxref(“Node”)}} must be accepted or not by the {{ domxref(“NodeIterator”) }} or {{ domxref(“TreeWalker”) }} iteration algorithm. This method is expected to be written by the user of a <code>NodeFilter</code>. Possible return values are:</p>
+<table class="no-markdown">
+<thead>
+<tr>
+<th>
+Constant
+</th>
+<th>
+Description
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>NodeFilter.FILTER_ACCEPT</code>
+</td>
+<td>
+Value returned by the {{ domxref(“NodeFilter.acceptNode()”) }} method when a node should be accepted.
+</td>
+</tr>
+<tr>
+<td>
+<code>NodeFilter.FILTER_REJECT</code>
+</td>
+<td>
+Value to be returned by the {{ domxref(“NodeFilter.acceptNode()”) }} method when a node should be rejected. The children of rejected nodes are not visited by the {{ domxref(“NodeIterator”) }} or {{ domxref(“TreeWalker”) }} object; this value is treated as “skip this node and all its children”.
+</td>
+</tr>
+<tr>
+<td>
+<code>NodeFilter.FILTER_SKIP</code>
+</td>
+<td>
+Value to be returned by {{ domxref(“NodeFilter.acceptNode()”) }} for nodes to be skipped by the {{ domxref(“NodeIterator”) }} or {{ domxref(“TreeWalker”) }} object. The children of skipped nodes are still considered. This is treated as “skip this node but not its children”.
+</td>
+</tr>
+</tbody>
+</table>
+<p>The function should return <code>NodeFilter.FILTER_ACCEPT</code>, which causes the TreeWalker to return the node, <code>NodeFilter.FILTER_REJECT</code>, which causes the TreeWalker to ignore the entire subtree, or <code>NodeFilter.FILTER_SKIP</code>.</p>
+<p>The browser doesn’t provide any object implementing this method. It is the user who is expected to write an object implementing the {{domxref(“NodeFilter”)}} interface, tailoring the <code>acceptNode()</code> method to its needs, and using it with some {{domxref(“TreeWalker”)}} or {{domxref(“NodeIterator”)}} objects.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1">result <span class="op">=</span> <span class="va">nodeFilter</span>.<span class="at">acceptNode</span>(node)</a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><em>node</em>
+<ul>
+<li>: Is a {{domxref(“Node”)}} being the object to check against the filter.</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> nodeIterator <span class="op">=</span> <span class="va">document</span>.<span class="at">createNodeIterator</span>(</a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="co">// Node to use as root</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;someId&#39;</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="co">// Only consider nodes that are text nodes (nodeType 3)</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="va">NodeFilter</span>.<span class="at">SHOW_TEXT</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-7" title="7"></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="co">// Object containing the function to use for the acceptNode method</span></a>
+<a class="sourceLine" id="cb2-9" title="9">  <span class="co">// of the NodeFilter</span></a>
+<a class="sourceLine" id="cb2-10" title="10">    <span class="op">{</span> <span class="dt">acceptNode</span><span class="op">:</span> <span class="kw">function</span>(node) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-11" title="11">      <span class="co">// Logic to determine whether to accept, reject or skip node</span></a>
+<a class="sourceLine" id="cb2-12" title="12">      <span class="co">// In this case, only accept nodes that have content</span></a>
+<a class="sourceLine" id="cb2-13" title="13">      <span class="co">// other than whitespace</span></a>
+<a class="sourceLine" id="cb2-14" title="14">      <span class="cf">if</span> ( <span class="op">!</span> <span class="ss">/</span><span class="sc">^\s*$</span><span class="ss">/</span>.<span class="at">test</span>(<span class="va">node</span>.<span class="at">data</span>) ) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-15" title="15">        <span class="cf">return</span> <span class="va">NodeFilter</span>.<span class="at">FILTER_ACCEPT</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-16" title="16">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-17" title="17">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-18" title="18">  <span class="op">},</span></a>
+<a class="sourceLine" id="cb2-19" title="19">  <span class="kw">false</span></a>
+<a class="sourceLine" id="cb2-20" title="20">)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-21" title="21"></a>
+<a class="sourceLine" id="cb2-22" title="22"><span class="co">// Show the content of every non-empty text node that is a child of root</span></a>
+<a class="sourceLine" id="cb2-23" title="23"><span class="kw">var</span> node<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-24" title="24"></a>
+<a class="sourceLine" id="cb2-25" title="25"><span class="cf">while</span> ((node <span class="op">=</span> <span class="va">nodeIterator</span>.<span class="at">nextNode</span>())) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-26" title="26">  <span class="at">alert</span>(<span class="va">node</span>.<span class="at">data</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-27" title="27"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>The interface it belongs to: {{domxref(“NodeFilter”)}}.</li>
+</ul>

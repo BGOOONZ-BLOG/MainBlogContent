@@ -1,0 +1,54 @@
+<p>{{APIRef(“WebRTC”)}}</p>
+<p>The <strong><code>send()</code></strong> method of the {{domxref(“RTCDataChannel”)}} interface sends data across the data channel to the remote peer. This can be done any time except during the initial process of creating the underlying transport channel. Data sent before connecting is buffered if possible (or an error occurs if it’s not possible), and is also buffered if sent while the connection is closing or closed.</p>
+<blockquote>
+<p><strong>Note:</strong> Different browsers have different limitations on the size of the message you can send. Specifications exist to define how to automatically fragment large messages, but not all browsers implement them, and those that do have various additional restrictions. This will get less complicated over time, but for now, if you have questions, see {{SectionOnPage(“/en-US/docs/Web/API/WebRTC_API/Using_data_channels”, “Understanding message size limits”)}}.</p>
+</blockquote>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">RTCDataChannel</span>.<span class="at">send</span>(data)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>data</code>
+<ul>
+<li>: The data to transmit across the connection. This may be a {{domxref(“USVString”)}}, a {{domxref(“Blob”)}}, an {{jsxref(“ArrayBuffer”)}}, or an {{domxref(“ArrayBufferView”)}}.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p><code>undefined</code>.</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><code>InvalidStateError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown when the data channel has not finished establishing its own connection (that is, its {{domxref(“RTCDataChannel.readyState”, “readyState”)}} is <code>connecting</code>). The data channel must establish its own connection because it uses a transport channel separate from that of the media content. This error occurs without sending or buffering the <code>data</code>.</li>
+</ul></li>
+<li><code>NetworkError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown when the specified <code>data</code> would need to be buffered, and there isn’t room for it in the buffer. In this scenario, the underlying transport is immediately closed.</li>
+</ul></li>
+<li><code>TypeError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the specified <code>data</code> is too large for the other peer to receive. Since there are multiple techniques for breaking up large data into smaller pieces for transfer, it’s possible to encounter scenarios in which the other peer does not support the same ones. For example, if one peer is a modern browser that supports using the <code>EOR</code> (End of Record) flag to indicate when a received message is the last piece of a multi-part object sent using <code>send()</code>. For more information about message size restrictions, see {{SectionOnPage(“/en-US/docs/Web/API/WebRTC_API/Using_data_channels”, “Understanding message size limits”)}}.</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<p>In this example, a routine called <code>sendMessage()</code> is created; it accepts an object as input and sends to the remote peer, over the {{domxref(“RTCDataChannel”)}}, a JSON string with the specified object and a time stamp.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> pc <span class="op">=</span> <span class="kw">new</span> <span class="at">RTCPeerConnection</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">var</span> dc <span class="op">=</span> <span class="va">pc</span>.<span class="at">createDataChannel</span>(<span class="st">&quot;BackChannel&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="kw">function</span> <span class="at">sendMessage</span>(msg) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="kw">let</span> obj <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-6" title="6">    <span class="st">&quot;message&quot;</span><span class="op">:</span> msg<span class="op">,</span></a>
+<a class="sourceLine" id="cb2-7" title="7">    <span class="st">&quot;timestamp&quot;</span><span class="op">:</span> <span class="kw">new</span> <span class="at">Date</span>()</a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-9" title="9">  <span class="va">dc</span>.<span class="at">send</span>(<span class="va">JSON</span>.<span class="at">stringify</span>(obj))<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/WebRTC_API">WebRTC</a></li>
+<li>{{domxref(“RTCDataChannel”)}}</li>
+<li>{{domxref(“RTCDataChannel.readyState”)}}</li>
+<li>{{DOMxRef(“RTCDataChannel.close_event”, “close”)}} event</li>
+</ul>

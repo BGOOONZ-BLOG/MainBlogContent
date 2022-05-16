@@ -1,0 +1,65 @@
+<p>{{APIRef(“Web Notifications”)}}{{securecontext_header}}</p>
+<blockquote>
+<p><strong>Note:</strong> Safari still uses the callback syntax to get the permission. Read <a href="/en-US/docs/Web/API/Notifications_API/Using_the_Notifications_API">Using the Notifications API</a> for a good example of how to feature detect this and run code as appropriate.</p>
+</blockquote>
+<p>The <strong><code>requestPermission()</code></strong> method of the {{domxref(“Notification”)}} interface requests permission from the user for the current origin to display notifications.</p>
+<h2 id="syntax">Syntax</h2>
+<p>The latest spec has updated this method to a promise-based syntax that works like this:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">Notification</span>.<span class="at">requestPermission</span>().<span class="at">then</span>(<span class="kw">function</span>(permission) <span class="op">{</span> <span class="co">/* ... */</span> <span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>Previously, the syntax was based on a simple callback; this version is now deprecated:</p>
+<pre><code>Notification.requestPermission(callback);</code></pre>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>callback</code> {{optional_inline}} {{deprecated_inline}}
+<ul>
+<li>: An optional callback function that is called with the permission value. Deprecated in favor of the promise return value.</li>
+</ul></li>
+</ul>
+<h3 id="returns">Returns</h3>
+<p>A {{jsxref(“Promise”)}} that resolves to a {{domxref(“DOMString”)}} with the permission picked by the user. Possible values for this string are:</p>
+<ul>
+<li><code>granted</code></li>
+<li><code>denied</code></li>
+<li><code>default</code></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>Assume this basic HTML:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">&lt;button</span><span class="ot"> onclick=</span><span class="st">&quot;notifyMe()&quot;</span><span class="kw">&gt;</span>Notify me!<span class="kw">&lt;/button&gt;</span></a></code></pre></div>
+<p>It’s possible to send a notification as follows — here we present a fairly verbose and complete set of code you could use if you wanted to first check whether notifications are supported, then check if permission has been granted for the current origin to send notifications, then request permission if required, before then sending a notification.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">function</span> <span class="at">notifyMe</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="co">// Let&#39;s check if the browser supports notifications</span></a>
+<a class="sourceLine" id="cb4-3" title="3">  <span class="cf">if</span> (<span class="op">!</span>(<span class="st">&quot;Notification&quot;</span> <span class="kw">in</span> window)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-4" title="4">    <span class="at">alert</span>(<span class="st">&quot;This browser does not support desktop notification&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-6" title="6"></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="co">// Let&#39;s check whether notification permissions have already been granted</span></a>
+<a class="sourceLine" id="cb4-8" title="8">  <span class="cf">else</span> <span class="cf">if</span> (<span class="va">Notification</span>.<span class="at">permission</span> <span class="op">===</span> <span class="st">&quot;granted&quot;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-9" title="9">    <span class="co">// If it&#39;s okay let&#39;s create a notification</span></a>
+<a class="sourceLine" id="cb4-10" title="10">    <span class="kw">var</span> notification <span class="op">=</span> <span class="kw">new</span> <span class="at">Notification</span>(<span class="st">&quot;Hi there!&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-11" title="11">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-12" title="12"></a>
+<a class="sourceLine" id="cb4-13" title="13">  <span class="co">// Otherwise, we need to ask the user for permission</span></a>
+<a class="sourceLine" id="cb4-14" title="14">  <span class="cf">else</span> <span class="cf">if</span> (<span class="va">Notification</span>.<span class="at">permission</span> <span class="op">!==</span> <span class="st">&quot;denied&quot;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-15" title="15">    <span class="va">Notification</span>.<span class="at">requestPermission</span>().<span class="at">then</span>(<span class="kw">function</span> (permission) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-16" title="16">      <span class="co">// If the user accepts, let&#39;s create a notification</span></a>
+<a class="sourceLine" id="cb4-17" title="17">      <span class="cf">if</span> (permission <span class="op">===</span> <span class="st">&quot;granted&quot;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-18" title="18">        <span class="kw">var</span> notification <span class="op">=</span> <span class="kw">new</span> <span class="at">Notification</span>(<span class="st">&quot;Hi there!&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-19" title="19">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-20" title="20">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-21" title="21">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-22" title="22"></a>
+<a class="sourceLine" id="cb4-23" title="23">  <span class="co">// At last, if the user has denied notifications, and you</span></a>
+<a class="sourceLine" id="cb4-24" title="24">  <span class="co">// want to be respectful there is no need to bother them any more.</span></a>
+<a class="sourceLine" id="cb4-25" title="25"><span class="op">}</span></a></code></pre></div>
+<p>We no longer show a live sample on this page, as Chrome and Firefox no longer allow notification permissions to be requested from cross-origin {{htmlelement(“iframe”)}}s, with other browsers to follow. To see a example in action, check out our <a href="https://github.com/mdn/to-do-notifications/tree/gh-pages">To-do list example</a> (also see <a href="https://mdn.github.io/to-do-notifications/">the app running live</a>.)</p>
+<blockquote>
+<p><strong>Note:</strong> In the above example we spawn notifications in response to a user gesture (clicking a button). This is not only best practice — you should not be spamming users with notifications they didn’t agree to — but going forward browsers will explicitly disallow notifications not triggered in response to a user gesture. Firefox is already doing this from version 72, for example.</p>
+</blockquote>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Notifications_API/Using_the_Notifications_API">Using the Notifications API</a></li>
+</ul>

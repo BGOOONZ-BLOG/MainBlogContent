@@ -1,0 +1,56 @@
+<p>{{APIRef(“Web Authentication API”)}}{{securecontext_header}}</p>
+<p>The <strong><code>response</code></strong> read-only property of the {{domxref(“PublicKeyCredential”)}} interface is an {{domxref(“AuthenticatorResponse”)}} object which is sent from the authenticator to the user agent for the creation/fetching of credentials. The information contained in this response will be used by the relying party’s server to verify the demand is legitimate.</p>
+<p>An <code>AuthenticatorResponse</code> is either:</p>
+<ul>
+<li>an {{domxref(“AuthenticatorAttestationResponse”)}} (when the <code>PublicKeyCredential</code> is created via {{domxref(“CredentialsContainer.create()”)}})</li>
+<li>an {{domxref(“AuthenticatorAssertionResponse”)}} (when the <code>PublicKeyCredential</code> is obtained via {{domxref(“CredentialsContainer.get()”)}}).</li>
+</ul>
+<p>In order to validate the <em>creation</em> of credentials, a relying party’s server needs both:</p>
+<ul>
+<li>this response</li>
+<li>the extensions of the client (given by {{domxref(“PublicKeyCredential.getClientExtensionResults()”)}}) to validate the demand.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> When validating the fetching of existing credentials, the whole <code>PublicKeyCredential</code> object and the client extensions are necessary for the relying party’s server.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> This property may only be used in top-level contexts and will not be available in an {{HTMLElement(“iframe”)}} for example.</p>
+</blockquote>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1">response <span class="op">=</span> <span class="va">publicKeyCredential</span>.<span class="at">response</span></a></code></pre></div>
+<h3 id="value">Value</h3>
+<p>An {{domxref(“AuthenticatorResponse”)}} object containing the data a relying party’s script will receive and which should be sent to the relying party’s server in order to validate the demand for creation or fetching. This object contains data from the client ({{domxref(“AuthenticatorResponse/clientDataJSON”)}}) and from the authenticator.</p>
+<h2 id="examples">Examples</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> options <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="dt">challenge</span><span class="op">:</span> <span class="kw">new</span> <span class="at">Uint8Array</span>(<span class="dv">16</span>) <span class="co">/* from the server */</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="dt">rp</span><span class="op">:</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">    <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;Example CORP&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="dt">id  </span><span class="op">:</span> <span class="st">&quot;login.example.com&quot;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="op">},</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="dt">user</span><span class="op">:</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-8" title="8">    <span class="dt">id</span><span class="op">:</span> <span class="kw">new</span> <span class="at">Uint8Array</span>(<span class="dv">16</span>) <span class="co">/* from the server */</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-9" title="9">    <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;jdoe@example.com&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-10" title="10">    <span class="dt">displayName</span><span class="op">:</span> <span class="st">&quot;John Doe&quot;</span></a>
+<a class="sourceLine" id="cb2-11" title="11">  <span class="op">},</span></a>
+<a class="sourceLine" id="cb2-12" title="12">  <span class="dt">pubKeyCredParams</span><span class="op">:</span> [</a>
+<a class="sourceLine" id="cb2-13" title="13">    <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-14" title="14">      <span class="dt">type</span><span class="op">:</span> <span class="st">&quot;public-key&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-15" title="15">      <span class="dt">alg</span><span class="op">:</span> <span class="dv">-7</span></a>
+<a class="sourceLine" id="cb2-16" title="16">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-17" title="17">  ]</a>
+<a class="sourceLine" id="cb2-18" title="18"><span class="op">};</span></a>
+<a class="sourceLine" id="cb2-19" title="19"></a>
+<a class="sourceLine" id="cb2-20" title="20"><span class="va">navigator</span>.<span class="va">credentials</span>.<span class="at">create</span>(<span class="op">{</span>  <span class="dt">publicKey</span><span class="op">:</span> options <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-21" title="21">  .<span class="at">then</span>(<span class="kw">function</span> (pubKeyCredential) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-22" title="22">    <span class="kw">var</span> response <span class="op">=</span> <span class="va">pubKeyCredential</span>.<span class="at">response</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-23" title="23">    <span class="kw">var</span> clientExtResults <span class="op">=</span> <span class="va">pubKeyCredential</span>.<span class="at">getClientExtensionResults</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-24" title="24">    <span class="co">// Send response and client extensions to the server so that it can validate</span></a>
+<a class="sourceLine" id="cb2-25" title="25">    <span class="co">// and create credentials</span></a>
+<a class="sourceLine" id="cb2-26" title="26"></a>
+<a class="sourceLine" id="cb2-27" title="27"><span class="op">}</span>).<span class="at">catch</span>(<span class="kw">function</span> (err) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-28" title="28">  <span class="co">// Deal with any error</span></a>
+<a class="sourceLine" id="cb2-29" title="29"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

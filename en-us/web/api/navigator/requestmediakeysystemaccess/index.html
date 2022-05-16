@@ -1,0 +1,55 @@
+<p>{{APIRef(“Encrypted Media Extensions”)}}</p>
+<p>The <strong><code>Navigator.requestMediaKeySystemAccess()</code></strong> method returns a {{jsxref(‘Promise’)}} which delivers a {{domxref(‘MediaKeySystemAccess’)}} object that can be used to access a particular media key system, which can in turn be used to create keys for decrypting a media stream. This method is part of the <a href="/en-US/docs/Web/API/Encrypted_Media_Extensions_API">Encrypted Media Extensions API</a>, which brings support for encrypted media and DRM-protected video to the web.</p>
+<p>This method may have user-visible effects such as asking for permission to access one or more system resources. Consider that when deciding when to call <code>requestMediaKeySystemAccess``()</code>; you don’t want those requests to happen at inconvenient times. As a general rule, this function should be called only when it’s about time to create and use a {{domxref(“MediaKeys”)}} object by calling the returned {{domxref(“MediaKeySystemAccess”)}} object’s {{domxref(“MediaKeySystemAccess.createMediaKeys”, “createMediaKeys()”)}} method.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1">promise <span class="op">=</span> <span class="va">navigator</span>.<span class="at">requestMediaKeySystemAccess</span>(keySystem<span class="op">,</span> supportedConfigurations)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>keySystem</code>
+<ul>
+<li>: A {{domxref(‘DOMString’)}} identifying the key system. For example <code>com.example.somesystem</code> or <code>org.w3.clearkey</code>.</li>
+</ul></li>
+<li><code>supportedConfigurations</code>
+<ul>
+<li>: A non-empty {{jsxref(‘Array’)}} of objects conforming to the object returned by {{domxref(“MediaKeySystemAccess.getConfiguration”)}}. The first element with a satisfiable configuration will be used.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A {{jsxref(‘Promise’)}} that, when resolved, delivers a {{domxref(‘MediaKeySystemAccess’)}} object to your fulfillment handler function. The fulfillment handler receives as input just one parameter:</p>
+<ul>
+<li><code>mediaKeySystemAccess</code>
+<ul>
+<li>: A {{domxref(“MediaKeySystemAccess”)}} object representing the media key system configuration described by <code>keySystem</code> and <code>supportedConfigurations</code></li>
+</ul></li>
+</ul>
+<h3 id="exceptions">Exceptions</h3>
+<p>In case of an error, the returned {{jsxref(‘Promise’)}} is rejected with a {{domxref(‘DOMException’)}} whose name indicates what kind of error occurred.</p>
+<ul>
+<li><code>NotSupportedError</code>
+<ul>
+<li>: Either the specified <code>keySystem</code> isn’t supported by the platform or the browser, or none of the configurations specified by <code>supportedConfigurations</code> can be satisfied (if, for example, none of the <code>codecs</code> specified in <code>contentType</code> are available).</li>
+</ul></li>
+<li><code>TypeError</code>
+<ul>
+<li>: Either <code>keySystem</code> is an empty string or the <code>supportedConfigurations</code> array is empty.</li>
+</ul></li>
+</ul>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h3 id="firefox-compatibility-notes">Firefox compatibility notes</h3>
+<p>Firefox 55 outputs a warning to the console if a candidate {{domxref(“MediaKeySystemConfiguration”)}} included in <code>supportedConfigurations</code> includes an <code>audioCapabilities</code> or <code>videoCapabilities</code> object whose value of <code>contentType</code> doesn’t specify a <code>"codecs"</code> substring defining which codecs within the media wrapper format should be allowed.</p>
+<p>For example:</p>
+<p>```js example-bad let clearKeyOptions = [ { initDataTypes: [‘keyids’, ‘webm’], audioCapabilities: [ { contentType: ‘audio/webm’ } ], videoCapabilities: [ { contentType: ‘video/webm’ } ] }];</p>
+<p>navigator.requestMediaKeySystemAccess(‘org.w3.clearkey’, clearKeyOptions) .then(function(keySystemAccess) { /* use the access to get create keys */ }); ```</p>
+<p>The code above works in Firefox up to version 55, but version 55 onwards will output a warning to console, because <code>"codecs"</code> is not included in the <code>contentType</code> strings. This could be corrected as follows:</p>
+<p>```js example-good let clearKeyOptions = [ { initDataTypes: [‘keyids’, ‘webm’], audioCapabilities: [ { contentType: ‘audio/webm; codecs=“opus”’ }, { contentType: ‘audio/webm; codecs=“vorbis”’ } ], videoCapabilities: [ { contentType: ‘video/webm; codecs=“vp9”’ }, { contentType: ‘video/webm; codecs=“vp8”’ } ] }];</p>
+<p>navigator.requestMediaKeySystemAccess(‘org.w3.clearkey’, clearKeyOptions) .then(function(keySystemAccess) { /* use the access to get create keys */ }); ```</p>
+<p>In this revised example, the audio and video capabilities include possible codecs which should be permitted, and therefore are valid requests.</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Encrypted_Media_Extensions_API">Encrypted Media Extensions API</a></li>
+<li><a href="/en-US/docs/Web/API/Media_Streams_API">Media Capture and Streams API</a></li>
+<li><a href="/en-US/docs/Web/API/WebRTC_API">WebRTC API</a></li>
+</ul>

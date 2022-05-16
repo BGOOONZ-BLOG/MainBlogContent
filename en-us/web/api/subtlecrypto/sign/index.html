@@ -1,0 +1,142 @@
+<p>{{APIRef(“Web Crypto API”)}}{{SecureContext_header}}</p>
+<p>The <strong><code>sign()</code></strong> method of the {{domxref(“SubtleCrypto”)}} interface generates a digital {{glossary(“signature”)}}.</p>
+<p>It takes as its arguments a {{glossary(“key”)}} to sign with, some algorithm-specific parameters, and the data to sign. It returns a {{jsxref(“Promise”)}} which will be fulfilled with the signature.</p>
+<p>You can use the corresponding {{domxref(“SubtleCrypto.verify()”)}} method to verify the signature.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> signature <span class="op">=</span> <span class="va">crypto</span>.<span class="va">subtle</span>.<span class="at">sign</span>(algorithm<span class="op">,</span> key<span class="op">,</span> data)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><p><em><code>algorithm</code></em> is a string or object that specifies the signature algorithm to use and its parameters:</p>
+<ul>
+<li>To use <a href="#rsassa-pkcs1-v1_5">RSASSA-PKCS1-v1_5</a>, pass the string <code>"RSASSA-PKCS1-v1_5"</code> or an object of the form <code>{ "name": "RSASSA-PKCS1-v1_5" }</code>.</li>
+<li>To use <a href="#rsa-pss">RSA-PSS</a>, pass an {{domxref(“RsaPssParams”)}} object.</li>
+<li>To use <a href="#ecdsa">ECDSA</a>, pass an {{domxref(“EcdsaParams”)}} object.</li>
+<li>To use <a href="#hmac">HMAC</a>, pass the string <code>"HMAC"</code> or an object of the form <code>{ "name": "HMAC" }</code>.</li>
+</ul></li>
+<li><code>key</code> is a {{domxref(“CryptoKey”)}} object containing the key to be used for signing. If algorithm identifies a public-key cryptosystem, this is the private key.</li>
+<li><p><em><code>data</code></em> is an {{jsxref(“ArrayBuffer”)}} or {{domxref(“ArrayBufferView”)}} object containing the data to be signed.</p></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<ul>
+<li><code>signature</code> is a {{jsxref(“Promise”)}} that fulfills with an {{jsxref(“ArrayBuffer”)}} containing the signature.</li>
+</ul>
+<h3 id="exceptions">Exceptions</h3>
+<p>The promise is rejected when the following exception is encountered:</p>
+<ul>
+<li>{{exception(“InvalidAccessError”)}}
+<ul>
+<li>: Raised when the signing key is not a key for the request signing algorithm or when trying to use an algorithm that is either unknown or isn’t suitable for signing.</li>
+</ul></li>
+</ul>
+<h2 id="supported-algorithms">Supported algorithms</h2>
+<p>The Web Crypto API provides four algorithms that can be used for signing and signature verification.</p>
+<p>Three of these algorithms — RSASSA-PKCS1-v1_5, RSA-PSS, and ECDSA — are {{Glossary(“public-key cryptography”, “public-key cryptosystems”)}} that use the private key for signing and the public key for verification. These systems all use a <a href="/en-US/docs/Web/API/SubtleCrypto/digest#supported_algorithms">digest algorithm</a> to hash the message to a short fixed size before signing. The choice of digest algorithm is passed into the {{domxref(“SubtleCrypto.generateKey()”, “generateKey()”)}} or {{domxref(“SubtleCrypto.importKey()”, “importKey()”)}} functions.</p>
+<p>The fourth algorithm — HMAC — uses the same algorithm and key for signing and for verification: this means that the verification key must be kept secret, which in turn means that this algorithm is not suitable for many signature use cases. It can be a good choice however when the signer and verifier are the same entity.</p>
+<h3 id="rsassa-pkcs1-v1_5">RSASSA-PKCS1-v1_5</h3>
+<p>The RSASSA-PKCS1-v1_5 algorithm is specified in <a href="https://datatracker.ietf.org/doc/html/rfc3447">RFC 3447</a>.</p>
+<h3 id="rsa-pss">RSA-PSS</h3>
+<p>The RSA-PSS algorithm is specified in <a href="https://datatracker.ietf.org/doc/html/rfc3447">RFC 3447</a>.</p>
+<p>It’s different from RSASSA-PKCS1-v1_5 in that it incorporates a random salt in the signature operation, so the same message signed with the same key will not result in the same signature each time. An extra property, defining the salt length, is passed into the {{domxref(“SubtleCrypto.sign()”, “sign()”)}} and {{domxref(“SubtleCrypto.verify()”, “verify()”)}} functions when they are invoked.</p>
+<h3 id="ecdsa">ECDSA</h3>
+<p>ECDSA (Elliptic Curve Digital Signature Algorithm) is a variant of the Digital Signature Algorithm, specified in <a href="https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf">FIPS-186</a>, that uses Elliptic Curve Cryptography (<a href="https://datatracker.ietf.org/doc/html/rfc6090">RFC 6090</a>).</p>
+<h3 id="hmac">HMAC</h3>
+<p>The HMAC algorithm calculates and verifies hash-based message authentication codes according to the <a href="https://csrc.nist.gov/csrc/media/publications/fips/198/1/final/documents/fips-198-1_final.pdf">FIPS 198-1 standard</a>.</p>
+<p>The digest algorithm to use is specified in the <a href="/en-US/docs/Web/API/HmacKeyGenParams"><code>HmacKeyGenParams</code></a> object that you pass into  {{domxref(“SubtleCrypto.generateKey()”, “generateKey()”)}}, or the <a href="/en-US/docs/Web/API/HmacImportParams"><code>HmacImportParams</code></a> object that you pass into {{domxref(“SubtleCrypto.importKey()”, “importKey()”)}}.</p>
+<h2 id="examples">Examples</h2>
+<blockquote>
+<p><strong>Note:</strong> You can <a href="https://mdn.github.io/dom-examples/web-crypto/sign-verify/index.html">try the working examples</a> out on GitHub.</p>
+</blockquote>
+<h3 id="rsassa-pkcs1-v1_5-1">RSASSA-PKCS1-v1_5</h3>
+<p>This code fetches the contents of a text box, encodes it for signing, and signs it with a private key. <a href="https://github.com/mdn/dom-examples/blob/master/web-crypto/sign-verify/rsassa-pkcs1.js">See the complete source code on GitHub.</a></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">/*</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="co">Fetch the contents of the &quot;message&quot; textbox, and encode it</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="co">in a form we can use for the sign operation.</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="co">*/</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="kw">function</span> <span class="at">getMessageEncoding</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="kw">const</span> messageBox <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;.rsassa-pkcs1 #message&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="kw">let</span> message <span class="op">=</span> <span class="va">messageBox</span>.<span class="at">value</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="kw">let</span> enc <span class="op">=</span> <span class="kw">new</span> <span class="at">TextEncoder</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9">  <span class="cf">return</span> <span class="va">enc</span>.<span class="at">encode</span>(message)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-11" title="11"></a>
+<a class="sourceLine" id="cb2-12" title="12"><span class="kw">let</span> encoded <span class="op">=</span> <span class="at">getMessageEncoding</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="kw">let</span> signature <span class="op">=</span> <span class="cf">await</span> <span class="va">window</span>.<span class="va">crypto</span>.<span class="va">subtle</span>.<span class="at">sign</span>(</a>
+<a class="sourceLine" id="cb2-14" title="14">  <span class="st">&quot;RSASSA-PKCS1-v1_5&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-15" title="15">  privateKey<span class="op">,</span></a>
+<a class="sourceLine" id="cb2-16" title="16">  encoded</a>
+<a class="sourceLine" id="cb2-17" title="17">)<span class="op">;</span></a></code></pre></div>
+<h3 id="rsa-pss-1">RSA-PSS</h3>
+<p>This code fetches the contents of a text box, encodes it for signing, and signs it with a private key. <a href="https://github.com/mdn/dom-examples/blob/master/web-crypto/sign-verify/rsa-pss.js">See the complete source code on GitHub.</a></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="co">/*</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="co">Fetch the contents of the &quot;message&quot; textbox, and encode it</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="co">in a form we can use for the sign operation.</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="co">*/</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="kw">function</span> <span class="at">getMessageEncoding</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="kw">const</span> messageBox <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;.rsa-pss #message&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="kw">let</span> message <span class="op">=</span> <span class="va">messageBox</span>.<span class="at">value</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="kw">let</span> enc <span class="op">=</span> <span class="kw">new</span> <span class="at">TextEncoder</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">  <span class="cf">return</span> <span class="va">enc</span>.<span class="at">encode</span>(message)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-11" title="11"></a>
+<a class="sourceLine" id="cb3-12" title="12"><span class="kw">let</span> encoded <span class="op">=</span> <span class="at">getMessageEncoding</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-13" title="13"><span class="kw">let</span> signature <span class="op">=</span> <span class="cf">await</span> <span class="va">window</span>.<span class="va">crypto</span>.<span class="va">subtle</span>.<span class="at">sign</span>(</a>
+<a class="sourceLine" id="cb3-14" title="14">  <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-15" title="15">    <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;RSA-PSS&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-16" title="16">    <span class="dt">saltLength</span><span class="op">:</span> <span class="dv">32</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-17" title="17">  <span class="op">},</span></a>
+<a class="sourceLine" id="cb3-18" title="18">  privateKey<span class="op">,</span></a>
+<a class="sourceLine" id="cb3-19" title="19">  encoded</a>
+<a class="sourceLine" id="cb3-20" title="20">)<span class="op">;</span></a></code></pre></div>
+<h3 id="ecdsa-1">ECDSA</h3>
+<p>This code fetches the contents of a text box, encodes it for signing, and signs it with a private key. <a href="https://github.com/mdn/dom-examples/blob/master/web-crypto/sign-verify/ecdsa.js">See the complete source code on GitHub.</a></p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="co">/*</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="co">Fetch the contents of the &quot;message&quot; textbox, and encode it</span></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="co">in a form we can use for the sign operation.</span></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="co">*/</span></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="kw">function</span> <span class="at">getMessageEncoding</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-6" title="6">  <span class="kw">const</span> messageBox <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;.ecdsa #message&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="kw">let</span> message <span class="op">=</span> <span class="va">messageBox</span>.<span class="at">value</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-8" title="8">  <span class="kw">let</span> enc <span class="op">=</span> <span class="kw">new</span> <span class="at">TextEncoder</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-9" title="9">  <span class="cf">return</span> <span class="va">enc</span>.<span class="at">encode</span>(message)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-10" title="10"><span class="op">}</span></a>
+<a class="sourceLine" id="cb4-11" title="11"></a>
+<a class="sourceLine" id="cb4-12" title="12"><span class="kw">let</span> encoded <span class="op">=</span> <span class="at">getMessageEncoding</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-13" title="13"><span class="kw">let</span> signature <span class="op">=</span> <span class="cf">await</span> <span class="va">window</span>.<span class="va">crypto</span>.<span class="va">subtle</span>.<span class="at">sign</span>(</a>
+<a class="sourceLine" id="cb4-14" title="14">  <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-15" title="15">    <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;ECDSA&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb4-16" title="16">    <span class="dt">hash</span><span class="op">:</span> <span class="op">{</span><span class="dt">name</span><span class="op">:</span> <span class="st">&quot;SHA-384&quot;</span><span class="op">},</span></a>
+<a class="sourceLine" id="cb4-17" title="17">  <span class="op">},</span></a>
+<a class="sourceLine" id="cb4-18" title="18">  privateKey<span class="op">,</span></a>
+<a class="sourceLine" id="cb4-19" title="19">  encoded</a>
+<a class="sourceLine" id="cb4-20" title="20">)<span class="op">;</span></a></code></pre></div>
+<h3 id="hmac-1">HMAC</h3>
+<p>This code fetches the contents of a text box, encodes it for signing, and signs it with a secret key. <a href="https://github.com/mdn/dom-examples/blob/master/web-crypto/sign-verify/hmac.js">See the complete source code on GitHub.</a></p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="co">/*</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="co">Fetch the contents of the &quot;message&quot; textbox, and encode it</span></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="co">in a form we can use for the sign operation.</span></a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="co">*/</span></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="kw">function</span> <span class="at">getMessageEncoding</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-6" title="6">  <span class="kw">const</span> messageBox <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;.hmac #message&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-7" title="7">  <span class="kw">let</span> message <span class="op">=</span> <span class="va">messageBox</span>.<span class="at">value</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-8" title="8">  <span class="kw">let</span> enc <span class="op">=</span> <span class="kw">new</span> <span class="at">TextEncoder</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-9" title="9">  <span class="cf">return</span> <span class="va">enc</span>.<span class="at">encode</span>(message)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-10" title="10"><span class="op">}</span></a>
+<a class="sourceLine" id="cb5-11" title="11"></a>
+<a class="sourceLine" id="cb5-12" title="12"><span class="kw">let</span> encoded <span class="op">=</span> <span class="at">getMessageEncoding</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-13" title="13"><span class="kw">let</span> signature <span class="op">=</span> <span class="cf">await</span> <span class="va">window</span>.<span class="va">crypto</span>.<span class="va">subtle</span>.<span class="at">sign</span>(</a>
+<a class="sourceLine" id="cb5-14" title="14">  <span class="st">&quot;HMAC&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb5-15" title="15">  key<span class="op">,</span></a>
+<a class="sourceLine" id="cb5-16" title="16">  encoded</a>
+<a class="sourceLine" id="cb5-17" title="17">)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{domxref(“SubtleCrypto.verify()”)}}.</li>
+<li><a href="https://datatracker.ietf.org/doc/html/rfc3447">RFC 3447</a> specifies RSASSA-PKCS1-v1_5.</li>
+<li><a href="https://datatracker.ietf.org/doc/html/rfc3447">RFC 3447</a> specifies RSA-PSS.</li>
+<li><a href="https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf">FIPS-186</a> specifies ECDSA.</li>
+<li><a href="https://csrc.nist.gov/csrc/media/publications/fips/198/1/final/documents/fips-198-1_final.pdf">FIPS 198-1</a> specifies HMAC.</li>
+</ul>

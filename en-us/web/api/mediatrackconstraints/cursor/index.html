@@ -1,0 +1,50 @@
+<p>{{APIRef(“Media Capture and Streams”)}}</p>
+<p>The {{domxref(“MediaTrackConstraints”)}} dictionary’s <strong><code>cursor</code></strong> property is a <a href="/en-US/docs/Web/API/MediaTrackConstraints#ConstrainDOMString"><code>ConstrainDOMString</code></a> describing the requested or mandatory constraints placed upon the value of the {{domxref(“MediaTrackSettings.cursor”, “cursor”)}} constrainable property, which is used to specify whether or not the cursor should be included in the captured video.</p>
+<p>If needed, you can determine whether or not this constraint is supported by checking the value of {{domxref(“MediaTrackSupportedConstraints.cursor”)}} as returned by a call to {{domxref(“MediaDevices.getSupportedConstraints()”)}}. However, typically this is unnecessary since browsers will ignore any constraints they’re unfamiliar with.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> constraintsObject <span class="op">=</span> <span class="op">{</span> <span class="dt">cursor</span><span class="op">:</span> constraint <span class="op">};</span></a>
+<a class="sourceLine" id="cb1-2" title="2"></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="va">constraintsObject</span>.<span class="at">cursor</span> <span class="op">=</span> constraint<span class="op">;</span></a></code></pre></div>
+<h3 id="value">Value</h3>
+<p>A <a href="/en-US/docs/Web/API/MediaTrackConstraints#ConstrainDOMString"><code>ConstrainDOMString</code></a> which specifies whether or not the mouse cursor should be rendered into the video track in the {{domxref(“MediaStream”)}} returned by the call to {{domxref(“MediaDevices.getDisplayMedia”, “getDisplayMedia()”)}}. See {{SectionOnPage(“/en-US/docs/Web/API/Media_Streams_API/Constraints”, “How constraints are defined”)}} for an explanation of how to define constraints.</p>
+<h2 id="usage-notes">Usage notes</h2>
+<p>You can check the setting selected by the user agent after the display media has been created by {{domxref(“MediaDevices.getDisplayMedia”, “getDisplayMedia()”)}} by calling {{domxref(“MediaStreamTrack.getSettings”, “getSettings()”)}} on the display media’s video {{domxref(“MediaStreamTrack”)}}, then checking the value of  the returned {{domxref(“MediaTrackSettings”)}} object’s {{domxref(“MediaTrackSettings.cursor”, “cursor”)}} object.</p>
+<p>For example, if your app needs to alter the stream by inserting a representation of the cursor position if the stream doesn’t include the rendered cursor, you can determine the need to do so by using code like this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">let</span> insertFakeCursorFlag <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="cf">if</span> (<span class="va">displayStream</span>.<span class="at">getVideoTracks</span>()[<span class="dv">0</span>].<span class="at">getSettings</span>().<span class="at">cursor</span> <span class="op">===</span> <span class="st">&quot;never&quot;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  insertFakeCursorFlag <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="op">}</span></a></code></pre></div>
+<p>Following this code, <code>insertFakeCursorFlag</code> is <code>true</code> if there’s no cursor rendered into the stream already. Later code can detect this flag’s value and if it’s <code>true</code>, can manually look at some metadata that might be provided and insert a fake representation of the cursor at the correct position.</p>
+<h2 id="examples">Examples</h2>
+<p>Here are some example constraints objects for <code>getDisplayMedia()</code> that make use of the <code>cursor</code> property. In addition, see {{SectionOnPage(“/en-US/docs/Web/API/Media_Streams_API/Constraints”, “Example: Constraint exerciser”)}} for a complete example showing how constraints are used.</p>
+<h3 id="example-cursor-always-visible">Example: Cursor always visible</h3>
+<p>This example sets up the constraints to request that the cursor always be visible.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">let</span> displayMediaOptions <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="dt">cursor</span><span class="op">:</span> <span class="st">&quot;always&quot;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="op">};</span></a></code></pre></div>
+<h3 id="example-cursor-visible-during-motion-with-fallback">Example: Cursor visible during motion with fallback</h3>
+<p>In this example, the <code>cursor</code> property is configured to request that the cursor be visible when in motion, falling back to always being visible if the user agent doesn’t support in-motion only cursor rendering.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">let</span> displayMediaOptions <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="dt">cursor</span><span class="op">:</span> [<span class="st">&quot;motion&quot;</span><span class="op">,</span> <span class="st">&quot;always&quot;</span>]</a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="op">};</span></a></code></pre></div>
+<h3 id="example-require-that-the-cursor-not-be-visible">Example: Require that the cursor not be visible</h3>
+<p>This constraints object explicitly requires that the cursor <em>not</em> be rendered into the video track.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">let</span> displayMediaOptions <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="dt">cursor</span><span class="op">:</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-3" title="3">    <span class="dt">exact</span><span class="op">:</span> <span class="st">&quot;none&quot;</span></a>
+<a class="sourceLine" id="cb5-4" title="4">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="op">};</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Screen_Capture_API">Screen Capture API</a></li>
+<li><a href="/en-US/docs/Web/API/Screen_Capture_API/Using_Screen_Capture">Using the Screen Capture API</a></li>
+<li><a href="/en-US/docs/Web/API/Media_Streams_API/Constraints">Capabilities, constraints, and settings</a></li>
+<li>{{domxref(“MediaTrackConstraints”)}}</li>
+<li>{{domxref(“MediaDevices.getSupportedConstraints()”)}}</li>
+<li>{{domxref(“MediaTrackSupportedConstraints”)}}</li>
+</ul>

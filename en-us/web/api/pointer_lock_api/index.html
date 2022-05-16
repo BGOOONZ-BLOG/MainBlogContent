@@ -1,0 +1,171 @@
+<p>{{DefaultAPISidebar(“Pointer Lock API”)}}</p>
+<p>The <strong>Pointer Lock API</strong> (formerly called <em>Mouse Lock API</em>) provides input methods based on the movement of the mouse over time (i.e., deltas), not just the absolute position of the mouse cursor in the viewport. It gives you access to raw mouse movement, locks the target of mouse events to a single element, eliminates limits on how far mouse movement can go in a single direction, and removes the cursor from view. It is ideal for first person 3D games, for example.</p>
+<p>More than that, the API is useful for any applications that require significant mouse input to control movements, rotate objects, and change entries, for example allowing users to control the viewing angle by moving the mouse around without any button clicking. The buttons are then freed up for other actions. Other examples include apps for viewing maps or satellite imagery.</p>
+<p>Pointer lock lets you access mouse events even when the cursor goes past the boundary of the browser or screen. For example, your users can continue to rotate or manipulate a 3D model by moving the mouse without end. Without Pointer lock, the rotation or manipulation stops the moment the pointer reaches the edge of the browser or screen. Game players can now click buttons and swipe the mouse cursor back and forth without worrying about leaving the game play area and accidentally clicking another application that would take mouse focus away from the game.</p>
+<h2 id="basic-concepts">Basic concepts</h2>
+<p>Pointer lock is related to <a href="/en-US/docs/Web/API/Element/setCapture" title="element.setCapture">mouse capture</a>. Mouse capture provides continued delivery of events to a target element while a mouse is being dragged, but it stops when the mouse button is released. Pointer lock is different from mouse capture in the following ways:</p>
+<ul>
+<li>It is persistent: Pointer lock does not release the mouse until an explicit API call is made or the user uses a specific release gesture.</li>
+<li>It is not limited by browser or screen boundaries.</li>
+<li>It continues to send events regardless of mouse button state.</li>
+<li>It hides the cursor.</li>
+</ul>
+<h2 id="methodproperties-overview">Method/properties overview</h2>
+<p>This section provides a brief description of each property and method related to the pointer lock specification.</p>
+<h3 id="requestpointerlock">requestPointerLock()</h3>
+<p>The Pointer lock API, similar to the <a href="/en-US/docs/Web/API/Fullscreen_API">Fullscreen API</a>, extends DOM elements by adding a new method, {{domxref(“Element.requestPointerLock”,“requestPointerLock()”)}}. As it has recently unprefixed, you would currently declare it something like this, for example if you wanted to request pointer lock on a <code>canvas</code> element:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">canvas</span>.<span class="at">requestPointerLock</span> <span class="op">=</span> <span class="va">canvas</span>.<span class="at">requestPointerLock</span> <span class="op">||</span></a>
+<a class="sourceLine" id="cb1-2" title="2">                            <span class="va">canvas</span>.<span class="at">mozRequestPointerLock</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="va">canvas</span>.<span class="at">requestPointerLock</span>()</a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> If a user has exited pointer lock via the <a href="https://w3c.github.io/pointerlock/#dfn-default-unlock-gesture">default unlock gesture</a>, or pointer lock has not previously been entered for this document, an event generated as a result of an <a href="https://w3c.github.io/pointerlock/#dfn-engagement-gesture">engagement gesture</a> must be received by the document before <a href="https://w3c.github.io/pointerlock/#dom-element-requestpointerlock"><code>requestPointerLock</code></a> will succeed. (from <a href="https://w3c.github.io/pointerlock/#extensions-to-the-element-interface" class="uri">https://w3c.github.io/pointerlock/#extensions-to-the-element-interface</a>)</p>
+</blockquote>
+<h3 id="pointerlockelement-and-exitpointerlock">pointerLockElement and exitPointerLock()</h3>
+<p>The Pointer lock API also extends the {{domxref(“Document”)}} interface, adding both a new property and a new method. The new property is used for accessing the currently locked element (if any), and is named {{domxref(“Document.pointerLockElement”,“pointerLockElement”)}} and the new method on {{domxref(“Document”)}} is {{domxref(“Document.exitPointerLock”,“exitPointerLock()”)}} and, as the name implies, it is used to exit the pointer lock.</p>
+<p>The {{domxref(“Document.pointerLockElement”,“pointerLockElement”)}} property is useful for determining if any element is currently pointer locked (e.g., for doing a Boolean check) and also for obtaining a reference to the locked element, if any.</p>
+<p>Here is an example of using <code>pointerLockElement</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="cf">if</span>(<span class="va">document</span>.<span class="at">pointerLockElement</span> <span class="op">===</span> canvas <span class="op">||</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="va">document</span>.<span class="at">mozPointerLockElement</span> <span class="op">===</span> canvas) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;The pointer lock status is now locked&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;The pointer lock status is now unlocked&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="op">}</span></a></code></pre></div>
+<p>The {{domxref(“Document.exitPointerLock()”)}} method is used to exit pointer lock, and like {{domxref(“Element.requestPointerLock”,“requestPointerLock”)}}, works asynchronously using the {{event(“pointerlockchange”)}} and {{event(“pointerlockerror”)}} events, which you’ll see more about below.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="va">document</span>.<span class="at">exitPointerLock</span> <span class="op">=</span> <span class="va">document</span>.<span class="at">exitPointerLock</span>    <span class="op">||</span></a>
+<a class="sourceLine" id="cb3-2" title="2">                           <span class="va">document</span>.<span class="at">mozExitPointerLock</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="co">// Attempt to unlock</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="va">document</span>.<span class="at">exitPointerLock</span>()<span class="op">;</span></a></code></pre></div>
+<h2 id="pointerlockchange-event">pointerlockchange event</h2>
+<p>When the Pointer lock state changes—for example, when calling {{domxref(“Element.requestPointerLock”,“requestPointerLock()”)}}, {{domxref(“Document.exitPointerLock”,“exitPointerLock()”)}}, the user pressing the ESC key, etc.—the {{event(“pointerlockchange”)}} event is dispatched to the <code>document</code>. This is a simple event and contains no extra data.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="cf">if</span> (<span class="st">&quot;onpointerlockchange&quot;</span> <span class="kw">in</span> document) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="va">document</span>.<span class="at">addEventListener</span>(<span class="st">&#39;pointerlockchange&#39;</span><span class="op">,</span> lockChangeAlert<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (<span class="st">&quot;onmozpointerlockchange&quot;</span> <span class="kw">in</span> document) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-4" title="4">  <span class="va">document</span>.<span class="at">addEventListener</span>(<span class="st">&#39;mozpointerlockchange&#39;</span><span class="op">,</span> lockChangeAlert<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="op">}</span></a>
+<a class="sourceLine" id="cb4-6" title="6"></a>
+<a class="sourceLine" id="cb4-7" title="7"><span class="kw">function</span> <span class="at">lockChangeAlert</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-8" title="8">  <span class="cf">if</span>(<span class="va">document</span>.<span class="at">pointerLockElement</span> <span class="op">===</span> canvas <span class="op">||</span></a>
+<a class="sourceLine" id="cb4-9" title="9">  <span class="va">document</span>.<span class="at">mozPointerLockElement</span> <span class="op">===</span> canvas) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-10" title="10">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;The pointer lock status is now locked&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-11" title="11">    <span class="co">// Do something useful in response</span></a>
+<a class="sourceLine" id="cb4-12" title="12">  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-13" title="13">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;The pointer lock status is now unlocked&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-14" title="14">    <span class="co">// Do something useful in response</span></a>
+<a class="sourceLine" id="cb4-15" title="15">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-16" title="16"><span class="op">}</span></a></code></pre></div>
+<h2 id="pointerlockerror-event">pointerlockerror event</h2>
+<p>When there is an error caused by calling {{domxref(“Element.requestPointerLock”,“requestPointerLock()”)}} or {{domxref(“Document.exitPointerLock”,“exitPointerLock()”)}}, the {{event(“pointerlockerror”)}} event is dispatched to the <code>document</code>. This is a simple event and contains no extra data.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="va">document</span>.<span class="at">addEventListener</span>(<span class="st">&#39;pointerlockerror&#39;</span><span class="op">,</span> lockError<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="va">document</span>.<span class="at">addEventListener</span>(<span class="st">&#39;mozpointerlockerror&#39;</span><span class="op">,</span> lockError<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3"></a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="kw">function</span> <span class="at">lockError</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-5" title="5">  <span class="at">alert</span>(<span class="st">&quot;Pointer lock failed&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-6" title="6"><span class="op">}</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> until Firefox 50 the above events were prefixed with <code>moz</code> in Firefox.</p>
+</blockquote>
+<h2 id="extensions-to-mouse-events">Extensions to mouse events</h2>
+<p>The Pointer lock API extends the normal {{domxref(“MouseEvent”)}} interface with movement attributes. Two new attributes to mouse events—{{domxref(“MouseEvent.movementX”,“movementX”)}} and {{domxref(“MouseEvent.movementY”,“movementY”)}}—provide the change in mouse positions. The values of the parameters are the same as the difference between the values of {{domxref(“MouseEvent”)}} properties, {{domxref(“MouseEvent.screenX”,“screenX”)}} and {{domxref(“MouseEvent.screenY”,“screenY”)}}, which are stored in two subsequent {{event(“mousemove”)}} events, <code>eNow</code> and <code>ePrevious</code>. In other words, the Pointer lock parameter <code>movementX = eNow.screenX - ePrevious.screenX</code>.</p>
+<h3 id="locked-state">Locked state</h3>
+<p>When Pointer lock is enabled, the standard {{domxref(“MouseEvent”)}} properties {{domxref(“MouseEvent.clientX”,“clientX”)}}, {{domxref(“MouseEvent.clientY”,“clientY”)}}, {{domxref(“MouseEvent.screenX”,“screenX”)}}, and {{domxref(“MouseEvent.screenY”,“screenY”)}} are held constant, as if the mouse is not moving. The {{domxref(“MouseEvent.movementX”,“movementX”)}} and {{domxref(“MouseEvent.movementY”,“movementY”)}} properties continue to provide the mouse’s change in position. There is no limit to {{domxref(“MouseEvent.movementX”,“movementX”)}} and {{domxref(“MouseEvent.movementY”,“movementY”)}} values if the mouse is continuously moving in a single direction. The concept of the mouse cursor does not exist and the cursor cannot move off the window or be clamped by a screen edge.</p>
+<h3 id="unlocked-state">Unlocked state</h3>
+<p>The parameters {{domxref(“MouseEvent.movementX”,“movementX”)}} and {{domxref(“MouseEvent.movementY”,“movementY”)}} are valid regardless of the mouse lock state, and are available even when unlocked for convenience.</p>
+<p>When the mouse is unlocked, the system cursor can exit and re-enter the browser window. If that happens, {{domxref(“MouseEvent.movementX”,“movementX”)}} and {{domxref(“MouseEvent.movementY”,“movementY”)}} could be set to zero.</p>
+<h2 id="simple-example-walkthrough">Simple example walkthrough</h2>
+<p>We’ve written a <a href="https://mdn.github.io/dom-examples/pointer-lock/">simple pointer lock demo</a> to show you how to use it to set up a simple control system (<a href="https://github.com/mdn/dom-examples/tree/master/pointer-lock">see source code</a>). The demo looks like this:</p>
+<figure>
+<img src="pointer-lock.png" alt="A red circle on top of a black background." /><figcaption>A red circle on top of a black background.</figcaption>
+</figure>
+<p>This demo uses JavaScript to draw a ball on top of an {{ htmlelement(“canvas”) }} element. When you click the canvas, pointer lock is then used to remove the mouse pointer and allow you to move the ball directly using the mouse. Let’s see how this works.</p>
+<p>We set initial x and y positions on the canvas:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">var</span> x <span class="op">=</span> <span class="dv">50</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="kw">var</span> y <span class="op">=</span> <span class="dv">50</span><span class="op">;</span></a></code></pre></div>
+<p>The pointer lock methods are currently prefixed, so next we’ll fork them for the different browser implementations.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="va">canvas</span>.<span class="at">requestPointerLock</span> <span class="op">=</span> <span class="va">canvas</span>.<span class="at">requestPointerLock</span> <span class="op">||</span></a>
+<a class="sourceLine" id="cb7-2" title="2">                            <span class="va">canvas</span>.<span class="at">mozRequestPointerLock</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb7-3" title="3"></a>
+<a class="sourceLine" id="cb7-4" title="4"><span class="va">document</span>.<span class="at">exitPointerLock</span> <span class="op">=</span> <span class="va">document</span>.<span class="at">exitPointerLock</span> <span class="op">||</span></a>
+<a class="sourceLine" id="cb7-5" title="5">                           <span class="va">document</span>.<span class="at">mozExitPointerLock</span><span class="op">;</span></a></code></pre></div>
+<p>Now we set up an event listener to run the <code>requestPointerLock()</code> method on the canvas when it is clicked, which initiates pointer lock.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="va">canvas</span>.<span class="at">onclick</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-2" title="2">  <span class="va">canvas</span>.<span class="at">requestPointerLock</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-3" title="3"><span class="op">}</span></a></code></pre></div>
+<p>Now for the dedicated pointer lock event listener: <code>pointerlockchange</code>. When this occurs, we run a function called <code>lockChangeAlert()</code> to handle the change.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="co">// pointer lock event listener</span></a>
+<a class="sourceLine" id="cb9-2" title="2"></a>
+<a class="sourceLine" id="cb9-3" title="3"><span class="co">// Hook pointer lock state change events for different browsers</span></a>
+<a class="sourceLine" id="cb9-4" title="4"><span class="va">document</span>.<span class="at">addEventListener</span>(<span class="st">&#39;pointerlockchange&#39;</span><span class="op">,</span> lockChangeAlert<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-5" title="5"><span class="va">document</span>.<span class="at">addEventListener</span>(<span class="st">&#39;mozpointerlockchange&#39;</span><span class="op">,</span> lockChangeAlert<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a></code></pre></div>
+<p>This function checks the pointLockElement property to see if it is our canvas. If so, it attached an event listener to handle the mouse movements with the <code>updatePosition()</code> function. If not, it removes the event listener again.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">function</span> <span class="at">lockChangeAlert</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-2" title="2">  <span class="cf">if</span> (<span class="va">document</span>.<span class="at">pointerLockElement</span> <span class="op">===</span> canvas <span class="op">||</span></a>
+<a class="sourceLine" id="cb10-3" title="3">      <span class="va">document</span>.<span class="at">mozPointerLockElement</span> <span class="op">===</span> canvas) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-4" title="4">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;The pointer lock status is now locked&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-5" title="5">    <span class="va">document</span>.<span class="at">addEventListener</span>(<span class="st">&quot;mousemove&quot;</span><span class="op">,</span> updatePosition<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-6" title="6">  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-7" title="7">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;The pointer lock status is now unlocked&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-8" title="8">    <span class="va">document</span>.<span class="at">removeEventListener</span>(<span class="st">&quot;mousemove&quot;</span><span class="op">,</span> updatePosition<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-9" title="9">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-10" title="10"><span class="op">}</span></a></code></pre></div>
+<p>The updatePosition() function updates the position of the ball on the canvas (<code>x</code> and <code>y</code>), and also includes <code>if()</code> statements to check whether the ball has gone off the edges of the canvas. If so, it makes the ball wrap around to the opposite edge. It also includes a check whether a <a href="/en-US/docs/Web/API/window/requestAnimationFrame"><code>requestAnimationFrame()</code></a> call has previously been made, and if so, calls it again as required, and calls the <code>canvasDraw()</code> function that updates the canvas scene. A tracker is also set up to write out the X and Y values to the screen, for reference.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1"><span class="kw">var</span> tracker <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;tracker&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-2" title="2"></a>
+<a class="sourceLine" id="cb11-3" title="3"><span class="kw">var</span> animation<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-4" title="4"><span class="kw">function</span> <span class="at">updatePosition</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-5" title="5">  x <span class="op">+=</span> <span class="va">e</span>.<span class="at">movementX</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb11-6" title="6">  y <span class="op">+=</span> <span class="va">e</span>.<span class="at">movementY</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb11-7" title="7">  <span class="cf">if</span> (x <span class="op">&gt;</span> <span class="va">canvas</span>.<span class="at">width</span> <span class="op">+</span> RADIUS) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-8" title="8">    x <span class="op">=</span> <span class="op">-</span>RADIUS<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-9" title="9">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb11-10" title="10">  <span class="cf">if</span> (y <span class="op">&gt;</span> <span class="va">canvas</span>.<span class="at">height</span> <span class="op">+</span> RADIUS) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-11" title="11">    y <span class="op">=</span> <span class="op">-</span>RADIUS<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-12" title="12">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb11-13" title="13">  <span class="cf">if</span> (x <span class="op">&lt;</span> <span class="op">-</span>RADIUS) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-14" title="14">    x <span class="op">=</span> <span class="va">canvas</span>.<span class="at">width</span> <span class="op">+</span> RADIUS<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-15" title="15">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb11-16" title="16">  <span class="cf">if</span> (y <span class="op">&lt;</span> <span class="op">-</span>RADIUS) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-17" title="17">    y <span class="op">=</span> <span class="va">canvas</span>.<span class="at">height</span> <span class="op">+</span> RADIUS<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-18" title="18">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb11-19" title="19">  <span class="va">tracker</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&quot;X position: &quot;</span> <span class="op">+</span> x <span class="op">+</span> <span class="st">&quot;, Y position: &quot;</span> <span class="op">+</span> y<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-20" title="20"></a>
+<a class="sourceLine" id="cb11-21" title="21">  <span class="cf">if</span> (<span class="op">!</span>animation) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-22" title="22">    animation <span class="op">=</span> <span class="at">requestAnimationFrame</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-23" title="23">      animation <span class="op">=</span> <span class="kw">null</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb11-24" title="24">      <span class="at">canvasDraw</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-25" title="25">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-26" title="26">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb11-27" title="27"><span class="op">}</span></a></code></pre></div>
+<p>The <code>canvasDraw()</code> function draws the ball in the current <code>x</code> and <code>y</code> positions:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb12-1" title="1"><span class="kw">function</span> <span class="at">canvasDraw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb12-2" title="2">  <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&quot;black&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-3" title="3">  <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">canvas</span>.<span class="at">width</span><span class="op">,</span> <span class="va">canvas</span>.<span class="at">height</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-4" title="4">  <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&quot;#f00&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-5" title="5">  <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-6" title="6">  <span class="va">ctx</span>.<span class="at">arc</span>(x<span class="op">,</span> y<span class="op">,</span> RADIUS<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="at">degToRad</span>(<span class="dv">360</span>)<span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-7" title="7">  <span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-8" title="8"><span class="op">}</span></a></code></pre></div>
+<h2 id="iframe-limitations">iframe limitations</h2>
+<p>Pointer lock can only lock one iframe at a time. If you lock one iframe, you cannot try to lock another iframe and transfer the target to it; pointer lock will error out. To avoid this limitation, first unlock the locked iframe, and then lock the other.</p>
+<p>While iframes work by default, “sandboxed” iframes block Pointer lock. The ability to avoid this limitation, in the form of the attribute/value combination <code>&lt;iframe sandbox="allow-pointer-lock"&gt;</code>, is expected to appear in Chrome soon.</p>
+<h2 id="specifications">Specifications</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="https://w3c.github.io/pointerlock/">Pointer Lock</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<h3 id="element.requestpointerlock"><code>Element.requestPointerLock</code></h3>
+<p>{{Compat(“api.Element.requestPointerLock”)}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{domxref(“MouseEvent”)}}</li>
+</ul>

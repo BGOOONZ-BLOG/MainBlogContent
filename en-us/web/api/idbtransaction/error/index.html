@@ -1,0 +1,66 @@
+<p>{{ APIRef(“IndexedDB”) }}</p>
+<p>The <strong><code>IDBTransaction.error</code></strong> property of the {{domxref(“IDBTransaction”)}} interface returns one of several types of error when there is an unsuccessful transaction.</p>
+<p>{{AvailableInWorkers}}</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> myError <span class="op">=</span> <span class="va">transaction</span>.<span class="at">error</span><span class="op">;</span></a></code></pre></div>
+<h3 id="value">Value</h3>
+<p>A {{domxref(“DOMError”)}} containing the relevant error. In Chrome 48+/Firefox 58+ this property returns a {{domxref(“DOMException”)}} because <code>DOMError</code> has been removed from the DOM standard. The exact error is one of several possibilities. It can be a reference to the same error as the request object that raised it, or a transaction failure (for example {{exception(“QuotaExceededError”)}} or {{exception(“UnknownError”)}}).</p>
+<p>This property is <code>null</code> if the transaction is not finished, is finished and successfully committed, or was aborted with the {{domxref(“IDBTransaction.abort”)}} method.</p>
+<h2 id="example">Example</h2>
+<p>In the following code snippet, we open a read/write transaction on our database and add some data to an object store. Note also the functions attached to transaction event handlers to report on the outcome of the transaction opening in the event of success or failure. Note the <code>transaction.onerror = function(event) { };</code> block, making use of <code>transaction.error</code> to help in reporting what went wrong when the transaction was unsuccessful. For a full working example, see our <a href="https://github.com/mdn/to-do-notifications/">To-do Notifications</a> app (<a href="https://mdn.github.io/to-do-notifications/">view example live</a>.)</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">// Let us open our database</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">var</span> DBOpenRequest <span class="op">=</span> <span class="va">window</span>.<span class="va">indexedDB</span>.<span class="at">open</span>(<span class="st">&quot;toDoList&quot;</span><span class="op">,</span> <span class="dv">4</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="va">DBOpenRequest</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="va">note</span>.<span class="at">innerHTML</span> <span class="op">+=</span> <span class="st">&#39;&lt;li&gt;Database initialised.&lt;/li&gt;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6"></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="co">// store the result of opening the database in the db variable.</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="co">// This is used a lot below</span></a>
+<a class="sourceLine" id="cb2-9" title="9">  db <span class="op">=</span> <span class="va">DBOpenRequest</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10"></a>
+<a class="sourceLine" id="cb2-11" title="11">  <span class="co">// Run the addData() function to add the data to the database</span></a>
+<a class="sourceLine" id="cb2-12" title="12">  <span class="at">addData</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="op">};</span></a>
+<a class="sourceLine" id="cb2-14" title="14"></a>
+<a class="sourceLine" id="cb2-15" title="15"><span class="kw">function</span> <span class="at">addData</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-16" title="16">  <span class="co">// Create a new object ready for being inserted into the IDB</span></a>
+<a class="sourceLine" id="cb2-17" title="17">  <span class="kw">var</span> newItem <span class="op">=</span> [ <span class="op">{</span> <span class="dt">taskTitle</span><span class="op">:</span> <span class="st">&quot;Walk dog&quot;</span><span class="op">,</span> <span class="dt">hours</span><span class="op">:</span> <span class="dv">19</span><span class="op">,</span> <span class="dt">minutes</span><span class="op">:</span> <span class="dv">30</span><span class="op">,</span> <span class="dt">day</span><span class="op">:</span> <span class="dv">24</span><span class="op">,</span> <span class="dt">month</span><span class="op">:</span> <span class="st">&quot;December&quot;</span><span class="op">,</span> <span class="dt">year</span><span class="op">:</span> <span class="dv">2013</span><span class="op">,</span> <span class="dt">notified</span><span class="op">:</span> <span class="st">&quot;no&quot;</span> <span class="op">}</span> ]<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18"></a>
+<a class="sourceLine" id="cb2-19" title="19">  <span class="co">// open a read/write db transaction, ready for adding the data</span></a>
+<a class="sourceLine" id="cb2-20" title="20">  <span class="kw">var</span> transaction <span class="op">=</span> <span class="va">db</span>.<span class="at">transaction</span>([<span class="st">&quot;toDoList&quot;</span>]<span class="op">,</span> <span class="st">&quot;readwrite&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-21" title="21"></a>
+<a class="sourceLine" id="cb2-22" title="22">  <span class="co">// report on the success of opening the transaction</span></a>
+<a class="sourceLine" id="cb2-23" title="23">  <span class="va">transaction</span>.<span class="at">oncomplete</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-24" title="24">    <span class="va">note</span>.<span class="at">innerHTML</span> <span class="op">+=</span> <span class="st">&#39;&lt;li&gt;Transaction completed: database modification finished.&lt;/li&gt;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-25" title="25">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb2-26" title="26"></a>
+<a class="sourceLine" id="cb2-27" title="27">  <span class="va">transaction</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-28" title="28">    <span class="va">note</span>.<span class="at">innerHTML</span> <span class="op">+=</span> <span class="st">&#39;&lt;li&gt;Transaction not opened due to error: &#39;</span> <span class="op">+</span> <span class="va">transaction</span>.<span class="at">error</span> <span class="op">+</span> <span class="st">&#39;&lt;/li&gt;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-29" title="29">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb2-30" title="30"></a>
+<a class="sourceLine" id="cb2-31" title="31">  <span class="co">// create an object store on the transaction</span></a>
+<a class="sourceLine" id="cb2-32" title="32">  <span class="kw">var</span> objectStore <span class="op">=</span> <span class="va">transaction</span>.<span class="at">objectStore</span>(<span class="st">&quot;toDoList&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-33" title="33"></a>
+<a class="sourceLine" id="cb2-34" title="34">  <span class="co">// add our newItem object to the object store</span></a>
+<a class="sourceLine" id="cb2-35" title="35">  <span class="kw">var</span> objectStoreRequest <span class="op">=</span> <span class="va">objectStore</span>.<span class="at">add</span>(newItem[<span class="dv">0</span>])<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-36" title="36"></a>
+<a class="sourceLine" id="cb2-37" title="37">  <span class="va">objectStoreRequest</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-38" title="38">    <span class="co">// report the success of the request (this does not mean the item</span></a>
+<a class="sourceLine" id="cb2-39" title="39">    <span class="co">// has been stored successfully in the DB - for that you need transaction.onsuccess)</span></a>
+<a class="sourceLine" id="cb2-40" title="40">    <span class="va">note</span>.<span class="at">innerHTML</span> <span class="op">+=</span> <span class="st">&#39;&lt;li&gt;Request successful.&lt;/li&gt;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-41" title="41">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb2-42" title="42"><span class="op">};</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/IndexedDB_API/Using_IndexedDB">Using IndexedDB</a></li>
+<li>Starting transactions: {{domxref(“IDBDatabase”)}}</li>
+<li>Using transactions: {{domxref(“IDBTransaction”)}}</li>
+<li>Setting a range of keys: {{domxref(“IDBKeyRange”)}}</li>
+<li>Retrieving and making changes to your data: {{domxref(“IDBObjectStore”)}}</li>
+<li>Using cursors: {{domxref(“IDBCursor”)}}</li>
+<li>Reference example: <a href="https://github.com/mdn/to-do-notifications/tree/gh-pages">To-do Notifications</a> (<a href="https://mdn.github.io/to-do-notifications/">view example live</a>.)</li>
+</ul>

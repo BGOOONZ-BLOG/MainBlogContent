@@ -1,0 +1,60 @@
+<p>{{APIRef(“Resource Timing API”)}} {{AvailableInWorkers}} {{securecontext_header}}</p>
+<p>The <strong><code>PerformanceServerTiming</code></strong> interface surfaces server metrics that are sent with the response in the {{HTTPHeader(“Server-Timing”)}} HTTP header.</p>
+<p>This interface is restricted to the same origin, but you can use the {{HTTPHeader(“Timing-Allow-Origin”)}} header to specify the domains that are allowed to access the server metrics. Note that this interface is only available in secure contexts (HTTPS) in some browsers.</p>
+<h2 id="properties">Properties</h2>
+<ul>
+<li>{{domxref(‘PerformanceServerTiming.description’)}}{{readonlyInline}}
+<ul>
+<li>: A {{domxref(“DOMString”)}} value of the server-specified metric description, or an empty string.</li>
+</ul></li>
+<li>{{domxref(‘PerformanceServerTiming.duration’)}}{{readonlyInline}}
+<ul>
+<li>: A double that contains the server-specified metric duration, or value <code>0.0</code>.</li>
+</ul></li>
+<li>{{domxref(‘PerformanceServerTiming.name’)}}{{readonlyInline}}
+<ul>
+<li>: A {{domxref(“DOMString”)}} value of the server-specified metric name.</li>
+</ul></li>
+</ul>
+<h2 id="methods">Methods</h2>
+<ul>
+<li>{{domxref(‘PerformanceServerTiming.toJSON()’)}}
+<ul>
+<li>: Returns a {{domxref(“DOMString”)}} that is the JSON representation of the <code>PerformanceServerTiming</code> object.</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<p>Given a server that sends the {{HTTPHeader(“Server-Timing”)}} header, for example a node.js server like this:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> http <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;http&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">function</span> <span class="at">requestHandler</span>(request<span class="op">,</span> response) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-4" title="4">  <span class="kw">const</span> headers <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-5" title="5">    <span class="st">&#39;Server-Timing&#39;</span><span class="op">:</span> <span class="vs">`</span></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="vs">      cache;desc=&quot;Cache Read&quot;;dur=23.2,</span></a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="vs">      db;dur=53,</span></a>
+<a class="sourceLine" id="cb1-8" title="8"><span class="vs">      app;dur=47.2</span></a>
+<a class="sourceLine" id="cb1-9" title="9"><span class="vs">    `</span>.<span class="at">replace</span>(<span class="ss">/</span><span class="sc">\n</span><span class="ss">/g</span><span class="op">,</span> <span class="st">&#39;&#39;</span>)</a>
+<a class="sourceLine" id="cb1-10" title="10">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb1-11" title="11">  <span class="va">response</span>.<span class="at">writeHead</span>(<span class="dv">200</span><span class="op">,</span> headers)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-12" title="12">  <span class="va">response</span>.<span class="at">write</span>(<span class="st">&#39;&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-13" title="13">  <span class="cf">return</span> <span class="at">setTimeout</span>(_ <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-14" title="14">   <span class="va">response</span>.<span class="at">end</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-15" title="15"> <span class="op">},</span> <span class="dv">1000</span>)</a>
+<a class="sourceLine" id="cb1-16" title="16"><span class="op">};</span></a>
+<a class="sourceLine" id="cb1-17" title="17"></a>
+<a class="sourceLine" id="cb1-18" title="18"><span class="va">http</span>.<span class="at">createServer</span>(requestHandler).<span class="at">listen</span>(<span class="dv">3000</span>).<span class="at">on</span>(<span class="st">&#39;error&#39;</span><span class="op">,</span> <span class="va">console</span>.<span class="at">error</span>)<span class="op">;</span></a></code></pre></div>
+<p>The <code>PerformanceServerTiming</code> entries are now observable from JavaScript via the {{domxref(“PerformanceResourceTiming.serverTiming”)}} property:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">let</span> entries <span class="op">=</span> <span class="va">performance</span>.<span class="at">getEntriesByType</span>(<span class="st">&#39;resource&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="va">console</span>.<span class="at">log</span>(entries[<span class="dv">0</span>].<span class="at">serverTiming</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="co">// 0: PerformanceServerTiming {name: &quot;cache&quot;, duration: 23.2, description: &quot;Cache Read&quot;}</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="co">// 1: PerformanceServerTiming {name: &quot;db&quot;, duration: 53, description: &quot;&quot;}</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="co">// 2: PerformanceServerTiming {name: &quot;app&quot;, duration: 47.2, description: &quot;&quot;}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{HTTPHeader(“Server-Timing”)}}</li>
+<li>{{domxref(“PerformanceResourceTiming.serverTiming”)}}</li>
+</ul>

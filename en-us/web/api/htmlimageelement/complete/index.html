@@ -1,0 +1,50 @@
+<p>{{APIRef(“HTML DOM”)}}</p>
+<p>The read-only {{domxref(“HTMLImageElement”)}} interface’s <strong><code>complete</code></strong> attribute is a Boolean value which indicates whether or not the image has completely loaded.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">let</span> doneLoading <span class="op">=</span> <span class="va">htmlImageElement</span>.<span class="at">complete</span><span class="op">;</span></a></code></pre></div>
+<h3 id="value">Value</h3>
+<p>A Boolean value which is <code>true</code> if the image has completely loaded; otherwise, the value is <code>false</code>.</p>
+<p>The image is considered completely loaded if any of the following are true:</p>
+<ul>
+<li>Neither the {{htmlattrxref(“src”, “img”)}} nor the {{htmlattrxref(“srcset”, “img”)}} attribute is specified.</li>
+<li>The <code>srcset</code> attribute is absent and the <code>src</code> attribute, while specified, is the empty string (<code>""</code>).</li>
+<li>The image resource has been fully fetched and has been queued for rendering/compositing.</li>
+<li>The image element has previously determined that the image is fully available and ready for use.</li>
+<li>The image is “broken;” that is, the image failed to load due to an error or because image loading is disabled.</li>
+</ul>
+<p>It’s worth noting that due to the image potentially being received asynchronously, the value of <code>complete</code> may change while your script is running.</p>
+<h2 id="examples">Examples</h2>
+<p>Consider a photo library app that provides the ability to open images into a lightbox mode for improved viewing as well as editing of the image. These photos may be very large, so you don’t want to wait for them to load, so your code uses <code>async</code>/<code>await</code> to load the images in the background.</p>
+<p>But imagine that you have other code that needs to only run when the image has completed loading, such as a command that performs red-eye removal on the image in the lightbox. While ideally this command wouldn’t even be executed if the image hasn’t fully loaded, for improved reliability you want to check to ensure this is the case.</p>
+<p>So the <code>fixRedEyeCommand()</code> function, which is called by the button that triggers red-eye removal, checks the value of the lightbox image’s <code>complete</code> property before attempting to do its work. This is demonstrated in the code below.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">let</span> lightboxElem <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;#lightbox&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">let</span> lightboxImgElem <span class="op">=</span> <span class="va">lightboxElem</span>.<span class="at">querySelector</span>(<span class="st">&quot;img&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">let</span> lightboxControlsElem <span class="op">=</span> <span class="va">lightboxElem</span>.<span class="at">querySelector</span>(<span class="st">&quot;.toolbar&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="kw">async</span> <span class="kw">function</span> <span class="at">loadImage</span>(url<span class="op">,</span> elem) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="cf">return</span> <span class="kw">new</span> <span class="at">Promise</span>((resolve<span class="op">,</span> reject) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-7" title="7">    <span class="va">elem</span>.<span class="at">onload</span> <span class="op">=</span> () <span class="kw">=&gt;</span> <span class="at">resolve</span>(elem)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">    <span class="va">elem</span>.<span class="at">onerror</span> <span class="op">=</span> reject<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9">    <span class="va">elem</span>.<span class="at">src</span> <span class="op">=</span> url<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-12" title="12"></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="kw">async</span> <span class="kw">function</span> <span class="at">lightBox</span>(url) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-14" title="14">  <span class="va">lightboxElem</span>.<span class="va">style</span>.<span class="at">display</span> <span class="op">=</span> <span class="st">&quot;block&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-15" title="15">  <span class="cf">await</span> <span class="at">loadImage</span>(<span class="st">&quot;https://somesite.net/huge-image.jpg&quot;</span><span class="op">,</span> lightboxImgElem)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-16" title="16">  <span class="va">lightboxControlsElem</span>.<span class="at">disabled</span> <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-17" title="17"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-18" title="18"></a>
+<a class="sourceLine" id="cb2-19" title="19"><span class="co">/* ... */</span></a>
+<a class="sourceLine" id="cb2-20" title="20"></a>
+<a class="sourceLine" id="cb2-21" title="21"><span class="kw">function</span> <span class="at">fixRedEyeCommand</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-22" title="22">  <span class="cf">if</span> (<span class="va">lightboxElem</span>.<span class="va">style</span>.<span class="at">display</span> <span class="op">===</span> <span class="st">&quot;block&quot;</span> <span class="op">&amp;&amp;</span> <span class="va">lightboxImgElem</span>.<span class="at">complete</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-23" title="23">    <span class="at">fixRedEye</span>(lightboxImgElem)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-24" title="24">  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-25" title="25">    <span class="co">/* can&#39;t start doing this until the image is fully loaded */</span></a>
+<a class="sourceLine" id="cb2-26" title="26">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-27" title="27"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

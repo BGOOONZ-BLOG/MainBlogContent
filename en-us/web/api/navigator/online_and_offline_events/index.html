@@ -1,0 +1,82 @@
+<p>Some browsers implement <a href="https://www.whatwg.org/specs/web-apps/current-work/#offline">Online/Offline events</a> from the <a href="https://www.whatwg.org/specs/web-apps/current-work/">WHATWG Web Applications 1.0 specification</a>.</p>
+<h2 id="overview">Overview</h2>
+<p>In order to build a good offline-capable web application, you need to know when your application is actually offline. You also need to know when your application has returned to an ‘online’ status again. Effectively, the requirements break down as such:</p>
+<ol type="1">
+<li>You need to know when the user comes back online, so that you can re-synchronize with the server.</li>
+<li>You need to know when the user is offline, so that you can queue your server requests for a later time.</li>
+</ol>
+<p>It is this process that online/offline events help to simplify.</p>
+<p>Unfortunately, these events aren’t fully reliable. If you need greater reliability, or if the API isn’t implemented in the browser, you can use other signals to detect if you are offline including using service workers and <a href="http://www.html5rocks.com/en/mobile/workingoffthegrid.html#toc-xml-http-request">responses from XMLHttpRequest</a>.</p>
+<h2 id="api">API</h2>
+<h3 id="navigator.online"><code>navigator.onLine</code></h3>
+<p><a href="/en-US/docs/DOM/window.navigator.onLine"><code>navigator.onLine</code></a> is a property that maintains a <code>true</code>/<code>false</code> value (<code>true</code> for online, <code>false</code> for offline).</p>
+<p>This property is updated whenever the user switches into “Offline Mode” (File → Work Offline in Firefox). Additionally, this property should update whenever a browser is no longer capable of connecting to the network. According to the <a href="https://www.whatwg.org/specs/web-apps/current-work/#offline">specification</a>:</p>
+<blockquote>
+<p>The <code>navigator.onLine</code> attribute must return false if the user agent will not contact the network when the user follows links or when a script requests a remote page (or knows that such an attempt would fail)…</p>
+</blockquote>
+<p>Firefox 2 updates this property when switching to/from the browser’s Offline mode.  <a href="/en-US/Firefox/Releases/41#Miscellaneous">Firefox 41</a> updates this property also when the OS reports a change in network connectivity on Windows, Linux, and OS X.</p>
+<p>This property existed in older versions of Firefox and Internet Explorer (the specification based itself off of these prior implementations), so you can begin using it immediately. Network status autodetection was implemented in Firefox 2.</p>
+<h3 id="online-and-offline-events">“<code>online</code>” and “<code>offline</code>” events</h3>
+<p><a href="/en-US/docs/Firefox_3_for_developers">Firefox 3</a> introduces two new events: “<a href="/en-US/docs/Web/API/document.ononline"><code>online</code></a>” and “<a href="/en-US/docs/Web/API/document.onoffline"><code>offline</code></a>”. These two events are fired on the <code>&lt;body&gt;</code> of each page when the browser switches between online and offline mode. Additionally, the events bubble up from <code>document.body</code>, to <code>document</code>, ending at <code>window</code>. Both events are non-cancellable (you can’t prevent the user from coming online, or going offline).</p>
+<p><a href="/en-US/Firefox/Releases/41#Miscellaneous">Firefox 41</a> fires these events when the OS reports a change in network connectivity on Windows, Linux, and OS X.</p>
+<p>You can register listeners for these events in a few familiar ways:</p>
+<ul>
+<li>using <a href="/en-US/docs/DOM/element.addEventListener"><code>addEventListener</code></a> on the <code>window</code>, <code>document</code>, or <code>document.body</code></li>
+<li>by setting the <code>.ononline</code> or <code>.onoffline</code> properties on <code>document</code> or <code>document.body</code> to a JavaScript <code>Function</code> object. (<strong>Note:</strong> using <code>window.ononline</code> or <code>window.onoffline</code> will not work for compatibility reasons.)</li>
+<li>by specifying <code>ononline="..."</code> or <code>onoffline="..."</code> attributes on the <code>&lt;body&gt;</code> tag in the HTML markup.</li>
+</ul>
+<h2 id="example">Example</h2>
+<p>There’s <a href="https://bugzilla.mozilla.org/attachment.cgi?id=220609">a simple test case</a> that you can run to verify that the events are working (does not work in Chrome due to attaching the event listener to document.body).</p>
+<p>Here’s the JavaScript part:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">window</span>.<span class="at">addEventListener</span>(<span class="st">&#39;load&#39;</span><span class="op">,</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="kw">var</span> status <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;status&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="kw">var</span> log <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;log&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-4" title="4"></a>
+<a class="sourceLine" id="cb1-5" title="5">  <span class="kw">function</span> <span class="at">updateOnlineStatus</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-6" title="6">    <span class="kw">var</span> condition <span class="op">=</span> <span class="va">navigator</span>.<span class="at">onLine</span> <span class="op">?</span> <span class="st">&quot;online&quot;</span> : <span class="st">&quot;offline&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-7" title="7"></a>
+<a class="sourceLine" id="cb1-8" title="8">    <span class="va">status</span>.<span class="at">className</span> <span class="op">=</span> condition<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-9" title="9">    <span class="va">status</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="va">condition</span>.<span class="at">toUpperCase</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-10" title="10"></a>
+<a class="sourceLine" id="cb1-11" title="11">    <span class="va">log</span>.<span class="at">insertAdjacentHTML</span>(<span class="st">&quot;beforeend&quot;</span><span class="op">,</span> <span class="st">&quot;Event: &quot;</span> <span class="op">+</span> <span class="va">event</span>.<span class="at">type</span> <span class="op">+</span> <span class="st">&quot;; Status: &quot;</span> <span class="op">+</span> condition)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-12" title="12">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-13" title="13"></a>
+<a class="sourceLine" id="cb1-14" title="14">  <span class="va">window</span>.<span class="at">addEventListener</span>(<span class="st">&#39;online&#39;</span><span class="op">,</span>  updateOnlineStatus)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-15" title="15">  <span class="va">window</span>.<span class="at">addEventListener</span>(<span class="st">&#39;offline&#39;</span><span class="op">,</span> updateOnlineStatus)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-16" title="16"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>A touch of CSS</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb2-1" title="1"><span class="pp">#status</span> {</a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">position</span>: <span class="dv">fixed</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="kw">width</span>: <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="kw">font</span>: <span class="dv">bold</span> <span class="dv">1</span><span class="dt">em</span> <span class="dv">sans-serif</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="kw">color</span>: <span class="cn">#FFF</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="kw">padding</span>: <span class="dv">0.5</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7">}</a>
+<a class="sourceLine" id="cb2-8" title="8"></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="pp">#log</span> {</a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="kw">padding</span>: <span class="dv">2.5</span><span class="dt">em</span> <span class="dv">0.5</span><span class="dt">em</span> <span class="dv">0.5</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11">  <span class="kw">font</span>: <span class="dv">1</span><span class="dt">em</span> <span class="dv">sans-serif</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12">}</a>
+<a class="sourceLine" id="cb2-13" title="13"></a>
+<a class="sourceLine" id="cb2-14" title="14"><span class="fu">.online</span> {</a>
+<a class="sourceLine" id="cb2-15" title="15">  <span class="kw">background</span>: <span class="cn">green</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-16" title="16">}</a>
+<a class="sourceLine" id="cb2-17" title="17"></a>
+<a class="sourceLine" id="cb2-18" title="18"><span class="fu">.offline</span> {</a>
+<a class="sourceLine" id="cb2-19" title="19">  <span class="kw">background</span>: <span class="cn">red</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-20" title="20">}</a></code></pre></div>
+<p>And the corresponding HTML:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;status&quot;</span><span class="kw">&gt;&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;log&quot;</span><span class="kw">&gt;&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw">&lt;p&gt;</span>This is a test<span class="kw">&lt;/p&gt;</span></a></code></pre></div>
+<p>Here’s the live result</p>
+<p>{{ EmbedLiveSample(‘Example’, ‘100%’, ‘150’) }}</p>
+<h2 id="notes">Notes</h2>
+<p>If the API isn’t implemented in the browser, you can use other signals to detect if you are offline including using service workers and <a href="http://www.html5rocks.com/en/mobile/workingoffthegrid.html#toc-xml-http-request">responses from XMLHttpRequest</a>.</p>
+<h2 id="references">References</h2>
+<ul>
+<li><a href="https://www.whatwg.org/specs/web-apps/current-work/#offline">‘Online/Offline events’ section from the WHATWG Web Applications 1.0 Specification</a></li>
+<li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id=336359">The bug tracking online/offline events implementation in Firefox</a> and a <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=336682">follow-up</a></li>
+<li><a href="https://bugzilla.mozilla.org/attachment.cgi?id=220609">A simple test case</a></li>
+<li><a href="http://ejohn.org/blog/offline-events/">An explanation of Online/Offline events</a></li>
+</ul>

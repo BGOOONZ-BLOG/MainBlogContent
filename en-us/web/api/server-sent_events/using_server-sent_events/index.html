@@ -1,0 +1,140 @@
+<p>{{DefaultAPISidebar(“Server Sent Events”)}}</p>
+<p>Developing a web application that uses <a href="/en-US/docs/Web/API/Server-sent_events">server-sent events</a> is straightforward. You’ll need a bit of code on the server to stream events to the front-end, but the client side code works almost identically to <a href="/en-US/docs/Web/API/WebSockets_API">websockets</a> in part of handling incoming events. This is a one-way connection, so you can’t send events from a client to a server.</p>
+<h2 id="receiving-events-from-the-server">Receiving events from the server</h2>
+<p>The server-sent event API is contained in the {{domxref(“EventSource”)}} interface; to open a connection to the server to begin receiving events from it, create a new <code>EventSource</code> object with the URL of a script that generates the events. For example:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> evtSource <span class="op">=</span> <span class="kw">new</span> <span class="at">EventSource</span>(<span class="st">&quot;ssedemo.php&quot;</span>)<span class="op">;</span></a></code></pre></div>
+<p>If the event generator script is hosted on a different origin, a new <code>EventSource</code> object should be created with both the URL and an options dictionary. For example, assuming the client script is on <code>example.com</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> evtSource <span class="op">=</span> <span class="kw">new</span> <span class="at">EventSource</span>(<span class="st">&quot;//api.example.com/ssedemo.php&quot;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">withCredentials</span><span class="op">:</span> <span class="kw">true</span> <span class="op">}</span> )<span class="op">;</span></a></code></pre></div>
+<p>Once you’ve instantiated your event source, you can begin listening for messages from the server by attaching a handler for the {{event(“message”)}} event:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="va">evtSource</span>.<span class="at">onmessage</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">const</span> newElement <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;li&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="kw">const</span> eventList <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;list&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4"></a>
+<a class="sourceLine" id="cb3-5" title="5">  <span class="va">newElement</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&quot;message: &quot;</span> <span class="op">+</span> <span class="va">event</span>.<span class="at">data</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="va">eventList</span>.<span class="at">appendChild</span>(newElement)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7"><span class="op">}</span></a></code></pre></div>
+<p>This code listens for incoming messages (that is, notices from the server that do not have an <code>event</code> field on them) and appends the message text to a list in the document’s HTML.</p>
+<p>You can also listen for events with <code>addEventListener()</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="va">evtSource</span>.<span class="at">addEventListener</span>(<span class="st">&quot;ping&quot;</span><span class="op">,</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="kw">const</span> newElement <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;li&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3">  <span class="kw">const</span> eventList <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;list&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-4" title="4">  <span class="kw">const</span> time <span class="op">=</span> <span class="va">JSON</span>.<span class="at">parse</span>(<span class="va">event</span>.<span class="at">data</span>).<span class="at">time</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="va">newElement</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&quot;ping at &quot;</span> <span class="op">+</span> time<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-6" title="6">  <span class="va">eventList</span>.<span class="at">appendChild</span>(newElement)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-7" title="7"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>This code is similar, except that it will be called automatically whenever the server sends a message with the <code>event</code> field set to “ping”; it then parses the JSON in the <code>data</code> field and outputs that information.</p>
+<blockquote>
+<p><strong>Warning:</strong> When <strong>not used over HTTP/2</strong>, SSE suffers from a limitation to the maximum number of open connections, which can be especially painful when opening multiple tabs, as the limit is <em>per browser</em> and is set to a very low number (6). The issue has been marked as “Won’t fix” in <a href="https://bugs.chromium.org/p/chromium/issues/detail?id=275955">Chrome</a> and <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=906896">Firefox</a>. This limit is per browser + domain, which means that you can open 6 SSE connections across all of the tabs to <code>www.example1.com</code> and another 6 SSE connections to <code>www.example2.com</code> (per <a href="https://stackoverflow.com/a/5326159/1905229">Stackoverflow</a>). When using HTTP/2, the maximum number of simultaneous <em>HTTP streams</em> is negotiated between the server and the client (defaults to 100).</p>
+</blockquote>
+<h2 id="sending-events-from-the-server">Sending events from the server</h2>
+<p>The server-side script that sends events needs to respond using the MIME type <code>text/event-stream</code>. Each notification is sent as a block of text terminated by a pair of newlines. For details on the format of the event stream, see {{ anch(“Event stream format”) }}.</p>
+<p>The {{Glossary(“PHP”)}} code for the example we’re using here follows:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode php"><code class="sourceCode php"><a class="sourceLine" id="cb5-1" title="1"><span class="fu">date_default_timezone_set</span><span class="ot">(</span><span class="st">&quot;America/New_York&quot;</span><span class="ot">);</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="fu">header</span><span class="ot">(</span><span class="st">&quot;Cache-Control: no-cache&quot;</span><span class="ot">);</span></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="fu">header</span><span class="ot">(</span><span class="st">&quot;Content-Type: text/event-stream&quot;</span><span class="ot">);</span></a>
+<a class="sourceLine" id="cb5-4" title="4"></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="kw">$counter</span> = <span class="fu">rand</span><span class="ot">(</span><span class="dv">1</span><span class="ot">,</span> <span class="dv">10</span><span class="ot">);</span></a>
+<a class="sourceLine" id="cb5-6" title="6"><span class="kw">while</span> <span class="ot">(</span><span class="kw">true</span><span class="ot">)</span> {</a>
+<a class="sourceLine" id="cb5-7" title="7">  <span class="co">// Every second, send a &quot;ping&quot; event.</span></a>
+<a class="sourceLine" id="cb5-8" title="8"></a>
+<a class="sourceLine" id="cb5-9" title="9">  <span class="kw">echo</span> <span class="st">&quot;event: ping</span><span class="kw">\n</span><span class="st">&quot;</span><span class="ot">;</span></a>
+<a class="sourceLine" id="cb5-10" title="10">  <span class="kw">$curDate</span> = <span class="fu">date</span><span class="ot">(</span><span class="kw">DATE_ISO8601</span><span class="ot">);</span></a>
+<a class="sourceLine" id="cb5-11" title="11">  <span class="kw">echo</span> <span class="st">&#39;data: {&quot;time&quot;: &quot;&#39;</span> . <span class="kw">$curDate</span> . <span class="st">&#39;&quot;}&#39;</span><span class="ot">;</span></a>
+<a class="sourceLine" id="cb5-12" title="12">  <span class="kw">echo</span> <span class="st">&quot;</span><span class="kw">\n\n</span><span class="st">&quot;</span><span class="ot">;</span></a>
+<a class="sourceLine" id="cb5-13" title="13"></a>
+<a class="sourceLine" id="cb5-14" title="14">  <span class="co">// Send a simple message at random intervals.</span></a>
+<a class="sourceLine" id="cb5-15" title="15"></a>
+<a class="sourceLine" id="cb5-16" title="16">  <span class="kw">$counter</span>--<span class="ot">;</span></a>
+<a class="sourceLine" id="cb5-17" title="17"></a>
+<a class="sourceLine" id="cb5-18" title="18">  <span class="kw">if</span> <span class="ot">(</span>!<span class="kw">$counter</span><span class="ot">)</span> {</a>
+<a class="sourceLine" id="cb5-19" title="19">    <span class="kw">echo</span> <span class="st">&#39;data: This is a message at time &#39;</span> . <span class="kw">$curDate</span> . <span class="st">&quot;</span><span class="kw">\n\n</span><span class="st">&quot;</span><span class="ot">;</span></a>
+<a class="sourceLine" id="cb5-20" title="20">    <span class="kw">$counter</span> = <span class="fu">rand</span><span class="ot">(</span><span class="dv">1</span><span class="ot">,</span> <span class="dv">10</span><span class="ot">);</span></a>
+<a class="sourceLine" id="cb5-21" title="21">  }</a>
+<a class="sourceLine" id="cb5-22" title="22"></a>
+<a class="sourceLine" id="cb5-23" title="23">  <span class="fu">ob_end_flush</span><span class="ot">();</span></a>
+<a class="sourceLine" id="cb5-24" title="24">  <span class="fu">flush</span><span class="ot">();</span></a>
+<a class="sourceLine" id="cb5-25" title="25"></a>
+<a class="sourceLine" id="cb5-26" title="26">  <span class="co">// Break the loop if the client aborted the connection (closed the page)</span></a>
+<a class="sourceLine" id="cb5-27" title="27"></a>
+<a class="sourceLine" id="cb5-28" title="28">  <span class="kw">if</span> <span class="ot">(</span> <span class="fu">connection_aborted</span><span class="ot">()</span> <span class="ot">)</span> <span class="kw">break</span><span class="ot">;</span></a>
+<a class="sourceLine" id="cb5-29" title="29"></a>
+<a class="sourceLine" id="cb5-30" title="30">  <span class="fu">sleep</span><span class="ot">(</span><span class="dv">1</span><span class="ot">);</span></a>
+<a class="sourceLine" id="cb5-31" title="31">}</a></code></pre></div>
+<p>The code above generates an event every second, with the event type “ping”. Each event’s data is a JSON object containing the ISO 8601 timestamp corresponding to the time at which the event was generated. At random intervals, a simple message (with no event type) is sent. The loop will keep running independent of the connection status, so a check is included to break the loop if the connection has been closed (e.g. client closes the page).</p>
+<blockquote>
+<p><strong>Note:</strong> You can find a full example that uses the code shown in this article on GitHub — see <a href="https://github.com/mdn/dom-examples/tree/master/server-sent-events">Simple SSE demo using PHP.</a></p>
+</blockquote>
+<h2 id="error-handling">Error handling</h2>
+<p>When problems occur (such as a network timeout or issues pertaining to <a href="/en-US/docs/Web/HTTP/CORS">access control</a>), an error event is generated. You can take action on this programmatically by implementing the <code>onerror</code> callback on the <code>EventSource</code> object:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="va">evtSource</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span>(err) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="va">console</span>.<span class="at">error</span>(<span class="st">&quot;EventSource failed:&quot;</span><span class="op">,</span> err)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="op">};</span></a></code></pre></div>
+<h2 id="closing-event-streams">Closing event streams</h2>
+<p>By default, if the connection between the client and server closes, the connection is restarted. The connection is terminated with the <code>.close()</code> method.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="va">evtSource</span>.<span class="at">close</span>()<span class="op">;</span></a></code></pre></div>
+<h2 id="event-stream-format">Event stream format</h2>
+<p>The event stream is a simple stream of text data which must be encoded using <a href="/en-US/docs/Glossary/UTF-8">UTF-8</a>. Messages in the event stream are separated by a pair of newline characters. A colon as the first character of a line is in essence a comment, and is ignored.</p>
+<blockquote>
+<p><strong>Note:</strong> The comment line can be used to prevent connections from timing out; a server can send a comment periodically to keep the connection alive.</p>
+</blockquote>
+<p>Each message consists of one or more lines of text listing the fields for that message. Each field is represented by the field name, followed by a colon, followed by the text data for that field’s value.</p>
+<h3 id="fields">Fields</h3>
+<p>Each message received has some combination of the following fields, one per line:</p>
+<ul>
+<li><code>event</code>
+<ul>
+<li>: A string identifying the type of event described. If this is specified, an event will be dispatched on the browser to the listener for the specified event name; the website source code should use <code>addEventListener()</code> to listen for named events. The <code>onmessage</code> handler is called if no event name is specified for a message.</li>
+</ul></li>
+<li><code>data</code>
+<ul>
+<li>: The data field for the message. When the <code>EventSource</code> receives multiple consecutive lines that begin with <code>data:</code>, <a href="https://www.w3.org/TR/eventsource/#dispatchMessage">it concatenates them</a>, inserting a newline character between each one. Trailing newlines are removed.</li>
+</ul></li>
+<li><code>id</code>
+<ul>
+<li>: The event ID to set the <a href="/en-US/docs/Web/API/EventSource"><code>EventSource</code></a> object’s last event ID value.</li>
+</ul></li>
+<li><code>retry</code>
+<ul>
+<li>: The reconnection time. If the connection to the server is lost, the browser will wait for the specified time before attempting to reconnect. This must be an integer, specifying the reconnection time in milliseconds. If a non-integer value is specified, the field is ignored.</li>
+</ul></li>
+</ul>
+<p>All other field names are ignored.</p>
+<blockquote>
+<p><strong>Note:</strong> If a line doesn’t contain a colon, the entire line is treated as the field name with an empty value string.</p>
+</blockquote>
+<h3 id="examples">Examples</h3>
+<h4 id="data-only-messages">Data-only messages</h4>
+<p>In the following example, there are three messages sent. The first is just a comment, since it starts with a colon character. As mentioned previously, this can be useful as a keep-alive mechanism if messages might not be sent regularly.</p>
+<p>The second message contains a data field with the value “some text”. The third message contains a data field with the value “another messagetwo lines”. Note the newline special character in the value.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb8-1" title="1"><span class="bu">:</span> this is a test stream</a>
+<a class="sourceLine" id="cb8-2" title="2"></a>
+<a class="sourceLine" id="cb8-3" title="3"><span class="ex">data</span>: some text</a>
+<a class="sourceLine" id="cb8-4" title="4"></a>
+<a class="sourceLine" id="cb8-5" title="5"><span class="ex">data</span>: another message</a>
+<a class="sourceLine" id="cb8-6" title="6"><span class="ex">data</span>: with two lines</a></code></pre></div>
+<h4 id="named-events">Named events</h4>
+<p>This example sends named events. Each has an event name specified by the <code>event</code> field, and a <code>data</code> field whose value is an appropriate JSON string with the data needed for the client to act on the event. The <code>data</code> field could, of course, have any string data; it doesn’t have to be JSON.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb9-1" title="1"><span class="ex">event</span>: userconnect</a>
+<a class="sourceLine" id="cb9-2" title="2"><span class="ex">data</span>: {<span class="st">&quot;username&quot;</span>: <span class="st">&quot;bobby&quot;</span>, <span class="st">&quot;time&quot;</span>: <span class="st">&quot;02:33:48&quot;</span>}</a>
+<a class="sourceLine" id="cb9-3" title="3"></a>
+<a class="sourceLine" id="cb9-4" title="4"><span class="ex">event</span>: usermessage</a>
+<a class="sourceLine" id="cb9-5" title="5"><span class="ex">data</span>: {<span class="st">&quot;username&quot;</span>: <span class="st">&quot;bobby&quot;</span>, <span class="st">&quot;time&quot;</span>: <span class="st">&quot;02:34:11&quot;</span>, <span class="st">&quot;text&quot;</span>: <span class="st">&quot;Hi everyone.&quot;</span>}</a>
+<a class="sourceLine" id="cb9-6" title="6"></a>
+<a class="sourceLine" id="cb9-7" title="7"><span class="ex">event</span>: userdisconnect</a>
+<a class="sourceLine" id="cb9-8" title="8"><span class="ex">data</span>: {<span class="st">&quot;username&quot;</span>: <span class="st">&quot;bobby&quot;</span>, <span class="st">&quot;time&quot;</span>: <span class="st">&quot;02:34:23&quot;</span>}</a>
+<a class="sourceLine" id="cb9-9" title="9"></a>
+<a class="sourceLine" id="cb9-10" title="10"><span class="ex">event</span>: usermessage</a>
+<a class="sourceLine" id="cb9-11" title="11"><span class="ex">data</span>: {<span class="st">&quot;username&quot;</span>: <span class="st">&quot;sean&quot;</span>, <span class="st">&quot;time&quot;</span>: <span class="st">&quot;02:34:36&quot;</span>, <span class="st">&quot;text&quot;</span>: <span class="st">&quot;Bye, bobby.&quot;</span>}</a></code></pre></div>
+<h4 id="mixing-and-matching">Mixing and matching</h4>
+<p>You don’t have to use just unnamed messages or typed events; you can mix them together in a single event stream.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb10-1" title="1"><span class="ex">event</span>: userconnect</a>
+<a class="sourceLine" id="cb10-2" title="2"><span class="ex">data</span>: {<span class="st">&quot;username&quot;</span>: <span class="st">&quot;bobby&quot;</span>, <span class="st">&quot;time&quot;</span>: <span class="st">&quot;02:33:48&quot;</span>}</a>
+<a class="sourceLine" id="cb10-3" title="3"></a>
+<a class="sourceLine" id="cb10-4" title="4"><span class="ex">data</span>: Here<span class="st">&#39;s a system message of some kind that will get used</span></a>
+<a class="sourceLine" id="cb10-5" title="5"><span class="st">data: to accomplish some task.</span></a>
+<a class="sourceLine" id="cb10-6" title="6"></a>
+<a class="sourceLine" id="cb10-7" title="7"><span class="st">event: usermessage</span></a>
+<a class="sourceLine" id="cb10-8" title="8"><span class="st">data: {&quot;username&quot;: &quot;bobby&quot;, &quot;time&quot;: &quot;02:34:11&quot;, &quot;text&quot;: &quot;Hi everyone.&quot;}</span></a></code></pre></div>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<h3 id="eventsource"><code>EventSource</code></h3>
+<p>{{Compat(“api.EventSource”)}}</p>

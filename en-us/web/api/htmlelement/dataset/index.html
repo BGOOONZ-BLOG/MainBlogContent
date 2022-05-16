@@ -1,0 +1,87 @@
+<p>{{APIRef(“HTML DOM”)}}</p>
+<p>The <strong><code>dataset</code></strong> read-only property of the {{DOMxRef(“HTMLElement”)}} interface provides read/write access to <a href="/en-US/docs/Web/HTML/Global_attributes/data-*">custom data attributes</a> (<code>data-*</code>) on elements. It exposes a map of strings ({{domxref(“DOMStringMap”)}}) with an entry for each <code>data-*</code> attribute.</p>
+<blockquote>
+<p><strong>Note:</strong> The <code>dataset</code> property itself can be read, but not directly written. Instead, all writes must be to the individual properties within the <code>dataset</code>, which in turn represent the data attributes.</p>
+</blockquote>
+<p>An HTML <code>data-*</code> attribute and its corresponding DOM <code>dataset.property</code> modify their shared name according to where they are read or written:</p>
+<ul>
+<li>In HTML
+<ul>
+<li>: The attribute name begins with <code>data-</code>. It can contain only letters, numbers, dashes (<code>-</code>), periods (<code>.</code>), colons (<code>:</code>), and underscores (<code>_</code>). Any ASCII capital letters (<code>A</code> to <code>Z</code>) are converted to lowercase.</li>
+</ul></li>
+<li>In JavaScript
+<ul>
+<li>: The property name of a custom data attribute is the same as the HTML attribute without the <code>data-</code> prefix, and removes single dashes (<code>-</code>) for when to capitalize the property’s “camelCased” name.</li>
+</ul></li>
+</ul>
+<p>In addition to the information below, you’ll find a how-to guide for using HTML data attributes in our article <a href="/en-US/docs/Learn/HTML/Howto/Use_data_attributes"><em>Using data attributes</em>.</a></p>
+<h3 id="name-conversion">Name conversion</h3>
+<ul>
+<li><p><code>dash-style</code> to <code>camelCase</code> conversion</p>
+<ul>
+<li><p>: A custom data attribute name is transformed to a key for the {{ domxref(“DOMStringMap”) }} entry by the following:</p>
+<ol type="1">
+<li>Lowercase all ASCII capital letters (<code>A</code> to <code>Z</code>);</li>
+<li>Remove the prefix <code>data-</code> (including the dash);</li>
+<li>For any dash (<code>U+002D</code>) followed by an ASCII lowercase letter <code>a</code> to <code>z</code>, remove the dash and uppercase the letter;</li>
+<li>Other characters (including other dashes) are left unchanged.</li>
+</ol></li>
+</ul></li>
+<li><p><code>camelCase</code> to <code>dash-style</code> conversion</p>
+<ul>
+<li><p>: The opposite transformation, which maps a key to an attribute name, uses the following:</p>
+<ol type="1">
+<li><strong>Restriction:</strong> Before transformation, a dash <em>must not</em> be immediately followed by an ASCII lowercase letter <code>a</code> to <code>z</code>;</li>
+<li>Add the <code>data-</code> prefix;</li>
+<li>Add a dash before any ASCII uppercase letter <code>A</code> to <code>Z</code>, then lowercase the letter;</li>
+<li>Other characters are left unchanged.</li>
+</ol></li>
+</ul></li>
+</ul>
+<p>For example, a <code>data-abc-def</code> attribute corresponds to <code>dataset.abcDef</code>.</p>
+<h3 id="accessing-values">Accessing values</h3>
+<ul>
+<li>Attributes can be set and read by the camelCase name/key as an object property of the dataset: <code>element.dataset.keyname</code></li>
+<li>Attributes can also be set and read using bracket syntax: <code>element.dataset['keyname']</code></li>
+<li>The <a href="/en-US/docs/Web/JavaScript/Reference/Operators/in"><code>in</code> operator</a> can check if a given attribute exists: <code>'keyname' in element.dataset</code></li>
+</ul>
+<h3 id="setting-values">Setting values</h3>
+<ul>
+<li><p>When the attribute is set, its value is always converted to a string.</p>
+<p>For example: <code>element.dataset.example = null</code> is converted into <code>data-example="null"</code>.</p></li>
+<li><p>To remove an attribute, you can use the <a href="/en-US/docs/Web/JavaScript/Reference/Operators/delete"><code>delete</code> operator</a>: <code>delete element.dataset.keyname</code></p></li>
+</ul>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> dataAttrMap <span class="op">=</span> <span class="va">element</span>.<span class="at">dataset</span></a></code></pre></div>
+<h3 id="value">Value</h3>
+<p>A {{domxref(“DOMStringMap”)}}.</p>
+<h2 id="examples">Examples</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;user&quot;</span><span class="ot"> data-id=</span><span class="st">&quot;1234567890&quot;</span><span class="ot"> data-user=</span><span class="st">&quot;johndoe&quot;</span><span class="ot"> data-date-of-birth</span><span class="kw">&gt;</span>John Doe<span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> el <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#user&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="co">// el.id === &#39;user&#39;</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="co">// el.dataset.id === &#39;1234567890&#39;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="co">// el.dataset.user === &#39;johndoe&#39;</span></a>
+<a class="sourceLine" id="cb3-6" title="6"><span class="co">// el.dataset.dateOfBirth === &#39;&#39;</span></a>
+<a class="sourceLine" id="cb3-7" title="7"></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="co">// set a data attribute</span></a>
+<a class="sourceLine" id="cb3-9" title="9"><span class="va">el</span>.<span class="va">dataset</span>.<span class="at">dateOfBirth</span> <span class="op">=</span> <span class="st">&#39;1960-10-03&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10"><span class="co">// Result: el.dataset.dateOfBirth === &#39;1960-10-03&#39;</span></a>
+<a class="sourceLine" id="cb3-11" title="11"></a>
+<a class="sourceLine" id="cb3-12" title="12"><span class="kw">delete</span> <span class="va">el</span>.<span class="va">dataset</span>.<span class="at">dateOfBirth</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-13" title="13"><span class="co">// Result: el.dataset.dateOfBirth === undefined</span></a>
+<a class="sourceLine" id="cb3-14" title="14"></a>
+<a class="sourceLine" id="cb3-15" title="15"><span class="cf">if</span> (<span class="st">&#39;someDataAttr&#39;</span> <span class="kw">in</span> <span class="va">el</span>.<span class="at">dataset</span> <span class="op">===</span> <span class="kw">false</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-16" title="16">  <span class="va">el</span>.<span class="va">dataset</span>.<span class="at">someDataAttr</span> <span class="op">=</span> <span class="st">&#39;mydata&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-17" title="17">  <span class="co">// Result: &#39;someDataAttr&#39; in el.dataset === true</span></a>
+<a class="sourceLine" id="cb3-18" title="18"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>The HTML <a href="/en-US/docs/Web/HTML/Global_attributes/data-*"><code>data-*</code></a> class of global attributes.</li>
+<li><a href="/en-US/docs/Learn/HTML/Howto/Use_data_attributes">Using data attributes</a></li>
+<li>{{DOMxRef(“Element.getAttribute()”)}} and {{DOMxRef(“Element.setAttribute()”)}}</li>
+</ul>

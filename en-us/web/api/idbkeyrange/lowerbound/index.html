@@ -1,0 +1,73 @@
+<p>{{ APIRef(“IndexedDB”) }}</p>
+<p>The <strong><code>lowerBound()</code></strong> method of the {{domxref(“IDBKeyRange”)}} interface creates a new key range with only a lower bound. By default, it includes the lower endpoint value and is closed.</p>
+<p>{{AvailableInWorkers}}</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> myIDBKeyRange <span class="op">=</span> <span class="va">IDBKeyRange</span>.<span class="at">lowerBound</span>(lower)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">var</span> myIDBKeyRange <span class="op">=</span> <span class="va">IDBKeyRange</span>.<span class="at">lowerBound</span>(lower<span class="op">,</span> open)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li>lower
+<ul>
+<li>: specifies the lower bound of the new key range.</li>
+</ul></li>
+<li>open {{optional_inline}}
+<ul>
+<li>: indicates whether the lower bound excludes the endpoint value. The default is false.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>{{domxref(“IDBKeyRange”)}}: The newly created key range.</p>
+<h3 id="exceptions">Exceptions</h3>
+<p>This method may raise a {{domxref(“DOMException”)}} of the following type:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Exception</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>DataError</code></td>
+<td>The value parameter passed was not a valid key.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="example">Example</h2>
+<p>The following example illustrates how you’d use a lower bound key range. Here we declare <code>keyRangeValue = IDBKeyRange.lowerBound("F", false);</code> — a range that includes the value “F” and everthing after it. We open a transaction (using {{domxref(“IDBTransaction”)}}) and an object store, and open a Cursor with {{domxref(“IDBObjectStore.openCursor”)}}, declaring <code>keyRangeValue</code> as its optional key range value. This means that the cursor will only retrieve the record with the key value “F” and all that come after it. If we used <code>IDBKeyRange.lowerBound("F", true);</code>, then the range would not include “F”; only the values after it.</p>
+<blockquote>
+<p><strong>Note:</strong> For a more complete example allowing you to experiment with key range, have a look at our <a href="https://github.com/mdn/indexeddb-examples/tree/master/idbkeyrange">IDBKeyRange-example</a> repo (<a href="https://mdn.github.io/indexeddb-examples/idbkeyrange/">view the example live too</a>.)</p>
+</blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">function</span> <span class="at">displayData</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">var</span> keyRangeValue <span class="op">=</span> <span class="va">IDBKeyRange</span>.<span class="at">lowerBound</span>(<span class="st">&quot;F&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="kw">var</span> transaction <span class="op">=</span> <span class="va">db</span>.<span class="at">transaction</span>([<span class="st">&#39;fThings&#39;</span>]<span class="op">,</span> <span class="st">&#39;readonly&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="kw">var</span> objectStore <span class="op">=</span> <span class="va">transaction</span>.<span class="at">objectStore</span>(<span class="st">&#39;fThings&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6"></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="va">objectStore</span>.<span class="at">openCursor</span>(keyRangeValue).<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-8" title="8">    <span class="kw">var</span> cursor <span class="op">=</span> <span class="va">event</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9">      <span class="cf">if</span>(cursor) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-10" title="10">        <span class="kw">var</span> listItem <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;li&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11">        <span class="va">listItem</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="st">&#39;&lt;strong&gt;&#39;</span> <span class="op">+</span> <span class="va">cursor</span>.<span class="va">value</span>.<span class="at">fThing</span> <span class="op">+</span> <span class="st">&#39;&lt;/strong&gt;, &#39;</span> <span class="op">+</span> <span class="va">cursor</span>.<span class="va">value</span>.<span class="at">fRating</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12">        <span class="va">list</span>.<span class="at">appendChild</span>(listItem)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13"></a>
+<a class="sourceLine" id="cb2-14" title="14">        <span class="va">cursor</span>.<span class="at">continue</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-15" title="15">      <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-16" title="16">        <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Entries all displayed.&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-17" title="17">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-18" title="18">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb2-19" title="19">  <span class="op">};</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/IndexedDB_API/Using_IndexedDB">Using IndexedDB</a></li>
+<li>Starting transactions: {{domxref(“IDBDatabase”)}}</li>
+<li>Using transactions: {{domxref(“IDBTransaction”)}}</li>
+<li>Setting a range of keys: {{domxref(“IDBKeyRange”)}}</li>
+<li>Retrieving and making changes to your data: {{domxref(“IDBObjectStore”)}}</li>
+<li>Using cursors: {{domxref(“IDBCursor”)}}</li>
+<li>Reference example: <a href="https://github.com/mdn/to-do-notifications/tree/gh-pages">To-do Notifications</a> (<a href="https://mdn.github.io/to-do-notifications/">view example live</a>.)</li>
+</ul>

@@ -1,0 +1,88 @@
+<p>{{APIRef(“Streams”)}}</p>
+<p>The <strong><code>cancel()</code></strong> method of the {{domxref(“ReadableStream”)}} interface returns a {{jsxref(“Promise”)}} that resolves when the stream is canceled.</p>
+<p>Cancel is used when you’ve completely finished with the stream and don’t need any more data from it, even if there are chunks enqueued waiting to be read. That data is lost after cancel is called, and the stream is not readable any more. To read those chunks still and not completely get rid of the stream, you’d use {{domxref(“ReadableStreamDefaultController.close()”)}}.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> promise <span class="op">=</span> <span class="va">readableStream</span>.<span class="at">cancel</span>(reason)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li>reason {{optional_inline}}
+<ul>
+<li>: A human-readable reason for the cancellation. The underlying source may or may not use it.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A {{jsxref(“Promise”)}}, which fulfills with the value given in the <code>reason</code> parameter.</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li>TypeError
+<ul>
+<li>: The stream you are trying to cancel is not a {{domxref(“ReadableStream”)}}, or it is locked.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>In Jake Archibald’s <a href="https://jsbin.com/gameboy/edit?js,console">cancelling a fetch</a> example, a stream is used to fetch the WHATWG HTML spec chunk by chunk; each chunk is searched for the string “service workers”. When the search terms is found, <code>cancel()</code> is used to cancel the stream — the job is finished so it is no longer needed.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> searchTerm <span class="op">=</span> <span class="st">&quot;service workers&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="co">// Chars to show either side of the result in the match</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">var</span> contextBefore <span class="op">=</span> <span class="dv">30</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="kw">var</span> contextAfter <span class="op">=</span> <span class="dv">30</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="kw">var</span> caseInsensitive <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="kw">var</span> url <span class="op">=</span> <span class="st">&#39;https://html.spec.whatwg.org/&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="va">console</span>.<span class="at">log</span>(<span class="vs">`Searching &#39;</span><span class="sc">${</span>url<span class="sc">}</span><span class="vs">&#39; for &#39;</span><span class="sc">${</span>searchTerm<span class="sc">}</span><span class="vs">&#39;`</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="at">fetch</span>(url).<span class="at">then</span>(response <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-11" title="11">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Received headers&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12"></a>
+<a class="sourceLine" id="cb2-13" title="13">  <span class="kw">var</span> decoder <span class="op">=</span> <span class="kw">new</span> <span class="at">TextDecoder</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14">  <span class="kw">var</span> reader <span class="op">=</span> <span class="va">response</span>.<span class="va">body</span>.<span class="at">getReader</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-15" title="15">  <span class="kw">var</span> toMatch <span class="op">=</span> caseInsensitive <span class="op">?</span> <span class="va">searchTerm</span>.<span class="at">toLowerCase</span>() : searchTerm<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-16" title="16">  <span class="kw">var</span> bufferSize <span class="op">=</span> <span class="va">Math</span>.<span class="at">max</span>(<span class="va">toMatch</span>.<span class="at">length</span> <span class="op">-</span> <span class="dv">1</span><span class="op">,</span> contextBefore)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-17" title="17"></a>
+<a class="sourceLine" id="cb2-18" title="18">  <span class="kw">var</span> bytesReceived <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-19" title="19">  <span class="kw">var</span> buffer <span class="op">=</span> <span class="st">&#39;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-20" title="20">  <span class="kw">var</span> matchFoundAt <span class="op">=</span> <span class="dv">-1</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-21" title="21"></a>
+<a class="sourceLine" id="cb2-22" title="22">  <span class="cf">return</span> <span class="va">reader</span>.<span class="at">read</span>().<span class="at">then</span>(<span class="kw">function</span> <span class="at">process</span>(result) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-23" title="23">    <span class="cf">if</span> (<span class="va">result</span>.<span class="at">done</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-24" title="24">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Failed to find match&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-25" title="25">      <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-26" title="26">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-27" title="27"></a>
+<a class="sourceLine" id="cb2-28" title="28">    bytesReceived <span class="op">+=</span> <span class="va">result</span>.<span class="va">value</span>.<span class="at">length</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-29" title="29">    <span class="va">console</span>.<span class="at">log</span>(<span class="vs">`Received </span><span class="sc">${</span>bytesReceived<span class="sc">}</span><span class="vs"> bytes of data so far`</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-30" title="30"></a>
+<a class="sourceLine" id="cb2-31" title="31">    buffer <span class="op">+=</span> <span class="va">decoder</span>.<span class="at">decode</span>(<span class="va">result</span>.<span class="at">value</span><span class="op">,</span> <span class="op">{</span><span class="dt">stream</span><span class="op">:</span> <span class="kw">true</span><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-32" title="32"></a>
+<a class="sourceLine" id="cb2-33" title="33">    <span class="co">// already found match &amp; just context-gathering?</span></a>
+<a class="sourceLine" id="cb2-34" title="34">    <span class="cf">if</span> (matchFoundAt <span class="op">===</span> <span class="dv">-1</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-35" title="35">      matchFoundAt <span class="op">=</span> (caseInsensitive <span class="op">?</span> <span class="va">buffer</span>.<span class="at">toLowerCase</span>() : buffer).<span class="at">indexOf</span>(toMatch)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-36" title="36">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-37" title="37"></a>
+<a class="sourceLine" id="cb2-38" title="38">    <span class="cf">if</span> (matchFoundAt <span class="op">===</span> <span class="dv">-1</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-39" title="39">      buffer <span class="op">=</span> <span class="va">buffer</span>.<span class="at">slice</span>(<span class="op">-</span>bufferSize)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-40" title="40">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-41" title="41">    <span class="cf">else</span> <span class="cf">if</span> (<span class="va">buffer</span>.<span class="at">slice</span>(matchFoundAt <span class="op">+</span> <span class="va">toMatch</span>.<span class="at">length</span>).<span class="at">length</span> <span class="op">&gt;=</span> contextAfter) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-42" title="42">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Here&#39;s the match:&quot;</span>)</a>
+<a class="sourceLine" id="cb2-43" title="43">      <span class="va">console</span>.<span class="at">log</span>(<span class="va">buffer</span>.<span class="at">slice</span>(</a>
+<a class="sourceLine" id="cb2-44" title="44">        <span class="va">Math</span>.<span class="at">max</span>(<span class="dv">0</span><span class="op">,</span> matchFoundAt <span class="op">-</span> contextBefore)<span class="op">,</span></a>
+<a class="sourceLine" id="cb2-45" title="45">        matchFoundAt <span class="op">+</span> <span class="va">toMatch</span>.<span class="at">length</span> <span class="op">+</span> contextAfter</a>
+<a class="sourceLine" id="cb2-46" title="46">      ))<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-47" title="47">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Cancelling fetch&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-48" title="48">      <span class="va">reader</span>.<span class="at">cancel</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-49" title="49">      <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-50" title="50">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-51" title="51">    <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-52" title="52">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Found match, but need more context…&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-53" title="53">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-54" title="54"></a>
+<a class="sourceLine" id="cb2-55" title="55">    <span class="co">// keep reading</span></a>
+<a class="sourceLine" id="cb2-56" title="56">    <span class="cf">return</span> <span class="va">reader</span>.<span class="at">read</span>().<span class="at">then</span>(process)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-57" title="57">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-58" title="58"><span class="op">}</span>).<span class="at">catch</span>(err <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-59" title="59">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Something went wrong. See devtools for details. Does the response lack CORS headers?&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-60" title="60">  <span class="cf">throw</span> err<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-61" title="61"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

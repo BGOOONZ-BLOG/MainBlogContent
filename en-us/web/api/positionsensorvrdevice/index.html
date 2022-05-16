@@ -1,0 +1,69 @@
+<p>{{deprecated_header}}{{APIRef(“WebVR API”)}}{{SeeCompatTable}}</p>
+<p>The <strong><code>PositionSensorVRDevice</code></strong> interface of the <a href="/en-US/docs/Web/API/WebVR_API">WebVR API</a> represents VR hardware’s position sensor. You can access information such as the current position and orientation of the sensor in relation to the head mounted display through the {{domxref(“PositionSensorVRDevice.getState()”)}} method.</p>
+<h2 id="methods">Methods</h2>
+<ul>
+<li>{{domxref(“PositionSensorVRDevice.getState()”)}}
+<ul>
+<li>: Returns the current state of the position sensor for the current frame (e.g. within the current {{domxref(“window.requestAnimationFrame”)}} callback) or for the previous frame, contained with a {{domxref(“VRPose”)}} object. This is the method you’d normally want to use, versus <code>getImmediateState()</code>.</li>
+</ul></li>
+<li>{{domxref(“PositionSensorVRDevice.getImmediateState()”)}}
+<ul>
+<li>: Returns the current instantaneous position sensor state. This is intended to only be used rarely, for certain special uses, for example sampling the immediate position of a hand orientation sensor — or at least it will be, in the future.</li>
+</ul></li>
+<li>{{domxref(“PositionSensorVRDevice.resetSensor()”)}}
+<ul>
+<li>: <em>Can be used to reset the sensor if desired, returning the</em> position and orientation values to zero.</li>
+</ul></li>
+</ul>
+<h2 id="properties">Properties</h2>
+<p><em>This interface doesn’t define any properties of its own, but it does inherit the properties of its parent interface, {{domxref(“VRDisplay”)}}.</em></p>
+<ul>
+<li>{{domxref(“VRDisplay.hardwareUnitId”)}} {{readonlyInline}}
+<ul>
+<li>: Returns the distinct hardware ID for the overall hardware unit that this <code>VRDevice</code> is a part of. All devices that are part of the same physical piece of hardware will have the same <code>hardwareUnitId</code>.</li>
+</ul></li>
+<li>{{domxref(“VRDisplay.displayId”)}} {{readonlyInline}}
+<ul>
+<li>: Returns the ID for this specific <code>VRDevice</code>. The ID shouldn’t change across browser restarts, allowing configuration data to be saved based on it.</li>
+</ul></li>
+<li>{{domxref(“VRDisplay.displayName”)}} {{readonlyInline}}
+<ul>
+<li>: A human-readable name to identify the <code>VRDevice</code>.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>The following example is taken from our <a href="https://mdn.github.io/webvr-tests/positionsensorvrdevice/">positionsensorvrdevice</a> demo, which uses the WebVR API to update the view of a simple {{domxref(“CanvasRenderingContext2D”,“2D canvas”)}} scene on each frame of a {{domxref(“window.requestAnimationFrame()”,“requestAnimationFrame”)}} loop.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">function</span> <span class="at">setView</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="kw">var</span> posState <span class="op">=</span> <span class="va">gPositionSensor</span>.<span class="at">getState</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="cf">if</span>(<span class="va">posState</span>.<span class="at">hasPosition</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-4" title="4">    <span class="va">posPara</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;Position: x&#39;</span> <span class="op">+</span> <span class="at">roundToTwo</span>(<span class="va">posState</span>.<span class="va">position</span>.<span class="at">x</span>) <span class="op">+</span> <span class="st">&quot; y&quot;</span></a>
+<a class="sourceLine" id="cb1-5" title="5">                                <span class="op">+</span> <span class="at">roundToTwo</span>(<span class="va">posState</span>.<span class="va">position</span>.<span class="at">y</span>) <span class="op">+</span> <span class="st">&quot; z&quot;</span></a>
+<a class="sourceLine" id="cb1-6" title="6">                                <span class="op">+</span> <span class="at">roundToTwo</span>(<span class="va">posState</span>.<span class="va">position</span>.<span class="at">z</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-7" title="7">    xPos <span class="op">=</span> <span class="op">-</span><span class="va">posState</span>.<span class="va">position</span>.<span class="at">x</span> <span class="op">*</span> WIDTH <span class="op">*</span> <span class="dv">2</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-8" title="8">    yPos <span class="op">=</span> <span class="va">posState</span>.<span class="va">position</span>.<span class="at">y</span> <span class="op">*</span> HEIGHT <span class="op">*</span> <span class="dv">2</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-9" title="9">    <span class="cf">if</span>(<span class="op">-</span><span class="va">posState</span>.<span class="va">position</span>.<span class="at">z</span> <span class="op">&gt;</span> <span class="fl">0.01</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-10" title="10">      zPos <span class="op">=</span> <span class="op">-</span><span class="va">posState</span>.<span class="va">position</span>.<span class="at">z</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-11" title="11">    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-12" title="12">      zPos <span class="op">=</span> <span class="fl">0.01</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-13" title="13">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-14" title="14">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-15" title="15"></a>
+<a class="sourceLine" id="cb1-16" title="16">  <span class="cf">if</span>(<span class="va">posState</span>.<span class="at">hasOrientation</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-17" title="17">    <span class="va">orientPara</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;Orientation: x&#39;</span> <span class="op">+</span> <span class="at">roundToTwo</span>(<span class="va">posState</span>.<span class="va">orientation</span>.<span class="at">x</span>) <span class="op">+</span> <span class="st">&quot; y&quot;</span></a>
+<a class="sourceLine" id="cb1-18" title="18">                                <span class="op">+</span> <span class="at">roundToTwo</span>(<span class="va">posState</span>.<span class="va">orientation</span>.<span class="at">y</span>) <span class="op">+</span> <span class="st">&quot; z&quot;</span></a>
+<a class="sourceLine" id="cb1-19" title="19">                                <span class="op">+</span> <span class="at">roundToTwo</span>(<span class="va">posState</span>.<span class="va">orientation</span>.<span class="at">z</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-20" title="20">    xOrient <span class="op">=</span> <span class="va">posState</span>.<span class="va">orientation</span>.<span class="at">x</span> <span class="op">*</span> WIDTH<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-21" title="21">    yOrient <span class="op">=</span> <span class="op">-</span><span class="va">posState</span>.<span class="va">orientation</span>.<span class="at">y</span> <span class="op">*</span> HEIGHT <span class="op">*</span> <span class="dv">2</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-22" title="22">    zOrient <span class="op">=</span> <span class="va">posState</span>.<span class="va">orientation</span>.<span class="at">z</span> <span class="op">*</span> <span class="dv">180</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-23" title="23"></a>
+<a class="sourceLine" id="cb1-24" title="24">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-25" title="25"><span class="op">}</span></a></code></pre></div>
+<p>Here we are grabbing a {{domxref(“VRPose”)}} object using {{domxref(“PositionSensorVRDevice.getState()”)}} and storing it in <code>posState</code>. We then check to make sure that position and orientation info is present in the current frame using {{domxref(“VRPose.hasPosition”)}} and {{domxref(“VRPose.hasOrientation”)}} (these return <code>null</code> if, for example the head mounted display is turned off or not pointing at the position sensor, which would cause an error.)</p>
+<p>We then output the x, y and z position and orientation values for informational purposes, and use those values to update the <code>xPos</code>, <code>yPos</code>, <code>zPos</code>, <code>xOrient</code>, <code>yOrient</code>, and <code>zOrient</code> variables, which are used to update the scene rendering on each frame.</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/WebVR_API">WebVR API homepage</a>.</li>
+<li><a href="https://mixedreality.mozilla.org/" class="uri">https://mixedreality.mozilla.org/</a> — demos, downloads, and other resources from the Mozilla VR team.</li>
+</ul>

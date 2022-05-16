@@ -1,0 +1,185 @@
+<p>{{APIRef(“Web Crypto API”)}}{{SecureContext_header}}</p>
+<p>The <strong><code>deriveKey()</code></strong> method of the {{domxref(“SubtleCrypto”)}} interface can be used to derive a secret key from a master key.</p>
+<p>It takes as arguments some initial key material, the derivation algorithm to use, and the desired properties for the key to derive. It returns a <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise" title="The Promise object represents the eventual completion (or failure) of an asynchronous operation, and its resulting value."><code>Promise</code></a> which will be fulfilled with a {{domxref(“CryptoKey”)}} object representing the new key.</p>
+<p>It’s worth noting that the three key derivation algorithms you can use have quite different characteristics and are appropriate in quite different situations. See <a href="#supported_algorithms">Supported algorithms</a> for some more detail on this.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> result <span class="op">=</span> <span class="va">crypto</span>.<span class="va">subtle</span>.<span class="at">deriveKey</span>(</a>
+<a class="sourceLine" id="cb1-2" title="2">    algorithm<span class="op">,</span></a>
+<a class="sourceLine" id="cb1-3" title="3">    baseKey<span class="op">,</span></a>
+<a class="sourceLine" id="cb1-4" title="4">    derivedKeyAlgorithm<span class="op">,</span></a>
+<a class="sourceLine" id="cb1-5" title="5">    extractable<span class="op">,</span></a>
+<a class="sourceLine" id="cb1-6" title="6">    keyUsages</a>
+<a class="sourceLine" id="cb1-7" title="7">)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><p><code>algorithm</code> is an object defining the <a href="#supported_algorithms">derivation algorithm</a> to use.</p>
+<ul>
+<li>To use <a href="#ecdh">ECDH</a>, pass an <a href="/en-US/docs/Web/API/EcdhKeyDeriveParams"><code>EcdhKeyDeriveParams</code></a> object.</li>
+<li>To use <a href="#hkdf">HKDF</a>, pass an <a href="/en-US/docs/Web/API/HkdfParams"><code>HkdfParams</code></a> object.</li>
+<li>To use <a href="#pbkdf2">PBKDF2</a>, pass a <a href="/en-US/docs/Web/API/Pbkdf2Params"><code>Pbkdf2Params</code></a> object.</li>
+</ul></li>
+<li><em><code>baseKey</code></em> is a {{domxref(“CryptoKey”)}} representing the input to the derivation algorithm. If <code>algorithm</code> is ECDH, then this will be the ECDH private key. Otherwise it will be the initial key material for the derivation function: for example, for PBKDF2 it might be a password, imported as a <code>CryptoKey</code> using <a href="/en-US/docs/Web/API/SubtleCrypto/importKey"><code>SubtleCrypto.importKey()</code></a>.</li>
+<li><p><code>derivedKeyAlgorithm</code> is an object defining the algorithm the derived key will be used for.</p>
+<ul>
+<li>For <a href="/en-US/docs/Web/API/SubtleCrypto/sign#hmac">HMAC</a>: pass an <a href="/en-US/docs/Web/API/HmacKeyGenParams"><code>HmacKeyGenParams</code></a> object.</li>
+<li>For <a href="/en-US/docs/Web/API/SubtleCrypto/encrypt#aes-ctr">AES-CTR</a>, <a href="/en-US/docs/Web/API/SubtleCrypto/encrypt#aes-cbc">AES-CBC</a>, <a href="/en-US/docs/Web/API/SubtleCrypto/encrypt#aes-gcm">AES-GCM</a>, or <a href="/en-US/docs/Web/API/SubtleCrypto/encrypt#aes-kw">AES-KW</a>: pass an <a href="/en-US/docs/Web/API/AesKeyGenParams"><code>AesKeyGenParams</code></a> object.</li>
+</ul></li>
+<li><code>extractable</code> is a boolean value indicating whether it will be possible to export  the key using {{domxref(“SubtleCrypto.exportKey()”)}} or {{domxref(“SubtleCrypto.wrapKey()”)}}.</li>
+<li><p><code>keyUsages</code>  is an {{jsxref(“Array”)}} indicating what can be done with the derived key. Note that the key usages must be allowed by the algorithm set in <code>derivedKeyAlgorithm</code>. Possible values of the array are:</p>
+<ul>
+<li><code>encrypt</code>: The key may be used to {{domxref(“SubtleCrypto.encrypt()”, “encrypt”)}} messages.</li>
+<li><code>decrypt</code>: The key may be used to {{domxref(“SubtleCrypto.decrypt()”, “decrypt”)}} messages.</li>
+<li><code>sign</code>: The key may be used to {{domxref(“SubtleCrypto.sign()”, “sign”)}} messages.</li>
+<li><code>verify</code>: The key may be used to {{domxref(“SubtleCrypto.verify()”, “verify”)}} signatures.</li>
+<li><code>deriveKey</code>: The key may be used in {{domxref(“SubtleCrypto.deriveKey()”, “deriving a new key”)}}.</li>
+<li><code>deriveBits</code>: The key may be used in {{domxref(“SubtleCrypto.deriveBits()”, “deriving bits”)}}.</li>
+<li><code>wrapKey</code>: The key may be used to {{domxref(“SubtleCrypto.wrapKey()”, “wrap a key”)}}.</li>
+<li><code>unwrapKey</code>: The key may be used to {{domxref(“SubtleCrypto.unwrapKey()”, “unwrap a key”)}}.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<ul>
+<li><code>result</code> is a {{jsxref(“Promise”)}} that fulfills with a {{domxref(“CryptoKey”)}}.</li>
+</ul>
+<h3 id="exceptions">Exceptions</h3>
+<p>The promise is rejected when one of the following exceptions are encountered:</p>
+<ul>
+<li>{{exception(“InvalidAccessError”)}}</li>
+<li>Raised when the master key is not a key for the requested derivation algorithm or if the <em>keyUsages</em> value of that key doesn’t contain <code>deriveKey</code>.</li>
+<li>{{exception(“NotSupported”)}}</li>
+<li>Raised when trying to use an algorithm that is either unknown or isn’t suitable for derivation, or if the algorithm requested for the derived key doesn’t define a key length.</li>
+<li>{{exception(“SyntaxError”)}}</li>
+<li>Raised when <em><code>keyUsages</code></em> is empty but the unwrapped key is of type <code>secret</code> or <code>private</code>.</li>
+</ul>
+<h2 id="supported-algorithms">Supported algorithms</h2>
+<p>The three algorithms supported by <code>deriveKey()</code> have quite different characteristics and are appropriate in different situations.</p>
+<h3 id="ecdh">ECDH</h3>
+<p>ECDH (Elliptic Curve Diffie-Hellman) is a <em>key-agreement algorithm</em>. It enables two people who each have an ECDH public/private key pair to generate a shared secret: that is, a secret that they — and noone else — share. They can then use this shared secret as a symmetric key to secure their communication, or can use the secret as an input to derive such a key (for example, using the HKDF algorithm).</p>
+<p>ECDH is specified in <a href="https://datatracker.ietf.org/doc/html/rfc6090">RFC 6090</a>.</p>
+<h3 id="hkdf">HKDF</h3>
+<p>HKDF is a <em>key derivation function</em>. It’s designed to derive key material from some high-entropy input, such as the output of an ECDH key agreement operation.</p>
+<p>It’s <em>not</em> designed to derive keys from relatively low-entropy inputs such as passwords. For that, use PBKDF2.</p>
+<p>HKDF is specified in <a href="https://datatracker.ietf.org/doc/html/rfc5869">RFC 5869</a>.</p>
+<h3 id="pbkdf2">PBKDF2</h3>
+<p>PBKDF2 is also a <em>key derivation function</em>. It’s designed to derive key material from some relatively low-entropy input, such as a password. It derives key material by applying a function such as HMAC to the input password along with some salt, and repeating this process many times. The more times the process is repeated, the more computationally expensive key derivation is: this makes it harder for an attacker to use brute-force to discover the key using a dictionary attack.</p>
+<p>PBKDF2 is specified in <a href="https://datatracker.ietf.org/doc/html/rfc2898">RFC 2898</a>.</p>
+<h2 id="examples">Examples</h2>
+<blockquote>
+<p><strong>Note:</strong> You can <a href="https://mdn.github.io/dom-examples/web-crypto/derive-key/index.html">try the working examples</a> on GitHub.</p>
+</blockquote>
+<h3 id="ecdh-1">ECDH</h3>
+<p>In this example Alice and Bob each generate an ECDH key pair, then exchange public keys. They then use <code>deriveKey()</code> to derive a shared AES key, that they could use to encrypt messages. <a href="https://github.com/mdn/dom-examples/blob/master/web-crypto/derive-key/ecdh.js">See the complete code on GitHub.</a></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">/*</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="co">Derive an AES key, given:</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="co">- our ECDH private key</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="co">- their ECDH public key</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="co">*/</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="kw">function</span> <span class="at">deriveSecretKey</span>(privateKey<span class="op">,</span> publicKey) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="cf">return</span> <span class="va">window</span>.<span class="va">crypto</span>.<span class="va">subtle</span>.<span class="at">deriveKey</span>(</a>
+<a class="sourceLine" id="cb2-8" title="8">    <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-9" title="9">      <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;ECDH&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-10" title="10">      <span class="dt">public</span><span class="op">:</span> publicKey</a>
+<a class="sourceLine" id="cb2-11" title="11">    <span class="op">},</span></a>
+<a class="sourceLine" id="cb2-12" title="12">    privateKey<span class="op">,</span></a>
+<a class="sourceLine" id="cb2-13" title="13">    <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-14" title="14">      <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;AES-GCM&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-15" title="15">      <span class="dt">length</span><span class="op">:</span> <span class="dv">256</span></a>
+<a class="sourceLine" id="cb2-16" title="16">    <span class="op">},</span></a>
+<a class="sourceLine" id="cb2-17" title="17">    <span class="kw">false</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-18" title="18">    [<span class="st">&quot;encrypt&quot;</span><span class="op">,</span> <span class="st">&quot;decrypt&quot;</span>]</a>
+<a class="sourceLine" id="cb2-19" title="19">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-20" title="20"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-21" title="21"></a>
+<a class="sourceLine" id="cb2-22" title="22"><span class="kw">async</span> <span class="kw">function</span> <span class="at">agreeSharedSecretKey</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-23" title="23">  <span class="co">// Generate 2 ECDH key pairs: one for Alice and one for Bob</span></a>
+<a class="sourceLine" id="cb2-24" title="24">  <span class="co">// In more normal usage, they would generate their key pairs</span></a>
+<a class="sourceLine" id="cb2-25" title="25">  <span class="co">// separately and exchange public keys securely</span></a>
+<a class="sourceLine" id="cb2-26" title="26">  <span class="kw">let</span> alicesKeyPair <span class="op">=</span> <span class="cf">await</span> <span class="va">window</span>.<span class="va">crypto</span>.<span class="va">subtle</span>.<span class="at">generateKey</span>(</a>
+<a class="sourceLine" id="cb2-27" title="27">    <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-28" title="28">      <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;ECDH&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-29" title="29">      <span class="dt">namedCurve</span><span class="op">:</span> <span class="st">&quot;P-384&quot;</span></a>
+<a class="sourceLine" id="cb2-30" title="30">    <span class="op">},</span></a>
+<a class="sourceLine" id="cb2-31" title="31">    <span class="kw">false</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-32" title="32">    [<span class="st">&quot;deriveKey&quot;</span>]</a>
+<a class="sourceLine" id="cb2-33" title="33">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-34" title="34"></a>
+<a class="sourceLine" id="cb2-35" title="35">  <span class="kw">let</span> bobsKeyPair <span class="op">=</span> <span class="cf">await</span> <span class="va">window</span>.<span class="va">crypto</span>.<span class="va">subtle</span>.<span class="at">generateKey</span>(</a>
+<a class="sourceLine" id="cb2-36" title="36">    <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-37" title="37">      <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;ECDH&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-38" title="38">      <span class="dt">namedCurve</span><span class="op">:</span> <span class="st">&quot;P-384&quot;</span></a>
+<a class="sourceLine" id="cb2-39" title="39">    <span class="op">},</span></a>
+<a class="sourceLine" id="cb2-40" title="40">    <span class="kw">false</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-41" title="41">    [<span class="st">&quot;deriveKey&quot;</span>]</a>
+<a class="sourceLine" id="cb2-42" title="42">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-43" title="43"></a>
+<a class="sourceLine" id="cb2-44" title="44">  <span class="co">// Alice then generates a secret key using her private key and Bob&#39;s public key.</span></a>
+<a class="sourceLine" id="cb2-45" title="45">  <span class="kw">let</span> alicesSecretKey <span class="op">=</span> <span class="cf">await</span> <span class="at">deriveSecretKey</span>(<span class="va">alicesKeyPair</span>.<span class="at">privateKey</span><span class="op">,</span> <span class="va">bobsKeyPair</span>.<span class="at">publicKey</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-46" title="46"></a>
+<a class="sourceLine" id="cb2-47" title="47">  <span class="co">// Bob generates the same secret key using his private key and Alice&#39;s public key.</span></a>
+<a class="sourceLine" id="cb2-48" title="48">  <span class="kw">let</span> bobsSecretKey <span class="op">=</span> <span class="cf">await</span> <span class="at">deriveSecretKey</span>(<span class="va">bobsKeyPair</span>.<span class="at">privateKey</span><span class="op">,</span> <span class="va">alicesKeyPair</span>.<span class="at">publicKey</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-49" title="49"></a>
+<a class="sourceLine" id="cb2-50" title="50">  <span class="co">// Alice can then use her copy of the secret key to encrypt a message to Bob.</span></a>
+<a class="sourceLine" id="cb2-51" title="51">  <span class="kw">let</span> encryptButton <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;.ecdh .encrypt-button&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-52" title="52">  <span class="va">encryptButton</span>.<span class="at">addEventListener</span>(<span class="st">&quot;click&quot;</span><span class="op">,</span> () <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-53" title="53">    <span class="at">encrypt</span>(alicesSecretKey)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-54" title="54">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-55" title="55"></a>
+<a class="sourceLine" id="cb2-56" title="56">  <span class="co">// Bob can use his copy to decrypt the message.</span></a>
+<a class="sourceLine" id="cb2-57" title="57">  <span class="kw">let</span> decryptButton <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;.ecdh .decrypt-button&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-58" title="58">  <span class="va">decryptButton</span>.<span class="at">addEventListener</span>(<span class="st">&quot;click&quot;</span><span class="op">,</span> () <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-59" title="59">    <span class="at">decrypt</span>(bobsSecretKey)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-60" title="60">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-61" title="61"><span class="op">}</span></a></code></pre></div>
+<h3 id="pbkdf2-1">PBKDF2</h3>
+<p>In this example we ask the user for a password, then use it to derive an AES key using PBKDF2, then use the AES key to encrypt a message. <a href="https://github.com/mdn/dom-examples/blob/master/web-crypto/derive-key/pbkdf2.js">See the complete code on GitHub.</a></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="co">/*</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="co">Get some key material to use as input to the deriveKey method.</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="co">The key material is a password supplied by the user.</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="co">*/</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="kw">function</span> <span class="at">getKeyMaterial</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="kw">let</span> password <span class="op">=</span> <span class="va">window</span>.<span class="at">prompt</span>(<span class="st">&quot;Enter your password&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="kw">let</span> enc <span class="op">=</span> <span class="kw">new</span> <span class="at">TextEncoder</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="cf">return</span> <span class="va">window</span>.<span class="va">crypto</span>.<span class="va">subtle</span>.<span class="at">importKey</span>(</a>
+<a class="sourceLine" id="cb3-9" title="9">    <span class="st">&quot;raw&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-10" title="10">    <span class="va">enc</span>.<span class="at">encode</span>(password)<span class="op">,</span></a>
+<a class="sourceLine" id="cb3-11" title="11">    <span class="st">&quot;PBKDF2&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-12" title="12">    <span class="kw">false</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-13" title="13">    [<span class="st">&quot;deriveBits&quot;</span><span class="op">,</span> <span class="st">&quot;deriveKey&quot;</span>]</a>
+<a class="sourceLine" id="cb3-14" title="14">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-15" title="15"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-16" title="16"></a>
+<a class="sourceLine" id="cb3-17" title="17"><span class="kw">async</span> <span class="kw">function</span> <span class="at">encrypt</span>(plaintext<span class="op">,</span> salt<span class="op">,</span> iv) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-18" title="18">  <span class="kw">let</span> keyMaterial <span class="op">=</span> <span class="cf">await</span> <span class="at">getKeyMaterial</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-19" title="19">  <span class="kw">let</span> key <span class="op">=</span> <span class="cf">await</span> <span class="va">window</span>.<span class="va">crypto</span>.<span class="va">subtle</span>.<span class="at">deriveKey</span>(</a>
+<a class="sourceLine" id="cb3-20" title="20">    <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-21" title="21">      <span class="st">&quot;name&quot;</span><span class="op">:</span> <span class="st">&quot;PBKDF2&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-22" title="22">      <span class="dt">salt</span><span class="op">:</span> salt<span class="op">,</span></a>
+<a class="sourceLine" id="cb3-23" title="23">      <span class="st">&quot;iterations&quot;</span><span class="op">:</span> <span class="dv">100000</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-24" title="24">      <span class="st">&quot;hash&quot;</span><span class="op">:</span> <span class="st">&quot;SHA-256&quot;</span></a>
+<a class="sourceLine" id="cb3-25" title="25">    <span class="op">},</span></a>
+<a class="sourceLine" id="cb3-26" title="26">    keyMaterial<span class="op">,</span></a>
+<a class="sourceLine" id="cb3-27" title="27">    <span class="op">{</span> <span class="st">&quot;name&quot;</span><span class="op">:</span> <span class="st">&quot;AES-GCM&quot;</span><span class="op">,</span> <span class="st">&quot;length&quot;</span><span class="op">:</span> <span class="dv">256</span><span class="op">},</span></a>
+<a class="sourceLine" id="cb3-28" title="28">    <span class="kw">true</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-29" title="29">    [ <span class="st">&quot;encrypt&quot;</span><span class="op">,</span> <span class="st">&quot;decrypt&quot;</span> ]</a>
+<a class="sourceLine" id="cb3-30" title="30">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-31" title="31"></a>
+<a class="sourceLine" id="cb3-32" title="32">  <span class="cf">return</span> <span class="va">window</span>.<span class="va">crypto</span>.<span class="va">subtle</span>.<span class="at">encrypt</span>(</a>
+<a class="sourceLine" id="cb3-33" title="33">    <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-34" title="34">      <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;AES-GCM&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-35" title="35">      <span class="dt">iv</span><span class="op">:</span> iv</a>
+<a class="sourceLine" id="cb3-36" title="36">    <span class="op">},</span></a>
+<a class="sourceLine" id="cb3-37" title="37">    key<span class="op">,</span></a>
+<a class="sourceLine" id="cb3-38" title="38">    plaintext</a>
+<a class="sourceLine" id="cb3-39" title="39">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-40" title="40"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="https://datatracker.ietf.org/doc/html/rfc5869">HKDF specification</a>.</li>
+<li><a href="https://csrc.nist.gov/publications/detail/sp/800-132/final">NIST guidelines for password-based key derivation</a>.</li>
+<li><a href="https://www.owasp.org/index.php/Password_Storage_Cheat_Sheet">Password storage cheat sheet</a>.</li>
+<li><a href="https://security.stackexchange.com/questions/3959/recommended-of-iterations-when-using-pkbdf2-sha256/3993#3993">Advice on choosing an iteration count for PBKDF2</a>.</li>
+</ul>

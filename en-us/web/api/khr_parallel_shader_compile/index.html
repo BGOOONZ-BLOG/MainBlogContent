@@ -1,0 +1,45 @@
+<p>{{draft}}{{APIRef(“WebGL”)}}</p>
+<p>The <strong><code>KHR_parallel_shader_compile</code></strong> extension is part of the <a href="/en-US/docs/Web/API/WebGL_API">WebGL API</a> and enables a non-blocking poll operation, so that compile/link status availability (<code>COMPLETION_STATUS_KHR</code>) can be queried without potentially incurring stalls. In other words you can check the status of your shaders compiling without blocking the runtime.</p>
+<p>WebGL extensions are available using the {{domxref(“WebGLRenderingContext.getExtension()”)}} method. For more information, see also <a href="/en-US/docs/Web/API/WebGL_API/Using_Extensions">Using Extensions</a> in the <a href="/en-US/docs/Web/API/WebGL_API/Tutorial">WebGL tutorial</a>.</p>
+<h2 id="constants">Constants</h2>
+<ul>
+<li><code>ext.COMPLETION_STATUS_KHR</code>
+<ul>
+<li>: A GLenum.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>Enable the extension:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> ext <span class="op">=</span> <span class="va">gl</span>.<span class="at">getExtension</span>(<span class="st">&#39;KHR_parallel_shader_compile&#39;</span>)<span class="op">;</span></a></code></pre></div>
+<p>In general, best practice with or without the extension is:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">// Assuming lists of `shaders` and `programs`:</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="cf">for</span> (<span class="kw">const</span> x <span class="kw">of</span> shaders)</a>
+<a class="sourceLine" id="cb2-3" title="3">    <span class="va">gl</span>.<span class="at">compileShader</span>(x)<span class="op">;</span> <span class="co">// Never check compile status unless subsequent linking fails.</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="cf">for</span> (<span class="kw">const</span> x <span class="kw">of</span> programs)</a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="va">gl</span>.<span class="at">linkProgram</span>(x)<span class="op">;</span></a></code></pre></div>
+<p>With the extension, apps would be able to poll whether programs have linked without janking, but these are likely to take the same total wall time to link:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="co">// Generator yielding a progress ratio [0.0, 1.0].</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="co">// Without the extension, this will jank and only check one program per generation.</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw">function</span><span class="op">*</span> <span class="at">linkingProgress</span>(programs) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="kw">const</span> ext <span class="op">=</span> <span class="va">gl</span>.<span class="at">getExtension</span>(<span class="st">&#39;KHR_parallel_shader_compile&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">    <span class="kw">let</span> todo <span class="op">=</span> <span class="va">programs</span>.<span class="at">slice</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6">    <span class="cf">while</span> (<span class="va">todo</span>.<span class="at">length</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-7" title="7">        <span class="cf">if</span> (ext) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-8" title="8">            todo <span class="op">=</span> <span class="va">todo</span>.<span class="at">filter</span>(x <span class="kw">=&gt;</span> <span class="op">!</span><span class="va">gl</span>.<span class="at">getProgramParameter</span>(x<span class="op">,</span> <span class="va">ext</span>.<span class="at">COMPLETION_STATUS_KHR</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-10" title="10">            <span class="kw">const</span> x <span class="op">=</span> <span class="va">todo</span>.<span class="at">pop</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-11" title="11">            <span class="va">gl</span>.<span class="at">getProgramParameter</span>(x<span class="op">,</span> <span class="va">gl</span>.<span class="at">LINK_STATUS</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-12" title="12">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-13" title="13">        <span class="cf">if</span> (<span class="op">!</span><span class="va">todo</span>.<span class="at">length</span>)</a>
+<a class="sourceLine" id="cb3-14" title="14">            <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-15" title="15">        <span class="kw">yield</span> <span class="fl">1.0</span> <span class="op">-</span> (<span class="va">todo</span>.<span class="at">length</span> / <span class="va">programs</span>.<span class="at">length</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-16" title="16">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-17" title="17"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{domxref(“WebGLRenderingContext.getExtension()”)}}</li>
+</ul>

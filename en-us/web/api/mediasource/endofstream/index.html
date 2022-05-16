@@ -1,0 +1,62 @@
+<p>{{APIRef(“Media Source Extensions”)}}{{SeeCompatTable}}</p>
+<p>The <strong><code>endOfStream()</code></strong> method of the {{domxref(“MediaSource”)}} interface signals the end of the stream.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">mediaSource</span>.<span class="at">endOfStream</span>(endOfStreamError)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><p>endOfStreamError {{optional_inline}}</p>
+<ul>
+<li><p>: A {{domxref(“DOMString”)}} representing an error to throw when the end of the stream is reached. The possible values are:</p>
+<ul>
+<li><code>network</code>: Terminates playback and signals that a network error has occurred. This can be used create a custom error handler related to media streams. For example, you might have a function that handles media chunk requests, separate from other network requests. When you make an <a href="/en-US/docs/Web/API/XMLHttpRequest">XMLHttpRequest</a> call for a media chunk, and <code>onabort</code> or <code>onerror</code> triggers, you might want to call <code>endOfStream('network')</code>, display a descriptive message in the UI, and maybe retry the network request immediately or wait until the network is back up (via some kind of polling.)</li>
+<li><code>decode</code>: Terminates playback and signals that a decoding error has occurred. This can be used to indicate that a parsing error has occurred while fetching media data; maybe the data is corrupt, or is encoded using a codec that the browser doesn’t know how to decode.</li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>{{jsxref(‘undefined’)}}</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><code>InvalidStateError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if {{domxref(“MediaSource.readyState”)}} is not equal to <code>open</code>, or one or more of the {{domxref(“SourceBuffer”)}} objects in {{domxref(“MediaSource.sourceBuffers”)}} are being updated (i.e. their {{domxref(“SourceBuffer.updating”)}} property is <code>true</code>.)</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<p>The following snippet is from a simple example written by Nick Desaulniers (<a href="https://nickdesaulniers.github.io/netfix/demo/bufferAll.html">view the full demo live</a>, or <a href="https://github.com/nickdesaulniers/netfix/blob/gh-pages/demo/bufferAll.html">download the source</a> for further investigation.)</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> assetURL <span class="op">=</span> <span class="st">&#39;frag_bunny.mp4&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="co">// Need to be specific for Blink regarding codecs</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="co">// ./mp4info frag_bunny.mp4 | grep Codec</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="kw">var</span> mimeCodec <span class="op">=</span> <span class="st">&#39;video/mp4; codecs=&quot;avc1.42E01E, mp4a.40.2&quot;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="cf">if</span> (<span class="st">&#39;MediaSource&#39;</span> <span class="kw">in</span> window <span class="op">&amp;&amp;</span> <span class="va">MediaSource</span>.<span class="at">isTypeSupported</span>(mimeCodec)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="kw">var</span> mediaSource <span class="op">=</span> <span class="kw">new</span> MediaSource<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="co">//console.log(mediaSource.readyState); // closed</span></a>
+<a class="sourceLine" id="cb2-9" title="9">  <span class="va">video</span>.<span class="at">src</span> <span class="op">=</span> <span class="va">URL</span>.<span class="at">createObjectURL</span>(mediaSource)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="va">mediaSource</span>.<span class="at">addEventListener</span>(<span class="st">&#39;sourceopen&#39;</span><span class="op">,</span> sourceOpen)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-12" title="12">  <span class="va">console</span>.<span class="at">error</span>(<span class="st">&#39;Unsupported MIME type or codec: &#39;</span><span class="op">,</span> mimeCodec)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-14" title="14"></a>
+<a class="sourceLine" id="cb2-15" title="15"><span class="kw">function</span> <span class="at">sourceOpen</span> (_) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-16" title="16">  <span class="co">//console.log(this.readyState); // open</span></a>
+<a class="sourceLine" id="cb2-17" title="17">  <span class="kw">var</span> mediaSource <span class="op">=</span> <span class="kw">this</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">  <span class="kw">var</span> sourceBuffer <span class="op">=</span> <span class="va">mediaSource</span>.<span class="at">addSourceBuffer</span>(mimeCodec)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-19" title="19">  <span class="at">fetchAB</span>(assetURL<span class="op">,</span> <span class="kw">function</span> (buf) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-20" title="20">    <span class="va">sourceBuffer</span>.<span class="at">addEventListener</span>(<span class="st">&#39;updateend&#39;</span><span class="op">,</span> <span class="kw">function</span> (_) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-21" title="21">      <span class="va">mediaSource</span>.<span class="at">endOfStream</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-22" title="22">      <span class="va">video</span>.<span class="at">play</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-23" title="23">      <span class="co">//console.log(mediaSource.readyState); // ended</span></a>
+<a class="sourceLine" id="cb2-24" title="24">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-25" title="25">    <span class="va">sourceBuffer</span>.<span class="at">appendBuffer</span>(buf)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-26" title="26">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-27" title="27"><span class="op">};</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{domxref(“SourceBuffer”)}}</li>
+<li>{{domxref(“SourceBufferList”)}}</li>
+</ul>

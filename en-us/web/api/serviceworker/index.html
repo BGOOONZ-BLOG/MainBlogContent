@@ -1,0 +1,69 @@
+<p>{{securecontext_header}}{{APIRef(“Service Workers API”)}}</p>
+<p>The <strong><code>ServiceWorker</code></strong> interface of the <a href="/en-US/docs/Web/API/Service_Worker_API">Service Worker API</a> provides a reference to a service worker. Multiple {{glossary(“browsing context”, “browsing contexts”)}} (e.g. pages, workers, etc.) can be associated with the same service worker, each through a unique <code>ServiceWorker</code> object.</p>
+<p>A <code>ServiceWorker</code> object is available in the {{domxref(“ServiceWorkerRegistration.active”)}} property, and the {{domxref(“ServiceWorkerContainer.controller”)}} property — this is a service worker that has been activated and is controlling the page (the service worker has been successfully registered, and the controlled page has been reloaded.)</p>
+<p>The <code>ServiceWorker</code> interface is dispatched a set of lifecycle events — <code>install</code> and <code>activate</code> — and functional events including <code>fetch</code>. A <code>ServiceWorker</code> object has an associated {{domxref(“ServiceWorker.state”)}}, related to its lifecycle.</p>
+<h2 id="properties">Properties</h2>
+<p><em>The <code>ServiceWorker</code> interface inherits properties from its parent, {{domxref(“EventTarget”)}}.</em></p>
+<ul>
+<li>{{domxref(“ServiceWorker.scriptURL”)}} {{readonlyinline}}
+<ul>
+<li>: Returns the <code>ServiceWorker</code> serialized script URL defined as part of {{domxref(“ServiceWorkerRegistration”)}}. The URL must be on the same origin as the document that registers the <code>ServiceWorker</code>.</li>
+</ul></li>
+<li>{{domxref(“ServiceWorker.state”)}} {{readonlyinline}}
+<ul>
+<li>: Returns the state of the service worker. It returns one of the following values: <code>installing</code>, <code>installed,</code> <code>activating</code>, <code>activated</code>, or <code>redundant</code>.</li>
+</ul></li>
+</ul>
+<h3 id="event-handlers">Event handlers</h3>
+<ul>
+<li>{{domxref(“ServiceWorker.onstatechange”)}} {{readonlyinline}}
+<ul>
+<li>: An {{domxref(“EventListener”)}} property called whenever an event of type <code>statechange</code> is fired; it is basically fired anytime the {{domxref(“ServiceWorker.state”)}} changes.</li>
+</ul></li>
+</ul>
+<h2 id="methods">Methods</h2>
+<p><em>The <code>ServiceWorker</code> interface inherits methods from its parent, {{domxref(“EventTarget”)}}.</em></p>
+<h2 id="examples">Examples</h2>
+<p>This code snippet is from the <a href="https://github.com/GoogleChrome/samples/blob/gh-pages/service-worker/registration-events/index.html">service worker registration-events sample</a> (<a href="https://googlechrome.github.io/samples/service-worker/registration-events/">live demo</a>). The code listens for any change in the {{domxref(“ServiceWorker.state”)}} and returns its value.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="cf">if</span> (<span class="st">&#39;serviceWorker&#39;</span> <span class="kw">in</span> navigator) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">    <span class="va">navigator</span>.<span class="va">serviceWorker</span>.<span class="at">register</span>(<span class="st">&#39;service-worker.js&#39;</span><span class="op">,</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-3" title="3">        <span class="dt">scope</span><span class="op">:</span> <span class="st">&#39;./&#39;</span></a>
+<a class="sourceLine" id="cb1-4" title="4">    <span class="op">}</span>).<span class="at">then</span>(<span class="kw">function</span> (registration) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-5" title="5">        <span class="kw">var</span> serviceWorker<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-6" title="6">        <span class="cf">if</span> (<span class="va">registration</span>.<span class="at">installing</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-7" title="7">            serviceWorker <span class="op">=</span> <span class="va">registration</span>.<span class="at">installing</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-8" title="8">            <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#kind&#39;</span>).<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;installing&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-9" title="9">        <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (<span class="va">registration</span>.<span class="at">waiting</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-10" title="10">            serviceWorker <span class="op">=</span> <span class="va">registration</span>.<span class="at">waiting</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-11" title="11">            <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#kind&#39;</span>).<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;waiting&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-12" title="12">        <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (<span class="va">registration</span>.<span class="at">active</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-13" title="13">            serviceWorker <span class="op">=</span> <span class="va">registration</span>.<span class="at">active</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-14" title="14">            <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#kind&#39;</span>).<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;active&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-15" title="15">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-16" title="16">        <span class="cf">if</span> (serviceWorker) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-17" title="17">            <span class="co">// logState(serviceWorker.state);</span></a>
+<a class="sourceLine" id="cb1-18" title="18">            <span class="va">serviceWorker</span>.<span class="at">addEventListener</span>(<span class="st">&#39;statechange&#39;</span><span class="op">,</span> <span class="kw">function</span> (e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-19" title="19">                <span class="co">// logState(e.target.state);</span></a>
+<a class="sourceLine" id="cb1-20" title="20">            <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-21" title="21">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-22" title="22">    <span class="op">}</span>).<span class="at">catch</span> (<span class="kw">function</span> (error) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-23" title="23">        <span class="co">// Something went wrong during registration. The service-worker.js file</span></a>
+<a class="sourceLine" id="cb1-24" title="24">        <span class="co">// might be unavailable or contain a syntax error.</span></a>
+<a class="sourceLine" id="cb1-25" title="25">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-26" title="26"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-27" title="27">    <span class="co">// The current browser doesn&#39;t support service workers.</span></a>
+<a class="sourceLine" id="cb1-28" title="28">    <span class="co">// Perhaps it is too old or we are not in a Secure Context.</span></a>
+<a class="sourceLine" id="cb1-29" title="29"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="https://web.dev/offline-cookbook/">The Offline Cookbook</a>(service workers)</li>
+<li><a href="/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers">Using Service Workers</a></li>
+<li><a href="https://github.com/mdn/sw-test">Service worker basic code example</a></li>
+<li><a href="https://jakearchibald.github.io/isserviceworkerready/">Is ServiceWorker ready?</a></li>
+<li>{{jsxref(“Promise”)}}</li>
+<li><a href="/en-US/docs/Web/API/Web_Workers_API/Using_web_workers">Using web workers</a></li>
+</ul>

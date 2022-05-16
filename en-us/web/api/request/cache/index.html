@@ -1,0 +1,97 @@
+<p>{{APIRef(“Fetch”)}}</p>
+<p>The <strong><code>cache</code></strong> read-only property of the {{domxref(“Request”)}} interface contains the cache mode of the request. It controls how the request will interact with the browser’s <a href="/en-US/docs/Web/HTTP/Caching">HTTP cache</a>.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> currentCacheMode <span class="op">=</span> <span class="va">request</span>.<span class="at">cache</span><span class="op">;</span></a></code></pre></div>
+<h3 id="value">Value</h3>
+<p>A <code>RequestCache</code> value. The available values are:</p>
+<ul>
+<li><p><code>default</code> — The browser looks for a matching request in its HTTP cache.</p>
+<ul>
+<li>If there is a match and it is <a href="/en-US/docs/Web/HTTP/Caching#freshness">fresh</a>, it will be returned from the cache.</li>
+<li>If there is a match but it is stale, the browser will make a <a href="/en-US/docs/Web/HTTP/Conditional_requests">conditional request</a> to the remote server. If the server indicates that the resource has not changed, it will be returned from the cache. Otherwise the resource will be downloaded from the server and the cache will be updated.</li>
+<li>If there is no match, the browser will make a normal request, and will update the cache with the downloaded resource.</li>
+</ul></li>
+<li><code>no-store</code> — The browser fetches the resource from the remote server without first looking in the cache, <em>and will not</em> update the cache with the downloaded resource.</li>
+<li><code>reload</code> — The browser fetches the resource from the remote server without first looking in the cache, <em>but then will</em> update the cache with the downloaded resource.</li>
+<li><p><code>no-cache</code> — The browser looks for a matching request in its HTTP cache.</p>
+<ul>
+<li>If there is a match, <em>fresh or stale,</em> the browser will make a <a href="/en-US/docs/Web/HTTP/Conditional_requests">conditional request</a> to the remote server. If the server indicates that the resource has not changed, it will be returned from the cache. Otherwise the resource will be downloaded from the server and the cache will be updated.</li>
+<li>If there is no match, the browser will make a normal request, and will update the cache with the downloaded resource.</li>
+</ul></li>
+<li><p><code>force-cache</code> — The browser looks for a matching request in its HTTP cache.</p>
+<ul>
+<li>If there is a match, <em>fresh or stale</em>, it will be returned from the cache.</li>
+<li>If there is no match, the browser will make a normal request, and will update the cache with the downloaded resource.</li>
+</ul></li>
+<li><p><code>only-if-cached</code> — The browser looks for a matching request in its HTTP cache.</p>
+<ul>
+<li>If there is a match, <em>fresh or stale</em>, it will be returned from the cache.</li>
+<li>If there is no match, the browser will respond with a <a href="/en-US/docs/Web/HTTP/Status/504">504 Gateway timeout</a> status.</li>
+</ul>
+<p>The <code>"only-if-cached"</code> mode can only be used if the request’s <a href="/en-US/docs/Web/API/Request/mode"><code>mode</code></a> is <code>"same-origin"</code>. Cached redirects will be followed if the request’s <code>redirect</code> property is <code>"follow"</code> and the redirects do not violate the <code>"same-origin"</code> mode.</p></li>
+</ul>
+<h2 id="example">Example</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">// Download a resource with cache busting, to bypass the cache</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="co">// completely.</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="at">fetch</span>(<span class="st">&quot;some.json&quot;</span><span class="op">,</span> <span class="op">{</span><span class="dt">cache</span><span class="op">:</span> <span class="st">&quot;no-store&quot;</span><span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-4" title="4">  .<span class="at">then</span>(<span class="kw">function</span>(response) <span class="op">{</span> <span class="co">/* consume the response */</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="co">// Download a resource with cache busting, but update the HTTP</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="co">// cache with the downloaded resource.</span></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="at">fetch</span>(<span class="st">&quot;some.json&quot;</span><span class="op">,</span> <span class="op">{</span><span class="dt">cache</span><span class="op">:</span> <span class="st">&quot;reload&quot;</span><span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-9" title="9">  .<span class="at">then</span>(<span class="kw">function</span>(response) <span class="op">{</span> <span class="co">/* consume the response */</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10"></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="co">// Download a resource with cache busting when dealing with a</span></a>
+<a class="sourceLine" id="cb2-12" title="12"><span class="co">// properly configured server that will send the correct ETag</span></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="co">// and Date headers and properly handle If-Modified-Since and</span></a>
+<a class="sourceLine" id="cb2-14" title="14"><span class="co">// If-None-Match request headers, therefore we can rely on the</span></a>
+<a class="sourceLine" id="cb2-15" title="15"><span class="co">// validation to guarantee a fresh response.</span></a>
+<a class="sourceLine" id="cb2-16" title="16"><span class="at">fetch</span>(<span class="st">&quot;some.json&quot;</span><span class="op">,</span> <span class="op">{</span><span class="dt">cache</span><span class="op">:</span> <span class="st">&quot;no-cache&quot;</span><span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-17" title="17">  .<span class="at">then</span>(<span class="kw">function</span>(response) <span class="op">{</span> <span class="co">/* consume the response */</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18"></a>
+<a class="sourceLine" id="cb2-19" title="19"><span class="co">// Download a resource with economics in mind!  Prefer a cached</span></a>
+<a class="sourceLine" id="cb2-20" title="20"><span class="co">// albeit stale response to conserve as much bandwidth as possible.</span></a>
+<a class="sourceLine" id="cb2-21" title="21"><span class="at">fetch</span>(<span class="st">&quot;some.json&quot;</span><span class="op">,</span> <span class="op">{</span><span class="dt">cache</span><span class="op">:</span> <span class="st">&quot;force-cache&quot;</span><span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-22" title="22">  .<span class="at">then</span>(<span class="kw">function</span>(response) <span class="op">{</span> <span class="co">/* consume the response */</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-23" title="23"></a>
+<a class="sourceLine" id="cb2-24" title="24"><span class="co">// Naive stale-while-revalidate client-level implementation.</span></a>
+<a class="sourceLine" id="cb2-25" title="25"><span class="co">// Prefer a cached albeit stale response; but update if it&#39;s too old.</span></a>
+<a class="sourceLine" id="cb2-26" title="26"><span class="co">// AbortController and signal to allow better memory cleaning.</span></a>
+<a class="sourceLine" id="cb2-27" title="27"><span class="co">// In reality; this would be a function that takes a path and a</span></a>
+<a class="sourceLine" id="cb2-28" title="28"><span class="co">// reference to the controller since it would need to change the value</span></a>
+<a class="sourceLine" id="cb2-29" title="29"><span class="kw">let</span> controller <span class="op">=</span> <span class="kw">new</span> <span class="at">AbortController</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-30" title="30"><span class="at">fetch</span>(<span class="st">&quot;some.json&quot;</span><span class="op">,</span> <span class="op">{</span><span class="dt">cache</span><span class="op">:</span> <span class="st">&quot;only-if-cached&quot;</span><span class="op">,</span> <span class="dt">mode</span><span class="op">:</span> <span class="st">&quot;same-origin&quot;</span><span class="op">,</span> <span class="dt">signal</span><span class="op">:</span> <span class="va">controller</span>.<span class="at">signal</span><span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-31" title="31">  .<span class="at">catch</span>(e <span class="kw">=&gt;</span> e <span class="kw">instanceof</span> TypeError <span class="op">&amp;&amp;</span> <span class="va">e</span>.<span class="at">message</span> <span class="op">===</span> <span class="st">&quot;Failed to fetch&quot;</span> <span class="op">?</span></a>
+<a class="sourceLine" id="cb2-32" title="32">    (<span class="op">{</span><span class="dt">status</span><span class="op">:</span> <span class="dv">504</span><span class="op">}</span>) : <span class="co">// Workaround for chrome; which fails with a typeerror</span></a>
+<a class="sourceLine" id="cb2-33" title="33">    <span class="va">Promise</span>.<span class="at">reject</span>(e))</a>
+<a class="sourceLine" id="cb2-34" title="34">  .<span class="at">then</span>(res <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-35" title="35">    <span class="cf">if</span> (<span class="va">res</span>.<span class="at">status</span> <span class="op">===</span> <span class="dv">504</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-36" title="36">      <span class="va">controller</span>.<span class="at">abort</span>()</a>
+<a class="sourceLine" id="cb2-37" title="37">      controller <span class="op">=</span> <span class="kw">new</span> <span class="at">AbortController</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-38" title="38">      <span class="cf">return</span> <span class="at">fetch</span>(<span class="st">&quot;some.json&quot;</span><span class="op">,</span> <span class="op">{</span><span class="dt">cache</span><span class="op">:</span> <span class="st">&quot;force-cache&quot;</span><span class="op">,</span> <span class="dt">mode</span><span class="op">:</span> <span class="st">&quot;same-origin&quot;</span><span class="op">,</span> <span class="dt">signal</span><span class="op">:</span> <span class="va">controller</span>.<span class="at">signal</span><span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-39" title="39">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-40" title="40">    <span class="kw">const</span> date <span class="op">=</span> <span class="va">res</span>.<span class="va">headers</span>.<span class="at">get</span>(<span class="st">&quot;date&quot;</span>)<span class="op">,</span> dt <span class="op">=</span> date <span class="op">?</span> <span class="kw">new</span> <span class="at">Date</span>(date).<span class="at">getTime</span>() : <span class="dv">0</span></a>
+<a class="sourceLine" id="cb2-41" title="41">    <span class="cf">if</span> (dt <span class="op">&lt;</span> (<span class="va">Date</span>.<span class="at">now</span>() <span class="op">-</span> <span class="dv">86400000</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-42" title="42">      <span class="co">// if older than 24 hours</span></a>
+<a class="sourceLine" id="cb2-43" title="43">      <span class="va">controller</span>.<span class="at">abort</span>()</a>
+<a class="sourceLine" id="cb2-44" title="44">      controller <span class="op">=</span> <span class="kw">new</span> <span class="at">AbortController</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-45" title="45">      <span class="cf">return</span> <span class="at">fetch</span>(<span class="st">&quot;some.json&quot;</span><span class="op">,</span> <span class="op">{</span><span class="dt">cache</span><span class="op">:</span> <span class="st">&quot;reload&quot;</span><span class="op">,</span> <span class="dt">mode</span><span class="op">:</span> <span class="st">&quot;same-origin&quot;</span><span class="op">,</span> <span class="dt">signal</span><span class="op">:</span> <span class="va">controller</span>.<span class="at">signal</span><span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-46" title="46">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-47" title="47"></a>
+<a class="sourceLine" id="cb2-48" title="48">    <span class="co">// Other possible conditions</span></a>
+<a class="sourceLine" id="cb2-49" title="49">    <span class="cf">if</span> (dt <span class="op">&lt;</span> (<span class="va">Date</span>.<span class="at">now</span>() <span class="op">-</span> <span class="dv">300000</span>)) <span class="co">// If it&#39;s older than 5 minutes</span></a>
+<a class="sourceLine" id="cb2-50" title="50">      <span class="at">fetch</span>(<span class="st">&quot;some.json&quot;</span><span class="op">,</span> <span class="op">{</span><span class="dt">cache</span><span class="op">:</span> <span class="st">&quot;no-cache&quot;</span><span class="op">,</span> <span class="dt">mode</span><span class="op">:</span> <span class="st">&quot;same-origin&quot;</span><span class="op">}</span>) <span class="co">// no cancellation or return value.</span></a>
+<a class="sourceLine" id="cb2-51" title="51">    <span class="cf">return</span> res</a>
+<a class="sourceLine" id="cb2-52" title="52">  <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-53" title="53">  .<span class="at">then</span>(<span class="kw">function</span>(response) <span class="op">{</span> <span class="co">/* consume the (possibly stale) response */</span> <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-54" title="54">  .<span class="at">catch</span>(error <span class="kw">=&gt;</span> <span class="op">{</span> <span class="co">/* Can be an AbortError/DOMError or a TypeError */</span> <span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Service_Worker_API">ServiceWorker API</a></li>
+<li><a href="/en-US/docs/Web/HTTP/CORS">HTTP access control (CORS)</a></li>
+<li><a href="/en-US/docs/Web/HTTP">HTTP</a></li>
+</ul>

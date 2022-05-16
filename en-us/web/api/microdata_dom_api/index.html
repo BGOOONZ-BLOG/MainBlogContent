@@ -1,0 +1,125 @@
+<blockquote>
+<p><strong>Warning:</strong> Microdata were implemented in some browsers for a long time. Nowadays, they have been abandoned and removed from all browsers and are therefore <strong>deprecated</strong>. You can’t use them anymore and this document is kept as information only.</p>
+</blockquote>
+<p>Microdata becomes even more useful when scripts can use it to expose information to the user, for example offering it in a form that can be used by other applications. The <code>document.getItems(typeNames)</code> method provides access to the top-level microdata items. It returns a NodeList containing the items with the specified types, or all types if no argument is specified. Each item is represented in the DOM by the element on which the relevant itemscope attribute is found. These elements have their element.itemScope IDL attribute set to true. The type(s) of items can be obtained using the element.itemType IDL attribute on the element with the itemscope attribute.</p>
+<h2 id="methods">Methods</h2>
+<p><code>document . getItems( [ types ] )</code></p>
+<p>Returns a NodeList of the elements in the Document that create items, that are not part of other items, and that are of the types given in the argument, if any are listed.</p>
+<p>The types argument is interpreted as a space-separated list of types.</p>
+<p>The <code>document.getItems(typeNames)</code> method takes a string that contains an unordered set of unique space-separated tokens that are case-sensitive, representing types. When called, the method must return a live NodeList object containing all the elements in the document, in tree order, that are each top-level microdata items whose types include all the types specified in the method’s argument, having obtained the types by splitting the string on spaces. If there are no tokens specified in the argument, then the method must return a NodeList containing all the top-level microdata items in the document. When the method is invoked on a Document object again with the same argument, the user agent may return the same object as the object returned by the earlier call. In other cases, a new NodeList object must be returned.</p>
+<h2 id="properties">Properties</h2>
+<p><code>element . itemValue [ = value ]</code></p>
+<p>Returns the element’s value.</p>
+<p>Can be set, to change the element’s value. Setting the value when the element has no itemprop attribute or when the element’s value is an item throws an InvalidAccessError exception.</p>
+<p><code>element . properties</code></p>
+<p>If the element has an itemscope attribute, returns an HTMLPropertiesCollection object with all the element’s properties. Otherwise, an empty HTMLPropertiesCollection object.</p>
+<h2 id="code-example">Code example</h2>
+<p>This sample shows how the <a href="https://www.w3.org/TR/microdata/#dom-document-getitems">getItems()</a> method can be used to obtain a list of all the top-level microdata items of a particular type given in the document:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> cats <span class="op">=</span> <span class="va">document</span>.<span class="at">getItems</span>(<span class="st">&quot;http://example.com/feline&quot;</span>)<span class="op">;</span></a></code></pre></div>
+<p>Once an element representing an <a href="https://www.w3.org/TR/microdata/#concept-item" title="concept-item">item</a> has been obtained, its properties can be extracted using the <a href="https://www.w3.org/TR/microdata/#dom-properties">properties</a> IDL attribute. This attribute returns an <a href="https://www.w3.org/TR/microdata/#htmlpropertiescollection-0">HTMLPropertiesCollection</a>, which can be enumerated to go through each element that adds one or more properties to the item. It can also be indexed by name, which will return an object with a list of the elements that add properties with that name.</p>
+<p>Each element that adds a property also has an <a href="https://www.w3.org/TR/microdata/#dom-itemvalue">itemValue</a> IDL attribute that returns its value.</p>
+<h2 id="code-example-1">Code example</h2>
+<p>This sample gets the first item of type “<code>http://example.net/user</code>” and then pops up an alert using the “name” property from that item.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> user <span class="op">=</span> <span class="va">document</span>.<span class="at">getItems</span>(<span class="st">&#39;http://example.net/user&#39;</span>)[<span class="dv">0</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="at">alert</span>(<span class="st">&#39;Hello &#39;</span> <span class="op">+</span> <span class="va">user</span>.<span class="at">properties</span>[<span class="st">&#39;name&#39;</span>][<span class="dv">0</span>].<span class="at">itemValue</span> <span class="op">+</span> <span class="st">&#39;!&#39;</span>)<span class="op">;</span></a></code></pre></div>
+<p>The <a href="https://www.w3.org/TR/microdata/#htmlpropertiescollection-0">HTMLPropertiesCollection</a> object, when indexed by name in this way, actually returns a <a href="https://www.w3.org/TR/microdata/#propertynodelist">PropertyNodeList</a> object with all the matching properties. The <a href="https://www.w3.org/TR/microdata/#propertynodelist">PropertyNodeList</a> object can be used to obtain all the values at once using<em>its</em> <a href="https://www.w3.org/TR/microdata/#dom-propertynodelist-getvalues">getValues</a> method, which returns an array of all the values.</p>
+<h2 id="code-example-2">Code example</h2>
+<p>In an earlier example, a “http://example.org/animals#cat” item had two “http://example.com/color” values. This script looks up the first such item and then lists all its values.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">var</span> cat <span class="op">=</span> <span class="va">document</span>.<span class="at">getItems</span>(<span class="st">&#39;http://example.org/animals#cat&#39;</span>)[<span class="dv">0</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">var</span> colors <span class="op">=</span> <span class="va">cat</span>.<span class="at">properties</span>[<span class="st">&#39;http://example.com/color&#39;</span>].<span class="at">getValues</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw">var</span> result<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="cf">if</span> (<span class="va">colors</span>.<span class="at">length</span> <span class="op">==</span> <span class="dv">0</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-5" title="5">  result <span class="op">=</span> <span class="st">&#39;Color unknown.&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6"><span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (<span class="va">colors</span>.<span class="at">length</span> <span class="op">==</span> <span class="dv">1</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  result <span class="op">=</span> <span class="st">&#39;Color: &#39;</span> <span class="op">+</span> colors[<span class="dv">0</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-9" title="9">  result <span class="op">=</span> <span class="st">&#39;Colors:&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10">  <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">colors</span>.<span class="at">length</span><span class="op">;</span> i <span class="op">+=</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb3-11" title="11">    result <span class="op">+=</span> <span class="st">&#39; &#39;</span> <span class="op">+</span> colors[i]<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-12" title="12"><span class="op">}</span></a></code></pre></div>
+<p>It’s also possible to get a list of all the <a href="https://www.w3.org/TR/microdata/#property-names">property names</a> using the object’s <a href="https://www.w3.org/TR/microdata/#dom-htmlpropertiescollection-names">names</a> IDL attribute.</p>
+<h2 id="code-example-3">Code example</h2>
+<p>This example creates a big list with a nested list for each item on the page, each with all of the property names used in that item.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">var</span> outer <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;ul&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="kw">var</span> items <span class="op">=</span> <span class="va">document</span>.<span class="at">getItems</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="cf">for</span> (<span class="kw">var</span> item <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> item <span class="op">&lt;</span> <span class="va">items</span>.<span class="at">length</span><span class="op">;</span> item <span class="op">+=</span> <span class="dv">1</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-4" title="4">  <span class="kw">var</span> itemLi <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;li&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="kw">var</span> inner <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;ul&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-6" title="6">  <span class="cf">for</span> (<span class="kw">var</span> name <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> name <span class="op">&lt;</span> items[item].<span class="va">properties</span>.<span class="va">names</span>.<span class="at">length</span><span class="op">;</span> name <span class="op">+=</span> <span class="dv">1</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-7" title="7">    <span class="kw">var</span> propLi <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;li&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-8" title="8">    <span class="va">propLi</span>.<span class="at">appendChild</span>(<span class="va">document</span>.<span class="at">createTextNode</span>(items[item].<span class="va">properties</span>.<span class="at">names</span>[name]))<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-9" title="9">    <span class="va">inner</span>.<span class="at">appendChild</span>(propLi)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-10" title="10">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-11" title="11">  <span class="va">itemLi</span>.<span class="at">appendChild</span>(inner)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-12" title="12">  <span class="va">outer</span>.<span class="at">appendChild</span>(itemLi)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-13" title="13"><span class="op">}</span></a>
+<a class="sourceLine" id="cb4-14" title="14"><span class="va">document</span>.<span class="va">body</span>.<span class="at">appendChild</span>(outer)<span class="op">;</span></a></code></pre></div>
+<p>If faced with the following from an earlier example:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">&lt;section</span><span class="ot"> itemscope itemtype=</span><span class="st">&quot;http://example.org/animals#cat&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="kw">&lt;h1</span><span class="ot"> itemprop=</span><span class="st">&quot;name http://example.com/fn&quot;</span><span class="kw">&gt;</span>Hedral<span class="kw">&lt;/h1&gt;</span></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="kw">&lt;p</span><span class="ot"> itemprop=</span><span class="st">&quot;desc&quot;</span><span class="kw">&gt;</span>Hedral is a male american domestic</a>
+<a class="sourceLine" id="cb5-4" title="4">shorthair, with a fluffy <span class="kw">&lt;span</span></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="ot">itemprop=</span><span class="st">&quot;http://example.com/color&quot;</span><span class="kw">&gt;</span>black<span class="kw">&lt;/span&gt;</span> fur with <span class="kw">&lt;span</span></a>
+<a class="sourceLine" id="cb5-6" title="6"><span class="ot">itemprop=</span><span class="st">&quot;http://example.com/color&quot;</span><span class="kw">&gt;</span>white<span class="kw">&lt;/span&gt;</span> paws and belly.<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb5-7" title="7"><span class="kw">&lt;img</span><span class="ot"> itemprop=</span><span class="st">&quot;img&quot;</span><span class="ot"> src=</span><span class="st">&quot;hedral.jpeg&quot;</span><span class="ot"> alt=</span><span class="st">&quot;&quot;</span><span class="ot"> title=</span><span class="st">&quot;Hedral, age 18 months&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb5-8" title="8"><span class="kw">&lt;/section&gt;</span></a></code></pre></div>
+<p>…it would result in the following output:</p>
+<pre><code>name
+http://example.com/fn
+desc
+http://example.com/color
+img</code></pre>
+<p>(The duplicate occurrence of “http://example.com/color” is not included in the list.)</p>
+<h2 id="htmlpropertiescollection">HTMLPropertiesCollection</h2>
+<p>The HTMLPropertiesCollection interface is used for collections of elements that add name-value pairs to a particular item in the microdata model.</p>
+<h3 id="interface-description-language">Interface description language</h3>
+<pre><code>interface HTMLPropertiesCollection : HTMLCollection {
+  // inherits length and item()
+  getter PropertyNodeList? namedItem(DOMString name); // shadows inherited namedItem()
+  readonly attribute DOMString[] names;
+};
+
+typedef sequence&lt;any&gt; PropertyValueArray;
+
+interface PropertyNodeList : NodeList {
+  PropertyValueArray getValues();
+};</code></pre>
+<ul>
+<li><code>collection . length</code>
+<ul>
+<li>: Returns the number of elements in the collection.</li>
+</ul></li>
+<li><code>element = collection . item(index)</code>
+<ul>
+<li>: Returns the element with index from the collection. The items are sorted in tree order.</li>
+</ul></li>
+<li><code>collection[index]</code>
+<ul>
+<li>: Returns the element with index from the collection. The items are sorted in tree order.</li>
+</ul></li>
+<li><code>propertyNodeList = collection . namedItem(name)</code>
+<ul>
+<li>: Returns a PropertyNodeList object containing any elements that add a property named name.</li>
+</ul></li>
+<li><code>collection[name]</code>
+<ul>
+<li>: Returns a PropertyNodeList object containing any elements that add a property named name. The name index has to be one of the values listed in the names list.</li>
+</ul></li>
+<li><code>collection . names</code>
+<ul>
+<li>: Returns an array with the property names of the elements in the collection.</li>
+</ul></li>
+<li><code>propertyNodeList . getValues()</code>
+<ul>
+<li>: Returns an array of the various values that the relevant elements have.</li>
+</ul></li>
+</ul>
+<!---->
+<ul>
+<li>The object’s supported property indices are as defined for HTMLCollection objects.</li>
+<li>The supported property names consist of the property names of all the elements represented by the collection, in tree order, ignoring later duplicates.</li>
+<li>The names attribute must return a live read only array object giving the property names of all the elements represented by the collection, listed in tree order, but with duplicates removed, leaving only the first occurrence of each name. The same object must be returned each time.</li>
+<li>The namedItem(name) method must return a PropertyNodeList object representing a live view of the HTMLPropertiesCollection object, further filtered so that the only nodes in the PropertyNodeList object are those that have a property name equal to name. The nodes in the PropertyNodeList object must be sorted in tree order, and the same object must be returned each time a particular name is queried.</li>
+<li>Members of the PropertyNodeList interface inherited from the NodeList interface must behave as they would on a NodeList object.</li>
+<li>The getValues method the PropertyNodeList object must return a newly constructed array whose values are the values obtained from the itemValue IDL attribute of each of the elements represented by the object, in tree order.</li>
+</ul>

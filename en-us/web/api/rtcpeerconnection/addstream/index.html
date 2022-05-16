@@ -1,0 +1,60 @@
+<p>{{APIRef(“WebRTC”)}}{{deprecated_header}}</p>
+<p>The <em>obsolete</em> {{domxref(“RTCPeerConnection”)}} method <strong><code>addStream()</code></strong> adds a {{domxref(“MediaStream”)}} as a local source of audio or video. Instead of using this obsolete method, you should instead use {{domxref(“RTCPeerConnection.addTrack”, “addTrack()”)}} once for each track you wish to send to the remote peer.</p>
+<p>If the {{domxref(“RTCPeerConnection.signalingState”, “signalingState”)}} is set to <code>closed</code>, an <code>InvalidStateError</code> is raised. If the {{domxref(“RTCPeerConnection.signalingState”, “signalingState”)}} is set to <code>stable</code>, the event {{DOMxRef(“RTCPeerConnection/negotiationneeded_event”, “negotiationneeded”)}} is sent on the {{domxref(“RTCPeerConnection”)}} to indicate that {{Glossary(“ICE”)}} negotiation must be repeated to consider the new stream.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">rtcPeerConnection</span>.<span class="at">addStream</span>(mediaStream)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>mediaStream</code>
+<ul>
+<li>: A {{domxref(“MediaStream”)}} object indicating the stream to add to the WebRTC peer connection.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>None.</p>
+<h2 id="example">Example</h2>
+<p>This simple example adds the audio and video stream coming from the user’s camera to the connection.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">navigator</span>.<span class="va">mediaDevices</span>.<span class="at">getUserMedia</span>(</a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="op">{</span> <span class="dt">video</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span> <span class="dt">audio</span><span class="op">:</span> <span class="kw">true</span> <span class="op">},</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="kw">function</span> (stream) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">    <span class="kw">var</span> pc <span class="op">=</span> <span class="kw">new</span> <span class="at">RTCPeerConnection</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="va">pc</span>.<span class="at">addStream</span>(stream)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-7" title="7">)<span class="op">;</span></a></code></pre></div>
+<h2 id="migrating-to-addtrack">Migrating to addTrack()</h2>
+<p>{{anch(“Browser compatibility”, “Compatibility allowing”)}}, you should update your code to instead use the {{domxref(“RTCPeerConnection.addTrack”, “addTrack()”)}} method:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="va">navigator</span>.<span class="at">getUserMedia</span>(<span class="op">{</span> <span class="dt">video</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span> <span class="dt">audio</span><span class="op">:</span> <span class="kw">true</span> <span class="op">},</span> <span class="kw">function</span> (stream) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">var</span> pc <span class="op">=</span> <span class="kw">new</span> <span class="at">RTCPeerConnection</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="va">stream</span>.<span class="at">getTracks</span>().<span class="at">forEach</span>(<span class="kw">function</span> (track) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="va">pc</span>.<span class="at">addTrack</span>(track<span class="op">,</span> stream)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>The newer {{domxref(“RTCPeerConnection.addTrack”, “addTrack()”)}} API avoids confusion over whether later changes to the track-makeup of a stream affects a peer connection (they do not).</p>
+<p>The exception is in Chrome, where <code>addStream()</code> <em>does</em> make the peer connection sensitive to later stream changes (though such changes do not fire the {{DOMxRef(“RTCPeerConnection/negotiationneeded_event”, “negotiationneeded”)}} event). If you are relying on the Chrome behavior, note that other browsers do not have it. You can write web compatible code using feature detection instead:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="co">// Add a track to a stream and the peer connection said stream was added to:</span></a>
+<a class="sourceLine" id="cb4-2" title="2"></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="va">stream</span>.<span class="at">addTrack</span>(track)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="cf">if</span> (<span class="va">pc</span>.<span class="at">addTrack</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="va">pc</span>.<span class="at">addTrack</span>(track<span class="op">,</span> stream)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-6" title="6"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="co">// If you have code listening for negotiationneeded events:</span></a>
+<a class="sourceLine" id="cb4-8" title="8">  <span class="at">setTimeout</span>(() <span class="kw">=&gt;</span> <span class="va">pc</span>.<span class="at">dispatchEvent</span>(<span class="kw">new</span> <span class="at">Event</span>(<span class="st">&quot;negotiationneeded&quot;</span>)))<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-9" title="9"><span class="op">}</span></a>
+<a class="sourceLine" id="cb4-10" title="10"></a>
+<a class="sourceLine" id="cb4-11" title="11"><span class="co">// Remove a track from a stream and the peer connection said stream was added to:</span></a>
+<a class="sourceLine" id="cb4-12" title="12"></a>
+<a class="sourceLine" id="cb4-13" title="13"><span class="va">stream</span>.<span class="at">removeTrack</span>(track)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-14" title="14"><span class="cf">if</span> (<span class="va">pc</span>.<span class="at">removeTrack</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-15" title="15">  <span class="va">pc</span>.<span class="at">removeTrack</span>(<span class="va">pc</span>.<span class="at">getSenders</span>().<span class="at">find</span>((sender) <span class="kw">=&gt;</span> <span class="va">sender</span>.<span class="at">track</span> <span class="op">==</span> track))<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-16" title="16"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-17" title="17">  <span class="co">// If you have code listening for negotiationneeded events:</span></a>
+<a class="sourceLine" id="cb4-18" title="18">  <span class="at">setTimeout</span>(() <span class="kw">=&gt;</span> <span class="va">pc</span>.<span class="at">dispatchEvent</span>(<span class="kw">new</span> <span class="at">Event</span>(<span class="st">&quot;negotiationneeded&quot;</span>)))<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-19" title="19"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/WebRTC_API">WebRTC</a></li>
+</ul>

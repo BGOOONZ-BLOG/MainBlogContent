@@ -1,0 +1,69 @@
+<p>{{draft}}{{APIRef(“CSS Painting API”)}}</p>
+<p>The <strong><code>PaintWorkletGlobalScope.registerPaint()</code></strong> method of the {{domxref(“PaintWorklet”)}} interface registers a class programmatically generate an image where a CSS property expects a file.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="at">registerPaint</span>(name<span class="op">,</span> <span class="kw">class</span>)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li>name
+<ul>
+<li>: The name of the worklet class to register.</li>
+</ul></li>
+<li>class
+<ul>
+<li>: A reference to the class that implements the worklet.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>{{jsxref(‘undefined’)}}</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li>TypeError
+<ul>
+<li>: Thrown when one of the arguments is invalid or missing.</li>
+</ul></li>
+<li>InvalidModificationError
+<ul>
+<li>: Thrown when the a worklet already exists with the specified name.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>The following shows registering an example worklet module. This should be in a separate js file. Note that <code>registerPaint()</code> is called without a reference to <code>PaintWorkletGlobalScope</code>. The file itself is loaded through <code>CSS.paintWorklet.addModule()</code> (documented here on the parent class of PaintWorklet, at {{domxref(‘Worklet.addModule()’)}}.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">/* checkboardWorklet.js */</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">class</span> CheckerboardPainter <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="at">paint</span>(ctx<span class="op">,</span> geom<span class="op">,</span> properties) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="co">// Use `ctx` as if it was a normal canvas</span></a>
+<a class="sourceLine" id="cb2-6" title="6">    <span class="kw">const</span> colors <span class="op">=</span> [<span class="st">&#39;red&#39;</span><span class="op">,</span> <span class="st">&#39;green&#39;</span><span class="op">,</span> <span class="st">&#39;blue&#39;</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7">    <span class="kw">const</span> size <span class="op">=</span> <span class="dv">32</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">    <span class="cf">for</span>(<span class="kw">let</span> y <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> y <span class="op">&lt;</span> <span class="va">geom</span>.<span class="at">height</span>/size<span class="op">;</span> y<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-9" title="9">      <span class="cf">for</span>(<span class="kw">let</span> x <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> x <span class="op">&lt;</span> <span class="va">geom</span>.<span class="at">width</span>/size<span class="op">;</span> x<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-10" title="10">        <span class="kw">const</span> color <span class="op">=</span> colors[(x <span class="op">+</span> y) <span class="op">%</span> <span class="va">colors</span>.<span class="at">length</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11">        <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12">        <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> color<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13">        <span class="va">ctx</span>.<span class="at">rect</span>(x <span class="op">*</span> size<span class="op">,</span> y <span class="op">*</span> size<span class="op">,</span> size<span class="op">,</span> size)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14">        <span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-15" title="15">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-16" title="16">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-17" title="17">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-18" title="18"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-19" title="19"></a>
+<a class="sourceLine" id="cb2-20" title="20"><span class="co">// Register our class under a specific name</span></a>
+<a class="sourceLine" id="cb2-21" title="21"><span class="at">registerPaint</span>(<span class="st">&#39;checkerboard&#39;</span><span class="op">,</span> CheckerboardPainter)<span class="op">;</span></a></code></pre></div>
+<p>The first step in using a paintworket is defining the paint worklet using the <code>registerPaint()</code> function, as done above. To use it, you register it with the <code>CSS.paintWorklet.addModule()</code> method:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">&lt;script&gt;</span></a>
+<a class="sourceLine" id="cb3-2" title="2">   <span class="va">CSS</span>.<span class="va">paintWorklet</span>.<span class="at">addModule</span>(<span class="st">&#39;checkboardWorklet.js&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw">&lt;/script&gt;</span></a></code></pre></div>
+<p>You can then use the <code>{{cssxref('paint()', 'paint()')}}</code> CSS function in your CSS anywhere an <code>{{cssxref('&amp;lt;image&amp;gt;')}}</code> value is valid.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb4-1" title="1">li {</a>
+<a class="sourceLine" id="cb4-2" title="2">   <span class="kw">background-image</span>: paint<span class="fu">(</span>checkerboard<span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3">}</a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/CSS_Painting_API">CSS Painting API</a></li>
+<li><a href="/en-US/docs/Web/Houdini">Houdini APIs</a></li>
+<li><a href="/en-US/docs/Web/Houdini/learn">Houdini overview</a></li>
+</ul>

@@ -1,0 +1,184 @@
+<p>{{APIRef(“Media Capabilities API”)}}</p>
+<p>The <a href="/en-US/docs/Web/API/Media_Capabilities_API">Media Capabilities API</a> provides several key features to help you better decide how to handle media, but also to determine how well media is being handled, in real time.</p>
+<p>These features include:</p>
+<ul>
+<li>The ability to query the browser to determine its ability to encode or decode media given a specified set of encoding parameters. These parameters may include the codecs, resolutions, bit rates, frame rates, and other such details. With the Media Capabilities API, you can determine not just if the browser can support a given format, but whether or not it can do so efficiently and smoothly. In short, this API replaces—and improves upon—the {{domxref(“MediaSource”)}} method {{domxref(“MediaSource.isTypeSupported”, “isTypeSupported()”)}} or the {{domxref(“HTMLMediaElement”)}} method {{domxref(“HTMLMediaElement.canPlayType”,“canPlayType()”)}}.</li>
+<li>More and more finely-detailed information about the display’s properties, so that informed decisions can be made when choosing the best format to play on the user’s device. For example, you can use the API to ensure that you don’t try to play High Dynamic Range (HDR) content on a Standard Dynamic Range (SDR) screen.</li>
+<li>Support for getting real-time feedback about the playback of media, so your code can make informed decisions about adapting the stream’s quality or other settings to manage the user’s perceived media performance and quality. One feature of this is the ability to detect when the device switches GPUs, so you can make appropriate adjustments based on the new GPU’s capabilities.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> The display capabilities functionality mentioned in the third point above have not yet appeared in any browser. They will be a useful feature of the API once available, but there is a high probability of the display capabilities functionality changing a great deal before browser implementations arrive.</p>
+</blockquote>
+<h2 id="the-mediacapabilities-interface">The MediaCapabilities interface</h2>
+<p>The {{domxref(“MediaCapabilities”)}} is available using the {{domxref(“Navigator.mediaCapabilities”, “mediaCapabilities”)}} property which is provided by both the <code>navigator</code> object and the {{domxref(“WorkerNavigator”)}} object; in other words, the Media Capabilities API is available both on the main thread and from workers.</p>
+<p>If the object exists, Media Capabilities API is available. You can, therefore, test for the presence of the API  like so:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="cf">if</span> (<span class="st">&quot;mediaCapabilities&quot;</span> <span class="kw">in</span> navigator) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="co">// mediaCapabilities is available</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-4" title="4">  <span class="co">// mediaCapabilities IS NOT available</span></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="op">}</span></a></code></pre></div>
+<p>Taking video as an example, to obtain information about video decoding abilities, you create a video decoding configuration which you pass as a parameter to  {{domxref(“MediaCapabilities.decodingInfo()”)}} method. This returns a promise that fulfills with information about the media capabilities as to whether the video can be decoded, and whether decoding will be smooth and power efficient. You can also test audio decoding as well as video and audio encoding.</p>
+<h3 id="creating-a-video-decoding-configuration">Creating a video decoding configuration</h3>
+<p>The {{domxref(“MediaCapabilities.decodingInfo()”)}} method takes as a parameter a media decoding configuration. There are very specific ways to go about creating the configuration defined by the {{domxref(“MediaDecodingConfiguration”)}} dictionary.</p>
+<p>In our example, we are testing the decoding capabilities of a video configuration. The configuration requires the type of media being tested — e.g. a plain <code>file</code> or {{domxref(“MediaSource”)}} — and a {{domxref(“VideoConfiguration”)}} including values for the <code>contentType</code>, <code>width</code>, <code>height</code>, <code>bitrate</code>, and <code>framerate</code><strong>:</strong></p>
+<ul>
+<li>The <code>contentType</code> must be a string specifying a <a href="/en-US/docs/Web/Media/Formats/Video_codecs">valid video MIME type</a>.</li>
+<li>The <code>width</code> and <code>height</code> are the horizontal and vertical dimensions of the video; these are also used to determine the aspect ratio.</li>
+<li>The <code>bitrate</code> is the number of bits used to encode one second of video.</li>
+<li>The <code>framerate</code> is the number of frames which are played per second of time when playing the video.</li>
+</ul>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> videoConfiguration <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="dt">type</span><span class="op">:</span> <span class="st">&quot;file&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-3" title="3">    <span class="dt">video</span><span class="op">:</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">      <span class="dt">contentType</span><span class="op">:</span> <span class="st">&quot;video/webm;codecs=vp8&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-5" title="5">      <span class="dt">width</span><span class="op">:</span> <span class="dv">800</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-6" title="6">      <span class="dt">height</span><span class="op">:</span> <span class="dv">600</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-7" title="7">      <span class="dt">bitrate</span><span class="op">:</span> <span class="dv">10000</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-8" title="8">      <span class="dt">framerate</span><span class="op">:</span> <span class="dv">15</span></a>
+<a class="sourceLine" id="cb2-9" title="9">   <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="op">};</span></a></code></pre></div>
+<p>Had we been querying the decodability of an audio file, we would create an audio configuration including the number of channels and sample rate, leaving out the properties that apply only to video—namely, the dimensions and the frame rate:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> audioConfiguration <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="dt">type</span><span class="op">:</span> <span class="st">&quot;file&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="dt">audio</span><span class="op">:</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">      <span class="dt">contentType</span><span class="op">:</span> <span class="st">&quot;audio/ogg&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-5" title="5">      <span class="dt">channels</span><span class="op">:</span> <span class="dv">2</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-6" title="6">      <span class="dt">bitrate</span><span class="op">:</span> <span class="dv">132700</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-7" title="7">      <span class="dt">samplerate</span><span class="op">:</span> <span class="dv">5200</span></a>
+<a class="sourceLine" id="cb3-8" title="8">   <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-9" title="9"><span class="op">};</span></a></code></pre></div>
+<p>Had we been testing encoding capabilities, we would have created a {{domxref(“MediaEncodingConfiguration”)}}, which requires the type of media being tested — either <code>record</code> (for recording media, i.e. a {{domxref(“MediaRecorder”)}} object) or <code>transmission</code> (for media transmitted over electronic means like <a href="/en-US/docs/Web/API/RTCPeerConnection" title="The RTCPeerConnection interface represents a WebRTC connection between the local computer and a remote peer. It provides methods to connect to a remote peer, maintain and monitor the connection, and close the connection once it&#39;s no longer needed."><code>RTCPeerConnection</code></a>) — plus either an audio or video configuration as described above.</p>
+<h3 id="querying-the-browser-about-decoding-abilities">Querying the browser about decoding abilities</h3>
+<p>Now that we’ve created a video decoding configuration we can pass it as a paramater of the {{domxref(“MediaCapabilities.decodingInfo”, “decodingInfo()”)}} method to determine if a video matching this configuration would be decodable and if the playback would be smooth and power efficient.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">var</span> promise <span class="op">=</span> <span class="va">navigator</span>.<span class="va">mediaCapabilities</span>.<span class="at">decodingInfo</span>(videoConfiguration)<span class="op">;</span></a></code></pre></div>
+<p>The <code>decodingInfo()</code> and {{domxref(“MediaCapabilities.encodingInfo”, “encodingInfo()”)}} methods both return promises. Once the promises state is fulfilled, you can access the <code>supported</code>, <code>smooth</code>, and <code>powerEfficient</code> properties from the returned object.</p>
+<h3 id="handling-the-response">Handling the response</h3>
+<p>Instead of the assigning the promise to a variable, we can output the values returned by the promise to the console:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="va">navigator</span>.<span class="va">mediaCapabilities</span>.<span class="at">decodingInfo</span>(videoConfiguration).<span class="at">then</span>(result <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;This configuration is &#39;</span> <span class="op">+</span></a>
+<a class="sourceLine" id="cb5-3" title="3">    (<span class="va">result</span>.<span class="at">supported</span> <span class="op">?</span> <span class="st">&#39;&#39;</span> : <span class="st">&#39;not &#39;</span>) <span class="op">+</span> <span class="st">&#39;supported, &#39;</span> <span class="op">+</span></a>
+<a class="sourceLine" id="cb5-4" title="4">    (<span class="va">result</span>.<span class="at">smooth</span> <span class="op">?</span> <span class="st">&#39;&#39;</span> : <span class="st">&#39;not &#39;</span>) <span class="op">+</span> <span class="st">&#39;smooth, and &#39;</span> <span class="op">+</span></a>
+<a class="sourceLine" id="cb5-5" title="5">    (<span class="va">result</span>.<span class="at">powerEfficient</span> <span class="op">?</span> <span class="st">&#39;&#39;</span> : <span class="st">&#39;not &#39;</span>) <span class="op">+</span> <span class="st">&#39;power efficient.&#39;</span>)</a>
+<a class="sourceLine" id="cb5-6" title="6"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="handling-errors">Handling errors</h2>
+<p>In our video decoding example, a <code>TypeError</code> would be raised if the media configuration passed to the {{domxref(“MediaCapabilities.decodingInfo”, “decodingInfo()”)}} method was invalid. There are a few reasons why an error might occur, including:</p>
+<ul>
+<li>The specified <code>type</code> isn’t one of the two permtited values: <code>file</code> or <code>media-source</code></li>
+<li>The <code>contentType</code> given is</li>
+</ul>
+<p>The error can be due to the <code>type</code> not being one of the two possible values, the <code>contentType</code> not being a valid codec MIME type, or invalid or omitted definitions required in the {{domxref(“VideoConfiguration”)}}.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="va">navigator</span>.<span class="va">mediaCapabilities</span>.<span class="at">decodingInfo</span>(videoConfiguration).<span class="at">then</span>(</a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;It worked&#39;</span>)</a>
+<a class="sourceLine" id="cb6-3" title="3">).<span class="at">catch</span>(error <span class="kw">=&gt;</span></a>
+<a class="sourceLine" id="cb6-4" title="4">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;It failed: &#39;</span> <span class="op">+</span> error)</a>
+<a class="sourceLine" id="cb6-5" title="5">)<span class="op">;</span></a></code></pre></div>
+<h2 id="media-capabilities-live-example">Media Capabilities live example</h2>
+<h3 id="css">CSS</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb7-1" title="1">li { <span class="kw">margin</span> : <span class="dv">1</span><span class="dt">em</span><span class="op">;</span> }</a></code></pre></div>
+<h3 id="html">HTML</h3>
+<div class="sourceCode" id="cb8"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">&lt;form&gt;</span></a>
+<a class="sourceLine" id="cb8-2" title="2"><span class="kw">&lt;p&gt;</span>Select your video configuration and find out if this browser supports the codec,</a>
+<a class="sourceLine" id="cb8-3" title="3">and whether decoding will be smooth and power efficient:<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb8-4" title="4">  <span class="kw">&lt;ul&gt;</span></a>
+<a class="sourceLine" id="cb8-5" title="5">  <span class="kw">&lt;li&gt;</span></a>
+<a class="sourceLine" id="cb8-6" title="6">    <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;codec&quot;</span><span class="kw">&gt;</span>Select a codec<span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb8-7" title="7">    <span class="kw">&lt;select</span><span class="ot"> id=</span><span class="st">&quot;codec&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb8-8" title="8">      <span class="kw">&lt;option&gt;</span>video/webm; codecs=vp8<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb8-9" title="9">      <span class="kw">&lt;option&gt;</span>video/webm; codecs=vp9<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb8-10" title="10">      <span class="kw">&lt;option&gt;</span>video/mp4; codecs=avc1<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb8-11" title="11">      <span class="kw">&lt;option&gt;</span>video/mp4; codecs=avc1.420034<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb8-12" title="12">      <span class="kw">&lt;option&gt;</span>video/ogg; codecs=theora<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb8-13" title="13">      <span class="kw">&lt;option&gt;</span>invalid<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb8-14" title="14">    <span class="kw">&lt;/select&gt;</span></a>
+<a class="sourceLine" id="cb8-15" title="15">  <span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb8-16" title="16">  <span class="kw">&lt;li&gt;</span></a>
+<a class="sourceLine" id="cb8-17" title="17">    <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;size&quot;</span><span class="kw">&gt;</span>Select a size<span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb8-18" title="18">    <span class="kw">&lt;select</span><span class="ot"> id=</span><span class="st">&quot;size&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb8-19" title="19">      <span class="kw">&lt;option&gt;</span>7680x4320<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb8-20" title="20">      <span class="kw">&lt;option&gt;</span>3840x2160<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb8-21" title="21">      <span class="kw">&lt;option&gt;</span>2560x1440<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb8-22" title="22">      <span class="kw">&lt;option&gt;</span>1920x1080<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb8-23" title="23">      <span class="kw">&lt;option&gt;</span>1280x720<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb8-24" title="24">      <span class="kw">&lt;option</span><span class="ot"> selected</span><span class="kw">&gt;</span>800x600<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb8-25" title="25">      <span class="kw">&lt;option&gt;</span>640x480<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb8-26" title="26">      <span class="kw">&lt;option&gt;</span>320x240<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb8-27" title="27">      <span class="kw">&lt;option</span><span class="ot"> value=</span><span class="st">&quot; x &quot;</span><span class="kw">&gt;</span>none<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb8-28" title="28">    <span class="kw">&lt;/select&gt;</span></a>
+<a class="sourceLine" id="cb8-29" title="29">  <span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb8-30" title="30">  <span class="kw">&lt;li&gt;</span></a>
+<a class="sourceLine" id="cb8-31" title="31">    <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;framerate&quot;</span><span class="kw">&gt;</span>Select a framerate<span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb8-32" title="32">    <span class="kw">&lt;select</span><span class="ot"> id=</span><span class="st">&quot;framerate&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb8-33" title="33">      <span class="kw">&lt;option&gt;</span>60<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb8-34" title="34">      <span class="kw">&lt;option&gt;</span>50<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb8-35" title="35">      <span class="kw">&lt;option&gt;</span>30<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb8-36" title="36">      <span class="kw">&lt;option&gt;</span>24<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb8-37" title="37">      <span class="kw">&lt;option</span><span class="ot"> selected</span><span class="kw">&gt;</span>15<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb8-38" title="38">    <span class="kw">&lt;/select&gt;</span></a>
+<a class="sourceLine" id="cb8-39" title="39">  <span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb8-40" title="40">    <span class="kw">&lt;li&gt;</span></a>
+<a class="sourceLine" id="cb8-41" title="41">    <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;bitrate&quot;</span><span class="kw">&gt;</span>Select a bitrate<span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb8-42" title="42">    <span class="kw">&lt;select</span><span class="ot"> id=</span><span class="st">&quot;bitrate&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb8-43" title="43">      <span class="kw">&lt;option&gt;</span>4000<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb8-44" title="44">      <span class="kw">&lt;option&gt;</span>2500<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb8-45" title="45">      <span class="kw">&lt;option&gt;</span>800<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb8-46" title="46">    <span class="kw">&lt;/select&gt;</span></a>
+<a class="sourceLine" id="cb8-47" title="47">  <span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb8-48" title="48">  <span class="kw">&lt;/ul&gt;</span></a>
+<a class="sourceLine" id="cb8-49" title="49">  <span class="kw">&lt;p&gt;&lt;input</span><span class="ot"> type=</span><span class="st">&quot;button&quot;</span><span class="ot"> value=</span><span class="st">&quot;Test this Video Configuration&quot;</span><span class="ot"> id=</span><span class="st">&quot;tryit&quot;</span><span class="kw">&gt;&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb8-50" title="50"><span class="kw">&lt;/form&gt;</span></a>
+<a class="sourceLine" id="cb8-51" title="51"></a>
+<a class="sourceLine" id="cb8-52" title="52"><span class="kw">&lt;ul</span><span class="ot"> id=</span><span class="st">&quot;results&quot;</span><span class="kw">&gt;&lt;/ul&gt;</span></a></code></pre></div>
+<h3 id="javascript">JavaScript</h3>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">let</span> mc <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-2" title="2">  <span class="dt">videoConfiguration </span><span class="op">:</span> <span class="kw">new</span> <span class="at">Object</span>()<span class="op">,</span></a>
+<a class="sourceLine" id="cb9-3" title="3"></a>
+<a class="sourceLine" id="cb9-4" title="4">  <span class="dt">tryit</span><span class="op">:</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-5" title="5">   <span class="va">mc</span>.<span class="at">createConfiguration</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-6" title="6">   <span class="va">mc</span>.<span class="at">testit</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-7" title="7">  <span class="op">},</span></a>
+<a class="sourceLine" id="cb9-8" title="8"></a>
+<a class="sourceLine" id="cb9-9" title="9">  <span class="dt">createConfiguration</span><span class="op">:</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-10" title="10">    <span class="kw">var</span> size <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;size&#39;</span>).<span class="va">value</span>.<span class="at">split</span>(<span class="st">&#39;x&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-11" title="11">    <span class="va">mc</span>.<span class="at">videoConfiguration</span> <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-12" title="12">      <span class="dt">type</span><span class="op">:</span> <span class="st">&#39;file&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb9-13" title="13">      <span class="dt">video</span><span class="op">:</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-14" title="14">        <span class="dt">contentType</span><span class="op">:</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;codec&#39;</span>).<span class="at">value</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb9-15" title="15">        <span class="dt">width</span><span class="op">:</span> size[<span class="dv">0</span>]<span class="op">,</span></a>
+<a class="sourceLine" id="cb9-16" title="16">        <span class="dt">height</span><span class="op">:</span> size[<span class="dv">1</span>]<span class="op">,</span></a>
+<a class="sourceLine" id="cb9-17" title="17">        <span class="dt">bitrate</span><span class="op">:</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;bitrate&#39;</span>).<span class="at">value</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb9-18" title="18">        <span class="dt">framerate</span><span class="op">:</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;framerate&#39;</span>).<span class="at">value</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb9-19" title="19">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb9-20" title="20">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb9-21" title="21">  <span class="op">},</span></a>
+<a class="sourceLine" id="cb9-22" title="22"></a>
+<a class="sourceLine" id="cb9-23" title="23">  <span class="dt">testit</span><span class="op">:</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-24" title="24">    <span class="kw">let</span> content <span class="op">=</span> <span class="st">&#39;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-25" title="25">    <span class="va">navigator</span>.<span class="va">mediaCapabilities</span>.<span class="at">decodingInfo</span>(<span class="va">mc</span>.<span class="at">videoConfiguration</span>).<span class="at">then</span>(result <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-26" title="26">      <span class="kw">var</span> li <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;li&#39;</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb9-27" title="27">        mcv <span class="op">=</span> <span class="va">mc</span>.<span class="va">videoConfiguration</span>.<span class="at">video</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-28" title="28">      content <span class="op">=</span> <span class="st">&#39;A &#39;</span> <span class="op">+</span> <span class="va">mcv</span>.<span class="at">width</span> <span class="op">+</span> <span class="st">&#39;x&#39;</span> <span class="op">+</span> <span class="va">mcv</span>.<span class="at">height</span> <span class="op">+</span> <span class="st">&#39;, &#39;</span> <span class="op">+</span> <span class="va">mcv</span>.<span class="at">contentType</span> <span class="op">+</span> <span class="st">&#39; at &#39;</span> <span class="op">+</span></a>
+<a class="sourceLine" id="cb9-29" title="29">        <span class="va">mcv</span>.<span class="at">framerate</span>  <span class="op">+</span> <span class="st">&#39;fps and &#39;</span> <span class="op">+</span>  <span class="va">mcv</span>.<span class="at">bitrate</span> <span class="op">+</span> <span class="st">&#39; bps video &#39;</span> <span class="op">+</span></a>
+<a class="sourceLine" id="cb9-30" title="30">        (<span class="va">result</span>.<span class="at">supported</span> <span class="op">?</span> <span class="st">&#39; IS &#39;</span> : <span class="st">&#39;IS NOT &#39;</span>) <span class="op">+</span> <span class="st">&#39; supported, &#39;</span> <span class="op">+</span></a>
+<a class="sourceLine" id="cb9-31" title="31">        (<span class="va">result</span>.<span class="at">smooth</span> <span class="op">?</span> <span class="st">&#39; IS &#39;</span> : <span class="st">&#39; is NOT &#39;</span>) <span class="op">+</span> <span class="st">&#39; smooth, and&#39;</span> <span class="op">+</span></a>
+<a class="sourceLine" id="cb9-32" title="32">        (<span class="va">result</span>.<span class="at">powerEfficient</span> <span class="op">?</span> <span class="st">&#39; IS &#39;</span> : <span class="st">&#39; IS NOT &#39;</span>) <span class="op">+</span> <span class="st">&#39;power efficient.&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-33" title="33">      <span class="kw">var</span> ul <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;results&quot;</span>)</a>
+<a class="sourceLine" id="cb9-34" title="34">      <span class="va">li</span>.<span class="at">innerHTML</span> <span class="op">=</span> content<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-35" title="35">      <span class="va">ul</span>.<span class="at">appendChild</span>(li)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-36" title="36">    <span class="op">}</span>).<span class="at">catch</span>((error) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-37" title="37">        <span class="kw">var</span> li <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;li&#39;</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb9-38" title="38">            ul <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;results&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-39" title="39">        <span class="va">li</span>.<span class="at">innerText</span> <span class="op">=</span> <span class="st">&#39;Codec &#39;</span> <span class="op">+</span> <span class="va">mc</span>.<span class="va">videoConfiguration</span>.<span class="va">video</span>.<span class="at">contentType</span> <span class="op">+</span> <span class="st">&#39; threw an error: &#39;</span> <span class="op">+</span> error<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-40" title="40">        <span class="va">ul</span>.<span class="at">appendChild</span>(li)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-41" title="41">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-42" title="42">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb9-43" title="43"><span class="op">}</span></a>
+<a class="sourceLine" id="cb9-44" title="44"></a>
+<a class="sourceLine" id="cb9-45" title="45"><span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;tryit&#39;</span>).<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> <span class="va">mc</span>.<span class="at">tryit</span>)<span class="op">;</span></a></code></pre></div>
+<h3 id="live-result">Live Result</h3>
+<p>{{EmbedLiveSample(‘Media_Capabilities_live_example’, ‘100%’, ‘400’)}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat(“api.MediaCapabilities”)}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{domxref(“navigator.mediaCapabilities”)}}</li>
+</ul>

@@ -1,0 +1,95 @@
+<p>When working with Media Source Extensions, it is likely that you need to condition your assets before you can stream them. This article takes you through the requirements and shows you a toolchain you can use to encode your assets appropriately.</p>
+<h2 id="getting-started">Getting started</h2>
+<ol type="1">
+<li>The first and most important step is to ensure that your files are comprised of a container and codec that users’ browsers support.</li>
+<li>Depending on the codec, you might need to fragment the file to comply with the <a href="https://www.w3.org/TR/mse-byte-stream-format-isobmff/">ISO BMFF spec</a>.</li>
+<li>(Optional) If you decide to use Dynamic Adaptive Streaming over HTTP (DASH) for adaptive bitrate streaming, you need to transcode your assets into multiple resolutions. Most DASH clients expect a corresponding Media Presentation Description (MPD) manifest file, which is typically generated while generating the multiple resolution asset files.</li>
+</ol>
+<p>Below we’ll cover all of these steps, but first let’s look at a toolchain we can use to do this fairly easily.</p>
+<h3 id="sample-media">Sample Media</h3>
+<p>If you’re looking to follow the steps listed here, but don’t have any media to experiment with, you can grab the trailer to Big Buck Bunny [0] <a href="http://wayback.archive.org/web/20161102172252id_/http://video.blendertestbuilds.de/download.php?file=download.blender.org/peach/trailer_1080p.mov">here</a>. Big Buck Bunny is licensed under the <a href="http://creativecommons.org/licenses/by/3.0/">Creative Commons Attribution 3.0</a> license.  Throughout this tutorial, you’ll see the filename trailer_1080p.mov which is the download.</p>
+<p>[0] (c) Copyright 2008, Blender Foundation / www.bigbuckbunny.org / https://peach.blender.org/about/</p>
+<h3 id="tools-required">Tools required</h3>
+<p>When working with MSE, the following tools are a must have:</p>
+<ol type="1">
+<li><a href="http://ffmpeg.org/">ffmpeg</a> — A command-line utility for transcoding your media into the required formats. You can download a version for your system at the <a href="http://ffmpeg.org/download.html">Download FFmpeg page</a>. Extract the executable from the archive file and add it’s location to your PATH statement. OSX users can also use <a href="http://brew.sh/">homebrew</a> to install ffmpeg.</li>
+<li><a href="https://github.com/axiomatic-systems/Bento4">Bento4</a> — A set of command-line utilities for getting asset metadata and creating content for DASH. To install, you’ll need to build/compile the application yourself from the provided project files/source files, depending on your OS and preferences. See the <a href="https://github.com/axiomatic-systems/Bento4#building">Building instructions</a> for more details. The prebuilt file is <a href="https://www.bento4.com/downloads/">here</a>. Put the contents of the <code>bin</code> directory in the same place as ffmpeg.</li>
+<li>python2 — Bento4 uses it.</li>
+</ol>
+<p>Get these installed successfully before moving to the next step.</p>
+<p>Sample media should be placed in the Bento4 <code>utils</code> directory and worked here.</p>
+<blockquote>
+<p><strong>Note:</strong> The prebuilt ffmpeg does not include libfdk_aac due to licensing reasons. Bento4 uses this by default, so you need to compile ffmpeg if necessary. If you don’t need it, add <code>--audio-codec=aac</code> to the <code>mp4-dash-encode.py</code> command line.</p>
+</blockquote>
+<h3 id="container-and-codec-support">Container and Codec Support</h3>
+<p>As specified in <a href="https://www.w3.org/TR/media-source/#goals">section 1.1 of the MSE spec: Goals</a>, MSE is designed not to require support for any particular media format or codec.  While this is true on paper, browser support varies for specific container/codec combinations.</p>
+<p>To check if the browser supports a particular container, you can pass a string of the MIME type to the {{domxref(“MediaSource.isTypeSupported”)}} method:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">MediaSource</span>.<span class="at">isTypeSupported</span>(<span class="st">&#39;audio/mp3&#39;</span>)<span class="op">;</span> <span class="co">// false</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="va">MediaSource</span>.<span class="at">isTypeSupported</span>(<span class="st">&#39;video/mp4&#39;</span>)<span class="op">;</span> <span class="co">// true</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="va">MediaSource</span>.<span class="at">isTypeSupported</span>(<span class="st">&#39;video/mp4; codecs=&quot;avc1.4D4028, mp4a.40.2&quot;&#39;</span>)<span class="op">;</span> <span class="co">// true</span></a></code></pre></div>
+<p>The string is the MIME type of the container, optionally followed by a list of codecs. While the MIME type is fairly simple to figure out, we can get the codec string using the <a href="https://nickdesaulniers.github.io/mp4info/">mp4info</a> utility.</p>
+<p>Currently, MP4 containers with H.264 video and AAC audio codecs have support across all modern browsers, while others don’t.</p>
+<p>To convert our sample media from a QuickTime MOV container to an MP4 container, we can use ffmpeg.  Because the audio codec in the MOV container is already AAC and the video codec is h.264, we can instruct ffmpeg not to perform transcoding. Instead, it will just copy the audio and video tracks over without performing any transcoding, which is relatively faster than having to transcode.</p>
+<pre><code>$ ffmpeg -i trailer_1080p.mov -c:v copy -c:a copy bunny.mp4
+$ ls
+bunny.mp4         trailer_1080p.mov</code></pre>
+<h3 id="checking-fragmentation">Checking Fragmentation</h3>
+<p>In order to properly stream MP4, we need the asset to be an <a href="https://www.w3.org/TR/mse-byte-stream-format-isobmff/">ISO BMF</a> format MP4. Without proper fragmentation, any given MP4 file is not guaranteed to work with MSE.  This means that metadata within the container is spread out and not lumped together.</p>
+<p>To check whether an MP4 file is a proper MP4 stream, you can again use the <a href="https://nickdesaulniers.github.io/mp4info/">mp4info</a> utility to list the atoms of an MP4.</p>
+<blockquote>
+<p><strong>Note:</strong> The fragmented version is slightly larger than the original, due to additional metadata spread throughout the file. This is usually a file size increase of 1 percent or less.</p>
+</blockquote>
+<h3 id="fragmenting">Fragmenting</h3>
+<p>If you have an asset that is not already an MP4, ffmpeg can handle emitting a properly fragmented MP4 during the transcode process, with the <code>-movflags frag_keyframe+empty_moov</code> command line flag:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb3-1" title="1">$ <span class="ex">ffmpeg</span> -i trailer_1080p.mov -c:v copy -c:a copy -movflags frag_keyframe+empty_moov bunny_fragmented.mp4</a></code></pre></div>
+<p>If you already have an MP4, but it’s not properly fragmented, you can again use ffmpeg:</p>
+<pre><code>$ ffmpeg -i non_fragmented.mp4 -movflags frag_keyframe+empty_moov fragmented.mp4</code></pre>
+<p>In both cases, Chrome may require an extra movie flag to be set:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb5-1" title="1"><span class="ex">-movflags</span> frag_keyframe+empty_moov+default_base_moof</a></code></pre></div>
+<p>Having a properly fragmented MP4 file is all you need to get started.  If you wish to employ adaptive bitrate streaming, you’ll have to create encodings at multiple resolutions.  While MSE is flexible enough to allow you to make your implementation, it’s highly recommended to use an existing DASH client as DASH is a well-specified application protocol.</p>
+<h3 id="creating-content-for-dash">Creating Content for DASH</h3>
+<p>Given that you have ffmpeg and Bento4’s utilities accessible through your $PATH, you can run Bento4’s <code>mp4-dash-encode.py</code> Python script to generate multiple encodings of your content at various resolutions. Bento4’s <code>mp4-dash.py</code> Python script can then be used to generate the corresponding MPD file needed by clients.</p>
+<p>Run the following commands (shown with sample output):</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb6-1" title="1">$ <span class="ex">python</span> mp4-dash-encode.py -b 5 -v bunny_fragmented.mp4</a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="ex">Encoding</span> 5 bitrates, min bitrate = 500.0 max bitrate = 2000.0</a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="ex">Media</span> Source: Video: resolution=640x360</a>
+<a class="sourceLine" id="cb6-4" title="4"><span class="ex">ENCODING</span> bitrate: 500, resolution: 256x144</a>
+<a class="sourceLine" id="cb6-5" title="5"><span class="ex">ENCODING</span> bitrate: 875, resolution: 384x216</a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="ex">ENCODING</span> bitrate: 1250, resolution: 480x270</a>
+<a class="sourceLine" id="cb6-7" title="7"><span class="ex">ENCODING</span> bitrate: 1625, resolution: 560x316</a>
+<a class="sourceLine" id="cb6-8" title="8"><span class="ex">ENCODING</span> bitrate: 2000, resolution: 640x360</a>
+<a class="sourceLine" id="cb6-9" title="9"></a>
+<a class="sourceLine" id="cb6-10" title="10">$ <span class="ex">python</span> mp4-dash.py video_0*</a>
+<a class="sourceLine" id="cb6-11" title="11"><span class="ex">Parsing</span> media file 1: video_00500.mp4</a>
+<a class="sourceLine" id="cb6-12" title="12"><span class="ex">Parsing</span> media file 2: video_00875.mp4</a>
+<a class="sourceLine" id="cb6-13" title="13"><span class="ex">Parsing</span> media file 3: video_01250.mp4</a>
+<a class="sourceLine" id="cb6-14" title="14"><span class="ex">Parsing</span> media file 4: video_01625.mp4</a>
+<a class="sourceLine" id="cb6-15" title="15"><span class="ex">Parsing</span> media file 5: video_02000.mp4</a>
+<a class="sourceLine" id="cb6-16" title="16"><span class="ex">Splitting</span> media file (audio) <span class="ex">video_00500.mp4</span></a>
+<a class="sourceLine" id="cb6-17" title="17"><span class="ex">Splitting</span> media file (video) <span class="ex">video_00500.mp4</span></a>
+<a class="sourceLine" id="cb6-18" title="18"><span class="ex">Splitting</span> media file (video) <span class="ex">video_00875.mp4</span></a>
+<a class="sourceLine" id="cb6-19" title="19"><span class="ex">Splitting</span> media file (video) <span class="ex">video_01250.mp4</span></a>
+<a class="sourceLine" id="cb6-20" title="20"><span class="ex">Splitting</span> media file (video) <span class="ex">video_01625.mp4</span></a>
+<a class="sourceLine" id="cb6-21" title="21"><span class="ex">Splitting</span> media file (video) <span class="ex">video_02000.mp4</span></a>
+<a class="sourceLine" id="cb6-22" title="22"></a>
+<a class="sourceLine" id="cb6-23" title="23">$ <span class="ex">tree</span> -L 2 output</a>
+<a class="sourceLine" id="cb6-24" title="24"><span class="ex">output</span></a>
+<a class="sourceLine" id="cb6-25" title="25">├── <span class="ex">audio</span></a>
+<a class="sourceLine" id="cb6-26" title="26">│   └── <span class="ex">und</span></a>
+<a class="sourceLine" id="cb6-27" title="27">├── <span class="ex">stream.mpd</span></a>
+<a class="sourceLine" id="cb6-28" title="28">└── <span class="ex">video</span></a>
+<a class="sourceLine" id="cb6-29" title="29">    ├── <span class="ex">1</span></a>
+<a class="sourceLine" id="cb6-30" title="30">    ├── <span class="ex">2</span></a>
+<a class="sourceLine" id="cb6-31" title="31">    ├── <span class="ex">3</span></a>
+<a class="sourceLine" id="cb6-32" title="32">    ├── <span class="ex">4</span></a>
+<a class="sourceLine" id="cb6-33" title="33">    └── <span class="ex">5</span></a>
+<a class="sourceLine" id="cb6-34" title="34"></a>
+<a class="sourceLine" id="cb6-35" title="35"><span class="ex">8</span> directories, 1 file</a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> <code>mp4-dash-encode.py</code> does not display ffmpeg error messages. You can see it by specifying the <code>-d</code> option.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> If <code>"Invalid duration specification for force_key_frames: 'expr:eq(mod(n"</code> is displayed as an error message, modify <code>mp4-dash-encode.py</code> and remove two <code>"'"</code> from <code>"-force_key_frames 'expr:eq(mod(n,%d),0)'"</code>.</p>
+</blockquote>
+<h2 id="summary">Summary</h2>
+<p>With your video properly encoded and adaptive bitrate media generated, you’re now ready to begin adaptive bitrate streaming on the web using DASH and MSE.</p>

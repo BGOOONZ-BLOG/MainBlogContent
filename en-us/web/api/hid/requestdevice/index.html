@@ -1,0 +1,91 @@
+<p>{{securecontext_header}}{{DefaultAPISidebar(“WebHID API”)}}</p>
+<p>The <strong><code>requestDevice()</code></strong> method of the {{domxref(“HID”)}} interface requests access to a HID device.</p>
+<p>The user agent will present a permission dialog including a list of connected devices, and ask the user to select and grant permission to one of these devices.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">HID</span>.<span class="at">requestDevice</span>(options)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><p><code>options</code></p>
+<ul>
+<li><p>: An object containing an array of filter objects for possible devices to pair with. Each filter object can have the following properties:</p>
+<ul>
+<li><code>vendorId</code>{{Optional_Inline}}
+<ul>
+<li>: An integer representing the vendorId of the requested HID device</li>
+</ul></li>
+<li><code>productId</code>{{Optional_Inline}}
+<ul>
+<li>: An integer representing the productId of the requested HID device.</li>
+</ul></li>
+<li><p><code>usagePage</code>{{Optional_Inline}}</p>
+<ul>
+<li><p>: An integer representing the usage page component of the HID usage of the requested device. The usage for a top level collection is used to identify the device type.</p>
+<p>Standard HID usage values can be found in the <a href="https://usb.org/document-library/hid-usage-tables-122">HID Usage Tables</a> document</p></li>
+</ul></li>
+<li><code>usage</code>{{Optional_Inline}}
+<ul>
+<li>: An integer representing the usage ID component of the HID usage of the requested device.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> The device filters are used to narrow the list of devices presented to the user. If no filters are present, all connected devices are shown. When one or more filters are included, a device is included if any filter matches. To match a filter, all of the rules included in that filter must match.</p>
+</blockquote>
+<h3 id="return-value">Return value</h3>
+<p>A {{jsxref(“Promise”)}} that resolves with an array of connected {{domxref(“HIDDevice”)}} objects that match the filters passed in.</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li>{{domxref(“DOMException”)}} <code>SecurityError</code>
+<ul>
+<li>: Thrown if the page does not allow access to the HID feature.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<h3 id="matching-a-device-with-all-four-filter-rules">Matching a device with all four filter rules</h3>
+<p>In the following example a HID device is requested that has a vendor ID of <code>0xABCD</code>, product ID of <code>0x1234</code>, usage page <code>0x0C</code> and usage ID <code>0x01</code>. Only devices that match all of these rules will be shown.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">let</span> requestButton <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;request-hid-device&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="va">requestButton</span>.<span class="at">addEventListener</span>(<span class="st">&quot;click&quot;</span><span class="op">,</span> <span class="kw">async</span> () <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3">    <span class="kw">let</span> device<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">    <span class="cf">try</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">      <span class="kw">const</span> devices <span class="op">=</span> <span class="cf">await</span> <span class="va">navigator</span>.<span class="va">hid</span>.<span class="at">requestDevice</span>(<span class="op">{</span></a>
+<a class="sourceLine" id="cb2-6" title="6">        <span class="dt">filters</span><span class="op">:</span> [</a>
+<a class="sourceLine" id="cb2-7" title="7">          <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-8" title="8">            <span class="dt">vendorId</span><span class="op">:</span> <span class="bn">0xabcd</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-9" title="9">            <span class="dt">productId</span><span class="op">:</span> <span class="bn">0x1234</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-10" title="10">            <span class="dt">usagePage</span><span class="op">:</span> <span class="bn">0x0c</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-11" title="11">            <span class="dt">usage</span><span class="op">:</span> <span class="bn">0x01</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-12" title="12">          <span class="op">},</span></a>
+<a class="sourceLine" id="cb2-13" title="13">        ]<span class="op">,</span></a>
+<a class="sourceLine" id="cb2-14" title="14">      <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-15" title="15">      device <span class="op">=</span> devices[<span class="dv">0</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-16" title="16">    <span class="op">}</span> <span class="cf">catch</span> (error) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-17" title="17">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;An error occurred.&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-19" title="19"></a>
+<a class="sourceLine" id="cb2-20" title="20">    <span class="cf">if</span> (<span class="op">!</span>device) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-21" title="21">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;No device was selected.&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-22" title="22">    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-23" title="23">      <span class="va">console</span>.<span class="at">log</span>(<span class="vs">`HID: </span><span class="sc">${</span><span class="va">device</span>.<span class="at">productName</span><span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-24" title="24">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-25" title="25">  <span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h3 id="an-example-with-two-filters">An example with two filters</h3>
+<p>This next example includes two filters. Devices will be shown if they match either of these filters.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="co">// Filter on devices with the Nintendo Switch Joy-Con USB Vendor/Product IDs.</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">const</span> filters <span class="op">=</span> [</a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">      <span class="dt">vendorId</span><span class="op">:</span> <span class="bn">0x057e</span><span class="op">,</span> <span class="co">// Nintendo Co., Ltd</span></a>
+<a class="sourceLine" id="cb3-5" title="5">      <span class="dt">productId</span><span class="op">:</span> <span class="bn">0x2006</span> <span class="co">// Joy-Con Left</span></a>
+<a class="sourceLine" id="cb3-6" title="6">    <span class="op">},</span></a>
+<a class="sourceLine" id="cb3-7" title="7">    <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-8" title="8">      <span class="dt">vendorId</span><span class="op">:</span> <span class="bn">0x057e</span><span class="op">,</span> <span class="co">// Nintendo Co., Ltd</span></a>
+<a class="sourceLine" id="cb3-9" title="9">      <span class="dt">productId</span><span class="op">:</span> <span class="bn">0x2007</span> <span class="co">// Joy-Con Right</span></a>
+<a class="sourceLine" id="cb3-10" title="10">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-11" title="11">  ]<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-12" title="12"></a>
+<a class="sourceLine" id="cb3-13" title="13">  <span class="co">// Prompt user to select a Joy-Con device.</span></a>
+<a class="sourceLine" id="cb3-14" title="14">  <span class="kw">const</span> [device] <span class="op">=</span> <span class="cf">await</span> <span class="va">navigator</span>.<span class="va">hid</span>.<span class="at">requestDevice</span>(<span class="op">{</span> filters <span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

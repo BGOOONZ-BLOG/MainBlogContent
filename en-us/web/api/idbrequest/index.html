@@ -1,0 +1,79 @@
+<p>{{APIRef(“IndexedDB”)}}</p>
+<p>The <strong><code>IDBRequest</code></strong> interface of the IndexedDB API provides access to results of asynchronous requests to databases and database objects using event handler attributes. Each reading and writing operation on a database is done using a request.</p>
+<p>The request object does not initially contain any information about the result of the operation, but once information becomes available, an event is fired on the request, and the information becomes available through the properties of the <code>IDBRequest</code> instance.</p>
+<p>All asynchronous operations immediately return an {{domxref(“IDBRequest”)}} instance. Each request has a <code>readyState</code> that is set to the <code>'pending'</code> state; this changes to <code>'done'</code> when the request is completed or fails. When the state is set to <code>done</code>, every request returns a <code>result</code> and an <code>error</code>, and an event is fired on the request. When the state is still <code>pending</code>, any attempt to access the <code>result</code> or <code>error</code> raises an <code>InvalidStateError</code> exception.</p>
+<p>In plain words, all asynchronous methods return a request object. If the request has been completed successfully, the result is made available through the <code>result</code> property and an event indicating success is fired at the request ({{domxref(“IDBRequest.onsuccess”)}}). If an error occurs while performing the operation, the exception is made available through the <code>result</code> property and an error event is fired ({{domxref(“IDBRequest.onerror”)}}).</p>
+<p>The interface {{domxref(“IDBOpenDBRequest”)}} is derived from <code>IDBRequest</code>.</p>
+<p>{{AvailableInWorkers}}</p>
+<p>{{InheritanceDiagram}}</p>
+<h2 id="properties">Properties</h2>
+<p><em>Also inherits properties from {{domxref(“EventTarget”)}}.</em></p>
+<ul>
+<li>{{domxref(“IDBRequest.error”)}} {{readonlyInline}}
+<ul>
+<li>: Returns a {{domxref(“DOMException”)}} in the event of an unsuccessful request, indicating what went wrong.</li>
+</ul></li>
+<li>{{domxref(“IDBRequest.result”)}} {{readonlyInline}}
+<ul>
+<li>: Returns the result of the request. If the request failed and the result is not available, an InvalidStateError exception is thrown.</li>
+</ul></li>
+<li>{{domxref(“IDBRequest.source”)}} {{readonlyInline}}
+<ul>
+<li>: The source of the request, such as an {{domxref(“IDBIndex”)}} or an {{domxref(“IDBObjectStore”)}}. If no source exists (such as when calling {{domxref(“IDBFactory.open”)}}), it returns null.</li>
+</ul></li>
+<li>{{domxref(“IDBRequest.readyState”)}} {{readonlyInline}}
+<ul>
+<li>: The state of the request. Every request starts in the <code>pending</code> state. The state changes to <code>done</code> when the request completes successfully or when an error occurs.</li>
+</ul></li>
+<li>{{domxref(“IDBRequest.transaction”)}} {{readonlyInline}}
+<ul>
+<li>: The transaction for the request. This property can be null for certain requests, for example those returned from {{domxref(“IDBFactory.open”)}} unless an upgrade is needed. (You’re just connecting to a database, so there is no transaction to return).</li>
+</ul></li>
+</ul>
+<h2 id="methods">Methods</h2>
+<p><em>No methods, but inherits methods from {{domxref(“EventTarget”)}}.</em></p>
+<h2 id="events">Events</h2>
+<p>Listen to these events using <code>addEventListener()</code> or by assigning an event listener to the <code>oneventname</code> property of this interface.</p>
+<ul>
+<li><a href="/en-US/docs/Web/API/IDBRequest/error_event"><code>error</code></a>
+<ul>
+<li>: Fired when an error caused a request to fail. Also available via the <a href="/en-US/docs/Web/API/IDBRequest/onerror"><code>onerror</code></a> property.</li>
+</ul></li>
+<li><a href="/en-US/docs/Web/API/IDBRequest/success_event"><code>success</code></a>
+<ul>
+<li>: Fired when an <code>IDBRequest</code> succeeds. Also available via the <a href="/en-US/docs/Web/API/IDBRequest/onsuccess"><code>onsuccess</code></a> property.</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<p>In the following code snippet, we open a database asynchronously and make a request; <code>onerror</code> and <code>onsuccess</code> functions are included to handle the success and error cases. For a full working example, see our <a href="https://github.com/chrisdavidmills/to-do-notifications/tree/gh-pages">To-do Notifications</a> app (<a href="https://chrisdavidmills.github.io/to-do-notifications/">view example live</a>.)</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> db<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="co">// Let us open our database</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="kw">var</span> DBOpenRequest <span class="op">=</span> <span class="va">window</span>.<span class="va">indexedDB</span>.<span class="at">open</span>(<span class="st">&quot;toDoList&quot;</span><span class="op">,</span> <span class="dv">4</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-5" title="5"></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="co">// these two event handlers act on the database being</span></a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="co">// opened successfully, or not</span></a>
+<a class="sourceLine" id="cb1-8" title="8"><span class="va">DBOpenRequest</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-9" title="9">  <span class="va">note</span>.<span class="at">innerHTML</span> <span class="op">+=</span> <span class="st">&#39;&lt;li&gt;Error loading database.&lt;/li&gt;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-10" title="10"><span class="op">};</span></a>
+<a class="sourceLine" id="cb1-11" title="11"></a>
+<a class="sourceLine" id="cb1-12" title="12"><span class="va">DBOpenRequest</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-13" title="13">  <span class="va">note</span>.<span class="at">innerHTML</span> <span class="op">+=</span> <span class="st">&#39;&lt;li&gt;Database initialised.&lt;/li&gt;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-14" title="14"></a>
+<a class="sourceLine" id="cb1-15" title="15">  <span class="co">// store the result of opening the database.</span></a>
+<a class="sourceLine" id="cb1-16" title="16">  db <span class="op">=</span> <span class="va">DBOpenRequest</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-17" title="17"><span class="op">};</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/IndexedDB_API/Using_IndexedDB">Using IndexedDB</a></li>
+<li>Starting transactions: {{domxref(“IDBDatabase”)}}</li>
+<li>Using transactions: {{domxref(“IDBTransaction”)}}</li>
+<li>Setting a range of keys: {{domxref(“IDBKeyRange”)}}</li>
+<li>Retrieving and making changes to your data: {{domxref(“IDBObjectStore”)}}</li>
+<li>Using cursors: {{domxref(“IDBCursor”)}}</li>
+<li>Reference example: <a href="https://github.com/mdn/to-do-notifications/tree/gh-pages">To-do Notifications</a> (<a href="https://mdn.github.io/to-do-notifications/">view example live</a>.)</li>
+</ul>

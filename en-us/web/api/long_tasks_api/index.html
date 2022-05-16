@@ -1,0 +1,74 @@
+<p>{{DefaultAPISidebar(“Long Tasks”)}}</p>
+<h2 id="motivation">Motivation</h2>
+<p>The experimental Long Tasks API gives us visibility into tasks that take 50 milliseconds or more. The 50 ms threshold comes from the <a href="https://web.dev/rail/">RAIL Model</a>, in particular the <a href="https://web.dev/rail/#response:-process-events-in-under-50ms">“Response: process events in under 50 ms”</a> section.</p>
+<p>Tasks that block the main thread for 50 ms or more cause, among other issues:</p>
+<ul>
+<li>Delayed “{{glossary(”Time to interactive“)}}”.</li>
+<li>High/variable input latency.</li>
+<li>High/variable event handling latency.</li>
+<li>Janky animations and scrolling.</li>
+</ul>
+<h2 id="concepts">Concepts</h2>
+<p>Some key terms or ideas that are utilized by the Long Tasks API.</p>
+<h3 id="long-task">Long task</h3>
+<p>Any uninterrupted period where the main UI thread is busy for 50 ms or longer. Common examples include:</p>
+<ul>
+<li>Long running event handlers.</li>
+<li>Expensive reflows and other re-renders.</li>
+<li>Work the browser does between different turns of the event loop that exceeds 50 ms.</li>
+</ul>
+<h3 id="culprit-browsing-context-container">Culprit browsing context container</h3>
+<p>The “culprit browsing context container”, or “the container” for short, is the top level page, iframe, embed or object that the task occurred within.</p>
+<h3 id="attributions">Attributions</h3>
+<p>A list of containers that the task occurred within. For tasks that don’t occur within the top level page, the <code>containerId</code>, <code>containerName</code> and <code>containerSrc</code> fields may provide information as to the source of the task.</p>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> observer <span class="op">=</span> <span class="kw">new</span> <span class="at">PerformanceObserver</span>(<span class="kw">function</span>(list) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">    <span class="kw">var</span> perfEntries <span class="op">=</span> <span class="va">list</span>.<span class="at">getEntries</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3">    <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">perfEntries</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-4" title="4">        <span class="co">// Process long task notifications:</span></a>
+<a class="sourceLine" id="cb1-5" title="5">        <span class="co">// report back for analytics and monitoring</span></a>
+<a class="sourceLine" id="cb1-6" title="6">        <span class="co">// ...</span></a>
+<a class="sourceLine" id="cb1-7" title="7">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-8" title="8"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-9" title="9"><span class="co">// register observer for long task notifications</span></a>
+<a class="sourceLine" id="cb1-10" title="10"><span class="va">observer</span>.<span class="at">observe</span>(<span class="op">{</span><span class="dt">entryTypes</span><span class="op">:</span> [<span class="st">&quot;longtask&quot;</span>]<span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-11" title="11"><span class="co">// Long script execution after this will result in queueing</span></a>
+<a class="sourceLine" id="cb1-12" title="12"><span class="co">// and receiving &quot;longtask&quot; entries in the observer.</span></a></code></pre></div>
+<h2 id="interfaces">Interfaces</h2>
+<ul>
+<li>{{domxref(‘PerformanceLongTaskTiming’)}}
+<ul>
+<li>: Reports instances of long tasks.</li>
+</ul></li>
+<li>{{domxref(“TaskAttributionTiming”)}}
+<ul>
+<li>: Returns information about the work involved in a long task and its associate frame context.</li>
+</ul></li>
+</ul>
+<h2 id="specifications">Specifications</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Specification</th>
+<th>Status</th>
+<th>Comment</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>{{SpecName(‘Long Tasks’)}}</td>
+<td>{{Spec2(‘Long Tasks’)}}</td>
+<td>Initial definition.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<h3 id="performancelongtasktiming"><code>PerformanceLongTaskTiming</code></h3>
+<p>{{Compat(“api.PerformanceLongTaskTiming”)}}</p>
+<h3 id="taskattributiontiming"><code>TaskAttributionTiming</code></h3>
+<p>{{Compat(“api.TaskAttributionTiming”)}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="https://github.com/w3c/longtasks">GitHub repository</a> contains documentation and some code samples.</li>
+<li><a href="https://calendar.perfplanet.com/2017/tracking-cpu-with-long-tasks-api/">PerfPlanet article</a> on Long Tasks API from 20th December 2017.</li>
+</ul>

@@ -1,0 +1,199 @@
+<p>{{DefaultAPISidebar(“Pointer Events”)}}</p>
+<p>This guide demonstrates how to use <a href="/en-US/docs/Web/API/Pointer_events">pointer events</a> and the HTML {{HTMLElement(“canvas”)}} element to build a multi-touch enabled drawing application. This example is based on the one in the <a href="/en-US/docs/Web/API/Touch_events">touch events overview</a>, except it uses the {{domxref(“PointerEvent”,“pointer events”, "", 1)}} input event model. Another difference is that because pointer events are pointer device agnostic, the application accepts coordinate-based inputs from a mouse, a pen, or a fingertip using the same code.</p>
+<p>This application will only work on a browser that supports pointer events.</p>
+<p>A live version of this application is available on <a href="https://mdn.github.io/dom-examples/pointerevents/Using_Pointer_Events.html">GitHub</a>. The <a href="https://github.com/mdn/dom-examples/blob/master/pointerevents/Using_Pointer_Events.html">source code is available on Github</a> and pull requests and bug reports are welcome.</p>
+<h2 id="definitions">Definitions</h2>
+<ul>
+<li>Surface
+<ul>
+<li>: A touch-sensitive surface. This may be a trackpad, a touch screen, or even a virtual mapping of a user’s desk surface (or mousepad) with the physical screen.</li>
+</ul></li>
+<li>Touch point
+<ul>
+<li>: A point of contact with the surface. This may be a finger (or elbow, ear, nose, whatever, but typically a finger), stylus, mouse, or any other method for specifying a single point on the surface.</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<blockquote>
+<p><strong>Note:</strong> The text below uses the term “finger” when describing the contact with the surface, but it could, of course, also be a stylus, mouse, or other method of pointing at a location.</p>
+</blockquote>
+<h3 id="create-a-canvas">Create a canvas</h3>
+<p>The {{cssxref(“touch-action”)}} property is set to <code>none</code> to prevent the browser from applying its default touch behavior to the application.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">&lt;canvas</span><span class="ot"> id=</span><span class="st">&quot;canvas&quot;</span><span class="ot"> width=</span><span class="st">&quot;600&quot;</span><span class="ot"> height=</span><span class="st">&quot;600&quot;</span><span class="ot"> style=</span><span class="st">&quot;border:solid black 1px; touch-action:none&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  Your browser does not support canvas element.</a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">&lt;/canvas&gt;</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="kw">&lt;br&gt;</span></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="kw">&lt;button</span><span class="ot"> onclick=</span><span class="st">&quot;startup()&quot;</span><span class="kw">&gt;</span>Initialize<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="kw">&lt;br&gt;</span></a>
+<a class="sourceLine" id="cb1-7" title="7">Log: <span class="kw">&lt;pre</span><span class="ot"> id=</span><span class="st">&quot;log&quot;</span><span class="ot"> style=</span><span class="st">&quot;border: 1px solid #ccc;&quot;</span><span class="kw">&gt;&lt;/pre&gt;</span></a></code></pre></div>
+<h3 id="setting-up-the-event-handlers">Setting up the event handlers</h3>
+<p>When the page loads, the <code>startup()</code> function shown below should be called by our {{HTMLElement(“body”)}} element’s <code>onload</code> attribute (but in the example we use a button to trigger it, due to limitations of the MDN live example system).</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">function</span> <span class="at">startup</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">var</span> el <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementsByTagName</span>(<span class="st">&quot;canvas&quot;</span>)[<span class="dv">0</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="va">el</span>.<span class="at">addEventListener</span>(<span class="st">&quot;pointerdown&quot;</span><span class="op">,</span> handleStart<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="va">el</span>.<span class="at">addEventListener</span>(<span class="st">&quot;pointerup&quot;</span><span class="op">,</span> handleEnd<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="va">el</span>.<span class="at">addEventListener</span>(<span class="st">&quot;pointercancel&quot;</span><span class="op">,</span> handleCancel<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="va">el</span>.<span class="at">addEventListener</span>(<span class="st">&quot;pointermove&quot;</span><span class="op">,</span> handleMove<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="at">log</span>(<span class="st">&quot;initialized.&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="op">}</span></a></code></pre></div>
+<p>This sets up all the event listeners for our {{HTMLElement(“canvas”)}} element so we can handle the touch events as they occur.</p>
+<h4 id="tracking-new-touches">Tracking new touches</h4>
+<p>We’ll keep track of the touches in-progress.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">var</span> ongoingTouches <span class="op">=</span> <span class="kw">new</span> <span class="at">Array</span>()<span class="op">;</span></a></code></pre></div>
+<p>When a {{event(“pointerdown”)}} event occurs, indicating that a new touch on the surface has occurred, the <code>handleStart()</code> function below is called.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">function</span> <span class="at">handleStart</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="at">log</span>(<span class="st">&quot;pointerdown.&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3">  <span class="kw">var</span> el <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementsByTagName</span>(<span class="st">&quot;canvas&quot;</span>)[<span class="dv">0</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-4" title="4">  <span class="kw">var</span> ctx <span class="op">=</span> <span class="va">el</span>.<span class="at">getContext</span>(<span class="st">&quot;2d&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5"></a>
+<a class="sourceLine" id="cb4-6" title="6">  <span class="at">log</span>(<span class="st">&quot;pointerdown: id = &quot;</span> <span class="op">+</span> <span class="va">evt</span>.<span class="at">pointerId</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="va">ongoingTouches</span>.<span class="at">push</span>(<span class="at">copyTouch</span>(evt))<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-8" title="8">  <span class="kw">var</span> color <span class="op">=</span> <span class="at">colorForTouch</span>(evt)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-9" title="9">  <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-10" title="10">  <span class="va">ctx</span>.<span class="at">arc</span>(touches[i].<span class="at">pageX</span><span class="op">,</span> touches[i].<span class="at">pageY</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">2</span> <span class="op">*</span> <span class="va">Math</span>.<span class="at">PI</span><span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span>  <span class="co">// a circle at the start</span></a>
+<a class="sourceLine" id="cb4-11" title="11">  <span class="va">ctx</span>.<span class="at">arc</span>(<span class="va">evt</span>.<span class="at">clientX</span><span class="op">,</span> <span class="va">evt</span>.<span class="at">clientY</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">2</span> <span class="op">*</span> <span class="va">Math</span>.<span class="at">PI</span><span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span>  <span class="co">// a circle at the start</span></a>
+<a class="sourceLine" id="cb4-12" title="12">  <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> color<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-13" title="13">  <span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-14" title="14"><span class="op">}</span></a></code></pre></div>
+<p>After storing some of the event’s processing in the <code>ongoingTouches</code> for later processing, the start point is drawn as a small circle. We’re using a 4-pixel wide line, so a 4 pixel radius circle will show up neatly.</p>
+<h4 id="drawing-as-the-pointers-move">Drawing as the pointers move</h4>
+<p>Each time one or more pointers moves, a {{event(“pointermove”)}} event is delivered, resulting in our <code>handleMove()</code> function being called. Its responsibility in this example is to update the cached touch information and to draw a line from the previous position to the current position of each touch.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">function</span> <span class="at">handleMove</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="kw">var</span> el <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementsByTagName</span>(<span class="st">&quot;canvas&quot;</span>)[<span class="dv">0</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3">  <span class="kw">var</span> ctx <span class="op">=</span> <span class="va">el</span>.<span class="at">getContext</span>(<span class="st">&quot;2d&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-4" title="4">  <span class="kw">var</span> color <span class="op">=</span> <span class="at">colorForTouch</span>(evt)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-5" title="5">  <span class="kw">var</span> idx <span class="op">=</span> <span class="at">ongoingTouchIndexById</span>(<span class="va">evt</span>.<span class="at">pointerId</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-6" title="6"></a>
+<a class="sourceLine" id="cb5-7" title="7">  <span class="at">log</span>(<span class="st">&quot;continuing touch: idx =  &quot;</span> <span class="op">+</span> idx)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-8" title="8">  <span class="cf">if</span> (idx <span class="op">&gt;=</span> <span class="dv">0</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-9" title="9">    <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-10" title="10">    <span class="at">log</span>(<span class="st">&quot;ctx.moveTo(&quot;</span> <span class="op">+</span> ongoingTouches[idx].<span class="at">pageX</span> <span class="op">+</span> <span class="st">&quot;, &quot;</span> <span class="op">+</span> ongoingTouches[idx].<span class="at">pageY</span> <span class="op">+</span> <span class="st">&quot;);&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-11" title="11">    <span class="va">ctx</span>.<span class="at">moveTo</span>(ongoingTouches[idx].<span class="at">pageX</span><span class="op">,</span> ongoingTouches[idx].<span class="at">pageY</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-12" title="12">    <span class="at">log</span>(<span class="st">&quot;ctx.lineTo(&quot;</span> <span class="op">+</span> <span class="va">evt</span>.<span class="at">clientX</span> <span class="op">+</span> <span class="st">&quot;, &quot;</span> <span class="op">+</span> <span class="va">evt</span>.<span class="at">clientY</span> <span class="op">+</span> <span class="st">&quot;);&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-13" title="13">    <span class="va">ctx</span>.<span class="at">lineTo</span>(<span class="va">evt</span>.<span class="at">clientX</span><span class="op">,</span> <span class="va">evt</span>.<span class="at">clientY</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-14" title="14">    <span class="va">ctx</span>.<span class="at">lineWidth</span> <span class="op">=</span> <span class="dv">4</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-15" title="15">    <span class="va">ctx</span>.<span class="at">strokeStyle</span> <span class="op">=</span> color<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-16" title="16">    <span class="va">ctx</span>.<span class="at">stroke</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-17" title="17"></a>
+<a class="sourceLine" id="cb5-18" title="18">    <span class="va">ongoingTouches</span>.<span class="at">splice</span>(idx<span class="op">,</span> <span class="dv">1</span><span class="op">,</span> <span class="at">copyTouch</span>(evt))<span class="op">;</span>  <span class="co">// swap in the new touch record</span></a>
+<a class="sourceLine" id="cb5-19" title="19">    <span class="at">log</span>(<span class="st">&quot;.&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-20" title="20">  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-21" title="21">    <span class="at">log</span>(<span class="st">&quot;can&#39;t figure out which touch to continue: idx = &quot;</span> <span class="op">+</span> idx)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-22" title="22">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-23" title="23"><span class="op">}</span></a></code></pre></div>
+<p>This function looks in our cached touch information array for the previous information about each touch to determine the starting point for each touch’s new line segment to be drawn. This is done by looking at each touch’s {{domxref(“PointerEvent.pointerId”)}} property. This property is a unique integer for each pointer event, and remains consistent for each event during the duration of each finger’s contact with the surface.</p>
+<p>This lets us get the coordinates of the previous position of each touch and use the appropriate context methods to draw a line segment joining the two positions together.</p>
+<p>After drawing the line, we call <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/splice"><code>Array.splice()</code></a> to replace the previous information about the touch point with the current information in the <code>ongoingTouches</code> array.</p>
+<h4 id="handling-the-end-of-a-touch">Handling the end of a touch</h4>
+<p>When the user lifts a finger off the surface, a {{event(“pointerup”)}} event is sent. We handle this event by calling the <code>handleEnd()</code> function below. Its job is to draw the last line segment for the touch that ended and remove the touch point from the ongoing touch list.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">function</span> <span class="at">handleEnd</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="at">log</span>(<span class="st">&quot;pointerup&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-3" title="3">  <span class="kw">var</span> el <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementsByTagName</span>(<span class="st">&quot;canvas&quot;</span>)[<span class="dv">0</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-4" title="4">  <span class="kw">var</span> ctx <span class="op">=</span> <span class="va">el</span>.<span class="at">getContext</span>(<span class="st">&quot;2d&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-5" title="5">  <span class="kw">var</span> color <span class="op">=</span> <span class="at">colorForTouch</span>(evt)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-6" title="6">  <span class="kw">var</span> idx <span class="op">=</span> <span class="at">ongoingTouchIndexById</span>(<span class="va">evt</span>.<span class="at">pointerId</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-7" title="7"></a>
+<a class="sourceLine" id="cb6-8" title="8">  <span class="cf">if</span> (idx <span class="op">&gt;=</span> <span class="dv">0</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-9" title="9">    <span class="va">ctx</span>.<span class="at">lineWidth</span> <span class="op">=</span> <span class="dv">4</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-10" title="10">    <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> color<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-11" title="11">    <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-12" title="12">    <span class="va">ctx</span>.<span class="at">moveTo</span>(ongoingTouches[idx].<span class="at">pageX</span><span class="op">,</span> ongoingTouches[idx].<span class="at">pageY</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-13" title="13">    <span class="va">ctx</span>.<span class="at">lineTo</span>(<span class="va">evt</span>.<span class="at">clientX</span><span class="op">,</span> <span class="va">evt</span>.<span class="at">clientY</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-14" title="14">    <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="va">evt</span>.<span class="at">clientX</span> <span class="op">-</span> <span class="dv">4</span><span class="op">,</span> <span class="va">evt</span>.<span class="at">clientY</span> <span class="op">-</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">8</span><span class="op">,</span> <span class="dv">8</span>)<span class="op">;</span>  <span class="co">// and a square at the end</span></a>
+<a class="sourceLine" id="cb6-15" title="15">    <span class="va">ongoingTouches</span>.<span class="at">splice</span>(idx<span class="op">,</span> <span class="dv">1</span>)<span class="op">;</span>  <span class="co">// remove it; we&#39;re done</span></a>
+<a class="sourceLine" id="cb6-16" title="16">  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-17" title="17">    <span class="at">log</span>(<span class="st">&quot;can&#39;t figure out which touch to end&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-18" title="18">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-19" title="19"><span class="op">}</span></a></code></pre></div>
+<p>This is very similar to the previous function; the only real differences are that we draw a small square to mark the end and that when we call <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/splice"><code>Array.splice()</code></a>, we remove the old entry from the ongoing touch list, without adding in the updated information. The result is that we stop tracking that touch point.</p>
+<h4 id="handling-canceled-touches">Handling canceled touches</h4>
+<p>If the user’s finger wanders into browser UI, or the touch otherwise needs to be canceled, the {{event(“pointercancel”)}} event is sent, and we call the <code>handleCancel()</code> function below.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">function</span> <span class="at">handleCancel</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="at">log</span>(<span class="st">&quot;pointercancel: id = &quot;</span> <span class="op">+</span> <span class="va">evt</span>.<span class="at">pointerId</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-3" title="3">  <span class="kw">var</span> idx <span class="op">=</span> <span class="at">ongoingTouchIndexById</span>(<span class="va">evt</span>.<span class="at">pointerId</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-4" title="4">  <span class="va">ongoingTouches</span>.<span class="at">splice</span>(idx<span class="op">,</span> <span class="dv">1</span>)<span class="op">;</span>  <span class="co">// remove it; we&#39;re done</span></a>
+<a class="sourceLine" id="cb7-5" title="5"><span class="op">}</span></a></code></pre></div>
+<p>Since the idea is to immediately abort the touch, we remove it from the ongoing touch list without drawing a final line segment.</p>
+<h3 id="convenience-functions">Convenience functions</h3>
+<p>This example uses two convenience functions that should be looked at briefly to help make the rest of the code more clear.</p>
+<h4 id="selecting-a-color-for-each-touch">Selecting a color for each touch</h4>
+<p>In order to make each touch’s drawing look different, the <code>colorForTouch()</code> function is used to pick a color based on the touch’s unique identifier. This identifier is an opaque number, but we can at least rely on it differing between the currently-active touches.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">function</span> <span class="at">colorForTouch</span>(touch) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-2" title="2">  <span class="kw">var</span> r <span class="op">=</span> <span class="va">touch</span>.<span class="at">pointerId</span> <span class="op">%</span> <span class="dv">16</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-3" title="3">  <span class="kw">var</span> g <span class="op">=</span> <span class="va">Math</span>.<span class="at">floor</span>(<span class="va">touch</span>.<span class="at">pointerId</span> / <span class="dv">3</span>) <span class="op">%</span> <span class="dv">16</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-4" title="4">  <span class="kw">var</span> b <span class="op">=</span> <span class="va">Math</span>.<span class="at">floor</span>(<span class="va">touch</span>.<span class="at">pointerId</span> / <span class="dv">7</span>) <span class="op">%</span> <span class="dv">16</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-5" title="5">  r <span class="op">=</span> <span class="va">r</span>.<span class="at">toString</span>(<span class="dv">16</span>)<span class="op">;</span> <span class="co">// make it a hex digit</span></a>
+<a class="sourceLine" id="cb8-6" title="6">  g <span class="op">=</span> <span class="va">g</span>.<span class="at">toString</span>(<span class="dv">16</span>)<span class="op">;</span> <span class="co">// make it a hex digit</span></a>
+<a class="sourceLine" id="cb8-7" title="7">  b <span class="op">=</span> <span class="va">b</span>.<span class="at">toString</span>(<span class="dv">16</span>)<span class="op">;</span> <span class="co">// make it a hex digit</span></a>
+<a class="sourceLine" id="cb8-8" title="8">  <span class="kw">var</span> color <span class="op">=</span> <span class="st">&quot;#&quot;</span> <span class="op">+</span> r <span class="op">+</span> g <span class="op">+</span> b<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-9" title="9">  <span class="at">log</span>(<span class="st">&quot;color for touch with identifier &quot;</span> <span class="op">+</span> <span class="va">touch</span>.<span class="at">pointerId</span> <span class="op">+</span> <span class="st">&quot; = &quot;</span> <span class="op">+</span> color)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-10" title="10">  <span class="cf">return</span> color<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-11" title="11"><span class="op">}</span></a></code></pre></div>
+<p>The result from this function is a string that can be used when calling {{HTMLElement(“canvas”)}} functions to set drawing colors. For example, for a {{domxref(“PointerEvent.pointerId”)}} value of 10, the resulting string is “#aaa”.</p>
+<h4 id="copying-a-touch-object">Copying a touch object</h4>
+<p>Some browsers may re-use touch objects between events, so it’s best to copy the bits you care about, rather than referencing the entire object.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">function</span> <span class="at">copyTouch</span>(touch) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-2" title="2">  <span class="cf">return</span> <span class="op">{</span> <span class="dt">identifier</span><span class="op">:</span> <span class="va">touch</span>.<span class="at">pointerId</span><span class="op">,</span> <span class="dt">pageX</span><span class="op">:</span> <span class="va">touch</span>.<span class="at">clientX</span><span class="op">,</span> <span class="dt">pageY</span><span class="op">:</span> <span class="va">touch</span>.<span class="at">clientY</span> <span class="op">};</span></a>
+<a class="sourceLine" id="cb9-3" title="3"><span class="op">}</span></a></code></pre></div>
+<h4 id="finding-an-ongoing-touch">Finding an ongoing touch</h4>
+<p>The <code>ongoingTouchIndexById()</code> function below scans through the <code>ongoingTouches</code> array to find the touch matching the given identifier, then returns that touch’s index into the array.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">function</span> <span class="at">ongoingTouchIndexById</span>(idToFind) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-2" title="2">  <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">ongoingTouches</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-3" title="3">    <span class="kw">var</span> id <span class="op">=</span> ongoingTouches[i].<span class="at">identifier</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-4" title="4"></a>
+<a class="sourceLine" id="cb10-5" title="5">    <span class="cf">if</span> (id <span class="op">==</span> idToFind) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-6" title="6">      <span class="cf">return</span> i<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-7" title="7">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-8" title="8">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-9" title="9">  <span class="cf">return</span> <span class="dv">-1</span><span class="op">;</span>    <span class="co">// not found</span></a>
+<a class="sourceLine" id="cb10-10" title="10"><span class="op">}</span></a></code></pre></div>
+<h4 id="showing-whats-going-on">Showing what’s going on</h4>
+<div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1"><span class="kw">function</span> <span class="at">log</span>(msg) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-2" title="2">  <span class="kw">var</span> p <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;log&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-3" title="3">  <span class="va">p</span>.<span class="at">innerHTML</span> <span class="op">=</span> msg <span class="op">+</span> <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span> <span class="op">+</span> <span class="va">p</span>.<span class="at">innerHTML</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb11-4" title="4"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<table class="no-markdown">
+<tbody>
+<tr>
+<th scope="col">
+Specification
+</th>
+<th scope="col">
+Status
+</th>
+<th scope="col">
+Comment
+</th>
+</tr>
+<tr>
+<td>
+{{SpecName(‘Pointer Events 2’,‘#pointerevent-interface’, ‘PointerEvent’)}}
+</td>
+<td>
+{{Spec2(‘Pointer Events 2’)}}
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+{{SpecName(‘Pointer Events’, ‘#pointerevent-interface’, ‘PointerEvent’)}}
+</td>
+<td>
+{{Spec2(‘Pointer Events’)}}
+</td>
+<td>
+Initial definition.
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<h3 id="pointerevent-interface"><code>PointerEvent</code> interface</h3>
+<p>{{Compat(“api.PointerEvent”, 0)}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Pointer_events">Pointer events</a></li>
+<li><a href="/en-US/docs/Web/API/Touch_events">Touch events</a></li>
+</ul>

@@ -1,0 +1,92 @@
+<p>{{DefaultAPISidebar(“Permissions API”)}}{{SeeCompatTable}}</p>
+<p>This article provides a basic guide to using the W3C Permissions API, which provides a programmatic way to query the status of API permissions attributed to the current context.</p>
+<h2 id="the-trouble-with-asking-for-permission">The trouble with asking for permission…</h2>
+<p>Let’s face it, permissions on the Web are a necessary evil, and they are not much fun to deal with as developers.</p>
+<p>Historically, different APIs handle their own permissions inconsistently — for example the Notifications API allows for explicit checking of permission status and requesting permission, whereas the Geolocation API doesn’t (which causes problems if the user denied the initial permission request, as we’ll see below).</p>
+<p>The <a href="/en-US/docs/Web/API/Permissions_API">Permissions API</a> provides the tools to allow developers to implement a better user experience as far as permissions are concerned. For example, it can query whether permission to use a particular API is granted or denied, and specifically request permission to use an API.</p>
+<p>At the moment, implementation of the API is at an early stage, so support in browsers is pretty spotty:</p>
+<ul>
+<li>It can only be found in Chrome 44 and later and Firefox 43 and later.</li>
+<li>The only supported method right now is {{domxref(“Permissions.query()”)}}, which queries permission status.</li>
+<li>The only two APIs currently recognized by the Permissions API in Chrome are <a href="/en-US/docs/Web/API/Geolocation">Geolocation</a> and Notification, with Firefox also recognizing <a href="/en-US/docs/Web/API/Push_API">Push</a> and WebMIDI.</li>
+</ul>
+<p>More features will be added as time progresses.</p>
+<h2 id="a-simple-example">A simple example</h2>
+<p>For this article, we have put together a simple demo called Location Finder. It uses Geolocation to query the user’s current location and plot it out on a Google Map:</p>
+<figure>
+<img src="location-finder-with-permissions-api.png" alt="Screenshot showing a map of Greenfield, UK." /><figcaption>Screenshot showing a map of Greenfield, UK.</figcaption>
+</figure>
+<p>You can <a href="https://chrisdavidmills.github.io/location-finder-permissions-api/">run the example live</a>, or <a href="https://github.com/chrisdavidmills/location-finder-permissions-api/tree/gh-pages">view the source code on Github</a>. Most of the code is simple and unremarkable — below we’ll just be walking through the Permissions API-related code, so check the code yourself if you want to study any of the other parts.</p>
+<h3 id="accessing-the-permissions-api">Accessing the Permissions API</h3>
+<p>The {{domxref(“Navigator.permissions”)}} property has been added to the browser to allow access to the global {{domxref(“Permissions”)}} object. This object will eventually include methods for querying, requesting, and revoking permissions, although currently it only contains {{domxref(“Permissions.query()”)}}; see below.</p>
+<h3 id="querying-permission-state">Querying permission state</h3>
+<p>In our example, the Permissions functionality is handled by one function — <code>handlePermission()</code>. This starts off by querying the permission status using {{domxref(“Permissions.query()”)}}. Depending on the value of the {{domxref(“PermissionStatus.state”, “state”)}} property of the  {{domxref(“PermissionStatus”)}} object returned when the promise resolves, it reacts differently:</p>
+<ul>
+<li><code>"granted"</code>
+<ul>
+<li>: The “Enable Geolocation” button is hidden, as it isn’t needed if Geolocation is already active.</li>
+</ul></li>
+<li><code>"prompt"</code>
+<ul>
+<li>: The “Enable Geolocation” button is hidden, as it isn’t needed if the user will be prompted to grant permission for Geolocation. The {{domxref(“Geolocation.getCurrentPosition()”)}} function is then run, which prompts the user for permission; it runs the <code>revealPosition()</code> function if permission is granted (which shows the map), or the <code>positionDenied()</code> function if permission is denied (which makes the “Enable Geolocation” button appear).</li>
+</ul></li>
+<li><code>"denied"</code>
+<ul>
+<li>: The “Enable Geolocation” button is revealed (this code needs to be here too, in case the permission state is already set to denied for this origin when the page is first loaded).</li>
+</ul></li>
+</ul>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">function</span> <span class="at">handlePermission</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="va">navigator</span>.<span class="va">permissions</span>.<span class="at">query</span>(<span class="op">{</span><span class="dt">name</span><span class="op">:</span><span class="st">&#39;geolocation&#39;</span><span class="op">}</span>).<span class="at">then</span>(<span class="kw">function</span>(result) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-3" title="3">    <span class="cf">if</span> (<span class="va">result</span>.<span class="at">state</span> <span class="op">==</span> <span class="st">&#39;granted&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-4" title="4">      <span class="at">report</span>(<span class="va">result</span>.<span class="at">state</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-5" title="5">      <span class="va">geoBtn</span>.<span class="va">style</span>.<span class="at">display</span> <span class="op">=</span> <span class="st">&#39;none&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-6" title="6">    <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (<span class="va">result</span>.<span class="at">state</span> <span class="op">==</span> <span class="st">&#39;prompt&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-7" title="7">      <span class="at">report</span>(<span class="va">result</span>.<span class="at">state</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-8" title="8">      <span class="va">geoBtn</span>.<span class="va">style</span>.<span class="at">display</span> <span class="op">=</span> <span class="st">&#39;none&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-9" title="9">      <span class="va">navigator</span>.<span class="va">geolocation</span>.<span class="at">getCurrentPosition</span>(revealPosition<span class="op">,</span>positionDenied<span class="op">,</span>geoSettings)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-10" title="10">    <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (<span class="va">result</span>.<span class="at">state</span> <span class="op">==</span> <span class="st">&#39;denied&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-11" title="11">      <span class="at">report</span>(<span class="va">result</span>.<span class="at">state</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-12" title="12">      <span class="va">geoBtn</span>.<span class="va">style</span>.<span class="at">display</span> <span class="op">=</span> <span class="st">&#39;inline&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-13" title="13">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-14" title="14">    <span class="va">result</span>.<span class="at">onchange</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-15" title="15">      <span class="at">report</span>(<span class="va">result</span>.<span class="at">state</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-16" title="16">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-17" title="17">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-18" title="18"><span class="op">}</span></a>
+<a class="sourceLine" id="cb1-19" title="19"></a>
+<a class="sourceLine" id="cb1-20" title="20"><span class="kw">function</span> <span class="at">report</span>(state) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-21" title="21">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Permission &#39;</span> <span class="op">+</span> state)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-22" title="22"><span class="op">}</span></a>
+<a class="sourceLine" id="cb1-23" title="23"></a>
+<a class="sourceLine" id="cb1-24" title="24"><span class="at">handlePermission</span>()<span class="op">;</span></a></code></pre></div>
+<h3 id="permission-descriptors">Permission descriptors</h3>
+<p>The {{domxref(“Permissions.query()”)}} method takes a <code>PermissionDescriptor</code> dictionary as a parameter — this contains the name of the API you are interested in. Some APIs have more complex <code>PermissionDescriptor</code>s containing additional information, which inherit from the default <code>PermissionDescriptor</code>. For example, the <code>PushPermissionDescriptor</code> should also contain a Boolean that specifies if <a href="/en-US/docs/Web/API/PushManager/subscribe#parameters"><code>userVisibleOnly</code></a> is <code>true</code> or <code>false</code>.</p>
+<h3 id="revoking-permissions">Revoking permissions</h3>
+<p>Starting in Firefox 47, you can now revoke existing permissions, using the  {{domxref(“Permissions.revoke()”)}} method. This works in exactly the same way as the {{domxref(“Permissions.query()”)}} method, except that it causes an existing permission to be reverted back to its default state when the promise successfully resolves (which is usually <code>prompt</code>). See the following code in our demo:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> revokeBtn <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;.revoke&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3">  ...</a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="va">revokeBtn</span>.<span class="at">onclick</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="at">revokePermission</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-8" title="8"></a>
+<a class="sourceLine" id="cb2-9" title="9">  ...</a>
+<a class="sourceLine" id="cb2-10" title="10"></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="kw">function</span> <span class="at">revokePermission</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-12" title="12">  <span class="va">navigator</span>.<span class="va">permissions</span>.<span class="at">revoke</span>(<span class="op">{</span><span class="dt">name</span><span class="op">:</span><span class="st">&#39;geolocation&#39;</span><span class="op">}</span>).<span class="at">then</span>(<span class="kw">function</span>(result) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-13" title="13">    <span class="at">report</span>(<span class="va">result</span>.<span class="at">state</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-15" title="15"><span class="op">}</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> The <code>revoke()</code> function has been disabled by default starting in Firefox 51, since its design has been brought into question in the <a href="https://www.w3.org/2011/webappsec/">Web Applications Security Working Group</a>. It can be re-enabled by setting the preference <code>dom.permissions.revoke.enable</code> to <code>true</code>.</p>
+</blockquote>
+<h3 id="responding-to-permission-state-changes">Responding to permission state changes</h3>
+<p>You’ll notice that there is an <code>onchange</code> event handler in the code above, attached to the {{domxref(“PermissionStatus”)}} object — this allows us to respond to any changes in the permission status for the API we are interested in. At the moment we are just reporting the change in state.</p>
+<h2 id="conclusion-and-future-work">Conclusion and future work</h2>
+<p>At the moment this doesn’t offer much more than what we had already. If we choose to never share our location from the permission prompt (deny permission), then we can’t get back to the permission prompt without using the browser menu options:</p>
+<ul>
+<li><strong>Firefox</strong>: <em>Tools &gt; Page Info &gt; Permissions &gt; Access Your Location</em>. Select <em>Always Ask</em>.</li>
+<li><strong>Chrome</strong>: <em>Hamburger Menu &gt; Settings &gt; Show advanced settings</em>. In the <em>Privacy</em> section, click <em>Content Settings</em>. In the resulting dialog, find the <em>Location</em> section and select <em>Ask when a site tries to…</em> . Finally, click <em>Manage Exceptions</em> and remove the permissions you granted to the sites you are interested in.</li>
+</ul>
+<p>However, future additions to browser functionality should provide the <code>request()</code> method, which will allow us to programmatically request permissions, any time we like. These should hopefully be available soon.</p>

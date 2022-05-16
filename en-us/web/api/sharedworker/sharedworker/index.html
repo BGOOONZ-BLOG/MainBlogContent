@@ -1,0 +1,66 @@
+<p>{{APIRef(“Web Workers API”)}}</p>
+<p>The <strong><code>SharedWorker()</code></strong> constructor creates a {{domxref(“SharedWorker”)}} object that executes the script at the specified URL. This script must obey the <a href="/en-US/docs/Web/Security/Same-origin_policy">same-origin policy</a>.</p>
+<blockquote>
+<p><strong>Note:</strong> there is disagreement among browser manufacturers about whether a data URI is of the same origin or not. Although Gecko 10.0 {{geckoRelease(“10.0”)}} and later accept data URIs, that’s not the case in all other browsers.</p>
+</blockquote>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> myWorker <span class="op">=</span> <span class="kw">new</span> <span class="at">SharedWorker</span>(aURL<span class="op">,</span> name)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">var</span> myWorker <span class="op">=</span> <span class="kw">new</span> <span class="at">SharedWorker</span>(aURL<span class="op">,</span> options)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><em>aURL</em>
+<ul>
+<li>: A {{domxref(“DOMString”)}} representing the URL of the script the worker will execute. It must obey the same-origin policy.</li>
+</ul></li>
+<li>name {{optional_inline}}
+<ul>
+<li>: A {{domxref(“DOMString”)}} specifying an identifying name for the {{domxref(“SharedWorkerGlobalScope”)}} representing the scope of the worker, which is mainly useful for debugging purposes.</li>
+</ul></li>
+<li><p><em>options</em> {{optional_inline}}</p>
+<ul>
+<li><p>: An object containing option properties that can set when creating the object instance. Available properties are as follows:</p>
+<ul>
+<li><code>type</code>: A {{domxref(“DOMString”)}} specifying the type of worker to create. The value can be <code>classic</code> or <code>module</code>. If not specified, the default used is <code>classic</code>.</li>
+<li><code>credentials</code>: A {{domxref(“DOMString”)}} specifying the type of credentials to use for the worker. The value can be <code>omit</code>, <code>same-origin</code>, or <em><code>include</code>. If not specified, or if type is <code>classic</code>, the default used is <code>omit</code> (no credentials required).</em></li>
+<li><code>name</code>: A {{domxref(“DOMString”)}} specifying an identifying name for the {{domxref(“SharedWorkerGlobalScope”)}} representing the scope of the worker, which is mainly useful for debugging purposes.</li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>The created worker.</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li>A <code>SecurityError</code> is raised if the document is not allowed to start workers, for example if the URL has an invalid syntax or if the same-origin policy is violated.</li>
+<li>A <code>NetworkError</code> is raised if the MIME type of the worker script is incorrect. It should <em>always</em> be <code>text/javascript</code> (for historical reasons <a href="/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types#javascript_types">other JavaScript MIME types</a> may be accepted).</li>
+<li>A <code>SyntaxError</code> is raised if <em>aURL</em> cannot be parsed.</li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>The following code snippet shows creation of a {{domxref(“SharedWorker”)}} object using the <code>SharedWorker()</code> constructor and subsequent usage of the object:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> myWorker <span class="op">=</span> <span class="kw">new</span> <span class="at">SharedWorker</span>(<span class="st">&#39;worker.js&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="va">myWorker</span>.<span class="va">port</span>.<span class="at">start</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="va">first</span>.<span class="at">onchange</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="va">myWorker</span>.<span class="va">port</span>.<span class="at">postMessage</span>([<span class="va">first</span>.<span class="at">value</span><span class="op">,</span><span class="va">second</span>.<span class="at">value</span>])<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Message posted to worker&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-9" title="9"></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="va">second</span>.<span class="at">onchange</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-11" title="11">  <span class="va">myWorker</span>.<span class="va">port</span>.<span class="at">postMessage</span>([<span class="va">first</span>.<span class="at">value</span><span class="op">,</span><span class="va">second</span>.<span class="at">value</span>])<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Message posted to worker&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-14" title="14"></a>
+<a class="sourceLine" id="cb2-15" title="15"><span class="va">myWorker</span>.<span class="va">port</span>.<span class="at">onmessage</span> <span class="op">=</span> <span class="kw">function</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-16" title="16">  <span class="va">result1</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="va">e</span>.<span class="at">data</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-17" title="17">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Message received from worker&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18"><span class="op">}</span></a></code></pre></div>
+<p>For a full example, see our <a href="https://github.com/mdn/simple-shared-worker">Basic shared worker example</a> (<a href="https://mdn.github.io/simple-shared-worker/">run shared worker</a>.)</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>The {{domxref(“SharedWorker”)}} interface it belongs to.</li>
+<li><a href="https://anlexn.github.io/shared-worker-mdn/">another multiply demo</a></li>
+</ul>

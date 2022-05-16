@@ -1,0 +1,113 @@
+<p>{{APIRef(“Fetch API”)}}</p>
+<p>The <strong><code>Request()</code></strong> constructor creates a new {{domxref(“Request”)}} object.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> myRequest <span class="op">=</span> <span class="kw">new</span> <span class="at">Request</span>(input[<span class="op">,</span> init])<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><p><em>input</em></p>
+<ul>
+<li><p>: Defines the resource that you wish to fetch. This can either be:</p>
+<ul>
+<li>A {{domxref(“USVString”)}} containing the direct URL of the resource you want to fetch.</li>
+<li><p>A {{domxref(“Request”)}} object, effectively creating a copy. Note the following behavioral updates to retain security while making the constructor less likely to throw exceptions:</p>
+<ul>
+<li>If this object exists on another origin to the constructor call, the {{domxref(“Request.referrer”)}} is stripped out.</li>
+<li>If this object has a {{domxref(“Request.mode”)}} of <code>navigate</code>, the <code>mode</code> value is converted to <code>same-origin</code>.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li><p><em>init</em> {{optional_inline}}</p>
+<ul>
+<li><p>: An options object containing any custom settings that you want to apply to the request. The possible options are:</p>
+<ul>
+<li><code>method</code>: The request method, e.g., <code>GET</code>, <code>POST</code>. The default is <code>GET</code>.</li>
+<li><code>headers</code>: Any headers you want to add to your request, contained within a {{domxref(“Headers”)}} object or an object literal with {{jsxref(“String”)}} values.</li>
+<li><code>body</code>: Any body that you want to add to your request: this can be a {{domxref(“Blob”)}}, {{domxref(“BufferSource”)}}, {{domxref(“FormData”)}}, {{domxref(“URLSearchParams”)}}, {{domxref(“USVString”)}}, or {{domxref(“ReadableStream”)}} object. Note that a request using the <code>GET</code> or <code>HEAD</code> method cannot have a body.</li>
+<li><code>mode</code>: The mode you want to use for the request, e.g., <code>cors</code>, <code>no-cors</code>, <code>same-origin</code>, or <code>navigate</code>. The default is <code>cors</code>.</li>
+<li><code>credentials</code>: The request credentials you want to use for the request: <code>omit</code>, <code>same-origin</code>, or <code>include</code>. The default is <code>same-origin</code>.</li>
+<li><code>cache</code>: The <a href="/en-US/docs/Web/API/Request/cache">cache mode</a> you want to use for the request.</li>
+<li><code>redirect</code>: The redirect mode to use: <code>follow</code>, <code>error</code>, or <code>manual</code>. The default is <code>follow</code>.</li>
+<li><code>referrer</code>: A {{domxref(“USVString”)}} specifying <code>no-referrer</code>, <code>client</code>, or a URL. The default is <code>about:client</code>.</li>
+<li><code>integrity</code>: Contains the <a href="/en-US/docs/Web/Security/Subresource_Integrity">subresource integrity</a> value of the request (e.g., <code>sha256-BpfBw7ivV8q2jLiT13fxDYAe2tJllusRSZ273h2nFSE=</code>).</li>
+</ul></li>
+</ul></li>
+</ul>
+<h2 id="errors">Errors</h2>
+<table class="no-markdown">
+<thead>
+<tr>
+<th scope="col">
+Type
+</th>
+<th scope="col">
+Description
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>TypeError</code>
+</td>
+<td>
+Since <a href="/en-US/docs/Mozilla/Firefox/Releases/43">Firefox 43</a>, <code>Request()</code> will throw a TypeError if the URL has credentials, such as http://user:password@example.com.
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="example">Example</h2>
+<p>In our <a href="https://github.com/mdn/fetch-examples/tree/master/fetch-request">Fetch Request example</a> (see <a href="https://mdn.github.io/fetch-examples/fetch-request/">Fetch Request live</a>) we create a new <code>Request</code> object using the constructor, then fetch it using a {{domxref(“fetch()”)}} call. Since we are fetching an image, we run {{domxref(“Response.blob”)}} on the response to give it the proper MIME type so it will be handled properly, then create an Object URL of it and display it in an {{htmlelement(“img”)}} element.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> myImage <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;img&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">var</span> myRequest <span class="op">=</span> <span class="kw">new</span> <span class="at">Request</span>(<span class="st">&#39;flowers.jpg&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="at">fetch</span>(myRequest).<span class="at">then</span>(<span class="kw">function</span>(response) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="cf">return</span> <span class="va">response</span>.<span class="at">blob</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="op">}</span>).<span class="at">then</span>(<span class="kw">function</span>(response) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="kw">var</span> objectURL <span class="op">=</span> <span class="va">URL</span>.<span class="at">createObjectURL</span>(response)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9">  <span class="va">myImage</span>.<span class="at">src</span> <span class="op">=</span> objectURL<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>In our <a href="https://github.com/mdn/fetch-examples/tree/master/fetch-request-with-init">Fetch Request with init example</a> (see <a href="https://mdn.github.io/fetch-examples/fetch-request-with-init/">Fetch Request init live</a>) we do the same thing except that we pass in an init object when we invoke <code>fetch()</code>:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">var</span> myImage <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;img&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw">var</span> myHeaders <span class="op">=</span> <span class="kw">new</span> <span class="at">Headers</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="va">myHeaders</span>.<span class="at">append</span>(<span class="st">&#39;Content-Type&#39;</span><span class="op">,</span> <span class="st">&#39;image/jpeg&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"></a>
+<a class="sourceLine" id="cb3-6" title="6"><span class="kw">var</span> myInit <span class="op">=</span> <span class="op">{</span> <span class="dt">method</span><span class="op">:</span> <span class="st">&#39;GET&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-7" title="7">               <span class="dt">headers</span><span class="op">:</span> myHeaders<span class="op">,</span></a>
+<a class="sourceLine" id="cb3-8" title="8">               <span class="dt">mode</span><span class="op">:</span> <span class="st">&#39;cors&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-9" title="9">               <span class="dt">cache</span><span class="op">:</span> <span class="st">&#39;default&#39;</span> <span class="op">};</span></a>
+<a class="sourceLine" id="cb3-10" title="10"></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="kw">var</span> myRequest <span class="op">=</span> <span class="kw">new</span> <span class="at">Request</span>(<span class="st">&#39;flowers.jpg&#39;</span><span class="op">,</span>myInit)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-12" title="12"></a>
+<a class="sourceLine" id="cb3-13" title="13"><span class="at">fetch</span>(myRequest).<span class="at">then</span>(<span class="kw">function</span>(response) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-14" title="14">  ...</a>
+<a class="sourceLine" id="cb3-15" title="15"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>Note that you could also pass the init object into the <code>fetch</code> call to get the same effect, e.g.:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="at">fetch</span>(myRequest<span class="op">,</span>myInit).<span class="at">then</span>(<span class="kw">function</span>(response) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  ...</a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>You can also use an object literal as <code>headers</code> in <code>init</code>.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">var</span> myInit <span class="op">=</span> <span class="op">{</span> <span class="dt">method</span><span class="op">:</span> <span class="st">&#39;GET&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb5-2" title="2">               <span class="dt">headers</span><span class="op">:</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-3" title="3">                   <span class="st">&#39;Content-Type&#39;</span><span class="op">:</span> <span class="st">&#39;image/jpeg&#39;</span></a>
+<a class="sourceLine" id="cb5-4" title="4">               <span class="op">},</span></a>
+<a class="sourceLine" id="cb5-5" title="5">               <span class="dt">mode</span><span class="op">:</span> <span class="st">&#39;cors&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb5-6" title="6">               <span class="dt">cache</span><span class="op">:</span> <span class="st">&#39;default&#39;</span> <span class="op">};</span></a>
+<a class="sourceLine" id="cb5-7" title="7"></a>
+<a class="sourceLine" id="cb5-8" title="8"><span class="kw">var</span> myRequest <span class="op">=</span> <span class="kw">new</span> <span class="at">Request</span>(<span class="st">&#39;flowers.jpg&#39;</span><span class="op">,</span> myInit)<span class="op">;</span></a></code></pre></div>
+<p>You may also pass a {{domxref(“Request”)}} object to the <code>Request()</code> constructor to create a copy of the Request (This is similar to calling the {{domxref(“Request.clone”,“clone()”)}} method.)</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">var</span> copy <span class="op">=</span> <span class="kw">new</span> <span class="at">Request</span>(myRequest)<span class="op">;</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> This last usage is probably only useful in <a href="/en-US/docs/Web/API/Service_Worker_API">ServiceWorkers</a>.</p>
+</blockquote>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Service_Worker_API">ServiceWorker API</a></li>
+<li><a href="/en-US/docs/Web/HTTP/CORS">HTTP access control (CORS)</a></li>
+<li><a href="/en-US/docs/Web/HTTP">HTTP</a></li>
+</ul>

@@ -1,0 +1,93 @@
+<p>{{APIRef(“Service Workers API”)}}</p>
+<p>The <code>ServiceWorkerContainer</code> interface of the <a href="/en-US/docs/Web/API/Service_Worker_API">Service Worker API</a> provides an object representing the service worker as an overall unit in the network ecosystem, including facilities to register, unregister and update service workers, and access the state of service workers and their registrations.</p>
+<p>Most importantly, it exposes the {{domxref(“ServiceWorkerContainer.register”, “ServiceWorkerContainer.register()”)}} method used to register service workers, and the {{domxref(“ServiceWorkerContainer.controller”)}} property used to determine whether or not the current page is actively controlled.</p>
+<h2 id="properties">Properties</h2>
+<ul>
+<li>{{domxref(“ServiceWorkerContainer.controller”)}} {{readonlyinline}}
+<ul>
+<li>: Returns a {{domxref(“ServiceWorker”)}} object if its state is <code>activating</code> or <code>activated</code> (the same object returned by {{domxref(“ServiceWorkerRegistration.active”)}}). This property returns <code>null</code> during a force-refresh request (<em>Shift</em> + refresh) or if there is no active worker.</li>
+</ul></li>
+<li>{{domxref(“ServiceWorkerContainer.ready”)}} {{readonlyinline}}
+<ul>
+<li>: Provides a way of delaying code execution until a service worker is active. It returns a {{jsxref(“Promise”)}} that will never reject, and which waits indefinitely until the {{domxref(“ServiceWorkerRegistration”)}} associated with the current page has an {{domxref(“ServiceWorkerRegistration.active”)}} worker. Once that condition is met, it resolves with the {{domxref(“ServiceWorkerRegistration”)}}.</li>
+</ul></li>
+</ul>
+<h2 id="events">Events</h2>
+<ul>
+<li><code>controllerchange</code>
+<ul>
+<li>: Occurs when the document’s associated {{domxref(“ServiceWorkerRegistration”)}} acquires a new {{domxref(“ServiceWorkerRegistration.active”,“active”)}} worker. Also available via the {{domxref(“ServiceWorkerContainer.oncontrollerchange”)}} property.</li>
+</ul></li>
+<li><code>error</code>
+<ul>
+<li>: Fired whenever an error occurs in the associated service workers.</li>
+</ul></li>
+<li><a href="/en-US/docs/Web/API/ServiceWorkerContainer/message_event"><code>message</code></a>
+<ul>
+<li>: Occurs when incoming messages are received by the {{domxref(“ServiceWorkerContainer”)}} object (e.g. via a {{domxref(“MessagePort.postMessage()”)}} call.) Also available via the {{domxref(“ServiceWorkerContainer.onmessage”)}} property.</li>
+</ul></li>
+</ul>
+<h2 id="methods">Methods</h2>
+<ul>
+<li>{{domxref(“ServiceWorkerContainer.register”, “ServiceWorkerContainer.register()”)}}
+<ul>
+<li>: Creates or updates a {{domxref(“ServiceWorkerRegistration”)}} for the given <code>scriptURL</code>.</li>
+</ul></li>
+<li>{{domxref(“ServiceWorkerContainer.getRegistration()”)}}
+<ul>
+<li>: Gets a {{domxref(“ServiceWorkerRegistration”)}} object whose scope matches the provided document URL.  The method returns a {{jsxref(“Promise”)}} that resolves to a {{domxref(“ServiceWorkerRegistration”)}} or <code>undefined</code>.</li>
+</ul></li>
+<li>{{domxref(“ServiceWorkerContainer.getRegistrations()”)}}
+<ul>
+<li>: Returns all {{domxref(“ServiceWorkerRegistration”)}} objects associated with a <code>ServiceWorkerContainer</code> in an array.  The method returns a {{jsxref(“Promise”)}} that resolves to an array of {{domxref(“ServiceWorkerRegistration”)}}.</li>
+</ul></li>
+<li>{{domxref(“ServiceWorkerContainer.startMessages()”)}}
+<ul>
+<li>: explicitly starts the flow of messages being dispatched from a service worker to pages under its control (e.g. sent via {{domxref(“Client.postMessage()”)}}). This can be used to react to sent messages earlier, even before that page’s content has finished loading.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>The example below first checks to see if the browser supports service workers. If supported, the code registers the service worker and determines if the page is actively controlled by the service worker. If it isn’t, it prompts the user to reload the page so the service worker can take control. The code also reports any registration failures.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="cf">if</span> (<span class="st">&#39;serviceWorker&#39;</span> <span class="kw">in</span> navigator) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="co">// Register a service worker hosted at the root of the</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="co">// site using the default scope.</span></a>
+<a class="sourceLine" id="cb1-4" title="4">  <span class="va">navigator</span>.<span class="va">serviceWorker</span>.<span class="at">register</span>(<span class="st">&#39;/sw.js&#39;</span>).<span class="at">then</span>(<span class="kw">function</span>(registration) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-5" title="5">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Service worker registration succeeded:&#39;</span><span class="op">,</span> registration)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-6" title="6"></a>
+<a class="sourceLine" id="cb1-7" title="7">    <span class="co">// At this point, you can optionally do something</span></a>
+<a class="sourceLine" id="cb1-8" title="8">    <span class="co">// with registration. See https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerRegistration</span></a>
+<a class="sourceLine" id="cb1-9" title="9">  <span class="op">}</span>).<span class="at">catch</span>(<span class="kw">function</span>(error) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-10" title="10">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Service worker registration failed:&#39;</span><span class="op">,</span> error)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-11" title="11">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-12" title="12"></a>
+<a class="sourceLine" id="cb1-13" title="13">  <span class="co">// Independent of the registration, let&#39;s also display</span></a>
+<a class="sourceLine" id="cb1-14" title="14">  <span class="co">// information about whether the current page is controlled</span></a>
+<a class="sourceLine" id="cb1-15" title="15">  <span class="co">// by an existing service worker, and when that</span></a>
+<a class="sourceLine" id="cb1-16" title="16">  <span class="co">// controller changes.</span></a>
+<a class="sourceLine" id="cb1-17" title="17"></a>
+<a class="sourceLine" id="cb1-18" title="18">  <span class="co">// First, do a one-off check if there&#39;s currently a</span></a>
+<a class="sourceLine" id="cb1-19" title="19">  <span class="co">// service worker in control.</span></a>
+<a class="sourceLine" id="cb1-20" title="20">  <span class="cf">if</span> (<span class="va">navigator</span>.<span class="va">serviceWorker</span>.<span class="at">controller</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-21" title="21">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;This page is currently controlled by:&#39;</span><span class="op">,</span> <span class="va">navigator</span>.<span class="va">serviceWorker</span>.<span class="at">controller</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-22" title="22">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-23" title="23"></a>
+<a class="sourceLine" id="cb1-24" title="24">  <span class="co">// Then, register a handler to detect when a new or</span></a>
+<a class="sourceLine" id="cb1-25" title="25">  <span class="co">// updated service worker takes control.</span></a>
+<a class="sourceLine" id="cb1-26" title="26">  <span class="va">navigator</span>.<span class="va">serviceWorker</span>.<span class="at">oncontrollerchange</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-27" title="27">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;This page is now controlled by:&#39;</span><span class="op">,</span> <span class="va">navigator</span>.<span class="va">serviceWorker</span>.<span class="at">controller</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-28" title="28">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb1-29" title="29"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-30" title="30">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Service workers are not supported.&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-31" title="31"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers">Using Service Workers</a></li>
+<li><a href="https://github.com/mdn/sw-test">Service workers basic code example</a></li>
+<li><a href="https://jakearchibald.github.io/isserviceworkerready/">Is ServiceWorker ready?</a></li>
+<li>{{jsxref(“Promise”)}}</li>
+<li><a href="/en-US/docs/Web/API/Web_Workers_API/Using_web_workers">Using web workers</a></li>
+</ul>

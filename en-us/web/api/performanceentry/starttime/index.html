@@ -1,0 +1,66 @@
+<p>{{APIRef(“Performance Timeline API”)}}</p>
+<p>The <strong><code>startTime</code></strong> property returns the first recorded {{domxref(“DOMHighResTimeStamp”,“timestamp”)}} of the {{domxref(“PerformanceEntry”,“performance entry”)}}.</p>
+<p>{{AvailableInWorkers}}</p>
+<p>The value returned by this property depends on the performance entry’s {{domxref(“PerformanceEntry.entryType”,“type”)}}:</p>
+<ul>
+<li>“<code>frame</code>” - returns the {{domxref(“DOMHighResTimeStamp”,“timestamp”)}} when the frame was started.</li>
+<li>“<code>mark</code>” - returns the {{domxref(“DOMHighResTimeStamp”,“timestamp”)}} when the mark was created by a call to {{domxref(“Performance.mark”,“performance.mark()”)}}.</li>
+<li>“<code>measure</code>” - returns the {{domxref(“DOMHighResTimeStamp”,“timestamp”)}} when the measure was created by a call to {{domxref(“Performance.measure”,“performance.measure()”)}}.</li>
+<li>“<code>navigation</code>” - returns the {{domxref(“DOMHighResTimeStamp”,“timestamp”)}} with a value of “<code>0</code>”.</li>
+<li>“<code>resource</code>” - returns the {{domxref(“DOMHighResTimeStamp”,“timestamp”)}} immediately before the browser {{domxref(“PerformanceResourceTiming/fetchStart”,“starts fetching the resource”)}}.</li>
+</ul>
+<p>This property is {{readonlyInline}}.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">entry</span>.<span class="at">startTime</span><span class="op">;</span></a></code></pre></div>
+<h3 id="return-value">Return value</h3>
+<p>A {{domxref(“DOMHighResTimeStamp”)}} representing the first timestamp when the {{domxref(“PerformanceEntry”,“performance entry”)}} was created.</p>
+<p>Note: if the performance entry has an {{domxref(“PerformanceEntry.entryType”,“entryType”)}} of “<code>resource</code>” (i.e. the entry is a {{domxref(“PerformanceResourceTiming”)}} object), this property returns the {{domxref(“PerformanceResourceTiming.fetchStart”)}} {{domxref(“DOMHighResTimeStamp”,“timestamp”)}}.</p>
+<h2 id="example">Example</h2>
+<p>The following example shows the use of the <code>startTime</code> property.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">function</span> <span class="at">run_PerformanceEntry</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="at">log</span>(<span class="st">&quot;PerformanceEntry support ...&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="cf">if</span> (<span class="va">performance</span>.<span class="at">mark</span> <span class="op">===</span> <span class="kw">undefined</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="at">log</span>(<span class="st">&quot;... performance.mark Not supported&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">    <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-8" title="8"></a>
+<a class="sourceLine" id="cb2-9" title="9">  <span class="co">// Create some performance entries via the mark() method</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="va">performance</span>.<span class="at">mark</span>(<span class="st">&quot;Begin&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11">  <span class="at">do_work</span>(<span class="dv">50000</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12">  <span class="va">performance</span>.<span class="at">mark</span>(<span class="st">&quot;End&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13"></a>
+<a class="sourceLine" id="cb2-14" title="14">  <span class="co">// Use getEntries() to iterate through the each entry</span></a>
+<a class="sourceLine" id="cb2-15" title="15">  <span class="kw">var</span> p <span class="op">=</span> <span class="va">performance</span>.<span class="at">getEntries</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-16" title="16">  <span class="cf">for</span> (<span class="kw">var</span> i<span class="op">=</span><span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">p</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-17" title="17">    <span class="at">log</span>(<span class="st">&quot;Entry[&quot;</span> <span class="op">+</span> i <span class="op">+</span> <span class="st">&quot;]&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">    <span class="at">check_PerformanceEntry</span>(p[i])<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-19" title="19">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-20" title="20"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-21" title="21"><span class="kw">function</span> <span class="at">check_PerformanceEntry</span>(obj) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-22" title="22">  <span class="kw">var</span> properties <span class="op">=</span> [<span class="st">&quot;name&quot;</span><span class="op">,</span> <span class="st">&quot;entryType&quot;</span><span class="op">,</span> <span class="st">&quot;startTime&quot;</span><span class="op">,</span> <span class="st">&quot;duration&quot;</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-23" title="23">  <span class="kw">var</span> methods <span class="op">=</span> [<span class="st">&quot;toJSON&quot;</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-24" title="24"></a>
+<a class="sourceLine" id="cb2-25" title="25">  <span class="cf">for</span> (<span class="kw">var</span> i<span class="op">=</span><span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">properties</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-26" title="26">    <span class="co">// check each property</span></a>
+<a class="sourceLine" id="cb2-27" title="27">    <span class="kw">var</span> supported <span class="op">=</span> properties[i] <span class="kw">in</span> obj<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-28" title="28">    <span class="cf">if</span> (supported)</a>
+<a class="sourceLine" id="cb2-29" title="29">      <span class="at">log</span>(<span class="st">&quot;...&quot;</span> <span class="op">+</span> properties[i] <span class="op">+</span> <span class="st">&quot; = &quot;</span> <span class="op">+</span> obj[properties[i]])<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-30" title="30">    <span class="cf">else</span></a>
+<a class="sourceLine" id="cb2-31" title="31">      <span class="at">log</span>(<span class="st">&quot;...&quot;</span> <span class="op">+</span> properties[i] <span class="op">+</span> <span class="st">&quot; = Not supported&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-32" title="32">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-33" title="33">  <span class="cf">for</span> (<span class="kw">var</span> i<span class="op">=</span><span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">methods</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-34" title="34">    <span class="co">// check each method</span></a>
+<a class="sourceLine" id="cb2-35" title="35">    <span class="kw">var</span> supported <span class="op">=</span> <span class="kw">typeof</span> obj[methods[i]] <span class="op">==</span> <span class="st">&quot;function&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-36" title="36">    <span class="cf">if</span> (supported) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-37" title="37">      <span class="kw">var</span> js <span class="op">=</span> obj[methods[i]]()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-38" title="38">      <span class="at">log</span>(<span class="st">&quot;...&quot;</span> <span class="op">+</span> methods[i] <span class="op">+</span> <span class="st">&quot;() = &quot;</span> <span class="op">+</span> <span class="va">JSON</span>.<span class="at">stringify</span>(js))<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-39" title="39">    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-40" title="40">      <span class="at">log</span>(<span class="st">&quot;...&quot;</span> <span class="op">+</span> methods[i] <span class="op">+</span> <span class="st">&quot; = Not supported&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-41" title="41">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-42" title="42">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-43" title="43"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

@@ -1,0 +1,58 @@
+<p>{{DefaultAPISidebar(“Navigation Timing”)}}</p>
+<p>The <strong>Navigation Timing API</strong> provides data that can be used to measure the performance of a web site. Unlike JavaScript-based libraries that have historically been used to collect similar information, the Navigation Timing API can be much more accurate and reliable.</p>
+<blockquote>
+<p><strong>Note:</strong> This article currently describes Navigation Timing Level 1. There is a specification for Level 2, but it is not yet covered here.</p>
+</blockquote>
+<h2 id="concepts-and-usage">Concepts and usage</h2>
+<p>You can use the Navigation Timing API to gather performance data on the client side, which you can then transmit to a server using {{domxref(“XMLHttpRequest”)}} or other techniques.</p>
+<p>This API lets you measure data that was previously difficult to obtain, such as the amount of time needed to unload the previous page, how long domain lookups take, the total time spent executing the window’s {{event(“load”)}} handler, and so forth.</p>
+<h2 id="interfaces">Interfaces</h2>
+<ul>
+<li>{{domxref(“Performance”)}}
+<ul>
+<li>: The {{domxref(“window.performance”)}} property returns a <code>Performance</code> object. While this interface is defined by the High Resolution Time API, the Navigation Timing API adds two properties: {{domxref(“Performance.timing”, “timing”)}} and {{domxref(“Performance.navigation”, “navigation”)}}, of the types below.</li>
+</ul></li>
+<li>{{domxref(“PerformanceNavigationTiming”)}}
+<ul>
+<li>: Provides methods and properties to store and retrieve metrics regarding the browser’s document navigation events. For example, this interface can be used to determine how much time it takes to load or unload a document.</li>
+</ul></li>
+<li>{{deprecated_inline}} {{domxref(“PerformanceTiming”)}}
+<ul>
+<li>: Used as the type for the value of {{domxref(“Performance.timing”, “timing”)}}, objects of this type contain timing information that can provide insight into web page performance.</li>
+</ul></li>
+<li>{{deprecated_inline}}  {{domxref(“PerformanceNavigation”)}}
+<ul>
+<li>: The type used to return the value of {{domxref(“Performance.navigation”, “navigation”)}}, which contains information explaining the context of the load operation described by this <code>Performance</code> instance.</li>
+</ul></li>
+</ul>
+<p>The Navigation Timing API can be used to gather performance data on the client side to be sent to a server via XHR as well as measure data that was very difficult to measure by other means such as time to unload a previous page, domain look up time, <code>window.onload</code> total time, etc.</p>
+<h2 id="examples">Examples</h2>
+<h3 id="calculate-the-total-page-load-time">Calculate the total page load time</h3>
+<p>To compute the total amount of time it took to load the page, you can use the following code:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> perfData <span class="op">=</span> <span class="va">window</span>.<span class="va">performance</span>.<span class="at">timing</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">const</span> pageLoadTime <span class="op">=</span> <span class="va">perfData</span>.<span class="at">loadEventEnd</span> <span class="op">-</span> <span class="va">perfData</span>.<span class="at">navigationStart</span><span class="op">;</span></a></code></pre></div>
+<p>This subtracts the time at which navigation began ({{domxref(“PerformanceTiming.navigationStart”, “navigationStart”)}}) from the time at which the {{event(“load”)}} event handler returns ({{domxref(“PerformanceTiming.loadEventEnd”, “loadEventEnd”)}}). This gives you the perceived page load time.</p>
+<h3 id="calculate-request-response-time">Calculate request response time</h3>
+<p>You can calculate the time elapsed between the beginning of a request and the completion of getting the response using code like this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> connectTime <span class="op">=</span> <span class="va">perfData</span>.<span class="at">responseEnd</span> <span class="op">-</span> <span class="va">perfData</span>.<span class="at">requestStart</span><span class="op">;</span></a></code></pre></div>
+<p>Here, the time at which the request was initiated ({{domxref(“PerformanceTiming.requestStart”, “requestStart”)}}). from the time at which the response was finished being received ({{domxref(“PerformanceTiming.responseEnd”, “responseEnd”)}}).</p>
+<h3 id="calculate-page-render-time">Calculate page render time</h3>
+<p>As another example of an interesting piece of data you can obtain using the Navigation Timing API that you can’t otherwise easily get, you can get the amount of time it took to render the page:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> renderTime <span class="op">=</span> <span class="va">perfData</span>.<span class="at">domComplete</span> <span class="op">-</span> <span class="va">perfData</span>.<span class="at">domLoading</span><span class="op">;</span></a></code></pre></div>
+<p>This is obtained by starting with the time at which loading of the DOM and its dependencies is complete ({{domxref(“PerformanceTiming.domComplete”, “domComplete”)}}) and subtracting from it the time at which parsing of the DOM began ({{domxref(“PerformanceTiming.domLoading”, “domLoading”)}}).</p>
+<h2 id="specifications">Specifications</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="https://w3c.github.io/navigation-timing/">Navigation Timing</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<h3 id="window.performance.timing"><code>Window.performance.timing</code></h3>
+<p>{{Compat(“api.PerformanceTiming”)}}</p>

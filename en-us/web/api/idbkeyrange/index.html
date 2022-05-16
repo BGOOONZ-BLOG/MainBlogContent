@@ -1,0 +1,149 @@
+<p>{{APIRef(“IndexedDB”)}}</p>
+<p>The <strong><code>IDBKeyRange</code></strong> interface of the <a href="/en-US/docs/Web/API/IndexedDB_API">IndexedDB API</a> represents a continuous interval over some data type that is used for keys. Records can be retrieved from {{domxref(“IDBObjectStore”)}} and {{domxref(“IDBIndex”)}} objects using keys or a range of keys. You can limit the range using lower and upper bounds. For example, you can iterate over all values of a key in the value range A–Z.</p>
+<p>A key range can be a single value or a range with upper and lower bounds or endpoints. If the key range has both upper and lower bounds, then it is <em>bounded</em>; if it has no bounds, it is <em>unbounded</em>. A bounded key range can either be open (the endpoints are excluded) or closed (the endpoints are included). To retrieve all keys within a certain range, you can use the following code constructs:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Range</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>All keys ≥ <strong>x</strong></td>
+<td>{{domxref(“IDBKeyRange.lowerBound”)}}<code>(x)</code></td>
+</tr>
+<tr class="even">
+<td>All keys &gt; <strong>x</strong></td>
+<td>{{domxref(“IDBKeyRange.lowerBound”)}}<code>(x, true)</code></td>
+</tr>
+<tr class="odd">
+<td>All keys ≤ <strong>y</strong></td>
+<td>{{domxref(“IDBKeyRange.upperBound”)}}<code>(y)</code></td>
+</tr>
+<tr class="even">
+<td>All keys &lt; <strong>y</strong></td>
+<td>{{domxref(“IDBKeyRange.upperBound”)}}<code>(y, true)</code></td>
+</tr>
+<tr class="odd">
+<td>All keys ≥ <strong>x</strong> &amp;&amp; ≤ <strong>y</strong></td>
+<td>{{domxref(“IDBKeyRange.bound”)}}<code>(x, y)</code></td>
+</tr>
+<tr class="even">
+<td>All keys &gt; <strong>x</strong> &amp;&amp;&lt; <strong>y</strong></td>
+<td>{{domxref(“IDBKeyRange.bound”)}}<code>(x, y, true, true)</code></td>
+</tr>
+<tr class="odd">
+<td>All keys &gt; <strong>x</strong> &amp;&amp; ≤ <strong>y</strong></td>
+<td>{{domxref(“IDBKeyRange.bound”)}}<code>(x, y, true, false)</code></td>
+</tr>
+<tr class="even">
+<td>All keys ≥ <strong>x</strong> &amp;&amp;&lt; <strong>y</strong></td>
+<td>{{domxref(“IDBKeyRange.bound”)}}<code>(x, y, false, true)</code></td>
+</tr>
+<tr class="odd">
+<td>The key = <strong>z</strong></td>
+<td>{{domxref(“IDBKeyRange.only”)}}<code>(z)</code></td>
+</tr>
+</tbody>
+</table>
+<p>A key is in a key range if the following conditions are true:</p>
+<ul>
+<li><p>The lower value of the key range is one of the following:</p>
+<ul>
+<li><code>undefined</code></li>
+<li>Less than key value</li>
+<li>Equal to key value if <code>lowerOpen</code> is <code>false</code>.</li>
+</ul></li>
+<li><p>The upper value of the key range is one of the following:</p>
+<ul>
+<li><code>undefined</code></li>
+<li>Greater than key value</li>
+<li>Equal to key value if <code>upperOpen</code> is <code>false</code>.</li>
+</ul></li>
+</ul>
+<p>{{AvailableInWorkers}}</p>
+<h2 id="properties">Properties</h2>
+<ul>
+<li>{{domxref(“IDBKeyRange.lower”)}} {{readonlyInline}}
+<ul>
+<li>: Lower bound of the key range.</li>
+</ul></li>
+<li>{{domxref(“IDBKeyRange.upper”)}} {{readonlyInline}}
+<ul>
+<li>: Upper bound of the key range.</li>
+</ul></li>
+<li>{{domxref(“IDBKeyRange.lowerOpen”)}} {{readonlyInline}}
+<ul>
+<li>: Returns false if the lower-bound value is included in the key range.</li>
+</ul></li>
+<li>{{domxref(“IDBKeyRange.upperOpen”)}} {{readonlyInline}}
+<ul>
+<li>: Returns false if the upper-bound value is included in the key range.</li>
+</ul></li>
+</ul>
+<h2 id="methods">Methods</h2>
+<h3 id="static-methods">Static methods</h3>
+<ul>
+<li>{{domxref(“IDBKeyRange.bound()”)}}
+<ul>
+<li>: Creates a new key range with upper and lower bounds.</li>
+</ul></li>
+<li>{{domxref(“IDBKeyRange.only()”)}}
+<ul>
+<li>: Creates a new key range containing a single value.</li>
+</ul></li>
+<li>{{domxref(“IDBKeyRange.lowerBound()”)}}
+<ul>
+<li>: Creates a new key range with only a lower bound.</li>
+</ul></li>
+<li>{{domxref(“IDBKeyRange.upperBound()”)}}
+<ul>
+<li>: Creates a new upper-bound key range.</li>
+</ul></li>
+</ul>
+<h3 id="instance-methods">Instance methods</h3>
+<ul>
+<li>{{domxref(“IDBKeyRange.includes()”)}}
+<ul>
+<li>: Returns a boolean indicating whether a specified key is inside the key range.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>The following example illustrates how you’d use a key range. Here we declare a <code>keyRangeValue</code> as a range between values of <code>"A"</code> and <code>"F"</code>. We open a transaction (using {{domxref(“IDBTransaction”)}}) and an object store, and open a cursor with {{domxref(“IDBObjectStore.openCursor”)}}, declaring <code>keyRangeValue</code> as its optional key range value. This means that the cursor will only retrieve records with keys inside that range. This range includes the values <code>"A"</code> and <code>"F"</code>, as we haven’t declared that they should be open bounds. If we used <code>IDBKeyRange.bound("A", "F", true, true);</code>, then the range would not include <code>"A"</code> and <code>"F"</code>, only the values between them.</p>
+<blockquote>
+<p><strong>Note:</strong> For a more complete example allowing you to experiment with key range, have a look at our <a href="https://github.com/mdn/indexeddb-examples/tree/master/idbkeyrange">IDBKeyRange-example</a> repo (<a href="https://mdn.github.io/indexeddb-examples/idbkeyrange/">view the example live too</a>.)</p>
+</blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">function</span> <span class="at">displayData</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="kw">var</span> keyRangeValue <span class="op">=</span> <span class="va">IDBKeyRange</span>.<span class="at">bound</span>(<span class="st">&quot;A&quot;</span><span class="op">,</span> <span class="st">&quot;F&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"></a>
+<a class="sourceLine" id="cb1-4" title="4">  <span class="kw">var</span> transaction <span class="op">=</span> <span class="va">db</span>.<span class="at">transaction</span>([<span class="st">&#39;fThings&#39;</span>]<span class="op">,</span> <span class="st">&#39;readonly&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-5" title="5">  <span class="kw">var</span> objectStore <span class="op">=</span> <span class="va">transaction</span>.<span class="at">objectStore</span>(<span class="st">&#39;fThings&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-6" title="6"></a>
+<a class="sourceLine" id="cb1-7" title="7">  <span class="va">objectStore</span>.<span class="at">openCursor</span>(keyRangeValue).<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-8" title="8">    <span class="kw">var</span> cursor <span class="op">=</span> <span class="va">event</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-9" title="9">    <span class="cf">if</span>(cursor) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-10" title="10">      <span class="kw">var</span> listItem <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;li&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-11" title="11">      <span class="va">listItem</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="st">&#39;&lt;strong&gt;&#39;</span> <span class="op">+</span> <span class="va">cursor</span>.<span class="va">value</span>.<span class="at">fThing</span> <span class="op">+</span> <span class="st">&#39;&lt;/strong&gt;, &#39;</span> <span class="op">+</span> <span class="va">cursor</span>.<span class="va">value</span>.<span class="at">fRating</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-12" title="12">      <span class="va">list</span>.<span class="at">appendChild</span>(listItem)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-13" title="13"></a>
+<a class="sourceLine" id="cb1-14" title="14">      <span class="va">cursor</span>.<span class="at">continue</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-15" title="15">    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-16" title="16">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Entries all displayed.&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-17" title="17">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-18" title="18">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb1-19" title="19"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/IndexedDB_API/Using_IndexedDB">Using IndexedDB</a></li>
+<li>Starting transactions: {{domxref(“IDBDatabase”)}}</li>
+<li>Using transactions: {{domxref(“IDBTransaction”)}}</li>
+<li>Setting a range of keys: {{domxref(“IDBKeyRange”)}}</li>
+<li>Retrieving and making changes to your data: {{domxref(“IDBObjectStore”)}}</li>
+<li>Using cursors: {{domxref(“IDBCursor”)}}</li>
+<li>Reference example: <a href="https://github.com/mdn/to-do-notifications/tree/gh-pages">To-do Notifications</a> (<a href="https://mdn.github.io/to-do-notifications/">view example live</a>.)</li>
+</ul>

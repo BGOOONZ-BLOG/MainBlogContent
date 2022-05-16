@@ -1,0 +1,63 @@
+<p>{{DefaultAPISidebar(“WebRTC”)}}</p>
+<p>The <strong><code>RTCError</code></strong> interface describes an error which has occurred while handling <a href="/en-US/docs/Web/API/WebRTC_API">WebRTC</a> operations. It’s based upon the standard {{domxref(“DOMException”)}} interface that describes general DOM errors.</p>
+<h2 id="constructor">Constructor</h2>
+<ul>
+<li>{{domxref(“RTCError.RTCError”, “RTCError()”)}}
+<ul>
+<li>: Creates and returns a new <code>RTCError</code> object initialized with the different parameters and, optionally, a string to use as the value of the error’s {{domxref(“DOMException.message”, “message”)}} property.</li>
+</ul></li>
+</ul>
+<h2 id="properties">Properties</h2>
+<p><em>In addition to the properties defined by the parent interface, {{domxref(“DOMException”)}}, <code>RTCError</code> includes the following properties:</em></p>
+<ul>
+<li>{{domxref(“RTCError.errorDetail”, “errorDetail”)}} {{ReadOnlyInline}}
+<ul>
+<li>: A {{domxref(“DOMString”)}} specifying the WebRTC-specific error code identifying the type of error that occurred.</li>
+</ul></li>
+<li>{{domxref(“RTCError.receivedAlert”, “receivedAlert”)}} {{ReadOnlyInline}}
+<ul>
+<li>: An unsigned long integer value indicating the fatal {{Glossary(“DTLS”)}} error which was received from the network. Only valid if the <code>errorDetail</code> string is <code>dtls-failure</code>. If <code>null</code>, no DTLS error was received.</li>
+</ul></li>
+<li>{{domxref(“RTCError.sctpCauseCode”, “sctpCauseCode”)}} {{ReadOnlyInline}}
+<ul>
+<li>: If <code>errorDetail</code> is <code>sctp-failure</code>, this property is a long integer specifying the {{Glossary(“SCTP”)}} cause code indicating the cause of the failed SCTP negotiation. <code>null</code> if the error isn’t an SCTP error.</li>
+</ul></li>
+<li>{{domxref(“RTCError.sdpLineNumber”, “sdpLineNumber”)}} {{ReadOnlyInline}}
+<ul>
+<li>: If <code>errorDetail</code> is <code>sdp-syntax-error</code>, this property is a long integer identifying the line number of the {{Glossary(“SDP”)}} on which the syntax error occurred. <code>null</code> if the error isn’t an SDP syntax error.</li>
+</ul></li>
+<li>{{domxref(“RTCError.sentAlert”, “sentAlert”)}} {{ReadOnlyInline}}
+<ul>
+<li>: If <code>errorDetail</code> is <code>dtls-failure</code>, this property is an unsigned long integer indicating the fatal DTLS error that was sent out by this device. If <code>null</code>, no DTLS error was transmitted.</li>
+</ul></li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> All <code>RTCError</code> objects have their {{domxref(“DOMException.name”, “name”)}} set to <code>OperationError</code>.</p>
+</blockquote>
+<h2 id="examples">Examples</h2>
+<p>In this example, a handler is established for an {{domxref(“RTCDataChannel”)}}’s {{domxref(“RTCDataChannel.error_event”, “error”)}} event.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">dataChannel</span>.<span class="at">addEventListener</span>(<span class="st">&quot;error&quot;</span><span class="op">,</span> (event) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="kw">let</span> error <span class="op">=</span> <span class="va">event</span>.<span class="at">error</span><span class="op">;</span> <span class="co">// event.error is an RTCError</span></a>
+<a class="sourceLine" id="cb1-3" title="3"></a>
+<a class="sourceLine" id="cb1-4" title="4">  <span class="cf">if</span> (<span class="va">error</span>.<span class="at">errorDetail</span> <span class="op">===</span> <span class="st">&quot;sdp-syntax-error&quot;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-5" title="5">    <span class="kw">let</span> errLine <span class="op">=</span> <span class="va">error</span>.<span class="at">sdpLineNumber</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-6" title="6">    <span class="kw">let</span> errMessage <span class="op">=</span> <span class="va">error</span>.<span class="at">message</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-7" title="7"></a>
+<a class="sourceLine" id="cb1-8" title="8">    <span class="kw">let</span> alertMessage <span class="op">=</span> <span class="vs">`A syntax error occurred interpreting line </span><span class="sc">${</span>errLine<span class="sc">}</span><span class="vs"> of the SDP: </span><span class="sc">${</span>errMessage<span class="sc">}</span><span class="vs">`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-9" title="9">    <span class="at">showMyAlertMessage</span>(<span class="st">&quot;Data Channel Error&quot;</span><span class="op">,</span> alertMessage)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-10" title="10">  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-11" title="11">    <span class="at">terminateMyConnection</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-12" title="12">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-13" title="13"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>If the error is an SDP syntax error—indicated by its {{domxref(“RTCError.errorDetail”, “errorDetail”)}} property being <code>sdp-syntax-error</code>—, a message string is constructed to present the error message and the line number within the SDP at which the error occurred. This message is then displayed using a function called <code>showMyAlertMessage()</code>, which stands in for whatever output mechanism this code might use.</p>
+<p>Any other error is treated as terminal, causing a <code>terminateMyConnection()</code> function to be called.</p>
+<p>The above example uses {{domxref(“EventTarget.addEventListener”, “addEventListener()”)}} to add the handler for <code>error</code> events. You can also use the <code>RTCDataChannel</code> object’s {{domxref(“RTCDataChannel.onerror”, “onerror”)}} event handler property, like this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">dataChannel</span>.<span class="at">onerror</span> <span class="op">=</span> (event) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">let</span> error <span class="op">=</span> <span class="va">event</span>.<span class="at">error</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="co">/* and so forth */</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="op">};</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

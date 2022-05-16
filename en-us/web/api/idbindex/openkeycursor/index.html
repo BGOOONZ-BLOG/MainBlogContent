@@ -1,0 +1,83 @@
+<p>{{ APIRef(“IndexedDB”) }}</p>
+<p>The <strong><code>openKeyCursor()</code></strong> method of the {{domxref(“IDBIndex”)}} interface returns an {{domxref(“IDBRequest”)}} object, and, in a separate thread, creates a cursor over the specified key range, as arranged by this index.</p>
+<p>The method sets the position of the cursor to the appropriate key, based on the specified direction.</p>
+<p>If the key range is not specified or is null, then the range includes all the keys.</p>
+<blockquote>
+<p><strong>Note:</strong> Cursors returned by <code>openKeyCursor()</code> do not make the referenced value available as <a href="/en-US/docs/Web/API/IDBIndex/openCursor"><code>IDBIndex.openCursor</code></a> does. This makes obtaining a list of keys much more efficient.</p>
+</blockquote>
+<p>{{AvailableInWorkers}}</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> request <span class="op">=</span> <span class="va">myIndex</span>.<span class="at">openKeyCursor</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">var</span> request <span class="op">=</span> <span class="va">myIndex</span>.<span class="at">openKeyCursor</span>(range)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">var</span> request <span class="op">=</span> <span class="va">myIndex</span>.<span class="at">openKeyCursor</span>(range<span class="op">,</span> direction)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li>range {{optional_inline}}
+<ul>
+<li>: A key or {{domxref(“IDBKeyRange”)}} to use as the cursor’s range. If nothing is passed, this will default to a key range that selects all the records in this object store.</li>
+</ul></li>
+<li>direction {{optional_inline}}
+<ul>
+<li>: The cursor’s <a href="/en-US/docs/Web/API/IDBCursor#constants">direction</a>. See <a href="/en-US/docs/Web/API/IDBCursor#constants">IDBCursor Constants</a> for possible values.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>An {{domxref(“IDBRequest”)}} object on which subsequent events related to this operation are fired.</p>
+<h3 id="exceptions">Exceptions</h3>
+<p>This method may raise a {{domxref(“DOMException”)}} of one of the following types:</p>
+<ul>
+<li><code>TransactionInactiveError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if this {{domxref(“IDBIndex”)}}’s transaction is inactive.</li>
+</ul></li>
+<li><code>TypeError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the value for the direction parameter is invalid.</li>
+</ul></li>
+<li><code>DataError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the key or key range provided contains an invalid key.</li>
+</ul></li>
+<li><code>InvalidStateError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the {{domxref(“IDBIndex”)}} has been deleted or removed.</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<p>In the following example we open a transaction and an object store, then get the index <code>lName</code> from a simple contacts database. We then open a key cursor on the index using <code>openKeyCursor()</code> — this works the same as opening a cursor directly on an <code>ObjectStore</code> using {{domxref(“IDBObjectStore.openKeyCursor”)}} except that the returned records are sorted based on the index, not the primary key.</p>
+<p>Finally, we iterate through each record in the index, and insert the last name and the corresponding primary key of the referenced record into an HTML table.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">function</span> <span class="at">displayDataByIndex</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="va">tableEntry</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="st">&#39;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="kw">var</span> transaction <span class="op">=</span> <span class="va">db</span>.<span class="at">transaction</span>([<span class="st">&#39;contactsList&#39;</span>]<span class="op">,</span> <span class="st">&#39;readonly&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="kw">var</span> objectStore <span class="op">=</span> <span class="va">transaction</span>.<span class="at">objectStore</span>(<span class="st">&#39;contactsList&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="kw">var</span> myIndex <span class="op">=</span> <span class="va">objectStore</span>.<span class="at">index</span>(<span class="st">&#39;lName&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="va">myIndex</span>.<span class="at">openKeyCursor</span>().<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-9" title="9">    <span class="kw">var</span> cursor <span class="op">=</span> <span class="va">event</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10">    <span class="cf">if</span>(cursor) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-11" title="11">      <span class="kw">var</span> tableRow <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;tr&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12">      <span class="va">tableRow</span>.<span class="at">innerHTML</span> <span class="op">=</span>   <span class="st">&#39;&lt;td&gt;&#39;</span> <span class="op">+</span> <span class="va">cursor</span>.<span class="at">key</span> <span class="op">+</span> <span class="st">&#39;&lt;/td&gt;&#39;</span></a>
+<a class="sourceLine" id="cb2-13" title="13">                           <span class="op">+</span> <span class="st">&#39;&lt;td&gt;&#39;</span> <span class="op">+</span> <span class="va">cursor</span>.<span class="at">primaryKey</span> <span class="op">+</span> <span class="st">&#39;&lt;/td&gt;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14">      <span class="va">tableEntry</span>.<span class="at">appendChild</span>(tableRow)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-15" title="15"></a>
+<a class="sourceLine" id="cb2-16" title="16">      <span class="va">cursor</span>.<span class="at">continue</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-17" title="17">    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-18" title="18">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;All last names displayed.&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-19" title="19">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-20" title="20">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb2-21" title="21"><span class="op">};</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/IndexedDB_API/Using_IndexedDB">Using IndexedDB</a></li>
+<li>Starting transactions: {{domxref(“IDBDatabase”)}}</li>
+<li>Using transactions: {{domxref(“IDBTransaction”)}}</li>
+<li>Setting a range of keys: {{domxref(“IDBKeyRange”)}}</li>
+<li>Retrieving and making changes to your data: {{domxref(“IDBObjectStore”)}}</li>
+<li>Using cursors: {{domxref(“IDBCursor”)}}</li>
+<li>Reference example: <a href="https://github.com/mdn/to-do-notifications/tree/gh-pages">To-do Notifications</a> (<a href="https://mdn.github.io/to-do-notifications/">view example live</a>.)</li>
+</ul>

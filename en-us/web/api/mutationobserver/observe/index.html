@@ -1,0 +1,120 @@
+<p>{{APIRef(“DOM WHATWG”)}}</p>
+<p>The {{domxref(“MutationObserver”)}} method <strong><code>observe()</code></strong> configures the <code>MutationObserver</code> callback to begin receiving notifications of changes to the DOM that match the given options.</p>
+<p>Depending on the configuration, the observer may watch a single {{domxref(“Node”)}} in the DOM tree, or that node and some or all of its descendant nodes.</p>
+<p>To stop the <code>MutationObserver</code> (so that none of its callbacks will be triggered any longer), call {{domxref(“MutationObserver.disconnect()”)}}.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">mutationObserver</span>.<span class="at">observe</span>(target<span class="op">,</span> options)</a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>target</code>
+<ul>
+<li>: A DOM {{domxref(“Node”)}} (which may be an {{domxref(“Element”)}}) within the DOM tree to watch for changes, or to be the root of a subtree of nodes to be watched.</li>
+</ul></li>
+<li><p><code>options</code></p>
+<ul>
+<li><p>: An object providing options that describe which DOM mutations should be reported to <code>mutationObserver</code>’s <code>callback</code>. At a minimum, one of <code>childList</code>, <code>attributes</code>, and/or <code>characterData</code> must be <code>true</code> when you call {{domxref(“MutationObserver.observe”, “observe()”)}}. Otherwise, a <code>TypeError</code> exception will be thrown.</p>
+<p>Options are as follows:</p>
+<ul>
+<li><code>subtree</code> {{optional_inline}}
+<ul>
+<li>: Set to <code>true</code> to extend monitoring to the entire subtree of nodes rooted at <code>target</code>. All of the other properties are then extended to all of the nodes in the subtree instead of applying solely to the <code>target</code> node. The default value is <code>false</code>.</li>
+</ul></li>
+<li><code>childList</code> {{optional_inline}}
+<ul>
+<li>: Set to <code>true</code> to monitor the target node (and, if <code>subtree</code> is <code>true</code>, its descendants) for the addition of new child nodes or removal of existing child nodes. The default value is <code>false</code>.</li>
+</ul></li>
+<li><code>attributes</code> {{optional_inline}}
+<ul>
+<li>: Set to <code>true</code> to watch for changes to the value of attributes on the node or nodes being monitored.</li>
+<li>The default value is <code>true</code> if either of <code>attributeFilter</code> or <code>attributeOldValue</code> is specified, otherwise the default value is <code>false</code>.</li>
+</ul></li>
+<li><code>attributeFilter</code> {{optional_inline}}
+<ul>
+<li>: An array of specific attribute names to be monitored. If this property isn’t included, changes to all attributes cause mutation notifications.</li>
+</ul></li>
+<li><code>attributeOldValue</code> {{optional_inline}}
+<ul>
+<li>: Set to <code>true</code> to record the previous value of any attribute that changes when monitoring the node or nodes for attribute changes; see {{SectionOnPage(“/en-US/docs/Web/API/MutationObserver”, “Monitoring attribute values”)}} for details on watching for attribute changes and value recording. The default value is <code>false</code>.</li>
+</ul></li>
+<li><code>characterData</code> {{optional_inline}}
+<ul>
+<li>: Set to <code>true</code> to monitor the specified target node (and, if <code>subtree</code> is <code>true</code>, its descendants) for changes to the character data contained within the node or nodes. The default value is <code>true</code> if <code>characterDataOldValue</code> is specified, otherwise the default value is <code>false</code>.</li>
+</ul></li>
+<li><code>characterDataOldValue</code> {{optional_inline}}
+<ul>
+<li>: Set to <code>true</code> to record the previous value of a node’s text whenever the text changes on nodes being monitored. The default value is <code>false</code>.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p><code>undefined</code>.</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><p>{{jsxref(‘TypeError’)}}</p>
+<ul>
+<li><p>: Thrown in any of the following circumstances:</p>
+<ul>
+<li>The <code>options</code> are configured such that nothing will actually be monitored. (For example, if <code>childList</code>, <code>attributes</code>, and <code>characterData</code> are all <code>false</code>.)</li>
+<li>The value of <code>options.attributes</code> is <code>false</code> (indicating that attribute changes are not to be monitored), but <code>attributeOldValue</code> is <code>true</code> and/or <code>attributeFilter</code> is present.</li>
+<li>The <code>characterDataOldValue</code> option is <code>true</code> but <code>characterData</code> is <code>false</code> (indicating that character changes are not to be monitored).</li>
+</ul></li>
+</ul></li>
+</ul>
+<h2 id="usage-notes">Usage notes</h2>
+<h3 id="reusing-mutationobservers">Reusing MutationObservers</h3>
+<p>You can call <code>observe()</code> multiple times on the same <code>MutationObserver</code> to watch for changes to different parts of the DOM tree and/or different types of changes. There are some caveats to note:</p>
+<ul>
+<li>If you call <code>observe()</code> on a node that’s already being observed by the same <code>MutationObserver</code>, all existing observers are automatically removed from all targets being observed before the new observer is activated.</li>
+<li>If the same <code>MutationObserver</code> is not already in use on the target, then the existing observers are left alone and the new one is added.</li>
+</ul>
+<h3 id="observation-follows-nodes-when-disconnected">Observation follows nodes when disconnected</h3>
+<p>Mutation observers are intended to let you be able to watch the desired set of nodes over time, even if the direct connections between those nodes are severed. If you begin watching a subtree of nodes, and a portion of that subtree is detached and moved elsewhere in the DOM, you continue to watch the detached segment of nodes, receiving the same callbacks as before the nodes were detached from the original subtree.</p>
+<p>In other words, until you’ve been notified that nodes are being split off from your monitored subtree, you’ll get notifications of changes to that split-off subtree and its nodes. This prevents you from missing changes that occur after the connection is severed and before you have a chance to specifically begin monitoring the moved node or subtree for changes.</p>
+<p>Theoretically, this means that if you keep track of the {{domxref(“MutationRecord”)}} objects describing the changes that occur, you should be able to “undo” the changes, rewinding the DOM back to its initial state.</p>
+<h2 id="examples">Examples</h2>
+<h3 id="basic-usage">Basic usage</h3>
+<p>In this example, we demonstrate how to call the method <strong><code>observe()</code></strong> on an instance of {{domxref(“MutationObserver”)}}, once it has been set up, passing it a target element and an <code>options</code> object.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">// identify an element to observe</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">const</span> elementToObserve <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;#targetElementId&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="co">// create a new instance of `MutationObserver` named `observer`,</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="co">// passing it a callback function</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="kw">const</span> observer <span class="op">=</span> <span class="kw">new</span> <span class="at">MutationObserver</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-7" title="7">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;callback that runs when observer is triggered&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="co">// call `observe()` on that MutationObserver instance,</span></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="co">// passing it the element to observe, and the options object</span></a>
+<a class="sourceLine" id="cb2-12" title="12"><span class="va">observer</span>.<span class="at">observe</span>(elementToObserve<span class="op">,</span> <span class="op">{</span><span class="dt">subtree</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span> <span class="dt">childList</span><span class="op">:</span> <span class="kw">true</span><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h3 id="using-attributefilter">Using <code>attributeFilter</code></h3>
+<p>In this example, a Mutation Observer is set up to watch for changes to the <code>status</code> and <code>username</code> attributes in any elements contained within a subtree that displays the names of users in a chat room. This lets the code, for example, reflect changes to users’ nicknames, or to mark them as away from keyboard (AFK) or offline.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">function</span> <span class="at">callback</span>(mutationList) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="va">mutationList</span>.<span class="at">forEach</span>(<span class="kw">function</span>(mutation) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="cf">switch</span>(<span class="va">mutation</span>.<span class="at">type</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">      <span class="cf">case</span> <span class="st">&quot;attributes&quot;</span><span class="op">:</span></a>
+<a class="sourceLine" id="cb3-5" title="5">        <span class="cf">switch</span>(<span class="va">mutation</span>.<span class="at">attributeName</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-6" title="6">          <span class="cf">case</span> <span class="st">&quot;status&quot;</span><span class="op">:</span></a>
+<a class="sourceLine" id="cb3-7" title="7">            <span class="at">userStatusChanged</span>(<span class="va">mutation</span>.<span class="va">target</span>.<span class="at">username</span><span class="op">,</span> <span class="va">mutation</span>.<span class="va">target</span>.<span class="at">status</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">            <span class="cf">break</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">          <span class="cf">case</span> <span class="st">&quot;username&quot;</span><span class="op">:</span></a>
+<a class="sourceLine" id="cb3-10" title="10">            <span class="at">usernameChanged</span>(<span class="va">mutation</span>.<span class="at">oldValue</span><span class="op">,</span> <span class="va">mutation</span>.<span class="va">target</span>.<span class="at">username</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-11" title="11">            <span class="cf">break</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-12" title="12">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-13" title="13">        <span class="cf">break</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-14" title="14">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-15" title="15">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-16" title="16"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-17" title="17"></a>
+<a class="sourceLine" id="cb3-18" title="18"><span class="kw">var</span> userListElement <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;#userlist&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-19" title="19"></a>
+<a class="sourceLine" id="cb3-20" title="20"><span class="kw">var</span> observer <span class="op">=</span> <span class="kw">new</span> <span class="at">MutationObserver</span>(callback)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-21" title="21"><span class="va">observer</span>.<span class="at">observe</span>(userListElement<span class="op">,</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-22" title="22">  <span class="dt">attributeFilter</span><span class="op">:</span> [ <span class="st">&quot;status&quot;</span><span class="op">,</span> <span class="st">&quot;username&quot;</span> ]<span class="op">,</span></a>
+<a class="sourceLine" id="cb3-23" title="23">  <span class="dt">attributeOldValue</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-24" title="24">  <span class="dt">subtree</span><span class="op">:</span> <span class="kw">true</span></a>
+<a class="sourceLine" id="cb3-25" title="25"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

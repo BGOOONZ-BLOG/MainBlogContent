@@ -1,0 +1,40 @@
+<p>{{APIRef(“WebRTC”)}}</p>
+<p>The <strong>{{domxref(“RTCIceCandidate”)}}</strong> interface’s read-only <strong><code>address</code></strong> property is a string providing the IP address of the device which is the source of the candidate. The <code>address</code> is <code>null</code> by default if not otherwise specified.</p>
+<p>The <code>address</code> field’s value is set from the <code>candidateInfo</code> options object passed to the {{domxref(“RTCIceCandidate.RTCIceCandidate”, “RTCIceCandidate()”)}} constructor. You can’t specify the value of <code>address</code> directly in the options object, but its value is automatically extracted from the object’s <code>candidate</code> a-line, if it’s formatted properly.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> address <span class="op">=</span> <span class="va">RTCIceCandidate</span>.<span class="at">address</span><span class="op">;</span></a></code></pre></div>
+<h3 id="value">Value</h3>
+<p>A {{domxref(“DOMString”)}} providing the IP address from which the candidate comes.</p>
+<blockquote>
+<p><strong>Note:</strong> If <code>port</code> is <code>null</code> — and <code>port</code> is supported by the {{Glossary(“user agent”)}} — passing the candidate to {{domxref(“RTCPeerConnection.addIceCandidate”, “addIceCandidate()”)}} will fail, throwing an <code>OperationError</code> exception.</p>
+</blockquote>
+<h2 id="security-notes">Security notes</h2>
+<p>It’s important to note here that although WebRTC does not require the two peers on an {{domxref(“RTCPeerConnection”)}} to know one another’s true IP addresses, the <code>address</code> property on <code>RTCIceCandidate</code> <em>can</em> expose more information about the source of the remote peer than the user expects. The IP address can be used to derive information about the remote device’s location, network topology, and so forth. It can also be used for fingerprinting purposes.</p>
+<p>The candidate IP addresses are <em>always</em> exposed to the application through <code>address</code>, and unsavory applications can in turn potentially reveal the address to the user. This can occur without the remote peer’s consent.</p>
+<p>Applications being built with user privacy and security in mind can choose to limit the permitted candidates to relay candidates only. Doing so prevents the remote user’s address from being exposed, but reduces the pool of available candidates to choose from. To do this, configure the ICE agent’s ICE transport policy with an object confirming to the <code>configuration</code> property described in {{domxref(“RTCPeerConnection.setConfiguration”)}}, like this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> rtcConfig <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="dt">iceServers</span><span class="op">:</span> [</a>
+<a class="sourceLine" id="cb2-3" title="3">    <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">      <span class="dt">urls</span><span class="op">:</span> <span class="st">&quot;turn:myturn.server.ip&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-5" title="5">      <span class="dt">username</span><span class="op">:</span> <span class="st">&quot;username&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-6" title="6">      <span class="dt">credential</span><span class="op">:</span> <span class="st">&quot;password&quot;</span></a>
+<a class="sourceLine" id="cb2-7" title="7">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  ]<span class="op">,</span></a>
+<a class="sourceLine" id="cb2-9" title="9">  <span class="dt">iceTransportPolicy</span><span class="op">:</span> <span class="st">&quot;relay&quot;</span></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="op">}</span></a></code></pre></div>
+<p>By setting <code>iceTransportPolicy</code> to <code>"relay"</code>, any host candidates (candidates where the IP address is the peer’s own IP address) are left out of the pool of candidates, as are any other candidates which aren’t relay candidates.</p>
+<h2 id="usage-notes">Usage notes</h2>
+<p>Consider this {{Glossary(“SDP”)}} attribute line (a-line) which describes an ICE candidate:</p>
+<pre><code>a=candidate:4234997325 1 udp 2043278322 192.168.0.56 44323 typ host</code></pre>
+<p>The fifth field, <code>"192.168.0.56"</code> is the IP address in this candidate’s a-line string.</p>
+<h2 id="example">Example</h2>
+<p>This code snippet uses the value of <code>address</code> to implement an IP address based ban feature.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="cf">if</span> (<span class="va">ipBanList</span>.<span class="at">includes</span>(<span class="va">candidate</span>.<span class="at">address</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="at">rejectCandidate</span>(candidate)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-4" title="4">  <span class="at">acceptCandidate</span>(candidate)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

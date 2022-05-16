@@ -1,0 +1,126 @@
+<p>{{APIRef(“WebRTC”)}}</p>
+<p>The {{domxref(“RTCPeerConnection”)}} method <strong><code>setRemoteDescription()</code></strong> sets the specified session description as the remote peer’s current offer or answer. The description specifies the properties of the remote end of the connection, including the media format. The method takes a single parameter—the session description—and it returns a {{jsxref(“Promise”)}} which is fulfilled once the description has been changed, asynchronously.</p>
+<p>This is typically called after receiving an offer or answer from another peer over the signaling server. Keep in mind that if <code>setRemoteDescription()</code> is called while a connection is already in place, it means renegotiation is underway (possibly to adapt to changing network conditions).</p>
+<p>Because descriptions will be exchanged until the two peers agree on a configuration, the description submitted by calling <code>setRemoteDescription()</code> does not immediately take effect. Instead, the current connection configuration remains in place until negotiation is complete. Only then does the agreed-upon configuration take effect.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1">aPromise <span class="op">=</span> <span class="va">rtcPeerConnection</span>.<span class="at">setRemoteDescription</span>(sessionDescription)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>sessionDescription</code>
+<ul>
+<li>: An {{domxref(“RTCSessionDescriptionInit”)}} or {{domxref(“RTCSessionDescription”)}} which specifies the remote peer’s current offer or answer. This value is an offer or answer received from the remote peer through your implementation of</li>
+</ul></li>
+</ul>
+<p>The <code>sessionDescription</code> parameter is technically of type <code>RTCSessionDescriptionInit</code>, but because {{domxref(“RTCSessionDescription”)}} serializes to be indistinguishable from <code>RTCSessionDescriptionInit</code>, you can also pass in an <code>RTCSessionDescription</code>. This lets you simplify code such as the following:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1">myPeerConnection</a>
+<a class="sourceLine" id="cb2-2" title="2">  .<span class="at">setRemoteDescription</span>(<span class="kw">new</span> <span class="at">RTCSessionDescription</span>(description))</a>
+<a class="sourceLine" id="cb2-3" title="3">  .<span class="at">then</span>(<span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">    <span class="cf">return</span> <span class="at">createMyStream</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>to be:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="va">myPeerConnection</span>.<span class="at">setRemoteDescription</span>(description).<span class="at">then</span>(<span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="cf">return</span> <span class="at">createMyStream</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>Using <a href="/en-US/docs/Web/JavaScript/Reference/Statements/async_function"><code>async</code></a>/<a href="/en-US/docs/Web/JavaScript/Reference/Operators/await"><code>await</code></a> syntax, you can further simplify this to:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="cf">await</span> <span class="va">myPeerConnection</span>.<span class="at">setRemoteDescription</span>(description)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="at">createMyStream</span>()<span class="op">;</span></a></code></pre></div>
+<p>Since it’s unnecessary, the {{domxref(“RTCSessionDescription.RTCSessionDescription”, “RTCSessionDescription()”)}} constructor is deprecated.</p>
+<h3 id="return-value">Return value</h3>
+<p>A {{jsxref(“Promise”)}} which is fulfilled once the value of the connection’s {{domxref(“RTCPeerConnection.remoteDescription”, “remoteDescription”)}} is successfully changed or rejected if the change cannot be applied (for example, if the specified description is incompatible with one or both of the peers on the connection). The promise fulfillment handler receives no input parameters.</p>
+<blockquote>
+<p><strong>Note:</strong> The process of changing descriptions actually involves intermediary steps handled by the WebRTC layer to ensure that an active connection can be changed without losing the connection if the change does not succeed. See {{SectionOnPage(“/en-US/docs/Web/API/WebRTC_API/Connectivity”, "Pending and</p>
+</blockquote>
+<pre><code>    current descriptions&quot;)}} for more details on this process.</code></pre>
+<h3 id="exceptions">Exceptions</h3>
+<p>The following exceptions are reported to the rejection handler for the promise returned by <code>setRemoteDescription()</code>:</p>
+<ul>
+<li><code>InvalidAccessError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if the content of the description is invalid.</li>
+</ul></li>
+<li><code>InvalidStateError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if the {{domxref(“RTCPeerConnection”)}} is closed, or it’s in a state that is not compatible with the specified description’s {{domxref(“RTCSessionDescription.type”, “type”)}}. For example, this exception is thrown if the <code>type</code> is <code>rollback</code> and the signaling state is one of <code>stable</code>, <code>have-local-pranswer</code>, or <code>have-remote-pranswer</code> because you cannot roll back a connection that’s either fully established or is in the final stage of becoming connected.</li>
+</ul></li>
+<li><code>OperationError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if an error does not match the ones specified here. This includes identity validation errors.</li>
+</ul></li>
+<li><code>RTCError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned with the {{domxref(“RTCError.errorDetail”, “errorDetail”)}} set to <code>sdp-syntax-error</code> if the {{Glossary(“SDP”)}} specified by {{domxref(“RTCSessionDescription.sdp”)}} is not valid. The error object’s {{domxref(“RTCError.sdpLineNumber”, “sdpLineNumber”)}} property indicates the line number within the SDP on which the syntax error was detected.</li>
+</ul></li>
+<li><code>TypeError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if the specified <code>RTCSessionDescriptionInit</code> or <code>RTCSessionDescription</code> object is missing the {{domxref(“RTCSessionDescription.type”, “type”)}} property, or no description parameter was provided at all.</li>
+</ul></li>
+</ul>
+<h2 id="usage-notes">Usage notes</h2>
+<p>When you call <code>setRemoteDescription()</code>, the ICE agent checks to make sure the {{domxref(“RTCPeerConnection”)}} is in either the <code>stable</code> or <code>have-remote-offer</code> {{domxref(“RTCPeerConnection.signalingState”, “signalingState”)}}. These states indicate that either an existing connection is being renegotiated or that an offer previously specified by an earlier call to <code>setRemoteDescription()</code> is to be replaced with the new offer. In either of those two cases, we’re at the beginning of the negotiation process, and the offer is set as the remote description.</p>
+<p>On the other hand, if we’re in the middle of an ongoing negotiation and an offer is passed into <code>setRemoteDescription()</code>, the ICE agent automatically begins an ICE rollback in order to return the connection to a stable signaling state, then, once the rollback is completed, sets the remote description to the specified offer. This begins a new negotiation session, with the newly-established offer as the starting point.</p>
+<p>Upon starting the new negotiation with the newly-established offer, the local peer is now the callee, even if it was previously the caller. This happens instead of throwing an exception, thereby reducing the number of potential errors which might occur, and simplifies the processing you need to do when you receive an offer, by eliminating the need to handle the offer/answer process differently depending on whether the local peer is the caller or callee.</p>
+<blockquote>
+<p><strong>Note:</strong> Earlier implementations of WebRTC would throw an exception if an offer was set outside a <code>stable</code> or <code>have-remote-offer</code> state.</p>
+</blockquote>
+<h2 id="deprecated-syntax">Deprecated syntax</h2>
+<p>In older code and documentation, you may see a callback-based version of this function used. This has been deprecated and its use is <em>strongly</em> discouraged. You should update any existing code to use the {{jsxref(“Promise”)}}-based version of <code>setRemoteDescription()</code> instead. The parameters for the older form of <code>setRemoteDescription()</code> are described below, to aid in updating existing code.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="va">pc</span>.<span class="at">setRemoteDescription</span>(sessionDescription<span class="op">,</span> successCallback<span class="op">,</span> errorCallback)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters-1">Parameters</h3>
+<ul>
+<li><code>successCallback</code> {{deprecated_inline}}
+<ul>
+<li>: A JavaScript {{jsxref(“Function”)}} which accepts no input parameters to be called once the description has been successfully set. At that time, the offer can be sent to a remote peer via the signaling server.</li>
+</ul></li>
+<li><code>errorCallback</code> {{deprecated_inline}}
+<ul>
+<li>: A function matching the signautre <code>RTCPeerConnectionErrorCallback</code> which gets called if the description can’t be set. It is passed a single {{domxref(“DOMException”)}} object explaining why the request failed.</li>
+</ul></li>
+</ul>
+<p>This deprecated form of the method returns instantaneously without waiting for the actual setting to be done: in case of success, the <code>successCallback</code> will be called; in case of failure, the <code>errorCallback</code> will be called.</p>
+<h3 id="exceptions-1">Exceptions</h3>
+<p>When using the deprecated callback-based version of <code>setRemoteDescription()</code>, the following exceptions may occur:</p>
+<ul>
+<li><code>InvalidStateError</code> {{deprecated_inline}}
+<ul>
+<li>: The connection’s {{domxref(“RTCPeerConnection.signalingState”, “signalingState”)}} is <code>"closed"</code>, indicating that the connection is not currently open, so negotiation cannot take place.</li>
+</ul></li>
+<li><code>InvalidSessionDescriptionError</code> {{deprecated_inline}}
+<ul>
+<li>: The {{domxref(“RTCSessionDescription”)}} specified by the <code>sessionDescription</code> parameter is invalid.</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<p>Here we see a function which handles an offer received from the remote peer. This code is derived from the example and tutorial in the article <a href="/en-US/docs/Web/API/WebRTC_API/Signaling_and_video_calling">Signaling and video calling</a>; take a look at that for more details and a more in-depth explanation of what’s going on.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">function</span> <span class="at">handleOffer</span>(msg) <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="at">createMyPeerConnection</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-3" title="3"></a>
+<a class="sourceLine" id="cb7-4" title="4">  myPeerConnection</a>
+<a class="sourceLine" id="cb7-5" title="5">    .<span class="at">setRemoteDescription</span>(<span class="va">msg</span>.<span class="at">description</span>)</a>
+<a class="sourceLine" id="cb7-6" title="6">    .<span class="at">then</span>(<span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-7" title="7">      <span class="cf">return</span> <span class="va">navigator</span>.<span class="va">mediaDevices</span>.<span class="at">getUserMedia</span>(mediaConstraints)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-8" title="8">    <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb7-9" title="9">    .<span class="at">then</span>(<span class="kw">function</span> (stream) <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-10" title="10">      <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;local_video&quot;</span>).<span class="at">srcObject</span> <span class="op">=</span> stream<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-11" title="11">      <span class="cf">return</span> <span class="va">myPeerConnection</span>.<span class="at">addStream</span>(stream)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-12" title="12">    <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb7-13" title="13">    .<span class="at">then</span>(<span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-14" title="14">      <span class="cf">return</span> <span class="va">myPeerConnection</span>.<span class="at">createAnswer</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-15" title="15">    <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb7-16" title="16">    .<span class="at">then</span>(<span class="kw">function</span> (answer) <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-17" title="17">      <span class="cf">return</span> <span class="va">myPeerConnection</span>.<span class="at">setLocalDescription</span>(answer)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-18" title="18">    <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb7-19" title="19">    .<span class="at">then</span>(<span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-20" title="20">      <span class="co">// Send the answer to the remote peer using the signaling server</span></a>
+<a class="sourceLine" id="cb7-21" title="21">    <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb7-22" title="22">    .<span class="at">catch</span>(handleGetUserMediaError)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-23" title="23"><span class="op">}</span></a></code></pre></div>
+<p>After creating our {{domxref(“RTCPeerConnection”)}} and saving it as <code>myPeerConnection</code>, we pass the description included in the received offer message, <code>msg</code>, directly into <code>setRemoteDescription()</code> to tell the user agent’s WebRTC layer what configuration the caller has proposed using. When our promise fulfillment handler is called, indicating that this has been done, we create a stream, add it to the connection, then create an SDP answer and call {{domxref(“RTCPeerConnection.setLocalDescription”, “setLocalDescription()”)}} to set that as the configuration at our end of the call before forwarding that answer to the caller.</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/WebRTC_API">WebRTC</a></li>
+<li>{{domxref(“RTCPeerConnection.remoteDescription”)}}, {{domxref(“RTCPeerConnection.pendingRemoteDescription”)}}, {{domxref(“RTCPeerConnection.currentRemoteDescription”)}}</li>
+</ul>

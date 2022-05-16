@@ -1,0 +1,62 @@
+<p>{{APIRef(“DOM WHATWG”)}}</p>
+<p>The DOM <strong><code>MutationObserver()</code></strong> constructor — part of the {{domxref(“MutationObserver”)}} interface — creates and returns a new observer which invokes a specified callback when DOM events occur.</p>
+<p>DOM observation does not begin immediately; the {{domxref(“MutationObserver.observe”, “observe()”)}} method must be called first to establish which portion of the DOM to watch and what kinds of changes to watch for.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> observer <span class="op">=</span> <span class="kw">new</span> <span class="at">MutationObserver</span>(callback)</a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><p><code>callback</code></p>
+<ul>
+<li><p>: A function which will be called on each DOM change that qualifies given the observed node or subtree and options.</p>
+<p>The <code>callback</code> function takes as input two parameters:</p>
+<ol type="1">
+<li>An array of {{domxref(“MutationRecord”)}} objects, describing each change that occurred; and</li>
+<li>the {{domxref(“MutationObserver”)}} which invoked the <code>callback</code>.</li>
+</ol>
+<p>See the {{anch(“Example”, “example”)}} below for more details.</p></li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A new {{domxref(“MutationObserver”)}} object, configured to call the specified <code>callback</code> when DOM mutations occur.</p>
+<h2 id="example">Example</h2>
+<p>This example creates a new <code>MutationObserver</code> configured to watch a node and all of its children for additions and removals of elements to the tree, as well as any changes to attributes on any of the elements in the tree.</p>
+<h3 id="the-callback-function">The callback function</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">function</span> <span class="at">callback</span>(mutationList<span class="op">,</span> observer) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="va">mutationList</span>.<span class="at">forEach</span>( (mutation) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3">    <span class="cf">switch</span>(<span class="va">mutation</span>.<span class="at">type</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">      <span class="cf">case</span> <span class="st">&#39;childList&#39;</span><span class="op">:</span></a>
+<a class="sourceLine" id="cb2-5" title="5">        <span class="co">/* One or more children have been added to and/or removed</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="co">           from the tree.</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="co">           (See mutation.addedNodes and mutation.removedNodes.) */</span></a>
+<a class="sourceLine" id="cb2-8" title="8">        <span class="cf">break</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9">      <span class="cf">case</span> <span class="st">&#39;attributes&#39;</span><span class="op">:</span></a>
+<a class="sourceLine" id="cb2-10" title="10">        <span class="co">/* An attribute value changed on the element in</span></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="co">           mutation.target.</span></a>
+<a class="sourceLine" id="cb2-12" title="12"><span class="co">           The attribute name is in mutation.attributeName, and</span></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="co">           its previous value is in mutation.oldValue. */</span></a>
+<a class="sourceLine" id="cb2-14" title="14">        <span class="cf">break</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-15" title="15">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-16" title="16">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-17" title="17"><span class="op">}</span></a></code></pre></div>
+<p>The <code>callback()</code> function is invoked when the observer sees changes matching the configuration of the observation request specified when calling {{domxref(“MutationObserver.observe”, “observe()”)}} to begin watching the DOM.</p>
+<p>The kind of change that took place (either a change to the list of children, or a change to an attribute) is detected by looking at the {{domxref(“MutationRecord.type”, “mutation.type”)}} property.</p>
+<h3 id="creating-and-starting-the-observer">Creating and starting the observer</h3>
+<p>This code actually sets up the observation process.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> targetNode <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;#someElement&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">const</span> observerOptions <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="dt">childList</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="dt">attributes</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-5" title="5"></a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="co">// Omit (or set to false) to observe only changes to the parent node</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="dt">subtree</span><span class="op">:</span> <span class="kw">true</span></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-9" title="9"></a>
+<a class="sourceLine" id="cb3-10" title="10"><span class="kw">const</span> observer <span class="op">=</span> <span class="kw">new</span> <span class="at">MutationObserver</span>(callback)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="va">observer</span>.<span class="at">observe</span>(targetNode<span class="op">,</span> observerOptions)<span class="op">;</span></a></code></pre></div>
+<p>The desired subtree is located by finding an element with the ID <code>someElement</code>. A set of options for the observer is also established in the <code>observerOptions</code> record. In it, we specify values of <code>true</code> for both <code>childList</code> and <code>attributes</code>, so we get the information we want.</p>
+<p>Then the observer is instantiated, specifying the <code>callback()</code> function. We begin observing the DOM nodes of interest by calling <code>observe()</code>, specifying the <code>target</code> node and the <code>options</code> object.</p>
+<p>From this point until {{domxref(“MutationObserver.disconnect”, “disconnect()”)}} is called, <code>callback()</code> will be called each time an element is added to or removed from the DOM tree rooted at <code>targetNode</code>, or any of those elements’ attributes are changed.</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

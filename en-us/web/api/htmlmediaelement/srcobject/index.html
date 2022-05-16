@@ -1,0 +1,56 @@
+<p>{{APIRef(“HTML DOM”)}}</p>
+<p>The <strong><code>srcObject</code></strong> property of the {{domxref(“HTMLMediaElement”)}} interface sets or returns the object which serves as the source of the media associated with the {{domxref(“HTMLMediaElement”)}}.</p>
+<p>The object can be a {{domxref(“MediaStream”)}}, a {{domxref(“MediaSource”)}}, a {{domxref(“Blob”)}}, or a {{domxref(“File”)}} (which inherits from <code>Blob</code>).</p>
+<blockquote>
+<p><strong>Note:</strong> As of March 2020, only Safari supports setting objects other than <code>MediaStream</code>. Until other browsers catch up, for <code>MediaSource</code>, <code>Blob</code> and <code>File</code>, consider falling back to creating a URL with {{domxref(“URL.createObjectURL()”)}} and assign it to {{domxref(“HTMLMediaElement.src”)}}. See below for an example.</p>
+</blockquote>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> sourceObject <span class="op">=</span> <span class="va">HTMLMediaElement</span>.<span class="at">srcObject</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="va">HTMLMediaElement</span>.<span class="at">srcObject</span> <span class="op">=</span> sourceObject<span class="op">;</span></a></code></pre></div>
+<h3 id="value">Value</h3>
+<p>A {{domxref(‘MediaStream’)}}, {{domxref(‘MediaSource’)}}, {{domxref(‘Blob’)}}, or {{domxref(‘File’)}} object (though see the compatibility table for what is actually supported).</p>
+<h2 id="usage-notes">Usage notes</h2>
+<p>Older versions of the Media Source specification required using {{domxref(“URL.createObjectURL”, “createObjectURL()”)}} to create an object URL then setting {{domxref(“HTMLMediaElement.src”, “src”)}} to that URL. Now you can just set <code>srcObject</code> to the {{domxref(“MediaStream”)}} directly.</p>
+<h2 id="examples">Examples</h2>
+<h3 id="basic-example">Basic example</h3>
+<p>In this example, a {{domxref(“MediaStream”)}} from a camera is assigned to a newly-created {{HTMLElement(“video”)}} element.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> mediaStream <span class="op">=</span> <span class="cf">await</span> <span class="va">navigator</span>.<span class="va">mediaDevices</span>.<span class="at">getUserMedia</span>(<span class="op">{</span><span class="dt">video</span><span class="op">:</span> <span class="kw">true</span><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">const</span> video <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;video&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="va">video</span>.<span class="at">srcObject</span> <span class="op">=</span> mediaStream<span class="op">;</span></a></code></pre></div>
+<p>In this example, a new {{domxref(‘MediaSource’)}} is assigned to a newly-created {{HTMLElement(“video”)}} element.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> mediaSource <span class="op">=</span> <span class="kw">new</span> <span class="at">MediaSource</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">const</span> video <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;video&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="va">video</span>.<span class="at">srcObject</span> <span class="op">=</span> mediaSource<span class="op">;</span></a></code></pre></div>
+<h3 id="supporting-fallback-to-the-src-property">Supporting fallback to the src property</h3>
+<p>The examples below support older browser versions that require you to create an object URL and assign it to <code>src</code> if <code>srcObject</code> isn’t supported.</p>
+<p>First, a {{domxref(“MediaStream”)}} from a camera is assigned to a newly-created {{HTMLElement(“video”)}} element, with fallback for older browsers.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">const</span> mediaStream <span class="op">=</span> <span class="cf">await</span> <span class="va">navigator</span>.<span class="va">mediaDevices</span>.<span class="at">getUserMedia</span>(<span class="op">{</span><span class="dt">video</span><span class="op">:</span> <span class="kw">true</span><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="kw">const</span> video <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;video&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="cf">if</span> (<span class="st">&#39;srcObject&#39;</span> <span class="kw">in</span> video) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-4" title="4">  <span class="va">video</span>.<span class="at">srcObject</span> <span class="op">=</span> mediaStream<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-6" title="6">  <span class="co">// Avoid using this in new browsers, as it is going away.</span></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="va">video</span>.<span class="at">src</span> <span class="op">=</span> <span class="va">URL</span>.<span class="at">createObjectURL</span>(mediaStream)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-8" title="8"><span class="op">}</span></a></code></pre></div>
+<p>Second, a new {{domxref(‘MediaSource’)}} is assigned to a newly-created {{HTMLElement(“video”)}} element, with fallback for older browsers and browsers that don’t yet support assignment of {{domxref(‘MediaSource’)}} directly.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">const</span> mediaSource <span class="op">=</span> <span class="kw">new</span> <span class="at">MediaSource</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="kw">const</span> video <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;video&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="co">// Older browsers may not have srcObject</span></a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="cf">if</span> (<span class="st">&#39;srcObject&#39;</span> <span class="kw">in</span> video) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-5" title="5">  <span class="cf">try</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-6" title="6">    <span class="va">video</span>.<span class="at">srcObject</span> <span class="op">=</span> mediaSource<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-7" title="7">  <span class="op">}</span> <span class="cf">catch</span> (err) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-8" title="8">    <span class="cf">if</span> (<span class="va">err</span>.<span class="at">name</span> <span class="op">!=</span> <span class="st">&quot;TypeError&quot;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-9" title="9">      <span class="cf">throw</span> err<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-10" title="10">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-11" title="11">    <span class="co">// Even if they do, they may only support MediaStream</span></a>
+<a class="sourceLine" id="cb5-12" title="12">    <span class="va">video</span>.<span class="at">src</span> <span class="op">=</span> <span class="va">URL</span>.<span class="at">createObjectURL</span>(mediaSource)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-13" title="13">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-14" title="14"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-15" title="15">  <span class="va">video</span>.<span class="at">src</span> <span class="op">=</span> <span class="va">URL</span>.<span class="at">createObjectURL</span>(mediaSource)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-16" title="16"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

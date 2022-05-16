@@ -1,0 +1,65 @@
+<p>{{ APIRef(“IndexedDB”) }}</p>
+<p>The <strong><code>upperOpen</code></strong> read-only property of the {{domxref(“IDBKeyRange”)}} interface returns a boolean indicating whether the upper-bound value is included in the key range.</p>
+<p>{{AvailableInWorkers}}</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> upperOpen <span class="op">=</span> <span class="va">myKeyRange</span>.<span class="at">upperOpen</span></a></code></pre></div>
+<h3 id="value">Value</h3>
+<p>A boolean value:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Value</th>
+<th>Indication</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>true</code></td>
+<td>The upper-bound value is not included in the key range.</td>
+</tr>
+<tr class="even">
+<td><code>false</code></td>
+<td>The upper-bound value is included in the key range.  </td>
+</tr>
+</tbody>
+</table>
+<h2 id="example">Example</h2>
+<p>The following example illustrates how you’d use a key range. Here we declare <code>keyRangeValue = IDBKeyRange.upperBound("F", "W", true, true);</code> — a range that includes everything between “F” and “W” but not including them — since both the upper and lower bounds have been declared as open (<code>true</code>). We open a transaction (using {{domxref(“IDBTransaction”)}}) and an object store, and open a Cursor with {{domxref(“IDBObjectStore.openCursor”)}}, declaring <code>keyRangeValue</code> as its optional key range value.</p>
+<p>After declaring the key range, we log its <code>upperOpen</code> property value to the console, which should appear as “true”: the upper bound is open, so won’t be included in the range.</p>
+<blockquote>
+<p><strong>Note:</strong> For a more complete example allowing you to experiment with key range, have a look at our <a href="https://github.com/mdn/IDBKeyRange-example">IDBKeyRange-example</a> repo (<a href="https://mdn.github.io/IDBKeyRange-example/">view the example live too</a>.)</p>
+</blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">function</span> <span class="at">displayData</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">var</span> keyRangeValue <span class="op">=</span> <span class="va">IDBKeyRange</span>.<span class="at">bound</span>(<span class="st">&quot;F&quot;</span><span class="op">,</span> <span class="st">&quot;W&quot;</span><span class="op">,</span> <span class="kw">true</span><span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="va">console</span>.<span class="at">log</span>(<span class="va">keyRangeValue</span>.<span class="at">upperOpen</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="kw">var</span> transaction <span class="op">=</span> <span class="va">db</span>.<span class="at">transaction</span>([<span class="st">&#39;fThings&#39;</span>]<span class="op">,</span> <span class="st">&#39;readonly&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="kw">var</span> objectStore <span class="op">=</span> <span class="va">transaction</span>.<span class="at">objectStore</span>(<span class="st">&#39;fThings&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="va">objectStore</span>.<span class="at">openCursor</span>(keyRangeValue).<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-9" title="9">    <span class="kw">var</span> cursor <span class="op">=</span> <span class="va">event</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10">      <span class="cf">if</span>(cursor) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-11" title="11">        <span class="kw">var</span> listItem <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;li&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12">        <span class="va">listItem</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="st">&#39;&lt;strong&gt;&#39;</span> <span class="op">+</span> <span class="va">cursor</span>.<span class="va">value</span>.<span class="at">fThing</span> <span class="op">+</span> <span class="st">&#39;&lt;/strong&gt;, &#39;</span> <span class="op">+</span> <span class="va">cursor</span>.<span class="va">value</span>.<span class="at">fRating</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13">        <span class="va">list</span>.<span class="at">appendChild</span>(listItem)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14"></a>
+<a class="sourceLine" id="cb2-15" title="15">        <span class="va">cursor</span>.<span class="at">continue</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-16" title="16">      <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-17" title="17">        <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Entries all displayed.&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-19" title="19">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb2-20" title="20">  <span class="op">};</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/IndexedDB_API/Using_IndexedDB">Using IndexedDB</a></li>
+<li>Starting transactions: {{domxref(“IDBDatabase”)}}</li>
+<li>Using transactions: {{domxref(“IDBTransaction”)}}</li>
+<li>Setting a range of keys: {{domxref(“IDBKeyRange”)}}</li>
+<li>Retrieving and making changes to your data: {{domxref(“IDBObjectStore”)}}</li>
+<li>Using cursors: {{domxref(“IDBCursor”)}}</li>
+<li>Reference example: <a href="https://github.com/mdn/to-do-notifications/tree/gh-pages">To-do Notifications</a> (<a href="https://mdn.github.io/to-do-notifications/">view example live</a>.)</li>
+</ul>

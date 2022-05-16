@@ -1,0 +1,50 @@
+<p>{{securecontext_header}}{{DefaultAPISidebar(“Idle Detection API”)}}</p>
+<p>The Idle Detection API provides a means to detect the user’s idle status, active, idle, and locked, specifically, and to be notified of changes to idle status without polling from a script.</p>
+<h2 id="concepts-and-usage">Concepts and Usage</h2>
+<p>Native applications and browser extensions use idle detection base user experiences on when a user is interacting with a device. For example, chat applications can show other users of an application whether someone is available. Other applications might choose to show notifications only when a user is interacting with the app. A web application could use this API for similar use cases. Additionally, a progressive web app could use idle detection to trigger a service worker update when the app isn’t being used.</p>
+<h2 id="interfaces">Interfaces</h2>
+<ul>
+<li><code>{{domxref("IdleDetector")}}</code>
+<ul>
+<li>: Provides methods and events for detecting user activity on a device or screen.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>The following example shows creating a detector and logging changes to the user’s idle state. A button is used to get the necessary user activation before requesting permission.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> controller <span class="op">=</span> <span class="kw">new</span> <span class="at">AbortController</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">const</span> signal <span class="op">=</span> <span class="va">controller</span>.<span class="at">signal</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="va">startButton</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> <span class="kw">async</span> () <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-5" title="5">  <span class="cf">if</span> (<span class="cf">await</span> <span class="va">IdleDetector</span>.<span class="at">requestPermission</span>() <span class="op">!=</span> <span class="st">&quot;granted&quot;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-6" title="6">    <span class="va">console</span>.<span class="at">error</span>(<span class="st">&quot;Idle detection permission denied.&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-7" title="7">    <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-8" title="8">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-9" title="9"></a>
+<a class="sourceLine" id="cb1-10" title="10">  <span class="cf">try</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-11" title="11">    <span class="kw">const</span> idleDetector <span class="op">=</span> <span class="kw">new</span> <span class="at">IdleDetector</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-12" title="12">    <span class="va">idleDetector</span>.<span class="at">addEventListener</span>(<span class="st">&#39;change&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-13" title="13">      <span class="kw">const</span> userState <span class="op">=</span> <span class="va">idleDetector</span>.<span class="at">userState</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-14" title="14">      <span class="kw">const</span> screenState <span class="op">=</span> <span class="va">idleDetector</span>.<span class="at">screenState</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-15" title="15">      <span class="va">console</span>.<span class="at">log</span>(<span class="vs">`Idle change: </span><span class="sc">${</span>userState<span class="sc">}</span><span class="vs">, </span><span class="sc">${</span>screenState<span class="sc">}</span><span class="vs">.`</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-16" title="16">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-17" title="17"></a>
+<a class="sourceLine" id="cb1-18" title="18">    <span class="cf">await</span> <span class="va">idleDetector</span>.<span class="at">start</span>(<span class="op">{</span></a>
+<a class="sourceLine" id="cb1-19" title="19">      <span class="dt">threshold</span><span class="op">:</span> <span class="dv">60</span>_000<span class="op">,</span></a>
+<a class="sourceLine" id="cb1-20" title="20">      signal<span class="op">,</span></a>
+<a class="sourceLine" id="cb1-21" title="21">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-22" title="22">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;IdleDetector is active.&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-23" title="23">  <span class="op">}</span> <span class="cf">catch</span> (err) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-24" title="24">    <span class="co">// Deal with initialization errors like permission denied,</span></a>
+<a class="sourceLine" id="cb1-25" title="25">    <span class="co">// running outside of top-level frame, etc.</span></a>
+<a class="sourceLine" id="cb1-26" title="26">    <span class="va">console</span>.<span class="at">error</span>(<span class="va">err</span>.<span class="at">name</span><span class="op">,</span> <span class="va">err</span>.<span class="at">message</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-27" title="27">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-28" title="28"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-29" title="29"></a>
+<a class="sourceLine" id="cb1-30" title="30"><span class="va">stopButton</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-31" title="31">  <span class="va">controller</span>.<span class="at">abort</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-32" title="32">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;IdleDetector is stopped.&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-33" title="33"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

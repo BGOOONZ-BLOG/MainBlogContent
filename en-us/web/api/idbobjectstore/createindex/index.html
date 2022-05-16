@@ -1,0 +1,168 @@
+<p>{{ APIRef(“IndexedDB”) }}</p>
+<p>The <strong><code>createIndex()</code></strong> method of the {{domxref(“IDBObjectStore”)}} interface creates and returns a new {{domxref(“IDBIndex”)}} object in the connected database. It creates a new field/column defining a new data point for each database record to contain.</p>
+<p>Bear in mind that IndexedDB indexes can contain <em>any</em> JavaScript data type; IndexedDB uses the <a href="/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm">structured clone algorithm</a> to serialize stored objects, which allows for storage of simple and complex objects.</p>
+<p>Note that this method must be called only from a <code>VersionChange</code> transaction mode callback.</p>
+<p>{{AvailableInWorkers}}</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> myIDBIndex <span class="op">=</span> <span class="va">objectStore</span>.<span class="at">createIndex</span>(indexName<span class="op">,</span> keyPath)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">var</span> myIDBIndex <span class="op">=</span> <span class="va">objectStore</span>.<span class="at">createIndex</span>(indexName<span class="op">,</span> keyPath<span class="op">,</span> objectParameters)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li>indexName
+<ul>
+<li>: The name of the index to create. Note that it is possible to create an index with an empty name.</li>
+</ul></li>
+<li>keyPath
+<ul>
+<li>: The key path for the index to use. Note that it is possible to create an index with an empty <code>keyPath</code>, and also to pass in a sequence (array) as a <code>keyPath</code>.</li>
+</ul></li>
+<li><p>objectParameters {{optional_inline}}</p>
+<ul>
+<li><p>: An {{domxref(“IDBIndexParameters”)}} object, which can include the following properties:</p>
+<table class="standard-table">
+<thead>
+<tr>
+<th scope="col">
+Attribute
+</th>
+<th scope="col">
+Description
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>unique</code>
+</td>
+<td>
+If true, the index will not allow duplicate values for a single key.
+</td>
+</tr>
+<tr>
+<td>
+<code>multiEntry</code>
+</td>
+<td>
+If <code>true</code>, the index will add an entry in the index for each array element when the <em>keyPath</em> resolves to an Array. If <code>false</code>, it will add one single entry containing the Array.
+</td>
+</tr>
+<tr>
+<td>
+<code>locale</code>
+</td>
+<td>
+<p>
+Currently Firefox-only (43+), this allows you to specify a locale for the index. Any sorting operations performed on the data via key ranges will then obey sorting rules of that locale (see <a
+            href="/en-US/docs/Web/API/IndexedDB_API/Using_IndexedDB#locale-aware_sorting"
+            >locale-aware sorting</a
+          >.) You can specify its value in one of three ways:
+</p>
+<ul>
+<li>
+<code>string</code>: A string containing a specific locale code, e.g. <code>en-US</code>, or <code>pl</code>.
+</li>
+<li>
+<code>auto</code>: The platform default locale will be used (may be changed by user agent settings.)
+</li>
+<li>
+<code>null or undefined</code>: If no locale is specified, normal JavaScript sorting will be used — not locale-aware.
+</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table></li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>An {{domxref(“IDBIndex”)}} object: the newly created index.</p>
+<h3 id="exceptions">Exceptions</h3>
+<p>This method may raise a {{domxref(“DOMException”)}} of one of the following types:</p>
+<ul>
+<li><code>ConstraintError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if an index with the same name already exists in the database. Index names are case-sensitive.</li>
+</ul></li>
+<li><code>InvalidAccessError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the provided key path is a sequence, and <code>multiEntry</code> is set to <code>true</code> in the <code>objectParameters</code> object.</li>
+</ul></li>
+<li><code>InvalidStateError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if:
+<ul>
+<li>The method was not called from a <code>versionchange</code> transaction mode callback, i.e. from inside a {{domxref(“IDBOpenDBRequest.onupgradeneeded”)}} handler.</li>
+<li>The object store has been deleted.</li>
+</ul></li>
+</ul></li>
+<li><code>SyntaxError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the provided <code>keyPath</code> is not a <a href="https://www.w3.org/TR/IndexedDB/#dfn-valid-key-path">valid key path</a>.</li>
+</ul></li>
+<li><code>TransactionInactiveError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the transaction this {{domxref(“IDBObjectStore”)}} belongs to is not active (e.g. has been deleted or removed.) In Firefox previous to version 41, an <code>InvalidStateError</code> was raised in this case as well, which was misleading; this has now been fixed (see {{Bug(“1176165”)}}.)</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<p>In the following example you can see the {{domxref(“IDBOpenDBRequest.onupgradeneeded”)}} handler being used to update the database structure if a database with a higher version number is loaded. <code>createIndex()</code> is used to create new indexes on the object store.  For a full working example, see our <a href="https://github.com/mdn/to-do-notifications/tree/gh-pages">To-do Notifications</a> app (<a href="https://mdn.github.io/to-do-notifications/">view example live</a>.)</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> db<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="co">// Let us open our database</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="kw">var</span> DBOpenRequest <span class="op">=</span> <span class="va">window</span>.<span class="va">indexedDB</span>.<span class="at">open</span>(<span class="st">&quot;toDoList&quot;</span><span class="op">,</span> <span class="dv">4</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="co">// Two event handlers for opening the database.</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="va">DBOpenRequest</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="va">note</span>.<span class="at">innerHTML</span> <span class="op">+=</span> <span class="st">&#39;&lt;li&gt;Error loading database.&lt;/li&gt;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="op">};</span></a>
+<a class="sourceLine" id="cb2-10" title="10"></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="va">DBOpenRequest</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-12" title="12">  <span class="va">note</span>.<span class="at">innerHTML</span> <span class="op">+=</span> <span class="st">&#39;&lt;li&gt;Database initialised.&lt;/li&gt;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13"></a>
+<a class="sourceLine" id="cb2-14" title="14">  <span class="co">// store the result of opening the database in the db variable.</span></a>
+<a class="sourceLine" id="cb2-15" title="15">  <span class="co">// This is used a lot below.</span></a>
+<a class="sourceLine" id="cb2-16" title="16">  db <span class="op">=</span> <span class="va">request</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-17" title="17"></a>
+<a class="sourceLine" id="cb2-18" title="18">  <span class="co">// Run the displayData() function to populate the task list with</span></a>
+<a class="sourceLine" id="cb2-19" title="19">  <span class="co">// all the to-do list data already in the IDB</span></a>
+<a class="sourceLine" id="cb2-20" title="20">  <span class="at">displayData</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-21" title="21"><span class="op">};</span></a>
+<a class="sourceLine" id="cb2-22" title="22"></a>
+<a class="sourceLine" id="cb2-23" title="23"><span class="co">// This handler fires when a new database is created and indicates</span></a>
+<a class="sourceLine" id="cb2-24" title="24"><span class="co">// either that one has not been created before, or a new version</span></a>
+<a class="sourceLine" id="cb2-25" title="25"><span class="co">// was submitted with window.indexedDB.open(). (See above.)</span></a>
+<a class="sourceLine" id="cb2-26" title="26"><span class="co">// It is only implemented in recent browsers.</span></a>
+<a class="sourceLine" id="cb2-27" title="27"><span class="va">DBOpenRequest</span>.<span class="at">onupgradeneeded</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-28" title="28">  <span class="kw">var</span> db <span class="op">=</span> <span class="va">event</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-29" title="29"></a>
+<a class="sourceLine" id="cb2-30" title="30">  <span class="va">db</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-31" title="31">    <span class="va">note</span>.<span class="at">innerHTML</span> <span class="op">+=</span> <span class="st">&#39;&lt;li&gt;Error loading database.&lt;/li&gt;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-32" title="32">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb2-33" title="33"></a>
+<a class="sourceLine" id="cb2-34" title="34">  <span class="co">// Create an objectStore for this database</span></a>
+<a class="sourceLine" id="cb2-35" title="35">  <span class="kw">var</span> objectStore <span class="op">=</span> <span class="va">db</span>.<span class="at">createObjectStore</span>(<span class="st">&quot;toDoList&quot;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">keyPath</span><span class="op">:</span> <span class="st">&quot;taskTitle&quot;</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-36" title="36"></a>
+<a class="sourceLine" id="cb2-37" title="37">  <span class="co">// define what data items the objectStore will contain</span></a>
+<a class="sourceLine" id="cb2-38" title="38"></a>
+<a class="sourceLine" id="cb2-39" title="39">  <span class="va">objectStore</span>.<span class="at">createIndex</span>(<span class="st">&quot;hours&quot;</span><span class="op">,</span> <span class="st">&quot;hours&quot;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">unique</span><span class="op">:</span> <span class="kw">false</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-40" title="40">  <span class="va">objectStore</span>.<span class="at">createIndex</span>(<span class="st">&quot;minutes&quot;</span><span class="op">,</span> <span class="st">&quot;minutes&quot;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">unique</span><span class="op">:</span> <span class="kw">false</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-41" title="41">  <span class="va">objectStore</span>.<span class="at">createIndex</span>(<span class="st">&quot;day&quot;</span><span class="op">,</span> <span class="st">&quot;day&quot;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">unique</span><span class="op">:</span> <span class="kw">false</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-42" title="42">  <span class="va">objectStore</span>.<span class="at">createIndex</span>(<span class="st">&quot;month&quot;</span><span class="op">,</span> <span class="st">&quot;month&quot;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">unique</span><span class="op">:</span> <span class="kw">false</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-43" title="43">  <span class="va">objectStore</span>.<span class="at">createIndex</span>(<span class="st">&quot;year&quot;</span><span class="op">,</span> <span class="st">&quot;year&quot;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">unique</span><span class="op">:</span> <span class="kw">false</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-44" title="44">  <span class="va">objectStore</span>.<span class="at">createIndex</span>(<span class="st">&quot;notified&quot;</span><span class="op">,</span> <span class="st">&quot;notified&quot;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">unique</span><span class="op">:</span> <span class="kw">false</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-45" title="45"><span class="op">};</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/IndexedDB_API/Using_IndexedDB">Using IndexedDB</a></li>
+<li>Starting transactions: {{domxref(“IDBDatabase”)}}</li>
+<li>Using transactions: {{domxref(“IDBTransaction”)}}</li>
+<li>Setting a range of keys: {{domxref(“IDBKeyRange”)}}</li>
+<li>Retrieving and making changes to your data: {{domxref(“IDBObjectStore”)}}</li>
+<li>Using cursors: {{domxref(“IDBCursor”)}}</li>
+<li>Reference example: <a href="https://github.com/mdn/to-do-notifications/tree/gh-pages">To-do Notifications</a> (<a href="https://mdn.github.io/to-do-notifications/">view example live</a>.)</li>
+</ul>

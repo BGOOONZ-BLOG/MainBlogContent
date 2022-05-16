@@ -1,0 +1,120 @@
+<p>{{APIRef(“WebRTC”)}}</p>
+<p>The <strong><code>createDataChannel()</code></strong> method on the {{domxref(“RTCPeerConnection”)}} interface creates a new channel linked with the remote peer, over which any kind of data may be transmitted. This can be useful for back-channel content, such as images, file transfer, text chat, game update packets, and so forth.</p>
+<p>If the new data channel is the first one added to the connection, renegotiation is started by delivering a {{DOMxRef(“RTCPeerConnection/negotiationneeded_event”, “negotiationneeded”)}} event.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1">dataChannel <span class="op">=</span> <span class="va">RTCPeerConnection</span>.<span class="at">createDataChannel</span>(label[<span class="op">,</span> options])<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>label</code>
+<ul>
+<li>: A human-readable name for the channel. This string may not be longer than 65,535 bytes.</li>
+</ul></li>
+<li><p><code>options</code> {{optional_inline}}</p>
+<ul>
+<li><p>: An object providing configuration options for the data channel. It can contain the following fields:</p>
+<ul>
+<li><code>ordered</code> {{optional_inline}}
+<ul>
+<li>: Indicates whether or not messages sent on the {{domxref(“RTCDataChannel”)}} are required to arrive at their destination in the same order in which they were sent (<code>true</code>), or if they’re allowed to arrive out-of-order (<code>false</code>). <strong>Default: <code>true</code>.</strong></li>
+</ul></li>
+<li><code>maxPacketLifeTime</code> {{optional_inline}}
+<ul>
+<li>: The maximum number of milliseconds that attempts to transfer a message may take in unreliable mode. While this value is a 16-bit unsigned number, each user agent may clamp it to whatever maximum it deems appropriate. <strong>Default: <code>null</code>.</strong></li>
+</ul></li>
+<li><code>maxRetransmits</code> {{optional_inline}}
+<ul>
+<li>: The maximum number of times the user agent should attempt to retransmit a message which fails the first time in unreliable mode. While this value is a 16-bit unsigned number, each user agent may clamp it to whatever maximum it deems appropriate. <strong>Default: <code>null</code>.</strong></li>
+</ul></li>
+<li><code>protocol</code> {{optional_inline}}
+<ul>
+<li>: The name of the sub-protocol being used on the {{domxref(“RTCDataChannel”)}}, if any; otherwise, the empty string (<code>""</code>). <strong>Default: empty string (<code>""</code>).</strong> This string may not be longer than 65,535 <em>bytes</em>.</li>
+</ul></li>
+<li><code>negotiated</code> {{optional_inline}}
+<ul>
+<li>: By default (<code>false</code>), data channels are negotiated in-band, where one side calls <code>createDataChannel</code>, and the other side listens to the {{domxref(“RTCDataChannelEvent”)}} event using the {{DOMxRef(“RTCPeerConnection.ondatachannel”, “ondatachannel”)}} event handler. Alternatively (<code>true</code>), they can be negotiated out of-band, where both sides call <code>createDataChannel</code> with an agreed-upon ID. <strong>Default: <code>false</code>.</strong></li>
+</ul></li>
+<li><code>id</code> {{optional_inline}}
+<ul>
+<li>: A 16-bit numeric ID for the channel; permitted values are 0 to 65534. If you don’t include this option, the user agent will select an ID for you.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> These options represent the script-settable subset of the properties on the {{domxref(“RTCDataChannel”)}} interface.</p>
+</blockquote>
+<h3 id="return-value">Return value</h3>
+<p>A new {{domxref(“RTCDataChannel”)}} object with the specified <code>label</code>, configured using the options specified by <code>options</code> if that parameter is included; otherwise, the defaults listed above are established.</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><code>InvalidStateError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the {{domxref(“RTCPeerConnection”)}} is closed.</li>
+</ul></li>
+<li><code>TypeError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown in the following situations:
+<ul>
+<li>The label and/or protocol string is too long; these cannot be longer than 65,535 bytes (bytes, rather than characters).</li>
+<li>The <code>id</code> is 65535. While this is a valid unsigned 16-bit value, it’s not a permitted value for <code>id</code>.</li>
+</ul></li>
+</ul></li>
+<li><code>SyntaxError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if values were specified for both the <code>maxPacketLifeTime</code> and <code>maxRetransmits</code> options. You may specify a non-<code>null</code> value for only one of these.</li>
+</ul></li>
+<li><code>ResourceInUse</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if an <code>id</code> was specified, but another {{domxref(“RTCDataChannel”)}} is already using the same value.</li>
+</ul></li>
+<li><code>OperationError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if either the specified <code>id</code> is already in use, or if no <code>id</code> was specified, the WebRTC layer was unable to automatically generate an ID because all IDs are in use.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>This example shows how to create a data channel and set up handlers for the {{DOMxRef(“RTCDataChannel/open_event”, “open”)}} and {{DOMxRef(“RTCDataChannel/message_event”, “message”)}} events to send and receive messages on it (For brievity, the example assumes onnegotiationneeded is set up).</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">// Offerer side</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">var</span> pc <span class="op">=</span> <span class="kw">new</span> <span class="at">RTCPeerConnection</span>(options)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="kw">var</span> channel <span class="op">=</span> <span class="va">pc</span>.<span class="at">createDataChannel</span>(<span class="st">&quot;chat&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="va">channel</span>.<span class="at">onopen</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="va">channel</span>.<span class="at">send</span>(<span class="st">&#39;Hi you!&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="va">channel</span>.<span class="at">onmessage</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-9" title="9">  <span class="va">console</span>.<span class="at">log</span>(<span class="va">event</span>.<span class="at">data</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="op">}</span></a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="co">// Answerer side</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw">var</span> pc <span class="op">=</span> <span class="kw">new</span> <span class="at">RTCPeerConnection</span>(options)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="va">pc</span>.<span class="at">ondatachannel</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-5" title="5">  <span class="kw">var</span> channel <span class="op">=</span> <span class="va">event</span>.<span class="at">channel</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6">    <span class="va">channel</span>.<span class="at">onopen</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-7" title="7">    <span class="va">channel</span>.<span class="at">send</span>(<span class="st">&#39;Hi back!&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-9" title="9">  <span class="va">channel</span>.<span class="at">onmessage</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-10" title="10">    <span class="va">console</span>.<span class="at">log</span>(<span class="va">event</span>.<span class="at">data</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-11" title="11">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-12" title="12"><span class="op">}</span></a></code></pre></div>
+<p>Alternatively, more symmetrical out-of-band negotiation can be used, using an agreed-upon id (0 here):</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="co">// Both sides</span></a>
+<a class="sourceLine" id="cb4-2" title="2"></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="kw">var</span> pc <span class="op">=</span> <span class="kw">new</span> <span class="at">RTCPeerConnection</span>(options)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="kw">var</span> channel <span class="op">=</span> <span class="va">pc</span>.<span class="at">createDataChannel</span>(<span class="st">&quot;chat&quot;</span><span class="op">,</span> <span class="op">{</span><span class="dt">negotiated</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span> <span class="dt">id</span><span class="op">:</span> <span class="dv">0</span><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="va">channel</span>.<span class="at">onopen</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-6" title="6">  <span class="va">channel</span>.<span class="at">send</span>(<span class="st">&#39;Hi!&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-7" title="7"><span class="op">}</span></a>
+<a class="sourceLine" id="cb4-8" title="8"><span class="va">channel</span>.<span class="at">onmessage</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-9" title="9">  <span class="va">console</span>.<span class="at">log</span>(<span class="va">event</span>.<span class="at">data</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-10" title="10"><span class="op">}</span></a></code></pre></div>
+<p>For a more thorough example showing how the connection and channel are established, see <a href="/en-US/docs/Web/API/WebRTC_API/Simple_RTCDataChannel_sample">A simple RTCDataChannel sample</a>.</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{domxref(“RTCDataChannel”)}}</li>
+<li><a href="/en-US/docs/Web/API/WebRTC_API/Simple_RTCDataChannel_sample">A simple RTCDataChannel sample</a></li>
+<li>{{domxref(“RTCPeerConnection”)}}</li>
+</ul>

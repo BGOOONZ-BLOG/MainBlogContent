@@ -1,0 +1,67 @@
+<p>{{APIRef(“Web Workers API”)}}</p>
+<p>The <strong><code>SharedWorker</code></strong> interface represents a specific kind of worker that can be <em>accessed</em> from several browsing contexts, such as several windows, iframes or even workers. They implement an interface different than dedicated workers and have a different global scope, {{domxref(“SharedWorkerGlobalScope”)}}.</p>
+<blockquote>
+<p><strong>Note:</strong> If SharedWorker can be accessed from several browsing contexts, all those browsing contexts must share the exact same origin (same protocol, host and port).</p>
+</blockquote>
+<h2 id="constructors">Constructors</h2>
+<ul>
+<li>{{domxref(“SharedWorker.SharedWorker”, “SharedWorker()”)}}
+<ul>
+<li>: Creates a shared web worker that executes the script at the specified URL.</li>
+</ul></li>
+</ul>
+<h2 id="properties">Properties</h2>
+<p><em>Inherits properties from its parent, {{domxref(“EventTarget”)}}.</em></p>
+<ul>
+<li>{{domxref(“SharedWorker.onerror”)}}
+<ul>
+<li>: Is an {{domxref(“EventListener”)}} that is called whenever an {{domxref(“ErrorEvent”)}} of type <code>error</code> event occurs.</li>
+</ul></li>
+<li>{{domxref(“SharedWorker.port”)}} {{readonlyInline}}
+<ul>
+<li>: Returns a {{domxref(“MessagePort”)}} object used to communicate with and control the shared worker.</li>
+</ul></li>
+</ul>
+<h2 id="methods">Methods</h2>
+<p><em>Inherits methods from its parent, {{domxref(“EventTarget”)}}.</em></p>
+<h2 id="example">Example</h2>
+<p>In our <a href="https://github.com/mdn/simple-shared-worker">Basic shared worker example</a> (<a href="https://mdn.github.io/simple-shared-worker/">run shared worker</a>), we have two HTML pages, each of which uses some JavaScript to perform a simple calculation. The different scripts are using the same worker file to perform the calculation — they can both access it, even if their pages are running inside different windows.</p>
+<p>The following code snippet shows creation of a <code>SharedWorker</code> object using the {{domxref(“SharedWorker.SharedWorker”, “SharedWorker()”)}} constructor. Both scripts contain this:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> myWorker <span class="op">=</span> <span class="kw">new</span> <span class="at">SharedWorker</span>(<span class="st">&#39;worker.js&#39;</span>)<span class="op">;</span></a></code></pre></div>
+<p>Both scripts then access the worker through a {{domxref(“MessagePort”)}} object created using the {{domxref(“SharedWorker.port”)}} property. If the onmessage event is attached using addEventListener, the port is manually started using its <code>start()</code> method:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">myWorker</span>.<span class="va">port</span>.<span class="at">start</span>()<span class="op">;</span></a></code></pre></div>
+<p>When the port is started, both scripts post messages to the worker and handle messages sent from it using <code>port.postMessage()</code> and <code>port.onmessage</code>, respectively:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="va">first</span>.<span class="at">onchange</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="va">myWorker</span>.<span class="va">port</span>.<span class="at">postMessage</span>([<span class="va">first</span>.<span class="at">value</span><span class="op">,</span><span class="va">second</span>.<span class="at">value</span>])<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Message posted to worker&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-5" title="5"></a>
+<a class="sourceLine" id="cb3-6" title="6"><span class="va">second</span>.<span class="at">onchange</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="va">myWorker</span>.<span class="va">port</span>.<span class="at">postMessage</span>([<span class="va">first</span>.<span class="at">value</span><span class="op">,</span><span class="va">second</span>.<span class="at">value</span>])<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Message posted to worker&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-10" title="10"></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="va">myWorker</span>.<span class="va">port</span>.<span class="at">onmessage</span> <span class="op">=</span> <span class="kw">function</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-12" title="12">  <span class="va">result1</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="va">e</span>.<span class="at">data</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-13" title="13">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Message received from worker&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-14" title="14"><span class="op">}</span></a></code></pre></div>
+<p>Inside the worker we use the {{domxref(“SharedWorkerGlobalScope.onconnect”)}} handler to connect to the same port discussed above. The ports associated with that worker are accessible in the {{event(“connect”)}} event’s <code>ports</code> property — we then use {{domxref(“MessagePort”)}} <code>start()</code> method to start the port, and the <code>onmessage</code> handler to deal with messages sent from the main threads.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1">onconnect <span class="op">=</span> <span class="kw">function</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="kw">var</span> port <span class="op">=</span> <span class="va">e</span>.<span class="at">ports</span>[<span class="dv">0</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"></a>
+<a class="sourceLine" id="cb4-4" title="4">  <span class="va">port</span>.<span class="at">addEventListener</span>(<span class="st">&#39;message&#39;</span><span class="op">,</span> <span class="kw">function</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-5" title="5">    <span class="kw">var</span> workerResult <span class="op">=</span> <span class="st">&#39;Result: &#39;</span> <span class="op">+</span> (<span class="va">e</span>.<span class="at">data</span>[<span class="dv">0</span>] <span class="op">*</span> <span class="va">e</span>.<span class="at">data</span>[<span class="dv">1</span>])<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-6" title="6">    <span class="va">port</span>.<span class="at">postMessage</span>(workerResult)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-8" title="8"></a>
+<a class="sourceLine" id="cb4-9" title="9">  <span class="va">port</span>.<span class="at">start</span>()<span class="op">;</span> <span class="co">// Required when using addEventListener. Otherwise called implicitly by onmessage setter.</span></a>
+<a class="sourceLine" id="cb4-10" title="10"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{domxref(“Worker”)}}</li>
+<li><a href="/en-US/docs/Web/API/Web_Workers_API/Using_web_workers">Using web workers</a></li>
+</ul>

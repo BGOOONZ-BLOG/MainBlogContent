@@ -1,0 +1,63 @@
+<p>{{APIRef(“Streams”)}}</p>
+<p>The <strong><code>ReadableStreamDefaultController</code></strong> interface of the <a href="/en-US/docs/Web/API/Streams_API">Streams API</a> represents a controller allowing control of a {{domxref(“ReadableStream”)}}’s state and internal queue. Default controllers are for streams that are not byte streams.</p>
+<h2 id="constructor">Constructor</h2>
+<p>None. <code>ReadableStreamDefaultController</code> instances are created automatically during <code>ReadableStream</code> construction.</p>
+<h2 id="properties">Properties</h2>
+<ul>
+<li>{{domxref(“ReadableStreamDefaultController.desiredSize”)}} {{readonlyInline}}
+<ul>
+<li>: Returns the desired size required to fill the stream’s internal queue.</li>
+</ul></li>
+</ul>
+<h2 id="methods">Methods</h2>
+<ul>
+<li>{{domxref(“ReadableStreamDefaultController.close()”)}}
+<ul>
+<li>: Closes the associated stream.</li>
+</ul></li>
+<li>{{domxref(“ReadableStreamDefaultController.enqueue()”)}}
+<ul>
+<li>: Enqueues a given chunk in the associated stream.</li>
+</ul></li>
+<li>{{domxref(“ReadableStreamDefaultController.error()”)}}
+<ul>
+<li>: Causes any future interactions with the associated stream to error.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>In the following simple example, a custom <code>ReadableStream</code> is created using a constructor (see our <a href="https://mdn.github.io/dom-examples/streams/simple-random-stream/">Simple random stream example</a> for the full code). The <code>start()</code> function generates a random string of text every second and enqueues it into the stream. A <code>cancel()</code> function is also provided to stop the generation if {{domxref(“ReadableStream.cancel()”)}} is called for any reason.</p>
+<p>Note that a {{domxref(“ReadableStreamDefaultController”)}} object is provided as the parameter of the <code>start()</code> and <code>pull()</code> functions.</p>
+<p>When a button is pressed, the generation is stopped, the stream is closed using {{domxref(“ReadableStreamDefaultController.close()”)}}, and another function is run, which reads the data back out of the stream.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> stream <span class="op">=</span> <span class="kw">new</span> <span class="at">ReadableStream</span>(<span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="at">start</span>(controller) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-3" title="3">    interval <span class="op">=</span> <span class="at">setInterval</span>(() <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-4" title="4">      <span class="kw">let</span> string <span class="op">=</span> <span class="at">randomChars</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-5" title="5"></a>
+<a class="sourceLine" id="cb1-6" title="6">      <span class="co">// Add the string to the stream</span></a>
+<a class="sourceLine" id="cb1-7" title="7">      <span class="va">controller</span>.<span class="at">enqueue</span>(string)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-8" title="8"></a>
+<a class="sourceLine" id="cb1-9" title="9">      <span class="co">// show it on the screen</span></a>
+<a class="sourceLine" id="cb1-10" title="10">      <span class="kw">let</span> listItem <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;li&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-11" title="11">      <span class="va">listItem</span>.<span class="at">textContent</span> <span class="op">=</span> string<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-12" title="12">      <span class="va">list1</span>.<span class="at">appendChild</span>(listItem)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-13" title="13">    <span class="op">},</span> <span class="dv">1000</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-14" title="14"></a>
+<a class="sourceLine" id="cb1-15" title="15">    <span class="va">button</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-16" title="16">      <span class="at">clearInterval</span>(interval)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-17" title="17">      <span class="at">fetchStream</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-18" title="18">      <span class="va">controller</span>.<span class="at">close</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-19" title="19">    <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb1-20" title="20">  <span class="op">},</span></a>
+<a class="sourceLine" id="cb1-21" title="21">  <span class="at">pull</span>(controller) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-22" title="22">    <span class="co">// We don&#39;t really need a pull in this example</span></a>
+<a class="sourceLine" id="cb1-23" title="23">  <span class="op">},</span></a>
+<a class="sourceLine" id="cb1-24" title="24">  <span class="at">cancel</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-25" title="25">    <span class="co">// This is called if the reader cancels,</span></a>
+<a class="sourceLine" id="cb1-26" title="26">    <span class="co">// so we should stop generating strings</span></a>
+<a class="sourceLine" id="cb1-27" title="27">    <span class="at">clearInterval</span>(interval)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-28" title="28">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-29" title="29"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

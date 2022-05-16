@@ -1,0 +1,116 @@
+<p>{{APIRef(“WebRTC API”)}}</p>
+<p>The <strong><code>setParameters()</code></strong> method of the {{domxref(“RTCRtpSender”)}} interface applies changes the configuration of sender’s {{domxref(“RTCRtpSender.track”, “track”)}}, which is the {{domxref(“MediaStreamTrack”)}} for which the <code>RTCRtpSender</code> is responsible.</p>
+<p>In other words, <code>setParameters()</code> updates the configuration of the {{Glossary(“RTP”)}} transmission as well as the encoding configuration for a specific outgoing media track on the <a href="/en-US/docs/Web/API/WebRTC_API">WebRTC</a> connection.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> promise <span class="op">=</span> <span class="va">rtcRtpSender</span>.<span class="at">setParameters</span>(parameters)</a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><p><code>parameters</code></p>
+<ul>
+<li><p>: A parameters object previously obtained by calling the same sender’s {{domxref(“RTCRtpSender.getParameters”, “getParameters()”)}} method, with the desired changes to the sender’s configuration parameters. These parameters include potential codecs that could be use for encoding the sender’s {{domxref(“RTCRtpSender.track”, “track”)}}. The available parameters are:</p>
+<ul>
+<li><code>encodings</code>
+<ul>
+<li>: An array of {{domxref(“RTCRtpEncodingParameters”)}} objects, each specifying the parameters for a single codec that could be used to encode the track’s media.</li>
+</ul></li>
+<li><code>transactionId</code>
+<ul>
+<li>: A string containing a unique ID for the last set of parameters applied; this value is used to ensure that {{domxref(“RTCRtpSender.setParameters”, “setParameters()”)}} can only be called to alter changes made by a specific previous call to {{domxref(“RTCRtpSender.getParameters”, “getParameters()”)}}. Once this parameter is initially set, it cannot be changed.</li>
+</ul></li>
+<li><code>degradationPreference</code> {{deprecated_inline}}
+<ul>
+<li>: Specifies the preferred way the WebRTC layer should handle optimizing bandwidth against quality in constrained-bandwidth situations; the value comes from the {{domxref(“RTCDegradationPreference”)}} enumerated string type, and the default is <code>balanced</code>.</li>
+</ul></li>
+<li><code>priority</code> {{deprecated_inline}}
+<ul>
+<li>: A string from the {{domxref(“RTCPriorityType”)}} enumerated type which indicates the encoding’s priority. The default value is <code>low</code>.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A {{jsxref(“Promise”)}} that resolves when the {{domxref(“RTCRtpSender.track”)}} property is updated with the given parameters.</p>
+<h3 id="exceptions">Exceptions</h3>
+<p>If an error occurs, the returned promise is rejected with the appropriate exception from the list below.</p>
+<ul>
+<li><code>InvalidModificationError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if one of the following problems is detected:
+<ul>
+<li>The number of encodings specified in the <code>parameters</code> object’s {{domxref(“RTCRtpSendParameters.encodings”, “encodings”)}} property does not match the number of encodings currently listed for the <code>RTCRtpSender</code>. You cannot change the number of encoding options after the sender has been created.</li>
+<li>The order of the specified <code>encodings</code> has changed from the current list’s order.</li>
+<li>An attempt has been made to alter a property that cannot be changed after the sender is first created.</li>
+</ul></li>
+</ul></li>
+<li><code>InvalidStateError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if the transceiver, of which the <code>RTCRtpSender</code> is a part, is not running or has no parameters to set.</li>
+</ul></li>
+<li><code>OperationError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if an error occurs that does not match the ones specified here.</li>
+</ul></li>
+<li><code>RangeError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if the value specified for {{domxref(“RTCRtpSendParameters.scaleResolutionDownBy”, “scaleResolutionDownBy”)}} is less than 1.0, which would result in scaling up rather than down, which is not allowed; or one or more of the specified encodings’ {{domxref(“RTCRtpEncodingParameters.maxFramerate”, “maxFramerate”)}} values is less than 0.0.</li>
+</ul></li>
+</ul>
+<p>In addition, if a WebRTC error occurs while configuring or accessing the media, an {{domxref(“RTCError”)}} is thrown with its {{domxref(“RTCError.errorDetail”, “errorDetail”)}} set to <code>hardware-encoder-error</code>.</p>
+<h2 id="description">Description</h2>
+<p>It’s important to keep in mind that you can’t create an {{domxref(“RTCRtpSendParameters”)}} object yourself and expect it to work. Instead, you <em>must</em> first call {{domxref(“RTCRtpSender.getParameters”, “getParameters()”)}}, modify the received parameters object, then pass that object into <code>setParameters()</code>. WebRTC uses the parameters object’s <code>transactionId</code> property to ensure that when you set parameters, your changes are based on the most recent parameters rather than an out of date configuration.</p>
+<h2 id="examples">Examples</h2>
+<p>One use case for <code>setParameters()</code> is to try to reduce network bandwidth use in constrained environments by altering the resolution and/or bit rate of the media being transmitted by the {{domxref(“RTCRtpSender”)}}.</p>
+<p>Currently, some browsers have limitations on their implementations that may cause issues. For that reason, two examples are given here. The first shows how to use <code>setParameters()</code> when all browsers fully support the parameters being used, while the second example demonstrates workarounds to help solve limitations in browsers with incomplete support for the {{domxref(“RTCRtpEncodingParameters.maxBitrate”, “maxBitrate”)}} and {{domxref(“RTCRtpEncodingParameters.scaleResolutionDownBy”, “scaleResolutionDownBy”)}} parameters.</p>
+<h3 id="by-the-specification">By the specification</h3>
+<p>Once all browsers implement the spec fully, this implementation of <code>setVideoParams()</code> will do the job. This demonstrates how everything <em>should</em> work. You should probably use the second example, below, for now. But this is a clearer demonstration of the basic concept of first fetching the parameters, then altering them, then setting them.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">async</span> <span class="kw">function</span> <span class="at">setVideoParams</span>(sender<span class="op">,</span> height<span class="op">,</span> bitrate) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">const</span> scaleRatio <span class="op">=</span> <span class="va">sender</span>.<span class="va">track</span>.<span class="at">getSettings</span>().<span class="at">height</span>/height<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="kw">const</span> params <span class="op">=</span> <span class="va">sender</span>.<span class="at">getParameters</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="va">params</span>.<span class="at">encodings</span>[<span class="dv">0</span>].<span class="at">scaleResolutionDownBy</span> <span class="op">=</span> <span class="va">Math</span>.<span class="at">max</span>(ratio<span class="op">,</span> <span class="dv">1</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="va">params</span>.<span class="at">encodings</span>[<span class="dv">0</span>].<span class="at">maxBitrate</span> <span class="op">=</span> bitrate<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="cf">await</span> <span class="va">sender</span>.<span class="at">setParameters</span>(params)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="op">}</span></a></code></pre></div>
+<p>In calling this function, you specify a sender, as w.ell as the height you wish to scale the sender’s video to, as well as a maximum bitrate to permit the sender to transmit. A scaling factor for the size of the video, <code>scaleRatio</code>, is computed. Then the sender’s current parameters are fetched using {{domxref(“RTCRtpSender.getParameters”, “getParameters()”)}}.</p>
+<p>The parameters are then altered by changing the first {{domxref(“RTCRtpSendParameters.encodings”, “encodings”)}} object’s {{domxref(“RTCRtpEncodingParameters.scaleResolutionDownBy”, “scaleResolutionDownBy”)}} and {{domxref(“RTCRtpEncodingParameters.maxBitrate”, “maxBitrate”)}} to the calculated scaling factor and the specified maximum <code>bitrate</code>.</p>
+<p>The changed parameters are then saved by calling the sender’s <code>setParameters()</code> method.</p>
+<h3 id="currently-compatible-implementation">Currently compatible implementation</h3>
+<p>As mentioned above, the previous example shows how things are meant to work. Unfortunately, there are implementation issues preventing this in many browsers right now. For that reason, if you want to be compatible with iPhone and other devices running Safari, and with Firefox, use code more like this:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">async</span> <span class="kw">function</span> <span class="at">setVideoParams</span>(sender<span class="op">,</span> height<span class="op">,</span> bitrate) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">const</span> scaleRatio <span class="op">=</span> <span class="va">sender</span>.<span class="va">track</span>.<span class="at">getSettings</span>().<span class="at">height</span>/height<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="kw">const</span> params <span class="op">=</span> <span class="va">sender</span>.<span class="at">getParameters</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4"></a>
+<a class="sourceLine" id="cb3-5" title="5">  <span class="co">// If encodings is null, create it</span></a>
+<a class="sourceLine" id="cb3-6" title="6"></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="cf">if</span> (<span class="op">!</span><span class="va">params</span>.<span class="at">encodings</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-8" title="8">    <span class="va">params</span>.<span class="at">encodings</span> <span class="op">=</span> [<span class="op">{</span> <span class="op">}</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-10" title="10"></a>
+<a class="sourceLine" id="cb3-11" title="11">  <span class="va">params</span>.<span class="at">encodings</span>[<span class="dv">0</span>].<span class="at">scaleResolutionDownBy</span> <span class="op">=</span> <span class="va">Math</span>.<span class="at">max</span>(ratio<span class="op">,</span> <span class="dv">1</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-12" title="12">  <span class="va">params</span>.<span class="at">encodings</span>[<span class="dv">0</span>].<span class="at">maxBitrate</span> <span class="op">=</span> bitrate<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-13" title="13">  <span class="cf">await</span> <span class="va">sender</span>.<span class="at">setParameters</span>(params)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-14" title="14"></a>
+<a class="sourceLine" id="cb3-15" title="15">  <span class="co">// If the newly changed value of scaleResolutionDownBy is 1,</span></a>
+<a class="sourceLine" id="cb3-16" title="16">  <span class="co">// use applyConstraints() to be sure the height is constrained,</span></a>
+<a class="sourceLine" id="cb3-17" title="17">  <span class="co">// since scaleResolutionDownBy may not be implemented</span></a>
+<a class="sourceLine" id="cb3-18" title="18"></a>
+<a class="sourceLine" id="cb3-19" title="19">  <span class="cf">if</span> (<span class="va">sender</span>.<span class="at">getParameters</span>().<span class="at">encodings</span>[<span class="dv">0</span>].<span class="at">scaleResolutionDownBy</span> <span class="op">==</span> <span class="dv">1</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-20" title="20">    <span class="cf">await</span> <span class="va">sender</span>.<span class="va">track</span>.<span class="at">applyConstraints</span>(<span class="op">{</span> height <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-21" title="21">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-22" title="22"><span class="op">}</span></a></code></pre></div>
+<p>The differences here:</p>
+<ul>
+<li>If <code>encodings</code> is <code>null</code>, we create it, in order to ensure that we can then set the parameters successfully without crashing.</li>
+<li>If, after setting the parameters, the value of <code>scaleResolutionDownBy</code> is still 1, we call the sender’s track’s {{domxref(“MediaStreamTrack.applyConstraints”, “applyConstraints()”)}} method to constrain the track’s height to <code>height</code>. This compensates for an unimplemented <code>scaleResolutionDownBy</code> (as is the case in Safari as of this writing).</li>
+</ul>
+<p>This code will cleanly fall back and work the normal way if the browser fully implements the used features.</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/WebRTC_API">WebRTC API</a></li>
+<li><a href="/en-US/docs/Web/Media/Formats/WebRTC_codecs">Codecs used by WebRTC</a></li>
+<li><a href="/en-US/docs/Web/Media">Web media technologies</a></li>
+</ul>

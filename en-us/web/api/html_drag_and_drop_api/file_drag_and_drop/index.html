@@ -1,0 +1,62 @@
+<p>{{DefaultAPISidebar(“HTML Drag and Drop API”)}}</p>
+<p>HTML Drag and Drop interfaces enable web applications to drag and drop files on a web page. This document describes how an application can accept one or more files that are dragged from the underlying platform’s <em>file manager</em> and dropped on a web page.</p>
+<p>The main steps to drag and drop are to define a <em>drop zone</em> (i.e. a target element for the file drop) and to define event handlers for the {{event(“drop”)}} and {{event(“dragover”)}} events. These steps are described below, including example code snippets. The full source code is available in <a href="https://github.com/mdn/dom-examples/tree/master/drag-and-drop">MDN’s drag-and-drop repository</a> (pull requests and/or issues are welcome).</p>
+<p>Note that {{domxref(“HTML_Drag_and_Drop_API”,“HTML drag and drop”)}} defines two different APIs to support dragging and dropping files. One API is the {{domxref(“DataTransfer”)}} interface and the second API is the {{domxref(“DataTransferItem”)}} and {{domxref(“DataTransferItemList”)}} interfaces. This example illustrates the use of both APIs (and does not use any Gecko specific interfaces).</p>
+<h2 id="define-the-drop-zone">Define the drop <em>zone</em></h2>
+<p>The <em>target element</em> of the {{event(“drop”)}} event needs an {{domxref(“GlobalEventHandlers.ondrop”,“ondrop”)}} global event handler. The following code snippet shows how this is done with a {{HTMLelement(“div”)}} element:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;drop_zone&quot;</span><span class="ot"> ondrop=</span><span class="st">&quot;dropHandler(event);&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="kw">&lt;p&gt;</span>Drag one or more files to this Drop Zone ...<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<p>Typically, an application will include a {{event(“dragover”)}} event handler on the drop target element and that handler will turn off the browser’s default drag behavior. To add this handler, you need to include a {{domxref(“GlobalEventHandlers.ondragover”,“ondragover”)}} global event handler:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;drop_zone&quot;</span><span class="ot"> ondrop=</span><span class="st">&quot;dropHandler(event);&quot;</span><span class="ot"> ondragover=</span><span class="st">&quot;dragOverHandler(event);&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">&lt;p&gt;</span>Drag one or more files to this Drop Zone ...<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<p>Lastly, an application may want to style the drop target element to visually indicate the element is a drop zone. In this example, the drop target element uses the following styling:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb3-1" title="1"><span class="pp">#drop_zone</span> {</a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">border</span>: <span class="dv">5</span><span class="dt">px</span> <span class="dv">solid</span> <span class="cn">blue</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="kw">width</span>:  <span class="dv">200</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="kw">height</span>: <span class="dv">100</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">}</a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> <code>dragstart</code> and <code>dragend</code> events are not fired when dragging a file into the browser from the OS.</p>
+</blockquote>
+<h2 id="process-the-drop">Process the drop</h2>
+<p>The {{event(“drop”)}} event is fired when the user drops the file(s). In the following drop handler, if the browser supports {{domxref(“DataTransferItemList”)}} interface, the {{domxref(“DataTransferItem.getAsFile”,“getAsFile()”)}} method is used to access each file; otherwise the {{domxref(“DataTransfer”)}} interface’s {{domxref(“DataTransfer.files”,“files”)}} property is used to access each file.</p>
+<p>This example shows how to write the name of each dragged file to the console. In a <em>real</em> application, an application may want to process a file using  the {{domxref(“File”,“File API”)}}.</p>
+<p>Note that in this example, any drag item that is not a file is ignored.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">function</span> <span class="at">dropHandler</span>(ev) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;File(s) dropped&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"></a>
+<a class="sourceLine" id="cb4-4" title="4">  <span class="co">// Prevent default behavior (Prevent file from being opened)</span></a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="va">ev</span>.<span class="at">preventDefault</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-6" title="6"></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="cf">if</span> (<span class="va">ev</span>.<span class="va">dataTransfer</span>.<span class="at">items</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-8" title="8">    <span class="co">// Use DataTransferItemList interface to access the file(s)</span></a>
+<a class="sourceLine" id="cb4-9" title="9">    <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">ev</span>.<span class="va">dataTransfer</span>.<span class="va">items</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-10" title="10">      <span class="co">// If dropped items aren&#39;t files, reject them</span></a>
+<a class="sourceLine" id="cb4-11" title="11">      <span class="cf">if</span> (<span class="va">ev</span>.<span class="va">dataTransfer</span>.<span class="at">items</span>[i].<span class="at">kind</span> <span class="op">===</span> <span class="st">&#39;file&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-12" title="12">        <span class="kw">var</span> file <span class="op">=</span> <span class="va">ev</span>.<span class="va">dataTransfer</span>.<span class="at">items</span>[i].<span class="at">getAsFile</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-13" title="13">        <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;... file[&#39;</span> <span class="op">+</span> i <span class="op">+</span> <span class="st">&#39;].name = &#39;</span> <span class="op">+</span> <span class="va">file</span>.<span class="at">name</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-14" title="14">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-15" title="15">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-16" title="16">  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-17" title="17">    <span class="co">// Use DataTransfer interface to access the file(s)</span></a>
+<a class="sourceLine" id="cb4-18" title="18">    <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">ev</span>.<span class="va">dataTransfer</span>.<span class="va">files</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-19" title="19">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;... file[&#39;</span> <span class="op">+</span> i <span class="op">+</span> <span class="st">&#39;].name = &#39;</span> <span class="op">+</span> <span class="va">ev</span>.<span class="va">dataTransfer</span>.<span class="at">files</span>[i].<span class="at">name</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-20" title="20">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-21" title="21">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-22" title="22"><span class="op">}</span></a></code></pre></div>
+<h2 id="prevent-the-browsers-default-drag-behavior">Prevent the browser’s default drag behavior</h2>
+<p>The following {{event(“dragover”)}} event handler calls {{domxref(“Event.preventDefault”,“preventDefault()”)}} to turn off the browser’s default drag and drop handler.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">function</span> <span class="at">dragOverHandler</span>(ev) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;File(s) in drop zone&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3"></a>
+<a class="sourceLine" id="cb5-4" title="4">  <span class="co">// Prevent default behavior (Prevent file from being opened)</span></a>
+<a class="sourceLine" id="cb5-5" title="5">  <span class="va">ev</span>.<span class="at">preventDefault</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-6" title="6"><span class="op">}</span></a></code></pre></div>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/HTML_Drag_and_Drop_API">HTML Drag and Drop API</a></li>
+<li><a href="/en-US/docs/Web/API/HTML_Drag_and_Drop_API/Drag_operations">Drag Operations</a></li>
+<li><a href="https://html.spec.whatwg.org/multipage/interaction.html#dnd">HTML5 Living Standard: Drag and Drop</a></li>
+</ul>

@@ -1,0 +1,39 @@
+<p>{{securecontext_header}}{{APIRef(“Payment Request API”)}}{{Deprecated_header}}{{Non-standard_header}}</p>
+<p>The <strong><code>shippingOption</code></strong> read-only attribute of the {{domxref(‘PaymentRequest’)}} interface returns either the id of a selected shipping option, null (if no shipping option was set to be selected) or a shipping option selected by the user. It is initially <code>null</code> by when no “selected” shipping options are provided.</p>
+<p>This attribute is only populated if the constructor is called with the <code>requestShipping</code> flag set to <code>true</code>. If <code>requestShipping</code> was <code>false</code> (or missing),  <code>shippingOption</code> returns <code>null</code>, even the developer provides a  selected a shipping option.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="co">// Returns the id of the selected PaymentShippingOption</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">var</span> shippingOption <span class="op">=</span> <span class="va">request</span>.<span class="at">shippingOption</span><span class="op">;</span></a></code></pre></div>
+<h2 id="example">Example</h2>
+<p>In the example below, the {{domxref(‘PaymentRequest.onshippingoptionchange’)}} and the {{domxref(‘PaymentRequest.onshippingaoptionchange’)}} events are dispatched. In each calls to <code>updateDetails()</code>  are made, one using a promise, and the other with a plain JS object. This demotrates synchrounous and asynchronous updates to a payment sheet.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> request <span class="op">=</span> <span class="kw">new</span> <span class="at">PaymentRequest</span>(methodData<span class="op">,</span> details<span class="op">,</span> options)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="co">// Async update to details</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="va">request</span>.<span class="at">onshippingaddresschange</span> <span class="op">=</span> ev <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="va">ev</span>.<span class="at">updateWith</span>(<span class="at">checkShipping</span>(request))<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="op">};</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="co">// Sync update to the total</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="va">request</span>.<span class="at">onshippingoptionchange</span> <span class="op">=</span> ev <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="kw">const</span> shippingOption <span class="op">=</span> <span class="va">shippingOptions</span>.<span class="at">find</span>(</a>
+<a class="sourceLine" id="cb2-9" title="9">    option <span class="kw">=&gt;</span> <span class="va">option</span>.<span class="at">id</span> <span class="op">===</span> <span class="va">request</span>.<span class="at">id</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11">  <span class="kw">const</span> newTotal <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-12" title="12">    <span class="dt">currency</span><span class="op">:</span> <span class="st">&quot;USD&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-13" title="13">    <span class="dt">label</span><span class="op">:</span> <span class="st">&quot;Total due&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-14" title="14">    <span class="dt">value</span><span class="op">:</span> <span class="at">calculateNewTotal</span>(shippingOption)<span class="op">,</span></a>
+<a class="sourceLine" id="cb2-15" title="15">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb2-16" title="16">  <span class="va">ev</span>.<span class="at">updateWith</span>(<span class="op">{</span> ...<span class="at">details</span><span class="op">,</span> <span class="dt">total</span><span class="op">:</span> newTotal <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-17" title="17"><span class="op">};</span></a>
+<a class="sourceLine" id="cb2-18" title="18"><span class="kw">async</span> <span class="kw">function</span> <span class="at">checkShipping</span>(request) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-19" title="19">  <span class="cf">try</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-20" title="20">    <span class="kw">const</span> json <span class="op">=</span> <span class="va">request</span>.<span class="va">shippingAddress</span>.<span class="at">toJSON</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-21" title="21"></a>
+<a class="sourceLine" id="cb2-22" title="22">    <span class="cf">await</span> <span class="at">ensureCanShipTo</span>(json)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-23" title="23">    <span class="kw">const</span> <span class="op">{</span> shippingOptions<span class="op">,</span> total <span class="op">}</span> <span class="op">=</span> <span class="cf">await</span> <span class="at">calculateShipping</span>(json)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-24" title="24"></a>
+<a class="sourceLine" id="cb2-25" title="25">    <span class="cf">return</span> <span class="op">{</span> ...<span class="at">details</span><span class="op">,</span> shippingOptions<span class="op">,</span> total <span class="op">};</span></a>
+<a class="sourceLine" id="cb2-26" title="26">  <span class="op">}</span> <span class="cf">catch</span> (err) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-27" title="27">    <span class="cf">return</span> <span class="op">{</span> ...<span class="at">details</span><span class="op">,</span> <span class="dt">error</span><span class="op">:</span> <span class="vs">`Sorry! we can&#39;t ship to your address.`</span> <span class="op">};</span></a>
+<a class="sourceLine" id="cb2-28" title="28">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-29" title="29"><span class="op">}</span></a></code></pre></div>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

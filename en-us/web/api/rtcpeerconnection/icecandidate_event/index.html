@@ -1,0 +1,102 @@
+<p>{{APIRef(“WebRTC”)}}</p>
+<p>An <strong><code>icecandidate</code></strong> event is sent to an {{domxref(“RTCPeerConnection”)}} when an {{domxref(“RTCIceCandidate”)}} has been identified and added to the local peer by a call to {{domxref(“RTCPeerConnection.setLocalDescription()”)}}. The event handler should transmit the candidate to the remote peer over the signaling channel so the remote peer can add it to its set of remote candidates.</p>
+<table class="properties">
+<tbody>
+<tr>
+<th scope="row">
+Bubbles
+</th>
+<td>
+No
+</td>
+</tr>
+<tr>
+<th scope="row">
+Cancelable
+</th>
+<td>
+No
+</td>
+</tr>
+<tr>
+<th scope="row">
+Interface
+</th>
+<td>
+{{DOMxRef(“RTCPeerConnectionIceEvent”)}}
+</td>
+</tr>
+<tr>
+<th scope="row">
+Event handler property
+</th>
+<td>
+{{DOMxRef(“RTCPeerConnection.onicecandidate”)}}
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="description">Description</h2>
+<p>There are three reasons why the <code>icecandidate</code> event is fired on an {{domxref(“RTCPeerConnection”)}}.</p>
+<h3 id="sharing-a-new-candidate">Sharing a new candidate</h3>
+<p>The majority of <code>icecandidate</code> events are fired to indicate that a new candidate has been gathered. This candidate needs to be delivered to the remote peer over the signaling channel your code manages.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">rtcPeerConnection</span>.<span class="at">onicecandidate</span> <span class="op">=</span> (event) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="cf">if</span> (<span class="va">event</span>.<span class="at">candidate</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-3" title="3">    <span class="at">sendCandidateToRemotePeer</span>(<span class="va">event</span>.<span class="at">candidate</span>)</a>
+<a class="sourceLine" id="cb1-4" title="4">  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-5" title="5">    <span class="co">/* there are no more candidates coming during this negotiation */</span></a>
+<a class="sourceLine" id="cb1-6" title="6">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="op">}</span></a></code></pre></div>
+<p>The remote peer, upon receiving the candidate, will add the candidate to its candidate pool by calling {{domxref(“RTCPeerConnection.addIceCandidate”, “addIceCandidate()”)}}, passing in the {{domxref(“RTCPeerConnectionIceEvent.candidate”, “candidate”)}} string you have passed along using the signaling server.</p>
+<h3 id="indicating-the-end-of-a-generation-of-candidates">Indicating the end of a generation of candidates</h3>
+<p>When an ICE negotiation session runs out of candidates to propose for a given {{domxref(“RTCIceTransport”)}}, it has completed gathering for a <strong>generation</strong> of candidates. That this has occurred is indicated by an <code>icecandidate</code> event whose {{domxref(“RTCPeerConnectionIceEvent.candidate”, “candidate”)}} string is empty (<code>""</code>).</p>
+<p>You should deliver this to the remote peer just like any standard candidate, as described under {{anch(“Sharing a new candidate”)}} above. This ensures that the remote peer is given the end-of-candidates notification as well. As you see in the code in the previous section, every candidate is sent to the other peer, including any that might have an empty candidate string. Only candidates for which the event’s {{domxref(“RTCPeerConnectionIceEvent.candidate”, “candidate”)}} property is <code>null</code> are not forwarded across the signaling connection.</p>
+<p>The end-of-candidates indication is described in <a href="https://datatracker.ietf.org/doc/html/draft-ietf-mmusic-trickle-ice-02#section-9.3">section 9.3 of the Trickle ICE draft specification</a> (note that the section number is subject to change as the specification goes through repeated drafts).</p>
+<h3 id="indicating-that-ice-gathering-is-complete">Indicating that ICE gathering is complete</h3>
+<p>Once all ICE transports have finished gathering candidates and the value of the {{domxref(“RTCPeerConnection”)}} object’s {{domxref(“RTCPeerConnection.iceGatheringState”, “iceGatheringState”)}} has made the transition to <code>complete</code>, an <code>icecandidate</code> event is sent with the value of <code>complete</code> set to <code>null</code>.</p>
+<p>This signal exists for backward compatibility purposes and does <em>not</em> need to be delivered onward to the remote peer (which is why the code snippet above checks to see if <code>event.candidate</code> is <code>null</code> prior to sending the candidate along.</p>
+<p>If you need to perform any special actions when there are no further candidates expected, you’re much better off watching the ICE gathering state by watching for {{domxref(“RTCPeerConnection.icegatheringstatechange_event”, “icegatheringstatechange”)}} events:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">pc</span>.<span class="at">addEventListener</span>(<span class="st">&quot;icegatheringstatechange&quot;</span><span class="op">,</span> ev <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="cf">switch</span>(<span class="va">pc</span>.<span class="at">iceGatheringState</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3">    <span class="cf">case</span> <span class="st">&quot;new&quot;</span><span class="op">:</span></a>
+<a class="sourceLine" id="cb2-4" title="4">      <span class="co">/* gathering is either just starting or has been reset */</span></a>
+<a class="sourceLine" id="cb2-5" title="5">      <span class="cf">break</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">    <span class="cf">case</span> <span class="st">&quot;gathering&quot;</span><span class="op">:</span></a>
+<a class="sourceLine" id="cb2-7" title="7">      <span class="co">/* gathering has begun or is ongoing */</span></a>
+<a class="sourceLine" id="cb2-8" title="8">      <span class="cf">break</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9">    <span class="cf">case</span> <span class="st">&quot;complete&quot;</span><span class="op">:</span></a>
+<a class="sourceLine" id="cb2-10" title="10">      <span class="co">/* gathering has ended */</span></a>
+<a class="sourceLine" id="cb2-11" title="11">      <span class="cf">break</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>As you can see in this example, the <code>icegatheringstatechange</code> event lets you know when the value of the {{domxref(“RTCPeerConnection”)}} property {{domxref(“RTCPeerConnection.iceGatheringState”, “iceGatheringState”)}} has been updated. If that value is now <code>complete</code>, you know that ICE gathering has just ended.</p>
+<p>This is a more reliable approach than looking at the individual ICE messages for one indicating that the ICE session is finished.</p>
+<h2 id="examples">Examples</h2>
+<p>This example creates a simple handler for the <code>icecandidate</code> event that uses a function called <code>sendMessage()</code> to create and send a reply to the remote peer through the signaling server.</p>
+<p>First, an example using {{domxref(“EventTarget.addEventListener”, “addEventListener()”)}}:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="va">pc</span>.<span class="at">addEventListener</span>(<span class="st">&quot;icecandidate&quot;</span><span class="op">,</span> ev <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="cf">if</span> (<span class="va">ev</span>.<span class="at">candidate</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="at">sendMessage</span>(<span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">      <span class="dt">type</span><span class="op">:</span> <span class="st">&quot;new-ice-candidate&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-5" title="5">      <span class="dt">candidate</span><span class="op">:</span> <span class="va">event</span>.<span class="at">candidate</span></a>
+<a class="sourceLine" id="cb3-6" title="6">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="op">},</span> <span class="kw">false</span>)<span class="op">;</span></a></code></pre></div>
+<p>You can also set the {{domxref(“RTCPeerConnection.onicecandidate”, “onicecandidate”)}} event handler property directly:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="va">pc</span>.<span class="at">onicecandidate</span> <span class="op">=</span> ev <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="cf">if</span> (<span class="va">ev</span>.<span class="at">candidate</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-3" title="3">    <span class="at">sendMessage</span>(<span class="op">{</span></a>
+<a class="sourceLine" id="cb4-4" title="4">      <span class="dt">type</span><span class="op">:</span> <span class="st">&quot;new-ice-candidate&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb4-5" title="5">      <span class="dt">candidate</span><span class="op">:</span> <span class="va">event</span>.<span class="at">candidate</span></a>
+<a class="sourceLine" id="cb4-6" title="6">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-8" title="8"><span class="op">};</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/WebRTC_API">WebRTC API</a></li>
+<li><a href="/en-US/docs/Web/API/WebRTC_API/Signaling_and_video_calling">Signaling and video calling</a></li>
+</ul>

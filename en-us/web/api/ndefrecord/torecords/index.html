@@ -1,0 +1,54 @@
+<p>{{securecontext_header}}{{SeeCompatTable}}{{APIRef()}}</p>
+<p>The <strong><code>toRecords()</code></strong> method of the {{DOMxRef(“NDEFRecord”)}} interface converts {{DOMxRef(“NDEFRecord.data”)}} to a sequence of records based on {{DOMxRef(“NDEFRecord.recordType”)}}, and returns the result. This allows parsing the payloads of record types which may contain nested records, such as smart poster and external type records.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">NDEFRecord</span>.<span class="at">toRecords</span>()</a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<p>None.</p>
+<h3 id="return-value">Return value</h3>
+<p>A list of {{DOMxRef(“NDEFRecord”)}}s.</p>
+<h2 id="exceptions">Exceptions</h2>
+<ul>
+<li>{{domxref(“DOMException”)}} <code>"NotSupported"</code>
+<ul>
+<li>: Indicates that the {{Glossary(“User Agent”)}} does not know how to parse this combination of {{DOMxRef(“NDEFRecord.data”)}} and {{DOMxRef(“NDEFRecord.recordType”)}}.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>Read an external record with an NDEF message as payload</p>
+<p>The example uses external type records to create application-defined records. These records may contain an {{domxref(“NDEFMessage”)}} as payload, with its own {{domxref(“NDEFRecord”)}} objects, including local types that are used in the context of the application. Notice that the smart poster record type also contains an NDEF message as payload.</p>
+<p>Because NDEF gives no guarantee on the ordering of records, using an external type record with an NDEF message as payload can be useful for encapsulating related data.</p>
+<p>This example shows how to read an external record for social posts, which contains an an {{domxref(“NDEFMessage”)}}, containing a text record and a record with the local type “act” (action), with a definition borrowed from smart poster, but used in local application context.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> ndefReader <span class="op">=</span> <span class="kw">new</span> <span class="at">NDEFReader</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="cf">await</span> <span class="va">ndefReader</span>.<span class="at">scan</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="va">ndefReader</span>.<span class="at">onreading</span> <span class="op">=</span> (event) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="kw">const</span> externalRecord <span class="op">=</span> <span class="va">event</span>.<span class="va">message</span>.<span class="va">records</span>.<span class="at">find</span>(</a>
+<a class="sourceLine" id="cb2-5" title="5">    record <span class="kw">=&gt;</span> <span class="va">record</span>.<span class="at">type</span> <span class="op">==</span> <span class="st">&quot;example.com:smart-poster&quot;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="kw">let</span> action<span class="op">,</span> text<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="cf">for</span> (<span class="kw">const</span> record <span class="kw">of</span> <span class="va">externalRecord</span>.<span class="at">toRecords</span>()) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-11" title="11">    <span class="cf">if</span> (<span class="va">record</span>.<span class="at">recordType</span> <span class="op">==</span> <span class="st">&quot;text&quot;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-12" title="12">      <span class="kw">const</span> decoder <span class="op">=</span> <span class="kw">new</span> <span class="at">TextDecoder</span>(<span class="va">record</span>.<span class="at">encoding</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13">      text <span class="op">=</span> <span class="va">decoder</span>.<span class="at">decode</span>(<span class="va">record</span>.<span class="at">data</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14">    <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (<span class="va">record</span>.<span class="at">recordType</span> <span class="op">==</span> <span class="st">&quot;:act&quot;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-15" title="15">      action <span class="op">=</span> <span class="va">record</span>.<span class="va">data</span>.<span class="at">getUint8</span>(<span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-16" title="16">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-17" title="17">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-18" title="18"></a>
+<a class="sourceLine" id="cb2-19" title="19">  <span class="cf">switch</span> (action) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-20" title="20">    <span class="cf">case</span> <span class="dv">0</span><span class="op">:</span> <span class="co">// do the action</span></a>
+<a class="sourceLine" id="cb2-21" title="21">      <span class="va">console</span>.<span class="at">log</span>(<span class="vs">`Post &quot;</span><span class="sc">${</span>text<span class="sc">}</span><span class="vs">&quot; to timeline`</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-22" title="22">      <span class="cf">break</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-23" title="23">    <span class="cf">case</span> <span class="dv">1</span><span class="op">:</span> <span class="co">// save for later</span></a>
+<a class="sourceLine" id="cb2-24" title="24">      <span class="va">console</span>.<span class="at">log</span>(<span class="vs">`Save &quot;</span><span class="sc">${</span>text<span class="sc">}</span><span class="vs">&quot; as a draft`</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-25" title="25">      <span class="cf">break</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-26" title="26">    <span class="cf">case</span> <span class="dv">2</span><span class="op">:</span> <span class="co">// open for editing</span></a>
+<a class="sourceLine" id="cb2-27" title="27">      <span class="va">console</span>.<span class="at">log</span>(<span class="vs">`Show editable post with &quot;</span><span class="sc">${</span>text<span class="sc">}</span><span class="vs">&quot;`</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-28" title="28">      <span class="cf">break</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-29" title="29">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-30" title="30"><span class="op">};</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

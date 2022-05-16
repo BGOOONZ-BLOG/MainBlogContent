@@ -1,0 +1,130 @@
+<p>{{APIRef(“User Timing API”)}}</p>
+<p>The <strong><code>measure()</code></strong> method creates a named {{domxref(“DOMHighResTimeStamp”,“timestamp”)}} in the browser’s <em>performance entry buffer</em> between marks, the navigation start time, or the current time.</p>
+<p>When measuring between two marks, there is a <em>start mark</em> and <em>end mark</em>, respectively. The named timestamp is referred to as a <em>measure</em>.</p>
+<p>The <code>measure</code> can be retrieved using any of the {{domxref(“Performance”)}} interfaces: ({{domxref(“Performance.getEntries”,“getEntries()”)}}, {{domxref(“Performance.getEntriesByName”,“getEntriesByName()”)}} or {{domxref(“Performance.getEntriesByType”,“getEntriesByType()”)}}).</p>
+<p>{{AvailableInWorkers}}</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="at">measure</span>(measureName)</a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="at">measure</span>(measureName<span class="op">,</span> MeasureOptions)</a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="at">measure</span>(measureName<span class="op">,</span> startMark)</a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="at">measure</span>(measureName<span class="op">,</span> startMark<span class="op">,</span> endMark)</a></code></pre></div>
+<p>If only <code>measureName</code> is specified, the start timestamp is set to zero, and the end timestamp (which is used to calculate the duration) is the value that would be returned by {{domxref(“Performance.now()”)}}.</p>
+<h3 id="arguments">Arguments</h3>
+<ul>
+<li><code>measureName</code>
+<ul>
+<li>: A {{domxref(“DOMString”)}} representing the name of the measure.</li>
+</ul></li>
+<li><code>MeasureOptions</code> {{optional_inline}}
+<ul>
+<li><p>: An object that may contain all measure options (the <code>startMark</code> and <code>endMark</code> may be specified in this object or as their own arguments):</p>
+<ul>
+<li><code>detail</code>
+<ul>
+<li>: Arbitrary metadata to be included in the measure.</li>
+</ul></li>
+<li><code>start</code>
+<ul>
+<li>: Timestamp {{domxref(“DOMHighResTimeStamp”)}} to be used as the start time, or {{domxref(“DOMString”)}} to be used as start mark. If this represents the name of a start mark, then it is defined in the same way as <code>startMark</code> (in other words it must be the name of an existing mark or a {{domxref(“PerformanceTiming”)}} property).</li>
+</ul></li>
+<li><code>duration</code>
+<ul>
+<li>: Duration between the start and end mark times ({{domxref(“DOMHighResTimeStamp”)}}).</li>
+</ul></li>
+<li><code>end</code>
+<ul>
+<li>: Timestamp ({{domxref(“DOMHighResTimeStamp”)}}) to be used as the end time, or {{domxref(“DOMString”)}} to be used as end mark. If this represents the name of an end mark, then it is defined in the same way as <code>endMark</code> (in other words it must be the name of an existing mark or a {{domxref(“PerformanceTiming”)}} property).</li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li><code>startMark</code> {{optional_inline}}
+<ul>
+<li>: A {{domxref(“DOMString”)}} representing the name of the measure’s starting mark. May also be the name of a {{domxref(“PerformanceTiming”)}} property. Specifying a name that does not represent an existing {{domxref(‘PerformanceMark’)}} or {{domxref(“PerformanceTiming”)}} raises a <code>SyntaxError</code> {{domxref(“DOMException”)}}.</li>
+</ul></li>
+<li><code>endMark</code> {{optional_inline}}
+<ul>
+<li>: A {{domxref(“DOMString”)}} representing the name of the measure’s ending mark. This may also be the name of a {{domxref(“PerformanceTiming”)}} property. Specifying a name that does not represent an existing {{domxref(‘PerformanceMark’)}} or {{domxref(“PerformanceTiming”)}} raises a <code>SyntaxError</code> {{domxref(“DOMException”)}}.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>The {{domxref(“PerformanceMeasure”)}} entry that was created.</p>
+<p>The returned <em>measure</em> will have the following property values:</p>
+<ul>
+<li>{{domxref(“PerformanceEntry.entryType”,“entryType”)}} - set to “<code>measure</code>”.</li>
+<li>{{domxref(“PerformanceEntry.name”,“name”)}} - set to the “<code>name</code>” argument.</li>
+<li>{{domxref(“PerformanceEntry.startTime”,“startTime”)}} - set to:
+<ul>
+<li>a {{domxref(“DOMHighResTimeStamp”,“timestamp”)}}, if specified in <code>MeasureOptions.start</code>.</li>
+<li>the {{domxref(“DOMHighResTimeStamp”,“timestamp”)}} of a start mark, if specified in <code>MeasureOptions.start</code> or <code>startMark</code></li>
+<li>a timestamp calculated from the <code>MeasureOptions.end</code> and <code>MeasureOptions.duration</code> (if <code>MeasureOptions.start</code> was not specified)</li>
+<li>0, if it isn’t specified and can’t be determined from other values.</li>
+</ul></li>
+<li><p>{{domxref(“PerformanceEntry.duration”,“duration”)}} - set to a {{domxref(“DOMHighResTimeStamp”)}} that is the duration of the measure calculated by subtracting the <code>startTime</code> from the end timestamp.</p>
+The end timestamp is one of:
+<ul>
+<li>a {{domxref(“DOMHighResTimeStamp”,“timestamp”)}}, if specified in <code>MeasureOptions.end</code>.</li>
+<li>the {{domxref(“DOMHighResTimeStamp”,“timestamp”)}} of an end mark, if one is specified in <code>MeasureOptions.end</code> or <code>endMark</code></li>
+<li>a timestamp calculated from the <code>MeasureOptions.start</code> and <code>MeasureOptions.duration</code> (if <code>MeasureOptions.end</code> was not specified)</li>
+<li>the value returned by {{domxref(“Performance.now()”)}}, if no end mark is specified or can be determined from other values.</li>
+</ul></li>
+<li><p>{{domxref(“PerformanceMeasure”,“detail”)}} - set to the value passed in <code>MeasureOptions</code>.</p></li>
+</ul>
+<h2 id="exceptions">Exceptions</h2>
+<ul>
+<li><code>TypeError</code> {{domxref(“DOMException”)}}
+<ul>
+<li><p>: This can be thrown in any case where the start, end or duration might be ambiguous:</p>
+<ul>
+<li>Both <code>endMark</code> and <code>MeasureOptions</code> are specified.</li>
+<li><code>MeasureOptions</code> is specified without either <code>start</code> and <code>end</code> members.</li>
+<li><code>MeasureOptions</code> is specified with all of <code>start</code>, <code>end</code>, and <code>duration</code> members (which might then be inconsistent).</li>
+</ul></li>
+</ul></li>
+<li><code>SyntaxError</code> {{domxref(“DOMException”)}}
+<ul>
+<li><p>: The named mark does not exist.</p>
+<ul>
+<li>An end mark is specified using either <code>endMark</code> or <code>MeasureOptions.end</code>, but there is no {{domxref(‘PerformanceMark’)}} in the performance buffer with the matching name.</li>
+<li>An end mark is specified using either <code>endMark</code> or <code>MeasureOptions.end</code>, but it cannot be converted to match that of a read only attribute in the {{domxref(“PerformanceTiming”)}} interface.</li>
+<li>A start mark is specified using either <code>startMark</code> or <code>MeasureOptions.start</code>, but there is no {{domxref(‘PerformanceMark’)}} in the performance buffer with the matching name.</li>
+<li>A start mark is specified using either <code>startMark</code> or <code>MeasureOptions.start</code>, but it cannot be converted to match that of a read only attribute in the {{domxref(“PerformanceTiming”)}} interface.</li>
+</ul></li>
+</ul></li>
+<li><code>DataCloneError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: The <code>MeasureOptions.detail</code> value is non-<code>null</code> and cannot be serialized using the HTML “StructuredSerialize” algorithm.</li>
+</ul></li>
+<li><code>RangeError</code>
+<ul>
+<li>: The <code>MeasureOptions.detail</code> value is non-<code>null</code> and memory cannot be allocated during serialization using the HTML “StructuredSerialize” algorithm.</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<p>The following example shows how <code>measure()</code> is used to create a new <em>measure</em> {{domxref(“PerformanceEntry”,“performance entry”)}} in the browser’s performance entry buffer.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> markerNameA <span class="op">=</span> <span class="st">&quot;example-marker-a&quot;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">const</span> markerNameB <span class="op">=</span> <span class="st">&quot;example-marker-b&quot;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="co">// Run some nested timeouts, and create a PerformanceMark for each.</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="va">performance</span>.<span class="at">mark</span>(markerNameA)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="at">setTimeout</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="va">performance</span>.<span class="at">mark</span>(markerNameB)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="at">setTimeout</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-9" title="9"></a>
+<a class="sourceLine" id="cb2-10" title="10">    <span class="co">// Create a variety of measurements.</span></a>
+<a class="sourceLine" id="cb2-11" title="11">    <span class="va">performance</span>.<span class="at">measure</span>(<span class="st">&quot;measure a to b&quot;</span><span class="op">,</span> markerNameA<span class="op">,</span> markerNameB)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12">    <span class="va">performance</span>.<span class="at">measure</span>(<span class="st">&quot;measure a to now&quot;</span><span class="op">,</span> markerNameA)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13">    <span class="va">performance</span>.<span class="at">measure</span>(<span class="st">&quot;measure from navigation start to b&quot;</span><span class="op">,</span> <span class="kw">undefined</span><span class="op">,</span> markerNameB)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14">    <span class="va">performance</span>.<span class="at">measure</span>(<span class="st">&quot;measure from navigation start to now&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-15" title="15"></a>
+<a class="sourceLine" id="cb2-16" title="16">    <span class="co">// Pull out all of the measurements.</span></a>
+<a class="sourceLine" id="cb2-17" title="17">    <span class="va">console</span>.<span class="at">log</span>(<span class="va">performance</span>.<span class="at">getEntriesByType</span>(<span class="st">&quot;measure&quot;</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18"></a>
+<a class="sourceLine" id="cb2-19" title="19">    <span class="co">// Finally, clean up the entries.</span></a>
+<a class="sourceLine" id="cb2-20" title="20">    <span class="va">performance</span>.<span class="at">clearMarks</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-21" title="21">    <span class="va">performance</span>.<span class="at">clearMeasures</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-22" title="22">  <span class="op">},</span> <span class="dv">1000</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-23" title="23"><span class="op">},</span> <span class="dv">1000</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

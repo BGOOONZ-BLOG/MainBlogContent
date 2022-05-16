@@ -1,0 +1,205 @@
+<p>{{DefaultAPISidebar(“MediaStream Recording”)}}</p>
+<p>The <a href="/en-US/docs/Web/API/MediaStream_Recording_API">MediaStream Recording API</a> makes it easy to record audio and/or video streams. When used with {{domxref(“MediaDevices.getUserMedia()”,“navigator.mediaDevices.getUserMedia()”)}}, it provides an easy way to record from the user’s input devices and instantly use the result in web apps.</p>
+<p>Both audio and video may be recorded, separately or together. This article aims to provide a basic guide on how to use the MediaRecorder interface, which provides this API.</p>
+<h2 id="a-sample-application-web-dictaphone">A sample application: Web Dictaphone</h2>
+<figure>
+<img src="web-dictaphone.png" alt="An image of the Web dictaphone sample app - a sine wave sound visualization, then record and stop buttons, then an audio jukebox of recorded tracks that can be played back." /><figcaption>An image of the Web dictaphone sample app - a sine wave sound visualization, then record and stop buttons, then an audio jukebox of recorded tracks that can be played back.</figcaption>
+</figure>
+<p>To demonstrate basic usage of the MediaRecorder API, we have built a web-based dictaphone. It allows you to record snippets of audio and then play them back. It even gives you a visualization of your device’s sound input, using the Web Audio API. We’ll concentrate on the recording and playback functionality for this article.</p>
+<p>You can see this <a href="https://mdn.github.io/web-dictaphone/">demo running live</a>, or <a href="https://github.com/mdn/web-dictaphone">grab the source code</a> on GitHub.</p>
+<h2 id="css-goodies">CSS goodies</h2>
+<p>The HTML is pretty simple in this app, so we won’t go through it here; there are a couple of slightly more interesting bits of CSS worth mentioning, however, so we’ll discuss them below. If you are not interested in CSS and want to get straight to the JavaScript, skip to the {{anch(“Basic app setup”)}} section.</p>
+<h3 id="keeping-the-interface-constrained-to-the-viewport-regardless-of-device-height-with-calc">Keeping the interface constrained to the viewport, regardless of device height, with calc()</h3>
+<p>The {{cssxref(“calc()”)}} function is one of those useful little utility features that’s cropped up in CSS that doesn’t look like much initially, but soon starts to make you think “Wow, why didn’t we have this before? Why was CSS2 layout so awkward?” It allows you do a calculation to determine the computed value of a CSS unit, mixing different units in the process.</p>
+<p>For example, in Web Dictaphone we have three main UI areas, stacked vertically. We wanted to give the first two (the header and the controls) fixed heights:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb1-1" title="1">header {</a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="kw">height</span>: <span class="dv">70</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3">}</a>
+<a class="sourceLine" id="cb1-4" title="4"></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="fu">.main-controls</span> {</a>
+<a class="sourceLine" id="cb1-6" title="6">  <span class="kw">padding-bottom</span>: <span class="dv">0.7</span><span class="dt">rem</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-7" title="7">  <span class="kw">height</span>: <span class="dv">170</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-8" title="8">}</a></code></pre></div>
+<p>However, we wanted to make the third area (which contains the recorded samples you can play back) take up whatever space is left, regardless of the device height. Flexbox could be the answer here, but it’s a bit overkill for such a simple layout. Instead, the problem was solved by making the third container’s height equal to 100% of the parent height, minus the heights and padding of the other two:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb2-1" title="1"><span class="fu">.sound-clips</span> {</a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">box-shadow</span>: <span class="dv">inset</span> <span class="dv">0</span> <span class="dv">3</span><span class="dt">px</span> <span class="dv">4</span><span class="dt">px</span> <span class="fu">rgba(</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">,</span><span class="dv">0.7</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="kw">background-color</span>: <span class="fu">rgba(</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">,</span><span class="dv">0.1</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="kw">height</span>: <span class="fu">calc(</span><span class="dv">100</span><span class="dt">%</span> <span class="op">-</span> <span class="dv">240</span><span class="dt">px</span> <span class="op">-</span> <span class="dv">0.7</span><span class="dt">rem</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="kw">overflow</span>: <span class="dv">scroll</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">}</a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> <code>calc()</code> has good support across modern browsers too, even going back to Internet Explorer 9.</p>
+</blockquote>
+<h3 id="checkbox-hack-for-showinghiding">Checkbox hack for showing/hiding</h3>
+<p>This is fairly well documented already, but we thought we’d give a mention to the checkbox hack, which abuses the fact that you can click on the {{htmlelement(“label”)}} of a checkbox to toggle it checked/unchecked. In Web Dictaphone this powers the Information screen, which is shown/hidden by clicking the question mark icon in the top right hand corner. First of all, we style the <code>&lt;label&gt;</code> how we want it, making sure that it has enough z-index to always sit above the other elements and therefore be focusable/clickable:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb3-1" title="1">label {</a>
+<a class="sourceLine" id="cb3-2" title="2">    <span class="kw">font-family</span>: <span class="st">&#39;NotoColorEmoji&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="kw">font-size</span>: <span class="dv">3</span><span class="dt">rem</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="kw">position</span>: <span class="dv">absolute</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">    <span class="kw">top</span>: <span class="dv">2</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6">    <span class="kw">right</span>: <span class="dv">3</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">    <span class="kw">z-index</span>: <span class="dv">5</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">    <span class="kw">cursor</span>: <span class="dv">pointer</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">}</a></code></pre></div>
+<p>Then we hide the actual checkbox, because we don’t want it cluttering up our UI:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb4-1" title="1">input<span class="ex">[type</span><span class="op">=</span><span class="st">checkbox</span><span class="ex">]</span> {</a>
+<a class="sourceLine" id="cb4-2" title="2">   <span class="kw">position</span>: <span class="dv">absolute</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3">   <span class="kw">top</span>: <span class="dv">-100</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-4" title="4">}</a></code></pre></div>
+<p>Next, we style the Information screen (wrapped in an {{htmlelement(“aside”)}} element) how we want it, give it fixed position so that it doesn’t appear in the layout flow and affect the main UI, transform it to the position we want it to sit in by default, and give it a transition for smooth showing/hiding:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb5-1" title="1">aside {</a>
+<a class="sourceLine" id="cb5-2" title="2">   <span class="kw">position</span>: <span class="dv">fixed</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3">   <span class="kw">top</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-4" title="4">   <span class="kw">left</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-5" title="5">   <span class="kw">text-shadow</span>: <span class="dv">1</span><span class="dt">px</span> <span class="dv">1</span><span class="dt">px</span> <span class="dv">1</span><span class="dt">px</span> <span class="cn">black</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-6" title="6">   <span class="kw">width</span>: <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-7" title="7">   <span class="kw">height</span>: <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-8" title="8">   <span class="kw">transform</span>: translateX(<span class="dv">100</span><span class="dt">%</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-9" title="9">   <span class="kw">transition</span>: <span class="dv">0.6</span><span class="dt">s</span> <span class="dv">all</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-10" title="10">   <span class="kw">background-color</span>: <span class="cn">#999</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-11" title="11">    <span class="kw">background-image</span>: <span class="fu">linear-gradient(</span>to <span class="dv">top</span> <span class="dv">right</span><span class="op">,</span> rgba(<span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="fu">)</span><span class="op">,</span> <span class="fu">rgba(</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">,</span><span class="dv">0.5</span><span class="fu">)</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-12" title="12">}</a></code></pre></div>
+<p>Last, we write a rule to say that when the checkbox is checked (when we click/focus the label), the adjacent <code>&lt;aside&gt;</code> element will have its horizontal translation value changed and transition smoothly into view:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb6-1" title="1">input<span class="ex">[type</span><span class="op">=</span><span class="st">checkbox</span><span class="ex">]</span><span class="in">:checked</span> <span class="op">~</span> aside {</a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="kw">transform</span>: translateX(<span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-3" title="3">}</a></code></pre></div>
+<h2 id="basic-app-setup">Basic app setup</h2>
+<p>To grab the media stream we want to capture, we use <code>getUserMedia()</code>. We then use the MediaRecorder API to record the stream, and output each recorded snippet into the source of a generated {{htmlelement(“audio”)}} element so it can be played back.</p>
+<p>We’ll declare some variables for the record and stop buttons, and the {{htmlelement(“article”)}} that will contain the generated audio players:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">const</span> record <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;.record&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-2" title="2"><span class="kw">const</span> stop <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;.stop&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-3" title="3"><span class="kw">const</span> soundClips <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;.sound-clips&#39;</span>)<span class="op">;</span></a></code></pre></div>
+<p>Finally for this section, we set up the basic <code>getUserMedia</code> structure:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="cf">if</span> (<span class="va">navigator</span>.<span class="at">mediaDevices</span> <span class="op">&amp;&amp;</span> <span class="va">navigator</span>.<span class="va">mediaDevices</span>.<span class="at">getUserMedia</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-2" title="2">   <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;getUserMedia supported.&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-3" title="3">   <span class="va">navigator</span>.<span class="va">mediaDevices</span>.<span class="at">getUserMedia</span> (</a>
+<a class="sourceLine" id="cb8-4" title="4">      <span class="co">// constraints - only audio needed for this app</span></a>
+<a class="sourceLine" id="cb8-5" title="5">      <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-6" title="6">         <span class="dt">audio</span><span class="op">:</span> <span class="kw">true</span></a>
+<a class="sourceLine" id="cb8-7" title="7">      <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb8-8" title="8"></a>
+<a class="sourceLine" id="cb8-9" title="9">      <span class="co">// Success callback</span></a>
+<a class="sourceLine" id="cb8-10" title="10">      .<span class="at">then</span>(<span class="kw">function</span>(stream) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-11" title="11"></a>
+<a class="sourceLine" id="cb8-12" title="12">      <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb8-13" title="13"></a>
+<a class="sourceLine" id="cb8-14" title="14">      <span class="co">// Error callback</span></a>
+<a class="sourceLine" id="cb8-15" title="15">      .<span class="at">catch</span>(<span class="kw">function</span>(err) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-16" title="16">         <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;The following getUserMedia error occurred: &#39;</span> <span class="op">+</span> err)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-17" title="17">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb8-18" title="18">   )<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-19" title="19"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-20" title="20">   <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;getUserMedia not supported on your browser!&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-21" title="21"><span class="op">}</span></a></code></pre></div>
+<p>The whole thing is wrapped in a test that checks whether <code>getUserMedia</code> is supported before running anything else. Next, we call <code>getUserMedia()</code> and inside it define:</p>
+<ul>
+<li><strong>The constraints</strong>: Only audio is to be captured for our dictaphone.</li>
+<li><strong>The success callback</strong>: This code is run once the <code>getUserMedia</code> call has been completed successfully.</li>
+<li><strong>The error/failure callback</strong>: The code is run if the <code>getUserMedia</code> call fails for whatever reason.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> All of the code below is placed inside the <code>getUserMedia</code> success callback.</p>
+</blockquote>
+<h2 id="capturing-the-media-stream">Capturing the media stream</h2>
+<p>Once <code>getUserMedia</code> has created a media stream successfully, you create a new Media Recorder instance with the <code>MediaRecorder()</code> constructor and pass it the stream directly. This is your entry point into using the MediaRecorder API — the stream is now ready to be captured into a {{domxref(“Blob”)}}, in the default encoding format of your browser.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">const</span> mediaRecorder <span class="op">=</span> <span class="kw">new</span> <span class="at">MediaRecorder</span>(stream)<span class="op">;</span></a></code></pre></div>
+<p>There are a series of methods available in the {{domxref(“MediaRecorder”)}} interface that allow you to control recording of the media stream; in Web Dictaphone we just make use of two, and listen to some events. First of all, {{domxref(“MediaRecorder.start()”)}} is used to start recording the stream once the record button is pressed:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1"><span class="va">record</span>.<span class="at">onclick</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-2" title="2">  <span class="va">mediaRecorder</span>.<span class="at">start</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-3" title="3">  <span class="va">console</span>.<span class="at">log</span>(<span class="va">mediaRecorder</span>.<span class="at">state</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-4" title="4">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;recorder started&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-5" title="5">  <span class="va">record</span>.<span class="va">style</span>.<span class="at">background</span> <span class="op">=</span> <span class="st">&quot;red&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-6" title="6">  <span class="va">record</span>.<span class="va">style</span>.<span class="at">color</span> <span class="op">=</span> <span class="st">&quot;black&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-7" title="7"><span class="op">}</span></a></code></pre></div>
+<p>When the <code>MediaRecorder</code> is recording, the {{domxref(“MediaRecorder.state”)}} property will return a value of “recording”.</p>
+<p>As recording progresses, we need to collect the audio data. We register an event handler to do this using {{domxref(“mediaRecorder.ondataavailable”)}}:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1"><span class="kw">let</span> chunks <span class="op">=</span> []<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-2" title="2"></a>
+<a class="sourceLine" id="cb11-3" title="3"><span class="va">mediaRecorder</span>.<span class="at">ondataavailable</span> <span class="op">=</span> <span class="kw">function</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-4" title="4">  <span class="va">chunks</span>.<span class="at">push</span>(<span class="va">e</span>.<span class="at">data</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-5" title="5"><span class="op">}</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> The browser will fire <code>dataavailable</code> events as needed, but if you want to intervene you can also include a timeslice when invoking the <code>start()</code> method — for example <code>start(10000)</code> — to control this interval, or call {{domxref(“MediaRecorder.requestData()”)}} to trigger an event when you need it.</p>
+</blockquote>
+<p>Lastly, we use the {{domxref(“MediaRecorder.stop()”)}} method to stop the recording when the stop button is pressed, and finalize the {{domxref(“Blob”)}} ready for use somewhere else in our application.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb12-1" title="1"><span class="va">stop</span>.<span class="at">onclick</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb12-2" title="2">  <span class="va">mediaRecorder</span>.<span class="at">stop</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-3" title="3">  <span class="va">console</span>.<span class="at">log</span>(<span class="va">mediaRecorder</span>.<span class="at">state</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-4" title="4">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;recorder stopped&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-5" title="5">  <span class="va">record</span>.<span class="va">style</span>.<span class="at">background</span> <span class="op">=</span> <span class="st">&quot;&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-6" title="6">  <span class="va">record</span>.<span class="va">style</span>.<span class="at">color</span> <span class="op">=</span> <span class="st">&quot;&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-7" title="7"><span class="op">}</span></a></code></pre></div>
+<p>Note that the recording may also stop naturally if the media stream ends (e.g. if you were grabbing a song track and the track ended, or the user stopped sharing their microphone).</p>
+<h2 id="grabbing-and-using-the-blob">Grabbing and using the blob</h2>
+<p>When recording has stopped, the <code>state</code> property returns a value of “inactive”, and a stop event is fired. We register an event handler for this using {{domxref(“mediaRecorder.onstop”)}}, and finalize our blob there from all the chunks we have received:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb13-1" title="1"><span class="va">mediaRecorder</span>.<span class="at">onstop</span> <span class="op">=</span> <span class="kw">function</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-2" title="2">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;recorder stopped&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-3" title="3"></a>
+<a class="sourceLine" id="cb13-4" title="4">  <span class="kw">const</span> clipName <span class="op">=</span> <span class="at">prompt</span>(<span class="st">&#39;Enter a name for your sound clip&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-5" title="5"></a>
+<a class="sourceLine" id="cb13-6" title="6">  <span class="kw">const</span> clipContainer <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;article&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-7" title="7">  <span class="kw">const</span> clipLabel <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;p&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-8" title="8">  <span class="kw">const</span> audio <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;audio&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-9" title="9">  <span class="kw">const</span> deleteButton <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;button&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-10" title="10"></a>
+<a class="sourceLine" id="cb13-11" title="11">  <span class="va">clipContainer</span>.<span class="va">classList</span>.<span class="at">add</span>(<span class="st">&#39;clip&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-12" title="12">  <span class="va">audio</span>.<span class="at">setAttribute</span>(<span class="st">&#39;controls&#39;</span><span class="op">,</span> <span class="st">&#39;&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-13" title="13">  <span class="va">deleteButton</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="st">&quot;Delete&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb13-14" title="14">  <span class="va">clipLabel</span>.<span class="at">innerHTML</span> <span class="op">=</span> clipName<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-15" title="15"></a>
+<a class="sourceLine" id="cb13-16" title="16">  <span class="va">clipContainer</span>.<span class="at">appendChild</span>(audio)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-17" title="17">  <span class="va">clipContainer</span>.<span class="at">appendChild</span>(clipLabel)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-18" title="18">  <span class="va">clipContainer</span>.<span class="at">appendChild</span>(deleteButton)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-19" title="19">  <span class="va">soundClips</span>.<span class="at">appendChild</span>(clipContainer)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-20" title="20"></a>
+<a class="sourceLine" id="cb13-21" title="21">  <span class="kw">const</span> blob <span class="op">=</span> <span class="kw">new</span> <span class="at">Blob</span>(chunks<span class="op">,</span> <span class="op">{</span> <span class="st">&#39;type&#39;</span> <span class="op">:</span> <span class="st">&#39;audio/ogg; codecs=opus&#39;</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-22" title="22">  chunks <span class="op">=</span> []<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-23" title="23">  <span class="kw">const</span> audioURL <span class="op">=</span> <span class="va">window</span>.<span class="va">URL</span>.<span class="at">createObjectURL</span>(blob)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-24" title="24">  <span class="va">audio</span>.<span class="at">src</span> <span class="op">=</span> audioURL<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-25" title="25"></a>
+<a class="sourceLine" id="cb13-26" title="26">  <span class="va">deleteButton</span>.<span class="at">onclick</span> <span class="op">=</span> <span class="kw">function</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-27" title="27">    <span class="kw">let</span> evtTgt <span class="op">=</span> <span class="va">e</span>.<span class="at">target</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb13-28" title="28">    <span class="va">evtTgt</span>.<span class="va">parentNode</span>.<span class="va">parentNode</span>.<span class="at">removeChild</span>(<span class="va">evtTgt</span>.<span class="at">parentNode</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-29" title="29">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb13-30" title="30"><span class="op">}</span></a></code></pre></div>
+<p>Let’s go through the above code and look at what’s happening.</p>
+<p>First, we display a prompt asking the user to name their clip.</p>
+<p>Next, we create an HTML structure like the following, inserting it into our clip container, which is an {{htmlelement(“article”)}} element.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb14-1" title="1"><span class="kw">&lt;article</span><span class="ot"> class=</span><span class="st">&quot;clip&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb14-2" title="2">  <span class="kw">&lt;audio</span><span class="ot"> controls</span><span class="kw">&gt;&lt;/audio&gt;</span></a>
+<a class="sourceLine" id="cb14-3" title="3">  <span class="kw">&lt;p&gt;</span>your clip name<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb14-4" title="4">  <span class="kw">&lt;button&gt;</span>Delete<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb14-5" title="5"><span class="kw">&lt;/article&gt;</span></a></code></pre></div>
+<p>After that, we create a combined {{domxref(“Blob”)}} out of the recorded audio chunks, and create an object URL pointing to it, using <code>window.URL.createObjectURL(blob)</code>. We then set the value of the {{HTMLElement(“audio”)}} element’s {{htmlattrxref(“src”, “audio”)}} attribute to the object URL, so that when the play button is pressed on the audio player, it will play the <code>Blob</code>.</p>
+<p>Finally, we set an <code>onclick</code> handler on the delete button to be a function that deletes the whole clip HTML structure.</p>
+<h2 id="specifications">Specifications</h2>
+<table>
+<colgroup>
+<col style="width: 55%" />
+<col style="width: 31%" />
+<col style="width: 13%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Specification</th>
+<th>Status</th>
+<th>Comment</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>{{SpecName(“MediaStream Recording”, “#MediaRecorderAPI”)}}</td>
+<td>{{Spec2(“MediaStream Recording”)}}</td>
+<td>Initial definition</td>
+</tr>
+</tbody>
+</table>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<h3 id="mediarecorder"><code>MediaRecorder</code></h3>
+<p>{{Compat(“api.MediaRecorder”)}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/MediaStream_Recording_API">MediaRecorder API</a> landing page</li>
+<li><code>{{domxref("Navigator.getUserMedia()")}}</code></li>
+<li><a href="https://addpipe.com/blog/media-recorder-api-is-now-supported-by-65-of-all-desktop-internet-users/">MediaRecorder API now supported by 65% of your website users</a></li>
+</ul>

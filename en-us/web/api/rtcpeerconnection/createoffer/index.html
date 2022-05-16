@@ -1,0 +1,80 @@
+<p>{{APIRef(“WebRTC”)}}</p>
+<p>The <strong><code>createOffer()</code></strong> method of the {{domxref(“RTCPeerConnection”)}} interface initiates the creation of an {{Glossary(“SDP”)}} offer for the purpose of starting a new WebRTC connection to a remote peer. The SDP offer includes information about any {{domxref(“MediaStreamTrack”)}} objects already attached to the WebRTC session, codec, and options supported by the browser, and any candidates already gathered by the {{Glossary(“ICE”)}} agent, for the purpose of being sent over the signaling channel to a potential peer to request a connection or to update the configuration of an existing connection.</p>
+<p>The return value is a {{jsxref(“Promise”)}} which, when the offer has been created, is resolved with a {{domxref(“RTCSessionDescription”)}} object containing the newly-created offer.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1">aPromise <span class="op">=</span> <span class="va">myPeerConnection</span>.<span class="at">createOffer</span>([options])<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="va">myPeerConnection</span>.<span class="at">createOffer</span>(successCallback<span class="op">,</span> failureCallback<span class="op">,</span> [options]) <span class="op">{{</span>deprecated_inline<span class="op">}}</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>options</code> {{optional_inline}}
+<ul>
+<li><p>: An object providing the following options requested for the offer:</p>
+<ul>
+<li><code>iceRestart</code> {{optional_inline}}
+<ul>
+<li>: To restart ICE on an active connection, set this to <code>true</code>. This will cause the returned offer to have different credentials than those already in place. If you then apply the returned offer, ICE will restart. Specify <code>false</code> to keep the same credentials and therefore not restart ICE. <strong>The default is <code>false</code></strong>.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="deprecated-parameters">Deprecated parameters</h3>
+<p>In older code and documentation, you may see a callback-based version of this function. This has been deprecated and its use is <strong>strongly</strong> discouraged. You should update any existing code to use the {{jsxref(“Promise”)}}-based version of <code>createOffer()</code> instead. The parameters for this form of <code>createOffer()</code> are described below, to aid in updating existing code.</p>
+<ul>
+<li><code>successCallback</code> {{deprecated_inline}}
+<ul>
+<li>: A <a href="/en-US/docs/Glossary/Callback_function">callback function</a> which will be passed a single {{domxref(“RTCSessionDescription”)}} object describing the newly-created offer.</li>
+</ul></li>
+<li><code>errorCallback</code> {{deprecated_inline}}
+<ul>
+<li>: A <a href="/en-US/docs/Glossary/Callback_function">callback function</a> which will be passed a single {{domxref(“DOMException”)}} object explaining why the request to create an offer failed.</li>
+</ul></li>
+<li><code>options</code> {{optional_inline}}
+<ul>
+<li>: An optional object providing options requested for the offer.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A {{jsxref(“Promise”)}} whose fulfillment handler will receive an object conforming to the {{domxref(“RTCSessionDescriptionInit”)}} dictionary which contains the SDP describing the generated offer. That received offer should be delivered through the signaling server to a remote peer.</p>
+<h3 id="exceptions">Exceptions</h3>
+<p>These exceptions are returned by rejecting the returned promise. Your rejection handler should examine the received exception to determine which occurred.</p>
+<ul>
+<li><code>InvalidStateError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if the <code>RTCPeerConnection</code> is closed.</li>
+</ul></li>
+<li><code>NotReadableError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if no certificate or set of certificates was provided for securing the connection, and <code>createOffer()</code> was unable to create a new one. Since all WebRTC connections are required to be secured, that results in an error.</li>
+</ul></li>
+<li><code>OperationError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if examining the state of the system to determine resource availability in order to generate the offer failed for some reason.</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<p>Here we see a handler for the {{DOMxRef(“RTCPeerConnection/negotiationneeded_event”, “negotiationneeded”)}} event which creates the offer and sends it to the remote system over a signaling channel.</p>
+<blockquote>
+<p><strong>Note:</strong> Keep in mind that this is part of the signaling process, the transport layer for which is an implementation detail that’s entirely up to you. In this case, a <a href="/en-US/docs/Web/API/WebSocket_API">WebSocket</a> connection is used to send a {{Glossary(“JSON”)}} message with a <code>type</code> field with the value “video-offer” to the other peer. The contents of the object being passed to the <code>sendToServer()</code> function, along with everything else in the promise fulfillment handler, depend entirely on your design.</p>
+</blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1">  <span class="va">myPeerConnection</span>.<span class="at">createOffer</span>().<span class="at">then</span>(<span class="kw">function</span>(offer) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">    <span class="cf">return</span> <span class="va">myPeerConnection</span>.<span class="at">setLocalDescription</span>(offer)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-4" title="4">  .<span class="at">then</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="at">sendToServer</span>(<span class="op">{</span></a>
+<a class="sourceLine" id="cb2-6" title="6">      <span class="dt">name</span><span class="op">:</span> myUsername<span class="op">,</span></a>
+<a class="sourceLine" id="cb2-7" title="7">      <span class="dt">target</span><span class="op">:</span> targetUsername<span class="op">,</span></a>
+<a class="sourceLine" id="cb2-8" title="8">      <span class="dt">type</span><span class="op">:</span> <span class="st">&quot;video-offer&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-9" title="9">      <span class="dt">sdp</span><span class="op">:</span> <span class="va">myPeerConnection</span>.<span class="at">localDescription</span></a>
+<a class="sourceLine" id="cb2-10" title="10">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11">  <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-12" title="12">  .<span class="at">catch</span>(<span class="kw">function</span>(reason) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-13" title="13">    <span class="co">// An error occurred, so handle the failure to connect</span></a>
+<a class="sourceLine" id="cb2-14" title="14">  <span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>In this code, the offer is created, and once successful, the local end of the {{domxref(“RTCPeerConnection”)}} is configured to match by passing the offer (which is represented using an object conforming to {{domxref(“RTCSessionDescriptionInit”)}}) into {{domxref(“RTCPeerConnection.setLocalDescription”, “setLocalDescription()”)}}. Once that’s done, the offer is sent to the remote system over the signaling channel; in this case, by using a custom function called <code>sendToServer()</code>. The implementation of the signaling server is independent from the WebRTC specification, so it doesn’t matter how the offer is sent as long as both the caller and potential receiver are using the same one.</p>
+<p>Use {{jsxref(“Promise.catch()”)}} to trap and handle errors.</p>
+<p>See <a href="/en-US/docs/Web/API/WebRTC_API/Signaling_and_video_calling">Signaling and video calling</a> for the complete example from which this snippet is derived; this will help you to understand how the signaling code here works.</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

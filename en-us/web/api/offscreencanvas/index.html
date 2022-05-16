@@ -1,0 +1,100 @@
+<p>{{APIRef(“Canvas API”)}} {{SeeCompatTable}}</p>
+<p>The <strong><code>OffscreenCanvas</code></strong> interface provides a canvas that can be rendered off screen. It is available in both the window and <a href="/en-US/docs/Web/API/Web_Workers_API">worker</a> contexts.</p>
+<p>{{AvailableInWorkers}}</p>
+<h2 id="constructors">Constructors</h2>
+<ul>
+<li>{{domxref(“OffscreenCanvas.OffscreenCanvas”, “OffscreenCanvas()”)}}
+<ul>
+<li>: <code>OffscreenCanvas</code> constructor. Creates a new <code>OffscreenCanvas</code> object.</li>
+</ul></li>
+</ul>
+<h2 id="properties">Properties</h2>
+<ul>
+<li>{{domxref(“OffscreenCanvas.height”)}}
+<ul>
+<li>: The height of the offscreen canvas.</li>
+</ul></li>
+<li>{{domxref(“OffscreenCanvas.width”)}}
+<ul>
+<li>: The width of the offscreen canvas.</li>
+</ul></li>
+</ul>
+<h2 id="methods">Methods</h2>
+<ul>
+<li>{{domxref(“OffscreenCanvas.getContext()”)}}
+<ul>
+<li>: Returns a rendering context for the offscreen canvas.</li>
+</ul></li>
+<li>{{domxref(“OffscreenCanvas.convertToBlob()”)}}
+<ul>
+<li>: Creates a {{domxref(“Blob”)}} object representing the image contained in the canvas.</li>
+</ul></li>
+<li>{{domxref(“OffscreenCanvas.transferToImageBitmap()”)}}
+<ul>
+<li>: Creates an {{domxref(“ImageBitmap”)}} object from the most recently rendered image of the <code>OffscreenCanvas</code>.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<h3 id="synchronous-display-of-frames-produced-by-an-offscreencanvas">Synchronous display of frames produced by an <code>OffscreenCanvas</code></h3>
+<p>One way to use the <code>OffscreenCanvas</code> API, is to use a rendering context that has been obtained from an <code>OffscreenCanvas</code> object to generate new frames. Once a new frame has finished rendering in this context,  the {{domxref(“OffscreenCanvas.transferToImageBitmap”, “transferToImageBitmap()”)}} method can be called to save the most recent rendered image. This method returns an {{domxref(“ImageBitmap”)}} object, which can be used in a variety of Web APIs and also in a second canvas without creating a transfer copy.</p>
+<p>To display the <code>ImageBitmap</code>, you can use a {{domxref(“ImageBitmapRenderingContext”)}} context, which can be created by calling <code>canvas.getContext("bitmaprenderer")</code> on a (visible) canvas element. This context only provides functionality to replace the canvas’s contents with the given <code>ImageBitmap</code>. A call to {{domxref(“ImageBitmapRenderingContext.transferFromImageBitmap()”)}} with the previously rendered and saved <code>ImageBitmap</code> from the OffscreenCanvas, will display the <code>ImageBitmap</code> on the canvas and transfer its ownership to the canvas. A single <code>OffscreenCanvas</code> may transfer frames into an arbitrary number of other <code>ImageBitmapRenderingContext</code> objects.</p>
+<p>Given these two {{HTMLElement(“canvas”)}} elements</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">&lt;canvas</span><span class="ot"> id=</span><span class="st">&quot;one&quot;</span><span class="kw">&gt;&lt;/canvas&gt;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">&lt;canvas</span><span class="ot"> id=</span><span class="st">&quot;two&quot;</span><span class="kw">&gt;&lt;/canvas&gt;</span></a></code></pre></div>
+<p>the following code will provide the rendering using an <code>OffscreenCanvas</code> as described above.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> one <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;one&quot;</span>).<span class="at">getContext</span>(<span class="st">&quot;bitmaprenderer&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">var</span> two <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;two&quot;</span>).<span class="at">getContext</span>(<span class="st">&quot;bitmaprenderer&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="kw">var</span> offscreen <span class="op">=</span> <span class="kw">new</span> <span class="at">OffscreenCanvas</span>(<span class="dv">256</span><span class="op">,</span> <span class="dv">256</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="kw">var</span> gl <span class="op">=</span> <span class="va">offscreen</span>.<span class="at">getContext</span>(<span class="st">&#39;webgl&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6"></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="co">// ... some drawing for the first canvas using the gl context ...</span></a>
+<a class="sourceLine" id="cb2-8" title="8"></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="co">// Commit rendering to the first canvas</span></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="kw">var</span> bitmapOne <span class="op">=</span> <span class="va">offscreen</span>.<span class="at">transferToImageBitmap</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="va">one</span>.<span class="at">transferFromImageBitmap</span>(bitmapOne)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12"></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="co">// ... some more drawing for the second canvas using the gl context ...</span></a>
+<a class="sourceLine" id="cb2-14" title="14"></a>
+<a class="sourceLine" id="cb2-15" title="15"><span class="co">// Commit rendering to the second canvas</span></a>
+<a class="sourceLine" id="cb2-16" title="16"><span class="kw">var</span> bitmapTwo <span class="op">=</span> <span class="va">offscreen</span>.<span class="at">transferToImageBitmap</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-17" title="17"><span class="va">two</span>.<span class="at">transferFromImageBitmap</span>(bitmapTwo)<span class="op">;</span></a></code></pre></div>
+<h3 id="asynchronous-display-of-frames-produced-by-an-offscreencanvas">Asynchronous display of frames produced by an <code>OffscreenCanvas</code></h3>
+<p>Another way to use the <code>OffscreenCanvas</code> API, is to call {{domxref(“HTMLCanvasElement.transferControlToOffscreen”, “transferControlToOffscreen()”)}} on a {{HTMLElement(“canvas”)}} element, either on a <a href="/en-US/docs/Web/API/Web_Workers_API">worker</a> or the main thread, which will return an <code>OffscreenCanvas</code> object from an {{domxref(“HTMLCanvasElement”)}} object from the main thread. Calling {{domxref(“OffscreenCanvas.getContext”, “getContext()”)}} will then obtain a rendering context from that <code>OffscreenCanvas</code>.</p>
+<p>main.js (main thread code):</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">var</span> htmlCanvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;canvas&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">var</span> offscreen <span class="op">=</span> <span class="va">htmlCanvas</span>.<span class="at">transferControlToOffscreen</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="kw">var</span> worker <span class="op">=</span> <span class="kw">new</span> <span class="at">Worker</span>(<span class="st">&quot;offscreencanvas.js&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="va">worker</span>.<span class="at">postMessage</span>(<span class="op">{</span><span class="dt">canvas</span><span class="op">:</span> offscreen<span class="op">},</span> [offscreen])<span class="op">;</span></a></code></pre></div>
+<p>offscreencanvas.js (worker code):</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1">onmessage <span class="op">=</span> <span class="kw">function</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="kw">var</span> canvas <span class="op">=</span> <span class="va">evt</span>.<span class="va">data</span>.<span class="at">canvas</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3">  <span class="kw">var</span> gl <span class="op">=</span> <span class="va">canvas</span>.<span class="at">getContext</span>(<span class="st">&quot;webgl&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-4" title="4"></a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="co">// ... some drawing using the gl context ...</span></a>
+<a class="sourceLine" id="cb4-6" title="6"><span class="op">};</span></a></code></pre></div>
+<p>You can also use requestAnimationFrame in workers</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1">onmessage <span class="op">=</span> <span class="kw">function</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="kw">const</span> canvas <span class="op">=</span> <span class="va">evt</span>.<span class="va">data</span>.<span class="at">canvas</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3">  <span class="kw">const</span> gl <span class="op">=</span> <span class="va">canvas</span>.<span class="at">getContext</span>(<span class="st">&quot;webgl&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-4" title="4"></a>
+<a class="sourceLine" id="cb5-5" title="5">  <span class="kw">function</span> <span class="at">render</span>(time) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-6" title="6">    <span class="co">// ... some drawing using the gl context ...</span></a>
+<a class="sourceLine" id="cb5-7" title="7">    <span class="at">requestAnimationFrame</span>(render)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-8" title="8">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-9" title="9">  <span class="at">requestAnimationFrame</span>(render)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-10" title="10"><span class="op">};</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="https://hacks.mozilla.org/2016/01/webgl-off-the-main-thread/">WebGL Off the Main Thread – Mozilla Hacks</a></li>
+<li>{{domxref(“CanvasRenderingContext2D”)}}</li>
+<li>{{domxref(“ImageBitmap”)}}</li>
+<li>{{domxref(“ImageBitmapRenderingContext”)}}</li>
+<li>{{domxref(“HTMLCanvasElement.transferControlToOffscreen()”)}}</li>
+<li>{{domxref(“WebGLRenderingContext.commit()”)}}</li>
+</ul>

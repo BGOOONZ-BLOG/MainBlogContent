@@ -1,0 +1,222 @@
+<p>{{APIRef(“HTML DOM”)}}</p>
+<p>The <strong><code>setInterval()</code></strong> method, offered on the {{domxref(“Window”)}} and {{domxref(“Worker”)}} interfaces, repeatedly calls a function or executes a code snippet, with a fixed time delay between each call.</p>
+<p>This method returns an interval ID which uniquely identifies the interval, so you can remove it later by calling {{domxref(“clearInterval”, “clearInterval()”)}}.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> intervalID <span class="op">=</span> <span class="at">setInterval</span>(func<span class="op">,</span> [delay<span class="op">,</span> arg1<span class="op">,</span> arg2<span class="op">,</span> ...])<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">var</span> intervalID <span class="op">=</span> <span class="at">setInterval</span>(<span class="kw">function</span>[<span class="op">,</span> delay])<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">var</span> intervalID <span class="op">=</span> <span class="at">setInterval</span>(code<span class="op">,</span> [delay])<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>func</code>
+<ul>
+<li>: A {{jsxref(“function”)}} to be executed every <code>delay</code> milliseconds. The first execution happens after <code>delay</code> milliseconds.</li>
+</ul></li>
+<li><code>code</code>
+<ul>
+<li>: An optional syntax allows you to include a string instead of a function, which is compiled and executed every <code>delay</code> milliseconds. This syntax is <em>not recommended</em> for the same reasons that make using {{jsxref(“Global_Objects/eval”, “eval()”)}} a security risk.</li>
+</ul></li>
+<li><code>delay</code>{{optional_inline}}
+<ul>
+<li>: The time, in milliseconds (thousandths of a second), the timer should delay in between executions of the specified function or code. See {{anch(“Delay restrictions”)}} below for details on the permitted range of <code>delay</code> values.</li>
+</ul></li>
+<li><code>arg1, ..., argN</code> {{optional_inline}}
+<ul>
+<li>: Additional arguments which are passed through to the function specified by <em>func</em> once the timer expires.</li>
+</ul></li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> Passing additional arguments to <code>setInterval()</code> in the first syntax does not work in Internet Explorer 9 and earlier. If you want to enable this functionality on that browser, you must use a polyfill (see the <a href="#callback_arguments">Callback arguments</a> section).</p>
+</blockquote>
+<h3 id="return-value">Return value</h3>
+<p>The returned <code>intervalID</code> is a numeric, non-zero value which identifies the timer created by the call to <code>setInterval()</code>; this value can be passed to {{domxref(“clearInterval()”)}} to cancel the interval.</p>
+<p>It may be helpful to be aware that <code>setInterval()</code> and {{domxref(“setTimeout()”)}} share the same pool of IDs, and that <code>clearInterval()</code> and {{domxref(“clearTimeout”, “clearTimeout()”)}} can technically be used interchangeably. For clarity, however, you should try to always match them to avoid confusion when maintaining your code.</p>
+<blockquote>
+<p><strong>Note:</strong> The <code>delay</code> argument is converted to a signed 32-bit integer. This effectively limits <code>delay</code> to 2147483647 ms, since it’s specified as a signed integer in the IDL.</p>
+</blockquote>
+<h2 id="examples">Examples</h2>
+<h3 id="example-1-basic-syntax">Example 1: Basic syntax</h3>
+<p>The following example demonstrates <code>setInterval()</code>’s basic syntax.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> intervalID <span class="op">=</span> <span class="at">setInterval</span>(myCallback<span class="op">,</span> <span class="dv">500</span><span class="op">,</span> <span class="st">&#39;Parameter 1&#39;</span><span class="op">,</span> <span class="st">&#39;Parameter 2&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">function</span> <span class="at">myCallback</span>(a<span class="op">,</span> b)</a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5"> <span class="co">// Your code here</span></a>
+<a class="sourceLine" id="cb2-6" title="6"> <span class="co">// Parameters are purely optional.</span></a>
+<a class="sourceLine" id="cb2-7" title="7"> <span class="va">console</span>.<span class="at">log</span>(a)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8"> <span class="va">console</span>.<span class="at">log</span>(b)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="op">}</span></a></code></pre></div>
+<h3 id="example-2-alternating-two-colors">Example 2: Alternating two colors</h3>
+<p>The following example calls the <code>flashtext()</code> function once a second until the Stop button is pressed.</p>
+<h4 id="html">HTML</h4>
+<div class="sourceCode" id="cb3"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;my_box&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">&lt;h3&gt;</span>Hello World<span class="kw">&lt;/h3&gt;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="kw">&lt;button</span><span class="ot"> id=</span><span class="st">&quot;start&quot;</span><span class="kw">&gt;</span>Start<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="kw">&lt;button</span><span class="ot"> id=</span><span class="st">&quot;stop&quot;</span><span class="kw">&gt;</span>Stop<span class="kw">&lt;/button&gt;</span></a></code></pre></div>
+<h4 id="css">CSS</h4>
+<div class="sourceCode" id="cb4"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb4-1" title="1"><span class="fu">.go</span> {</a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="kw">color</span>: <span class="cn">green</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3">}</a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="fu">.stop</span> {</a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="kw">color</span>: <span class="cn">red</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-6" title="6">}</a></code></pre></div>
+<h4 id="javascript">JavaScript</h4>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="co">// variable to store our intervalID</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="kw">let</span> nIntervId<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3"></a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="kw">function</span> <span class="at">changeColor</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-5" title="5">  <span class="co">// check if already an interval has been set up</span></a>
+<a class="sourceLine" id="cb5-6" title="6">  <span class="cf">if</span> (<span class="op">!</span>nIntervId) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-7" title="7">    nIntervId <span class="op">=</span> <span class="at">setInterval</span>(flashText<span class="op">,</span> <span class="dv">1000</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-8" title="8">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-9" title="9"><span class="op">}</span></a>
+<a class="sourceLine" id="cb5-10" title="10"></a>
+<a class="sourceLine" id="cb5-11" title="11"><span class="kw">function</span> <span class="at">flashText</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-12" title="12">  <span class="kw">const</span> oElem <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;my_box&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-13" title="13">  <span class="cf">if</span> (<span class="va">oElem</span>.<span class="at">className</span> <span class="op">===</span> <span class="st">&quot;go&quot;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-14" title="14">    <span class="va">oElem</span>.<span class="at">className</span> <span class="op">=</span> <span class="st">&quot;stop&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-15" title="15">  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-16" title="16">    <span class="va">oElem</span>.<span class="at">className</span> <span class="op">=</span> <span class="st">&quot;go&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-17" title="17">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-18" title="18"><span class="op">}</span></a>
+<a class="sourceLine" id="cb5-19" title="19"></a>
+<a class="sourceLine" id="cb5-20" title="20"><span class="kw">function</span> <span class="at">stopTextColor</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-21" title="21">  <span class="at">clearInterval</span>(nIntervId)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-22" title="22">  <span class="co">// release our intervalID from the variable</span></a>
+<a class="sourceLine" id="cb5-23" title="23">  nIntervId <span class="op">=</span> <span class="kw">null</span><span class="op">;</span> </a>
+<a class="sourceLine" id="cb5-24" title="24"><span class="op">}</span></a>
+<a class="sourceLine" id="cb5-25" title="25"></a>
+<a class="sourceLine" id="cb5-26" title="26"><span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;start&quot;</span>).<span class="at">addEventListener</span>(<span class="st">&quot;click&quot;</span><span class="op">,</span> changeColor)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-27" title="27"><span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;stop&quot;</span>).<span class="at">addEventListener</span>(<span class="st">&quot;click&quot;</span><span class="op">,</span> stopTextColor)<span class="op">;</span></a></code></pre></div>
+<h4 id="result">Result</h4>
+<p>{{EmbedLiveSample("Example_2:_Alternating_two_colors")}}</p>
+<p>See also: <a href="/en-US/docs/Web/API/clearInterval"><code>clearInterval()</code></a>.</p>
+<h2 id="callback-arguments">Callback arguments</h2>
+<p>As previously discussed, Internet Explorer versions 9 and below do not support the passing of arguments to the callback function in either <code>setTimeout()</code> or <code>setInterval()</code>. The following <strong>IE-specific</strong> code demonstrates a method for overcoming this limitation.  To use, add the following code to the top of your script.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="co">/*\</span></a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="co">|*|</span></a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="co">|*|  IE-specific polyfill that enables the passage of arbitrary arguments to the</span></a>
+<a class="sourceLine" id="cb6-4" title="4"><span class="co">|*|  callback functions of javascript timers (HTML5 standard syntax).</span></a>
+<a class="sourceLine" id="cb6-5" title="5"><span class="co">|*|</span></a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="co">|*|  https://developer.mozilla.org/en-US/docs/Web/API/window.setInterval</span></a>
+<a class="sourceLine" id="cb6-7" title="7"><span class="co">|*|</span></a>
+<a class="sourceLine" id="cb6-8" title="8"><span class="co">|*|  Syntax:</span></a>
+<a class="sourceLine" id="cb6-9" title="9"><span class="co">|*|  var timeoutID = window.setTimeout(func, delay[, arg1, arg2, ...]);</span></a>
+<a class="sourceLine" id="cb6-10" title="10"><span class="co">|*|  var timeoutID = window.setTimeout(code, delay);</span></a>
+<a class="sourceLine" id="cb6-11" title="11"><span class="co">|*|  var intervalID = window.setInterval(func, delay[, arg1, arg2, ...]);</span></a>
+<a class="sourceLine" id="cb6-12" title="12"><span class="co">|*|  var intervalID = window.setInterval(code, delay);</span></a>
+<a class="sourceLine" id="cb6-13" title="13"><span class="co">|*|</span></a>
+<a class="sourceLine" id="cb6-14" title="14"><span class="co">\*/</span></a>
+<a class="sourceLine" id="cb6-15" title="15"></a>
+<a class="sourceLine" id="cb6-16" title="16"><span class="cf">if</span> (<span class="va">document</span>.<span class="at">all</span> <span class="op">&amp;&amp;</span> <span class="op">!</span><span class="va">window</span>.<span class="va">setTimeout</span>.<span class="at">isPolyfill</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-17" title="17">  <span class="kw">var</span> __nativeST__ <span class="op">=</span> <span class="va">window</span>.<span class="at">setTimeout</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-18" title="18">  <span class="va">window</span>.<span class="at">setTimeout</span> <span class="op">=</span> <span class="kw">function</span> (vCallback<span class="op">,</span> nDelay <span class="co">/*, argumentToPass1, argumentToPass2, etc. */</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-19" title="19">    <span class="kw">var</span> aArgs <span class="op">=</span> <span class="va">Array</span>.<span class="va">prototype</span>.<span class="va">slice</span>.<span class="at">call</span>(<span class="kw">arguments</span><span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-20" title="20">    <span class="cf">return</span> <span class="at">__nativeST__</span>(vCallback <span class="kw">instanceof</span> Function <span class="op">?</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-21" title="21">      <span class="va">vCallback</span>.<span class="at">apply</span>(<span class="kw">null</span><span class="op">,</span> aArgs)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-22" title="22">    <span class="op">}</span> : vCallback<span class="op">,</span> nDelay)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-23" title="23">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb6-24" title="24">  <span class="va">window</span>.<span class="va">setTimeout</span>.<span class="at">isPolyfill</span> <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-25" title="25"><span class="op">}</span></a>
+<a class="sourceLine" id="cb6-26" title="26"></a>
+<a class="sourceLine" id="cb6-27" title="27"><span class="cf">if</span> (<span class="va">document</span>.<span class="at">all</span> <span class="op">&amp;&amp;</span> <span class="op">!</span><span class="va">window</span>.<span class="va">setInterval</span>.<span class="at">isPolyfill</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-28" title="28">  <span class="kw">var</span> __nativeSI__ <span class="op">=</span> <span class="va">window</span>.<span class="at">setInterval</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-29" title="29">  <span class="va">window</span>.<span class="at">setInterval</span> <span class="op">=</span> <span class="kw">function</span> (vCallback<span class="op">,</span> nDelay <span class="co">/*, argumentToPass1, argumentToPass2, etc. */</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-30" title="30">    <span class="kw">var</span> aArgs <span class="op">=</span> <span class="va">Array</span>.<span class="va">prototype</span>.<span class="va">slice</span>.<span class="at">call</span>(<span class="kw">arguments</span><span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-31" title="31">    <span class="cf">return</span> <span class="at">__nativeSI__</span>(vCallback <span class="kw">instanceof</span> Function <span class="op">?</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-32" title="32">      <span class="va">vCallback</span>.<span class="at">apply</span>(<span class="kw">null</span><span class="op">,</span> aArgs)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-33" title="33">    <span class="op">}</span> : vCallback<span class="op">,</span> nDelay)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-34" title="34">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb6-35" title="35">  <span class="va">window</span>.<span class="va">setInterval</span>.<span class="at">isPolyfill</span> <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-36" title="36"><span class="op">}</span></a></code></pre></div>
+<p>Another possibility is to use an anonymous function to call your callback, although this solution is a bit more expensive. Example:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">var</span> intervalID <span class="op">=</span> <span class="at">setInterval</span>(<span class="kw">function</span>() <span class="op">{</span> <span class="at">myFunc</span>(<span class="st">&#39;one&#39;</span><span class="op">,</span> <span class="st">&#39;two&#39;</span><span class="op">,</span> <span class="st">&#39;three&#39;</span>)<span class="op">;</span> <span class="op">},</span> <span class="dv">1000</span>)<span class="op">;</span></a></code></pre></div>
+<p>Another possibility is to use <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/bind">function’s bind</a>. Example:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">var</span> intervalID <span class="op">=</span> <span class="at">setInterval</span>(<span class="kw">function</span>(arg1) <span class="op">{}</span>.<span class="at">bind</span>(<span class="kw">undefined</span><span class="op">,</span> <span class="dv">10</span>)<span class="op">,</span> <span class="dv">1000</span>)<span class="op">;</span></a></code></pre></div>
+<p>{{h3_gecko_minversion(“Inactive tabs”, “5.0”)}}</p>
+<p>Starting in Gecko 5.0 {{geckoRelease(“5.0”)}}, intervals are clamped to fire no more often than once per second in inactive tabs.</p>
+<h2 id="the-this-problem">The “this” problem</h2>
+<p>When you pass a method to <code>setInterval()</code> or any other function, it is invoked with the wrong <a href="/en-US/docs/Web/JavaScript/Reference/Operators/this"><code>this</code></a> value. This problem is explained in detail in the <a href="/en-US/docs/Web/JavaScript/Reference/Operators/this#as_an_object_method">JavaScript reference</a>.</p>
+<h3 id="explanation">Explanation</h3>
+<p>Code executed by <code>setInterval()</code> runs in a separate execution context than the function from which it was called. As a consequence, the <a href="/en-US/docs/Web/JavaScript/Reference/Operators/this"><code>this</code></a> keyword for the called function is set to the <code>window</code> (or <code>global</code>) object, it is not the same as the <code>this</code> value for the function that called <code>setTimeout</code>. See the following example (which uses <code>setTimeout()</code> instead of <code>setInterval()</code> – the problem, in fact, is the same for both timers):</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1">myArray <span class="op">=</span> [<span class="st">&#39;zero&#39;</span><span class="op">,</span> <span class="st">&#39;one&#39;</span><span class="op">,</span> <span class="st">&#39;two&#39;</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-2" title="2"></a>
+<a class="sourceLine" id="cb9-3" title="3"><span class="va">myArray</span>.<span class="at">myMethod</span> <span class="op">=</span> <span class="kw">function</span> (sProperty) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-4" title="4">    <span class="at">alert</span>(<span class="kw">arguments</span>.<span class="at">length</span> <span class="op">&gt;</span> <span class="dv">0</span> <span class="op">?</span> <span class="kw">this</span>[sProperty] : <span class="kw">this</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-5" title="5"><span class="op">};</span></a>
+<a class="sourceLine" id="cb9-6" title="6"></a>
+<a class="sourceLine" id="cb9-7" title="7"><span class="va">myArray</span>.<span class="at">myMethod</span>()<span class="op">;</span> <span class="co">// prints &quot;zero,one,two&quot;</span></a>
+<a class="sourceLine" id="cb9-8" title="8"><span class="va">myArray</span>.<span class="at">myMethod</span>(<span class="dv">1</span>)<span class="op">;</span> <span class="co">// prints &quot;one&quot;</span></a>
+<a class="sourceLine" id="cb9-9" title="9"><span class="at">setTimeout</span>(<span class="va">myArray</span>.<span class="at">myMethod</span><span class="op">,</span> <span class="dv">1000</span>)<span class="op">;</span> <span class="co">// prints &quot;[object Window]&quot; after 1 second</span></a>
+<a class="sourceLine" id="cb9-10" title="10"><span class="at">setTimeout</span>(<span class="va">myArray</span>.<span class="at">myMethod</span><span class="op">,</span> <span class="dv">1500</span><span class="op">,</span> <span class="st">&quot;1&quot;</span>)<span class="op">;</span> <span class="co">// prints &quot;undefined&quot; after 1,5 seconds</span></a>
+<a class="sourceLine" id="cb9-11" title="11"><span class="co">// passing the &#39;this&#39; object with .call won&#39;t work</span></a>
+<a class="sourceLine" id="cb9-12" title="12"><span class="co">// because this will change the value of this inside setTimeout itself</span></a>
+<a class="sourceLine" id="cb9-13" title="13"><span class="co">// while we want to change the value of this inside myArray.myMethod</span></a>
+<a class="sourceLine" id="cb9-14" title="14"><span class="co">// in fact, it will be an error because setTimeout code expects this to be the window object:</span></a>
+<a class="sourceLine" id="cb9-15" title="15"><span class="va">setTimeout</span>.<span class="at">call</span>(myArray<span class="op">,</span> <span class="va">myArray</span>.<span class="at">myMethod</span><span class="op">,</span> <span class="dv">2000</span>)<span class="op">;</span> <span class="co">// error: &quot;NS_ERROR_XPC_BAD_OP_ON_WN_PROTO: Illegal operation on WrappedNative prototype object&quot;</span></a>
+<a class="sourceLine" id="cb9-16" title="16"><span class="va">setTimeout</span>.<span class="at">call</span>(myArray<span class="op">,</span> <span class="va">myArray</span>.<span class="at">myMethod</span><span class="op">,</span> <span class="dv">2500</span><span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span> <span class="co">// same error</span></a></code></pre></div>
+<p>As you can see there are no ways to pass the <code>this</code> object to the callback function in the legacy JavaScript.</p>
+<h3 id="a-possible-solution">A possible solution</h3>
+<p>A possible way to solve the “<code>this</code>” problem is to replace the two native <code>setTimeout()</code> or <code>setInterval()</code> global functions with two <em>non-native</em> ones that enable their invocation through the <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/call"><code>Function.prototype.call</code></a> method. The following example shows a possible replacement:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1"><span class="co">// Enable the passage of the &#39;this&#39; object through the JavaScript timers</span></a>
+<a class="sourceLine" id="cb10-2" title="2"></a>
+<a class="sourceLine" id="cb10-3" title="3"><span class="kw">var</span> __nativeST__ <span class="op">=</span> <span class="va">window</span>.<span class="at">setTimeout</span><span class="op">,</span> __nativeSI__ <span class="op">=</span> <span class="va">window</span>.<span class="at">setInterval</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-4" title="4"></a>
+<a class="sourceLine" id="cb10-5" title="5"><span class="va">window</span>.<span class="at">setTimeout</span> <span class="op">=</span> <span class="kw">function</span> (vCallback<span class="op">,</span> nDelay <span class="co">/*, argumentToPass1, argumentToPass2, etc. */</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-6" title="6">  <span class="kw">var</span> oThis <span class="op">=</span> <span class="kw">this</span><span class="op">,</span> aArgs <span class="op">=</span> <span class="va">Array</span>.<span class="va">prototype</span>.<span class="va">slice</span>.<span class="at">call</span>(<span class="kw">arguments</span><span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-7" title="7">  <span class="cf">return</span> <span class="at">__nativeST__</span>(vCallback <span class="kw">instanceof</span> Function <span class="op">?</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-8" title="8">    <span class="va">vCallback</span>.<span class="at">apply</span>(oThis<span class="op">,</span> aArgs)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-9" title="9">  <span class="op">}</span> : vCallback<span class="op">,</span> nDelay)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-10" title="10"><span class="op">};</span></a>
+<a class="sourceLine" id="cb10-11" title="11"></a>
+<a class="sourceLine" id="cb10-12" title="12"><span class="va">window</span>.<span class="at">setInterval</span> <span class="op">=</span> <span class="kw">function</span> (vCallback<span class="op">,</span> nDelay <span class="co">/*, argumentToPass1, argumentToPass2, etc. */</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-13" title="13">  <span class="kw">var</span> oThis <span class="op">=</span> <span class="kw">this</span><span class="op">,</span> aArgs <span class="op">=</span> <span class="va">Array</span>.<span class="va">prototype</span>.<span class="va">slice</span>.<span class="at">call</span>(<span class="kw">arguments</span><span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-14" title="14">  <span class="cf">return</span> <span class="at">__nativeSI__</span>(vCallback <span class="kw">instanceof</span> Function <span class="op">?</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-15" title="15">    <span class="va">vCallback</span>.<span class="at">apply</span>(oThis<span class="op">,</span> aArgs)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-16" title="16">  <span class="op">}</span> : vCallback<span class="op">,</span> nDelay)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-17" title="17"><span class="op">};</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> These two replacements also enable the HTML5 standard passage of arbitrary arguments to the callback functions of timers in IE. So they can be used as <em>non-standard-compliant</em> polyfills also. See the <a href="#callback_arguments">callback arguments paragraph</a> for a <em>standard-compliant</em> polyfill.</p>
+</blockquote>
+<p>New feature test:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1">myArray <span class="op">=</span> [<span class="st">&#39;zero&#39;</span><span class="op">,</span> <span class="st">&#39;one&#39;</span><span class="op">,</span> <span class="st">&#39;two&#39;</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-2" title="2"></a>
+<a class="sourceLine" id="cb11-3" title="3"><span class="va">myArray</span>.<span class="at">myMethod</span> <span class="op">=</span> <span class="kw">function</span> (sProperty) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-4" title="4">    <span class="at">alert</span>(<span class="kw">arguments</span>.<span class="at">length</span> <span class="op">&gt;</span> <span class="dv">0</span> <span class="op">?</span> <span class="kw">this</span>[sProperty] : <span class="kw">this</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-5" title="5"><span class="op">};</span></a>
+<a class="sourceLine" id="cb11-6" title="6"></a>
+<a class="sourceLine" id="cb11-7" title="7"><span class="at">setTimeout</span>(alert<span class="op">,</span> <span class="dv">1500</span><span class="op">,</span> <span class="st">&#39;Hello world!&#39;</span>)<span class="op">;</span> <span class="co">// the standard use of setTimeout and setInterval is preserved, but...</span></a>
+<a class="sourceLine" id="cb11-8" title="8"><span class="va">setTimeout</span>.<span class="at">call</span>(myArray<span class="op">,</span> <span class="va">myArray</span>.<span class="at">myMethod</span><span class="op">,</span> <span class="dv">2000</span>)<span class="op">;</span> <span class="co">// prints &quot;zero,one,two&quot; after 2 seconds</span></a>
+<a class="sourceLine" id="cb11-9" title="9"><span class="va">setTimeout</span>.<span class="at">call</span>(myArray<span class="op">,</span> <span class="va">myArray</span>.<span class="at">myMethod</span><span class="op">,</span> <span class="dv">2500</span><span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span> <span class="co">// prints &quot;two&quot; after 2,5 seconds</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> JavaScript 1.8.5 introduces the <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/bind"><code>Function.prototype.bind()</code></a> method, which lets you specify the value that should be used as <code>this</code> for all calls to a given function. This lets you easily bypass problems where it’s unclear what this will be, depending on the context from which your function was called. Also, ES2015 supports <a href="/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions">arrow functions</a>, with lexical this allowing us to write setInterval( () =&gt; this.myMethod) if we’re inside myArray method.</p>
+</blockquote>
+<h2 id="usage-notes">Usage notes</h2>
+<p>The <code>setInterval()</code> function is commonly used to set a delay for functions that are executed again and again, such as animations. You can cancel the interval using {{domxref(“clearInterval()”)}}.</p>
+<p>If you wish to have your function called <em>once</em> after the specified delay, use {{domxref(“setTimeout()”)}}.</p>
+<h3 id="delay-restrictions">Delay restrictions</h3>
+<p>It’s possible for intervals to be nested; that is, the callback for <code>setInterval()</code> can in turn call <code>setInterval()</code> to start another interval running, even though the first one is still going. To mitigate the potential impact this can have on performance, once intervals are nested beyond five levels deep, the browser will automatically enforce a 4 ms minimum value for the interval. Attempts to specify a value less than 4 ms in deeply-nested calls to <code>setInterval()</code> will be pinned to 4 ms.</p>
+<p>Browsers may enforce even more stringent minimum values for the interval under some circumstances, although these should not be common. Note also that the actual amount of time that elapses between calls to the callback may be longer than the given <code>delay</code>; see {{SectionOnPage(“/en-US/docs/Web/API/setTimeout”, “Reasons for delays longer than specified”)}} for examples.</p>
+<h3 id="ensure-that-execution-duration-is-shorter-than-interval-frequency">Ensure that execution duration is shorter than interval frequency</h3>
+<p>If there is a possibility that your logic could take longer to execute than the interval time, it is recommended that you recursively call a named function using {{domxref(“setTimeout()”)}}. For example, if using <code>setInterval()</code> to poll a remote server every 5 seconds, network latency, an unresponsive server, and a host of other issues could prevent the request from completing in its allotted time. As such, you may find yourself with queued up XHR requests that won’t necessarily return in order.</p>
+<p>In these cases, a recursive <code>setTimeout()</code> pattern is preferred:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb12-1" title="1">(<span class="kw">function</span> <span class="at">loop</span>()<span class="op">{</span></a>
+<a class="sourceLine" id="cb12-2" title="2">   <span class="at">setTimeout</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb12-3" title="3">      <span class="co">// Your logic here</span></a>
+<a class="sourceLine" id="cb12-4" title="4"></a>
+<a class="sourceLine" id="cb12-5" title="5">      <span class="at">loop</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-6" title="6">  <span class="op">},</span> delay)<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-7" title="7"><span class="op">}</span>)()<span class="op">;</span></a></code></pre></div>
+<p>In the above snippet, a named function <code>loop()</code> is declared and is immediately executed. <code>loop()</code> is recursively called inside <code>setTimeout()</code> after the logic has completed executing. While this pattern does not guarantee execution on a fixed interval, it does guarantee that the previous interval has completed before recursing.</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>A polyfill of <code>setInterval</code> which allows passing arguments to the callback is available in <a href="https://github.com/zloirock/core-js#settimeout-and-setinterval"><code>core-js</code></a></li>
+<li>{{domxref(“setTimeout”)}}</li>
+<li>{{domxref(“clearTimeout”)}}</li>
+<li>{{domxref(“clearInterval”)}}</li>
+<li>{{domxref(“window.requestAnimationFrame”)}}</li>
+</ul>

@@ -1,0 +1,47 @@
+<p>{{APIRef(“Media Capture”)}}</p>
+<p>The <strong><code>groupId</code></strong> readonly property of the {{domxref(“MediaDeviceInfo”)}} interface returns a {{domxref(“DOMString”)}} that is a group identifier.</p>
+<p>Two devices have the same group identifier if they belong to the same physical device; for example, a monitor with both a built-in camera and microphone.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> groupID <span class="op">=</span> <span class="va">mediaDeviceInfo</span>.<span class="at">groupId</span><span class="op">;</span></a></code></pre></div>
+<h3 id="value">Value</h3>
+<p>A {{domxref(“DOMString”)}} which uniquely identifies the group of related devices to which this device belongs.</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="examples">Examples</h2>
+<p>In this example, we assemble a list of the devices which are part of the same group as a given device. This might be used to produce a user interface that gathers associated devices together for presentation purposes, or to make it easy for the user to choose to use the built-in camera and microphone on the same display at the same time.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> getDeviceGroup <span class="op">=</span> mainDevInfo <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">let</span> devList <span class="op">=</span> []<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="va">navigator</span>.<span class="va">mediaDevices</span>.<span class="at">enumerateDevices</span>()</a>
+<a class="sourceLine" id="cb2-5" title="5">  .<span class="at">then</span>(devices <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-6" title="6">    <span class="va">devices</span>.<span class="at">forEach</span>(device <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-7" title="7">      <span class="cf">if</span> (<span class="va">device</span>.<span class="at">groupId</span> <span class="op">===</span> <span class="va">mainDevInfo</span>.<span class="at">groupId</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-8" title="8">        <span class="va">devList</span>.<span class="at">push</span>(device)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-10" title="10">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12"></a>
+<a class="sourceLine" id="cb2-13" title="13">  <span class="cf">return</span> devList<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14"><span class="op">};</span></a></code></pre></div>
+<p>The <code>getDeviceGroup()</code> function takes as input the <code>MediaDeviceInfo</code> object describing the device for which a group list is to be built. The function starts by initializing the result array, <code>devList</code>, to be an empty array.</p>
+<p>Then {{domxref(“MediaDevices.enumerateDevices”, “navigator.mediaDevices.enumerateDevices()”)}} is called to get the list of all media devices. Once the promise resolves, we walk the list using {{jsxref(“Array.forEach”, “forEach()”)}}. For each device, if its {{domxref(“MediaDeviceInfo.groupId”, “groupId”)}} matches the main device’s <code>groupId</code>, we push the {{domxref(“MediaDeviceInfo”)}} object onto the list.</p>
+<p>Finally, the list, which now contains a <code>MediaDeviceInfo</code> object for each device in the same group, is returned to the caller.</p>
+<p>This could be altered easily to either leave out the passed-in device from the returned list, or to place it at the top of the list, by comparing the two objects’ {{domxref(“MediaDeviceInfo.deviceId”, “deviceId”)}} values, only pushing the device onto the result list if it doesn’t match.</p>
+<p>This version of the example puts the passed-in device at the top of the result list, then adds any other members of the group that are found:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> getDeviceGroup <span class="op">=</span> mainDevInfo <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">let</span> devList <span class="op">=</span> [mainDevInfo]<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="va">navigator</span>.<span class="va">mediaDevices</span>.<span class="at">enumerateDevices</span>()</a>
+<a class="sourceLine" id="cb3-5" title="5">  .<span class="at">then</span>(devices <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-6" title="6">    <span class="va">devices</span>.<span class="at">forEach</span>(device <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-7" title="7">      <span class="cf">if</span> ((<span class="va">device</span>.<span class="at">groupId</span> <span class="op">===</span> <span class="va">mainDevInfo</span>.<span class="at">groupId</span>) <span class="op">&amp;&amp;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">          (<span class="va">device</span>.<span class="at">deviceId</span> <span class="op">!==</span> <span class="va">mainDevInfo</span>.<span class="at">deviceId</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-9" title="9">        <span class="va">devList</span>.<span class="at">push</span>(device)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-11" title="11">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-12" title="12">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-13" title="13"></a>
+<a class="sourceLine" id="cb3-14" title="14">  <span class="cf">return</span> devList<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-15" title="15"><span class="op">};</span></a></code></pre></div>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

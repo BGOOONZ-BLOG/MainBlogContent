@@ -1,0 +1,248 @@
+<p>{{securecontext_header}}{{SeeCompatTable}}{{APIRef(“Presentation API”)}}</p>
+<p>The Presentation API lets a {{Glossary(“user agent”)}} (such as a Web browser) effectively display web content through large presentation devices such as projectors and network-connected televisions. Supported types of multimedia devices include both displays which are wired using HDMI, DVI, or the like, or wireless, using <a href="https://www.dlna.org/">DLNA</a>, <a href="https://developers.google.com/cast/">Chromecast</a>, <a href="https://developer.apple.com/airplay/">AirPlay</a>, or <a href="https://www.wi-fi.org/discover-wi-fi/miracast">Miracast</a>.</p>
+<p><img src="presentation_mode_illustration.png" /></p>
+<p>In general, a web page uses the Presentation Controller API to specify the web content to be rendered on presentation device and initiate the presentation session. With Presentation Receiver API, the presenting web content obtains the session status. With providing both the controller page and the receiver one with a messaged-based channel, a Web developer can implement the interaction between these two pages.</p>
+<p>Depending on the connection mechanism provided by the presentation device, any controller- and receiver page can be rendered by the same user agent, or by separated user agents.</p>
+<ul>
+<li>For 1-UA mode devices, both pages are loaded by the same user agent. However, rendering result of the receiver page will be sent to the presentation device via supported remote rendering protocol.</li>
+<li>For 2-UAs mode device, the receiver page is loaded directly on the presentation device. Controlling user agent communicates with presentation device via supported presentation control protocol, to control the presentation session and to transmit the message between two pages.</li>
+</ul>
+<h2 id="interfaces">Interfaces</h2>
+<ul>
+<li>{{domxref(“Presentation”)}}
+<ul>
+<li>: In controlling browsing context, the <code>Presentation</code> interface provides a mechanism to override the browser default behavior of launching presentation to external screen. In receiving browsing context, <code>Presentation</code> interface provides the access to the available presentation connections.</li>
+</ul></li>
+<li>{{domxref(“PresentationRequest”)}}
+<ul>
+<li>: Initiates or reconnects to a presentation made by a controlling browsing context.</li>
+</ul></li>
+<li>{{domxref(“PresentationAvailability”)}}
+<ul>
+<li>: A <a href="/en-US/docs/Web/API/PresentationAvailability">PresentationAvailability</a> object is associated with available presentation displays and represents the <em>presentation display availability</em> for a presentation request.</li>
+</ul></li>
+<li>{{domxref(“PresentationConnectionAvailableEvent”)}}
+<ul>
+<li>: The <code>PresentationConnectionAvailableEvent</code> is fired on a <a href="/en-US/docs/Web/API/PresentationRequest" title="The PresentationRequest interface of the Presentation API provides methods for starting a new presentation or joining an active one."><code>PresentationRequest</code></a> when a connection associated with the object is created.</li>
+</ul></li>
+<li>{{domxref(“PresentationConnection”)}}
+<ul>
+<li>: Each presentation connection is represented by a <a href="/en-US/docs/Web/API/PresentationConnection">PresentationConnection</a> object.</li>
+</ul></li>
+<li>{{domxref(“PresentationConnectionCloseEvent”)}}
+<ul>
+<li>: A <code>PresentationConnectionCloseEvent</code> is fired when a presentation connection enters a <code>closed</code> state.</li>
+</ul></li>
+<li>{{domxref(“PresentationReceiver”)}}
+<ul>
+<li>: The <a href="/en-US/docs/Web/API/PresentationReceiver">PresentationReceiver</a> allows a receiving browsing context to access the controlling browsing contexts and communicate with them.</li>
+</ul></li>
+<li>{{domxref(“PresentationConnectionList”)}}
+<ul>
+<li>: <code>PresentationConnectionList</code> represents the collection of non-terminated presentation connections. It is also a monitor for the event of new available presentation connection.</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<p>Example codes below highlight the usage of main features of the Presentation API: <code>controller.html</code> implements the controller and <code>presentation.html</code> implements the presentation. Both pages are served from the domain <code>http://example.org</code> (<code>http://example.org/controller.html</code> and <code>http://example.org/presentation.html</code>). These examples assume that the controlling page is managing one presentation at a time. Please refer to the comments in the code examples for further details.</p>
+<h3 id="monitor-availability-of-presentation-displays">Monitor availability of presentation displays</h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" title="1"><span class="co">&lt;!-- controller.html --&gt;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">&lt;button</span><span class="ot"> id=</span><span class="st">&quot;presentBtn&quot;</span><span class="ot"> style=</span><span class="st">&quot;display: none;&quot;</span><span class="kw">&gt;</span>Present<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">&lt;script&gt;</span></a>
+<a class="sourceLine" id="cb1-4" title="4">  <span class="co">// The Present button is visible if at least one presentation display is available</span></a>
+<a class="sourceLine" id="cb1-5" title="5">  <span class="kw">var</span> presentBtn <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;presentBtn&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-6" title="6">  <span class="co">// It is also possible to use relative presentation URL e.g. &quot;presentation.html&quot;</span></a>
+<a class="sourceLine" id="cb1-7" title="7">  <span class="kw">var</span> presUrls <span class="op">=</span> [<span class="st">&quot;http://example.com/presentation.html&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb1-8" title="8">                  <span class="st">&quot;http://example.net/alternate.html&quot;</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-9" title="9">  <span class="co">// show or hide present button depending on display availability</span></a>
+<a class="sourceLine" id="cb1-10" title="10">  <span class="kw">var</span> handleAvailabilityChange <span class="op">=</span> <span class="kw">function</span>(available) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-11" title="11">    <span class="va">presentBtn</span>.<span class="va">style</span>.<span class="at">display</span> <span class="op">=</span> available <span class="op">?</span> <span class="st">&quot;inline&quot;</span> : <span class="st">&quot;none&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-12" title="12">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb1-13" title="13">  <span class="co">// Promise is resolved as soon as the presentation display availability is</span></a>
+<a class="sourceLine" id="cb1-14" title="14">  <span class="co">// known.</span></a>
+<a class="sourceLine" id="cb1-15" title="15">  <span class="kw">var</span> request <span class="op">=</span> <span class="kw">new</span> <span class="at">PresentationRequest</span>(presUrls)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-16" title="16">  <span class="va">request</span>.<span class="at">getAvailability</span>().<span class="at">then</span>(<span class="kw">function</span>(availability) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-17" title="17">    <span class="co">// availability.value may be kept up-to-date by the controlling UA as long</span></a>
+<a class="sourceLine" id="cb1-18" title="18">    <span class="co">// as the availability object is alive. It is advised for the web developers</span></a>
+<a class="sourceLine" id="cb1-19" title="19">    <span class="co">// to discard the object as soon as it&#39;s not needed.</span></a>
+<a class="sourceLine" id="cb1-20" title="20">    <span class="at">handleAvailabilityChange</span>(<span class="va">availability</span>.<span class="at">value</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-21" title="21">    <span class="va">availability</span>.<span class="at">onchange</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span> <span class="at">handleAvailabilityChange</span>(<span class="kw">this</span>.<span class="at">value</span>)<span class="op">;</span> <span class="op">};</span></a>
+<a class="sourceLine" id="cb1-22" title="22">  <span class="op">}</span>).<span class="at">catch</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-23" title="23">    <span class="co">// Availability monitoring is not supported by the platform, so discovery of</span></a>
+<a class="sourceLine" id="cb1-24" title="24">    <span class="co">// presentation displays will happen only after request.start() is called.</span></a>
+<a class="sourceLine" id="cb1-25" title="25">    <span class="co">// Pretend the devices are available for simplicity; or, one could implement</span></a>
+<a class="sourceLine" id="cb1-26" title="26">    <span class="co">// a third state for the button.</span></a>
+<a class="sourceLine" id="cb1-27" title="27">    <span class="at">handleAvailabilityChange</span>(<span class="kw">true</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-28" title="28">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-29" title="29"><span class="kw">&lt;/script&gt;</span></a></code></pre></div>
+<h3 id="starting-a-new-presentation">Starting a new presentation</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb2-1" title="1"><span class="co">&lt;!-- controller.html --&gt;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">&lt;script&gt;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="va">presentBtn</span>.<span class="at">onclick</span> <span class="op">=</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">    <span class="co">// Start new presentation.</span></a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="va">request</span>.<span class="at">start</span>()</a>
+<a class="sourceLine" id="cb2-6" title="6">      <span class="co">// The connection to the presentation will be passed to setConnection on</span></a>
+<a class="sourceLine" id="cb2-7" title="7">      <span class="co">// success.</span></a>
+<a class="sourceLine" id="cb2-8" title="8">      .<span class="at">then</span>(setConnection)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9">      <span class="co">// Otherwise, the user canceled the selection dialog or no screens were</span></a>
+<a class="sourceLine" id="cb2-10" title="10">      <span class="co">// found.</span></a>
+<a class="sourceLine" id="cb2-11" title="11">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb2-12" title="12"><span class="kw">&lt;/script&gt;</span></a></code></pre></div>
+<h3 id="reconnect-to-a-presentation">Reconnect to a presentation</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb3-1" title="1"><span class="co">&lt;!-- controller.html --&gt;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">&lt;button</span><span class="ot"> id=</span><span class="st">&quot;reconnectBtn&quot;</span><span class="ot"> style=</span><span class="st">&quot;display: none;&quot;</span><span class="kw">&gt;</span>Reconnect<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw">&lt;script&gt;</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="kw">var</span> reconnect <span class="op">=</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-5" title="5">    <span class="co">// read presId from localStorage if exists</span></a>
+<a class="sourceLine" id="cb3-6" title="6">    <span class="kw">var</span> presId <span class="op">=</span> localStorage[<span class="st">&quot;presId&quot;</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">    <span class="co">// presId is mandatory when reconnecting to a presentation.</span></a>
+<a class="sourceLine" id="cb3-8" title="8">    <span class="cf">if</span> (<span class="op">!!</span>presId) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-9" title="9">      <span class="va">request</span>.<span class="at">reconnect</span>(presId)</a>
+<a class="sourceLine" id="cb3-10" title="10">        <span class="co">// The new connection to the presentation will be passed to</span></a>
+<a class="sourceLine" id="cb3-11" title="11">        <span class="co">// setConnection on success.</span></a>
+<a class="sourceLine" id="cb3-12" title="12">        .<span class="at">then</span>(setConnection)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-13" title="13">        <span class="co">// No connection found for presUrl and presId, or an error occurred.</span></a>
+<a class="sourceLine" id="cb3-14" title="14">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-15" title="15">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb3-16" title="16">  <span class="co">// On navigation of the controller, reconnect automatically.</span></a>
+<a class="sourceLine" id="cb3-17" title="17">  <span class="va">document</span>.<span class="at">addEventListener</span>(<span class="st">&quot;DOMContentLoaded&quot;</span><span class="op">,</span> reconnect)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-18" title="18">  <span class="co">// Or allow manual reconnection.</span></a>
+<a class="sourceLine" id="cb3-19" title="19">  <span class="va">reconnectBtn</span>.<span class="at">onclick</span> <span class="op">=</span> reconnect<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-20" title="20"><span class="kw">&lt;/script&gt;</span></a></code></pre></div>
+<h3 id="presentation-initiation-by-the-controlling-ua">Presentation initiation by the controlling UA</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb4-1" title="1"><span class="co">&lt;!-- controller.html --&gt;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="co">&lt;!-- Setting presentation.defaultRequest allows the page to specify the</span></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="co">     PresentationRequest to use when the controlling UA initiates a</span></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="co">     presentation. --&gt;</span></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="kw">&lt;script&gt;</span></a>
+<a class="sourceLine" id="cb4-6" title="6">  <span class="va">navigator</span>.<span class="va">presentation</span>.<span class="at">defaultRequest</span> <span class="op">=</span> <span class="kw">new</span> <span class="at">PresentationRequest</span>(presUrls)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="va">navigator</span>.<span class="va">presentation</span>.<span class="va">defaultRequest</span>.<span class="at">onconnectionavailable</span> <span class="op">=</span> <span class="kw">function</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-8" title="8">    <span class="at">setConnection</span>(<span class="va">evt</span>.<span class="at">connection</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-9" title="9">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb4-10" title="10"><span class="kw">&lt;/script&gt;</span></a></code></pre></div>
+<h3 id="monitor-connections-state-and-exchange-data">Monitor connection’s state and exchange data</h3>
+<div class="sourceCode" id="cb5"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb5-1" title="1"><span class="co">&lt;!-- controller.html --&gt;</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="kw">&lt;button</span><span class="ot"> id=</span><span class="st">&quot;disconnectBtn&quot;</span><span class="ot"> style=</span><span class="st">&quot;display: none;&quot;</span><span class="kw">&gt;</span>Disconnect<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="kw">&lt;button</span><span class="ot"> id=</span><span class="st">&quot;stopBtn&quot;</span><span class="ot"> style=</span><span class="st">&quot;display: none;&quot;</span><span class="kw">&gt;</span>Stop<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="kw">&lt;button</span><span class="ot"> id=</span><span class="st">&quot;reconnectBtn&quot;</span><span class="ot"> style=</span><span class="st">&quot;display: none;&quot;</span><span class="kw">&gt;</span>Reconnect<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="kw">&lt;script&gt;</span></a>
+<a class="sourceLine" id="cb5-6" title="6">  <span class="kw">let</span> connection<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-7" title="7"></a>
+<a class="sourceLine" id="cb5-8" title="8">  <span class="co">// The Disconnect and Stop buttons are visible if there is a connected presentation</span></a>
+<a class="sourceLine" id="cb5-9" title="9">  <span class="kw">const</span> stopBtn <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;#stopBtn&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-10" title="10">  <span class="kw">const</span> reconnectBtn <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;#reconnectBtn&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-11" title="11">  <span class="kw">const</span> disconnectBtn <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;#disconnectBtn&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-12" title="12"></a>
+<a class="sourceLine" id="cb5-13" title="13">  <span class="va">stopBtn</span>.<span class="at">onclick</span> <span class="op">=</span> _ <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-14" title="14">    connection <span class="op">&amp;&amp;</span> <span class="va">connection</span>.<span class="at">terminate</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-15" title="15">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb5-16" title="16"></a>
+<a class="sourceLine" id="cb5-17" title="17">  <span class="va">disconnectBtn</span>.<span class="at">onclick</span> <span class="op">=</span> _ <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-18" title="18">    connection <span class="op">&amp;&amp;</span> <span class="va">connection</span>.<span class="at">close</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-19" title="19">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb5-20" title="20"></a>
+<a class="sourceLine" id="cb5-21" title="21">  <span class="kw">function</span> <span class="at">setConnection</span>(newConnection) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-22" title="22">    <span class="co">// Disconnect from existing presentation, if not attempting to reconnect</span></a>
+<a class="sourceLine" id="cb5-23" title="23">    <span class="cf">if</span> (connection <span class="op">&amp;&amp;</span> connection <span class="op">!=</span> newConnection <span class="op">&amp;&amp;</span> <span class="va">connection</span>.<span class="at">state</span> <span class="op">!=</span> <span class="st">&#39;closed&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-24" title="24">      <span class="va">connection</span>.<span class="at">onclosed</span> <span class="op">=</span> <span class="kw">undefined</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-25" title="25">      <span class="va">connection</span>.<span class="at">close</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-26" title="26">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-27" title="27"></a>
+<a class="sourceLine" id="cb5-28" title="28">    <span class="co">// Set the new connection and save the presentation ID</span></a>
+<a class="sourceLine" id="cb5-29" title="29">    connection <span class="op">=</span> newConnection<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-30" title="30">    localStorage[<span class="st">&quot;presId&quot;</span>] <span class="op">=</span> <span class="va">connection</span>.<span class="at">id</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-31" title="31"></a>
+<a class="sourceLine" id="cb5-32" title="32">    <span class="kw">function</span> <span class="at">showConnectedUI</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-33" title="33">      <span class="co">// Allow the user to disconnect from or terminate the presentation</span></a>
+<a class="sourceLine" id="cb5-34" title="34">      <span class="va">stopBtn</span>.<span class="va">style</span>.<span class="at">display</span> <span class="op">=</span> <span class="st">&quot;inline&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-35" title="35">      <span class="va">disconnectBtn</span>.<span class="va">style</span>.<span class="at">display</span> <span class="op">=</span> <span class="st">&quot;inline&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-36" title="36">      <span class="va">reconnectBtn</span>.<span class="va">style</span>.<span class="at">display</span> <span class="op">=</span> <span class="st">&quot;none&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-37" title="37">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-38" title="38"></a>
+<a class="sourceLine" id="cb5-39" title="39">    <span class="kw">function</span> <span class="at">showDisconnectedUI</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-40" title="40">      <span class="va">disconnectBtn</span>.<span class="va">style</span>.<span class="at">display</span> <span class="op">=</span> <span class="st">&quot;none&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-41" title="41">      <span class="va">stopBtn</span>.<span class="va">style</span>.<span class="at">display</span> <span class="op">=</span> <span class="st">&quot;none&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-42" title="42">      <span class="va">reconnectBtn</span>.<span class="va">style</span>.<span class="at">display</span> <span class="op">=</span> localStorage[<span class="st">&quot;presId&quot;</span>] <span class="op">?</span> <span class="st">&quot;inline&quot;</span> : <span class="st">&quot;none&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-43" title="43">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-44" title="44"></a>
+<a class="sourceLine" id="cb5-45" title="45">    <span class="co">// Monitor the connection state</span></a>
+<a class="sourceLine" id="cb5-46" title="46">    <span class="va">connection</span>.<span class="at">onconnect</span> <span class="op">=</span> _ <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-47" title="47">      <span class="at">showConnectedUI</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-48" title="48"></a>
+<a class="sourceLine" id="cb5-49" title="49">      <span class="co">// Register message handler</span></a>
+<a class="sourceLine" id="cb5-50" title="50">      <span class="va">connection</span>.<span class="at">onmessage</span> <span class="op">=</span> message <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-51" title="51">        <span class="va">console</span>.<span class="at">log</span>(<span class="vs">`Received message: </span><span class="sc">${</span><span class="va">message</span>.<span class="at">data</span><span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-52" title="52">      <span class="op">};</span></a>
+<a class="sourceLine" id="cb5-53" title="53"></a>
+<a class="sourceLine" id="cb5-54" title="54">      <span class="co">// Send initial message to presentation page</span></a>
+<a class="sourceLine" id="cb5-55" title="55">      <span class="va">connection</span>.<span class="at">send</span>(<span class="st">&quot;Say hello&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-56" title="56">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb5-57" title="57"></a>
+<a class="sourceLine" id="cb5-58" title="58">    <span class="va">connection</span>.<span class="at">onclose</span> <span class="op">=</span> _ <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-59" title="59">      connection <span class="op">=</span> <span class="kw">null</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-60" title="60">      <span class="at">showDisconnectedUI</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-61" title="61">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb5-62" title="62"></a>
+<a class="sourceLine" id="cb5-63" title="63">    <span class="va">connection</span>.<span class="at">onterminate</span> <span class="op">=</span> _ <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-64" title="64">      <span class="co">// Remove presId from localStorage if exists</span></a>
+<a class="sourceLine" id="cb5-65" title="65">      <span class="kw">delete</span> localStorage[<span class="st">&quot;presId&quot;</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-66" title="66">      connection <span class="op">=</span> <span class="kw">null</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-67" title="67">      <span class="at">showDisconnectedUI</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-68" title="68">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb5-69" title="69">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb5-70" title="70"><span class="kw">&lt;/script&gt;</span></a></code></pre></div>
+<h3 id="monitor-available-connections-and-say-hello">Monitor available connection(s) and say hello</h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb6-1" title="1"><span class="co">&lt;!-- presentation.html --&gt;</span></a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="kw">&lt;script&gt;</span></a>
+<a class="sourceLine" id="cb6-3" title="3">  <span class="kw">var</span> addConnection <span class="op">=</span> <span class="kw">function</span>(connection) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-4" title="4">    <span class="kw">this</span>.<span class="at">onmessage</span> <span class="op">=</span> <span class="kw">function</span> (message) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-5" title="5">      <span class="cf">if</span> (<span class="va">message</span>.<span class="at">data</span> <span class="op">==</span> <span class="st">&quot;say hello&quot;</span>)</a>
+<a class="sourceLine" id="cb6-6" title="6">        <span class="kw">this</span>.<span class="at">send</span>(<span class="st">&quot;hello&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-7" title="7">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb6-8" title="8">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb6-9" title="9"></a>
+<a class="sourceLine" id="cb6-10" title="10">  <span class="va">navigator</span>.<span class="va">presentation</span>.<span class="va">receiver</span>.<span class="va">connectionList</span>.<span class="at">then</span>(<span class="kw">function</span> (list) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-11" title="11">    <span class="va">list</span>.<span class="va">connections</span>.<span class="at">map</span>(<span class="kw">function</span> (connection) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-12" title="12">      <span class="at">addConnection</span>(connection)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-13" title="13">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-14" title="14">    <span class="va">list</span>.<span class="at">onconnectionavailable</span> <span class="op">=</span> <span class="kw">function</span> (evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-15" title="15">      <span class="at">addConnection</span>(<span class="va">evt</span>.<span class="at">connection</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-16" title="16">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb6-17" title="17">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-18" title="18"><span class="kw">&lt;/script&gt;</span></a></code></pre></div>
+<h3 id="passing-locale-information-with-a-message">Passing locale information with a message</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb7-1" title="1"><span class="co">&lt;!-- controller.html --&gt;</span></a>
+<a class="sourceLine" id="cb7-2" title="2"><span class="kw">&lt;script&gt;</span></a>
+<a class="sourceLine" id="cb7-3" title="3">  <span class="va">connection</span>.<span class="at">send</span>(<span class="st">&quot;{string: &#39;你好，世界!&#39;, lang: &#39;zh-CN&#39;}&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-4" title="4">  <span class="va">connection</span>.<span class="at">send</span>(<span class="st">&quot;{string: &#39;こんにちは、世界!&#39;, lang: &#39;ja&#39;}&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-5" title="5">  <span class="va">connection</span>.<span class="at">send</span>(<span class="st">&quot;{string: &#39;안녕하세요, 세계!&#39;, lang: &#39;ko&#39;}&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-6" title="6">  <span class="va">connection</span>.<span class="at">send</span>(<span class="st">&quot;{string: &#39;Hello, world!&#39;, lang: &#39;en-US&#39;}&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-7" title="7"><span class="kw">&lt;/script&gt;</span></a>
+<a class="sourceLine" id="cb7-8" title="8"></a>
+<a class="sourceLine" id="cb7-9" title="9"><span class="co">&lt;!-- presentation.html --&gt;</span></a>
+<a class="sourceLine" id="cb7-10" title="10"><span class="kw">&lt;script&gt;</span></a>
+<a class="sourceLine" id="cb7-11" title="11">  <span class="va">connection</span>.<span class="at">onmessage</span> <span class="op">=</span> <span class="kw">function</span> (message) <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-12" title="12">    <span class="kw">var</span> messageObj <span class="op">=</span> <span class="va">JSON</span>.<span class="at">parse</span>(<span class="va">message</span>.<span class="at">data</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-13" title="13">    <span class="kw">var</span> spanElt <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;SPAN&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-14" title="14">    <span class="va">spanElt</span>.<span class="at">lang</span> <span class="op">=</span> <span class="va">messageObj</span>.<span class="at">lang</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb7-15" title="15">    <span class="va">spanElt</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="va">messageObj</span>.<span class="at">string</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb7-16" title="16">    <span class="va">document</span>.<span class="at">appendChild</span>(spanElt)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-17" title="17">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb7-18" title="18"><span class="kw">&lt;/script&gt;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="https://w3c.github.io/presentation-api/">Presentation API</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<h3 id="presentation"><code>Presentation</code></h3>
+<p>{{Compat(“api.Presentation”)}}</p>
+<h2 id="see-also">See also</h2>
+<p><a href="https://mediascape.github.io/presentation-api-polyfill/">Presentation API polyfill</a> contains a JavaScript polyfill of the <a href="https://w3c.github.io/presentation-api/">Presentation API</a> specification under standardisation within the <a href="https://www.w3.org/2014/secondscreen/">Second Screen Working Group</a> at W3C. The polyfill is mostly intended for exploring how the Presentation API may be implemented on top of different presentation mechanisms.</p>

@@ -1,0 +1,161 @@
+<p>{{APIRef(“Web Share API”)}}{{securecontext_header}}</p>
+<p>The <strong><code>navigator.share()</code></strong> method of the <a href="/en-US/docs/Web/API/Web_Share_API">Web Share API</a> invokes the native sharing mechanism of the device to share data such as text, URLs, or files. The available <em>share targets</em> depend on the device, but might include the clipboard, contacts and email applications, websites, bluetooth, etc.</p>
+<p>This method requires that the current document have the <a href="/en-US/docs/Web/HTTP/Headers/Feature-Policy/web-share">web-share</a> permission policy and {{Glossary(“transient activation”)}}. (It must be triggered off a UI event like a button click and cannot be launched at arbitrary points by a script.) Further, the method must specify valid data that is supported for sharing by the native implementation.</p>
+<p>The method resolves a {{jsxref(“Promise”)}} with <code>undefined</code>. On Windows this happens when the share popup is launched, while on Android the promise resolves once the data has successfully been passed to the <em>share target</em>.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">navigator</span>.<span class="at">share</span>(data)</a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><p><code>data</code></p>
+<ul>
+<li><p>: An object containing data to share.</p>
+<p>Properties that are unknown to the user agent are ignored; share data is only assessed on properties understood by the user agent. All properties are optional but at least one known data property must be specified.</p>
+<p>Possible values are:</p>
+<ul>
+<li><code>url</code>: A {{domxref(“USVString”)}} representing a URL to be shared.</li>
+<li><code>text</code>: A {{domxref(“USVString”)}} representing text to be shared.</li>
+<li><code>title</code>: A {{domxref(“USVString”)}} representing a title to be shared. May be ignored by the target.</li>
+<li><code>files</code>: An array of {{domxref(“File”)}} objects representing files to be shared. See <a href="#shareable_file_types">below</a> for shareable file types.</li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A {{jsxref(“Promise”)}} that resolves with <code>undefined</code>, or rejected with one of the <a href="#exceptions">Exceptions</a> given below.</p>
+<h3 id="exceptions">Exceptions</h3>
+<p>The {{jsxref(“Promise”)}} may be rejected with one of the following <code>DOMException</code> values:</p>
+<ul>
+<li><code>NotAllowedError</code>
+<ul>
+<li>: The <a href="/en-US/docs/Web/HTTP/Headers/Feature-Policy/web-share">web-share</a> permission has not been granted, or the window does not have {{Glossary(“transient activation”)}}, or a file share is being blocked due to security considerations.</li>
+</ul></li>
+<li><p><code>TypeError</code></p>
+<ul>
+<li><p>: The specified share data cannot be validated. Possible reasons include:</p>
+<ul>
+<li>The <code>data</code> parameter was omitted completely or only contains properties with unknown values. Note that any properties that are not recognized by the user agent are ignored.</li>
+<li>A URL is badly formatted.</li>
+<li>Files are specified but the implementation does not support file sharing.</li>
+<li>Sharing the specified data would be considered a “hostile share” by the user-agent.</li>
+</ul></li>
+</ul></li>
+<li><code>AbortError</code>
+<ul>
+<li>: The user canceled the share operation or there are no share targets available.</li>
+</ul></li>
+<li><code>DataError</code>
+<ul>
+<li>: There was a problem starting the share target or transmitting the data.</li>
+</ul></li>
+</ul>
+<h2 id="shareable-file-types">Shareable file types</h2>
+<p>The following is a list of usually shareable file types. However, you should always test with {{domxref(“navigator.canShare()”)}} if sharing would succeed.</p>
+<ul>
+<li>Application
+<ul>
+<li><code>.pdf</code> - <code>application/pdf</code></li>
+</ul></li>
+<li>Audio
+<ul>
+<li><code>.flac</code> - <code>audio/flac</code></li>
+<li><code>.m4a</code> - <code>audio/x-m4a</code></li>
+<li><code>.mp3</code> - <code>audio/mpeg</code> (also accepts <code>audio/mp3</code>)</li>
+<li><code>.oga</code> - <code>audio/ogg</code></li>
+<li><code>.ogg</code> - <code>audio/ogg</code></li>
+<li><code>.opus</code> - <code>audio/ogg</code></li>
+<li><code>.wav</code> - <code>audio/wav</code></li>
+<li><code>.weba</code> - <code>audio/webm</code></li>
+</ul></li>
+<li>Image
+<ul>
+<li><code>.bmp</code> - <code>image/bmp</code></li>
+<li><code>.gif</code> - <code>image/gif</code></li>
+<li><code>.ico</code> - <code>image/x-icon</code></li>
+<li><code>.jfif</code> - <code>image/jpeg</code></li>
+<li><code>.jpeg</code> - <code>image/jpeg</code></li>
+<li><code>.jpg</code> - <code>image/jpeg</code></li>
+<li><code>.pjp</code> - <code>image/jpeg</code></li>
+<li><code>.pjpeg</code> - <code>image/jpeg</code></li>
+<li><code>.png</code> - <code>image/png</code></li>
+<li><code>.svg</code> - <code>image/svg+xml</code></li>
+<li><code>.svgz</code> - <code>image/svg+xml</code></li>
+<li><code>.tif</code> - <code>image/tiff</code></li>
+<li><code>.tiff</code> - <code>image/tiff</code></li>
+<li><code>.webp</code> - <code>image/webp</code></li>
+<li><code>.xbm</code> - <code>image/x-xbitmap</code></li>
+</ul></li>
+<li>Text
+<ul>
+<li><code>.css</code> - <code>text/css</code></li>
+<li><code>.csv</code> - <code>text/csv</code></li>
+<li><code>.ehtml</code> - <code>text/html</code></li>
+<li><code>.htm</code> - <code>text/html</code></li>
+<li><code>.html</code> - <code>text/html</code></li>
+<li><code>.shtm</code> - <code>text/html</code></li>
+<li><code>.shtml</code> - <code>text/html</code></li>
+<li><code>.text</code> - <code>text/plain</code></li>
+<li><code>.txt</code> - <code>text/plain</code></li>
+</ul></li>
+<li>Video
+<ul>
+<li><code>.m4v</code> - <code>video/mp4</code></li>
+<li><code>.mp4</code> - <code>video/mp4</code></li>
+<li><code>.mpeg</code> - <code>video/mpeg</code></li>
+<li><code>.mpg</code> - <code>video/mpeg</code></li>
+<li><code>.ogm</code> - <code>video/ogg</code></li>
+<li><code>.ogv</code> - <code>video/ogg</code></li>
+<li><code>.webm</code> - <code>video/webm</code></li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>The example below shows a button click invoking the Web Share API to share MDN’s URL. This is taken from our <a href="https://mdn.github.io/dom-examples/web-share/">Web share test</a> (<a href="https://github.com/mdn/dom-examples/blob/master/web-share/index.html">see the source code</a>).</p>
+<h3 id="html">HTML</h3>
+<p>The HTML just creates a button to trigger the share, and a paragraph in which to display the result of the test.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">&lt;p&gt;&lt;button&gt;</span>Share MDN!<span class="kw">&lt;/button&gt;&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">&lt;p</span><span class="ot"> class=</span><span class="st">&quot;result&quot;</span><span class="kw">&gt;&lt;/p&gt;</span></a></code></pre></div>
+<h3 id="javascript">JavaScript</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> shareData <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">    <span class="dt">title</span><span class="op">:</span> <span class="st">&#39;MDN&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="dt">text</span><span class="op">:</span> <span class="st">&#39;Learn web development on MDN!&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="dt">url</span><span class="op">:</span> <span class="st">&#39;https://developer.mozilla.org&#39;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-6" title="6"></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="kw">const</span> btn <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;button&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="kw">const</span> resultPara <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;.result&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9"></a>
+<a class="sourceLine" id="cb3-10" title="10">  <span class="co">// Share must be triggered by &quot;user activation&quot;</span></a>
+<a class="sourceLine" id="cb3-11" title="11">  <span class="va">btn</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> <span class="kw">async</span> () <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-12" title="12">    <span class="cf">try</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-13" title="13">      <span class="cf">await</span> <span class="va">navigator</span>.<span class="at">share</span>(shareData)</a>
+<a class="sourceLine" id="cb3-14" title="14">      <span class="va">resultPara</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;MDN shared successfully&#39;</span></a>
+<a class="sourceLine" id="cb3-15" title="15">    <span class="op">}</span> <span class="cf">catch</span>(err) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-16" title="16">      <span class="va">resultPara</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;Error: &#39;</span> <span class="op">+</span> err</a>
+<a class="sourceLine" id="cb3-17" title="17">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-18" title="18">  <span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h3 id="result">Result</h3>
+<p>Click the button to launch the share dialog on your platform. Text will appear below the button to indicate whether the share was successful or provide an error code.</p>
+<p>{{EmbedLiveSample(‘Examples’)}}</p>
+<h4 id="sharing-files"><strong>Sharing Files</strong></h4>
+<p>To share files, first test for and call {{domxref(“navigator.canShare()”)}}. Then include an array of files in the call to <code>navigator.share()</code>:</p>
+<blockquote>
+<p><strong>Note:</strong> This sample feature detects by testing for <code>navigator.canShare()</code> rather than for <code>navigator.share()</code>. The data object passed to <code>canShare()</code> only includes the <code>files</code> property. Image, video, audio, and text files can be shared.</p>
+</blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="cf">if</span> (<span class="va">navigator</span>.<span class="at">canShare</span> <span class="op">&amp;&amp;</span> <span class="va">navigator</span>.<span class="at">canShare</span>(<span class="op">{</span> <span class="dt">files</span><span class="op">:</span> filesArray <span class="op">}</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="va">navigator</span>.<span class="at">share</span>(<span class="op">{</span></a>
+<a class="sourceLine" id="cb4-3" title="3">    <span class="dt">files</span><span class="op">:</span> filesArray<span class="op">,</span></a>
+<a class="sourceLine" id="cb4-4" title="4">    <span class="dt">title</span><span class="op">:</span> <span class="st">&#39;Pictures&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb4-5" title="5">    <span class="dt">text</span><span class="op">:</span> <span class="st">&#39;Our Pictures.&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb4-6" title="6">  <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb4-7" title="7">  .<span class="at">then</span>(() <span class="kw">=&gt;</span> <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Share was successful.&#39;</span>))</a>
+<a class="sourceLine" id="cb4-8" title="8">  .<span class="at">catch</span>((error) <span class="kw">=&gt;</span> <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Sharing failed&#39;</span><span class="op">,</span> error))<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-9" title="9"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-10" title="10">  <span class="va">console</span>.<span class="at">log</span>(<span class="vs">`Your system doesn&#39;t support sharing files.`</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-11" title="11"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{domxref(“navigator.canShare()”)}}</li>
+<li><a href="https://wpt.live/web-share/" class="uri">https://wpt.live/web-share/</a> (web platform tests)</li>
+</ul>

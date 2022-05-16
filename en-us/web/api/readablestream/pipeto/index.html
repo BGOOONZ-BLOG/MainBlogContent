@@ -1,0 +1,42 @@
+<p>{{SeeCompatTable}}{{APIRef(“Streams”)}}</p>
+<p>The <strong><code>pipeTo()</code></strong> method of the {{domxref(“ReadableStream”)}} interface pipes the current <code>ReadableStream</code> to a given {{domxref(“WritableStream”)}} and returns a {{jsxref(“Promise”)}} that fulfills when the piping process completes successfully, or rejects if any errors were encountered.</p>
+<p>Piping a stream will generally lock it for the duration of the pipe, preventing other readers from locking it.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> promise <span class="op">=</span> <span class="va">readableStream</span>.<span class="at">pipeTo</span>(destination[<span class="op">,</span> options])<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li>destination
+<ul>
+<li>: A {{domxref(“WritableStream”)}} that acts as the final destination for the {{domxref(“ReadableStream”)}}.</li>
+</ul></li>
+<li><p>options {{optional_inline}}</p>
+<ul>
+<li><p>: The options that should be used when piping to the <code>writable</code> stream. Available options are:</p>
+<ol type="1">
+<li><code>preventClose</code>: If this is set to <code>true</code>, the source <code>ReadableStream</code> closing will no longer cause the destination <code>WritableStream</code> to be closed. The method will return a fulfilled promise once this process completes, unless an error is encountered while closing the destination in which case it will be rejected with that error.</li>
+<li><code>preventAbort</code>: If this is set to <code>true</code>, errors in the source <code>ReadableStream</code> will no longer abort the destination <code>WritableStream</code>. The method will return a promise rejected with the source’s error, or with any error that occurs during aborting the destination.</li>
+<li><code>preventCancel</code>: If this is set to <code>true</code>, errors in the destination <code>WritableStream</code> will no longer cancel the source <code>ReadableStream</code>. In this case the method will return a promise rejected with the source’s error, or with any error that occurs during canceling the source. In addition, if the destination writable stream starts out closed or closing, the source readable stream will no longer be canceled. In this case the method will return a promise rejected with an error indicating piping to a closed stream failed, or with any error that occurs during canceling the source.</li>
+<li><code>signal</code>: If set to an <a href="/en-US/docs/Web/API/AbortSignal"><code>AbortSignal</code></a> object, ongoing pipe operations can then be aborted via the corresponding <a href="/en-US/docs/Web/API/AbortController"><code>AbortController</code></a>.</li>
+</ol></li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A {{jsxref(“Promise”)}} that resolves when the piping process has completed.</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li>TypeError
+<ul>
+<li>: The <code>writableStream</code> and/or <code>readableStream</code> objects are not a writable stream/readable stream, or one or both of the streams are locked.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">// Fetch the original image</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="at">fetch</span>(<span class="st">&#39;png-logo.png&#39;</span>)</a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="co">// Retrieve its body as ReadableStream</span></a>
+<a class="sourceLine" id="cb2-4" title="4">.<span class="at">then</span>(response <span class="kw">=&gt;</span> <span class="va">response</span>.<span class="at">body</span>)</a>
+<a class="sourceLine" id="cb2-5" title="5">.<span class="at">then</span>(body <span class="kw">=&gt;</span> <span class="va">body</span>.<span class="at">pipeThrough</span>(<span class="kw">new</span> <span class="at">PNGTransformStream</span>()))</a>
+<a class="sourceLine" id="cb2-6" title="6">.<span class="at">then</span>(rs <span class="kw">=&gt;</span> <span class="va">rs</span>.<span class="at">pipeTo</span>(<span class="kw">new</span> <span class="at">FinalDestinationStream</span>()))</a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

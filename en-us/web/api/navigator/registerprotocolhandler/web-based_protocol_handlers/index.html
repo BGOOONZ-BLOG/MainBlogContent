@@ -1,0 +1,88 @@
+<h2 id="background">Background</h2>
+<p>It’s fairly common to find web pages link to resources using non-<code>http</code> protocols. An example is the <code>mailto:</code> protocol:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;mailto:webmaster@example.com&quot;</span><span class="kw">&gt;</span>Web Master<span class="kw">&lt;/a&gt;</span></a></code></pre></div>
+<p>Web authors can use a <code>mailto:</code> link when they want to provide a convenient way for users to send an email, directly from the webpage. When the link is activated, the browser should launch the default desktop application for handling email. You can think of this as a <em>desktop-based</em> protocol handler.</p>
+<p>Web-based protocol handlers allow web-based applications to participate in the process too. This is becoming more important as more types of applications migrate to the web. In fact, there are many web-based email handling applications that could process a <code>mailto</code> link.</p>
+<h2 id="registering">Registering</h2>
+<p>Setting up a web application as a protocol handler is not a difficult process. Basically, the web application uses <a href="/en-US/docs/Web/API/Navigator/registerProtocolHandler"><code>registerProtocolHandler()</code></a> to register itself with the browser as a potential handler for a given protocol. For example:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">navigator</span>.<span class="at">registerProtocolHandler</span>(<span class="st">&quot;web+burger&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-2" title="2">                                  <span class="st">&quot;http://www.google.co.uk/?uri=%s&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-3" title="3">                                  <span class="st">&quot;Burger handler&quot;</span>)<span class="op">;</span></a></code></pre></div>
+<p>Where the parameters are:</p>
+<ul>
+<li>The protocol.</li>
+<li>The URL template, used as the handler. The “%s” is replaced with the <code>href</code> of the link and a GET is executed on the resultant URL.</li>
+<li>The user friendly name for the protocol handler.</li>
+</ul>
+<p>When a browser executes this code, it should display a prompt to the user, asking permission to allow the web application to register as a handler for the protocol. Firefox displays a prompt in the notification bar area:</p>
+<p><img src="protocolregister.png" /></p>
+<blockquote>
+<p><strong>Note:</strong> The URL template supplied when registering <strong>must</strong> be of the same domain as the webpage attempting to perform the registration or the registration will fail. For example, <code>http://example.com/homepage.html</code> can register a protocol handler for <code>http://example.com/handle_mailto/%s</code>, but not for <code>http://example.org/handle_mailto/%s</code>.</p>
+</blockquote>
+<p>Registering the same protocol handler more than once will pop up a different notification, indicating that the protocol handler is already registered. Therefore, it is a good idea to guard your call to register the protocol handler with a check to see if it is already registered, such as in the example below.</p>
+<h3 id="example">Example</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="op">&lt;!</span>DOCTYPE HTML PUBLIC <span class="st">&quot;-//W3C//DTD HTML 4.01//EN&quot;</span><span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="op">&lt;</span>html lang<span class="op">=</span><span class="st">&quot;en&quot;</span><span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="op">&lt;</span>head<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="op">&lt;</span>title<span class="op">&gt;</span>Web Protocol Handler Sample <span class="op">-</span> Register&lt;/title<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">  <span class="op">&lt;</span>script type<span class="op">=</span><span class="st">&quot;text/javascript&quot;</span><span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb3-6" title="6">    <span class="va">navigator</span>.<span class="at">registerProtocolHandler</span>(<span class="st">&quot;web+burger&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-7" title="7">                                  <span class="st">&quot;http://www.google.co.uk/?uri=%s&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-8" title="8">                                  <span class="st">&quot;Burger handler&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">  &lt;/script<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb3-10" title="10">&lt;/head<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="op">&lt;</span>body<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb3-12" title="12">  <span class="op">&lt;</span>h1<span class="op">&gt;</span>Web Protocol Handler Sample&lt;/h1<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb3-13" title="13">  <span class="op">&lt;</span>p<span class="op">&gt;</span>This web page will install a web protocol handler <span class="cf">for</span> the <span class="op">&lt;</span>code<span class="op">&gt;</span>web<span class="op">+</span>burger<span class="op">:</span>&lt;/code<span class="op">&gt;</span> <span class="va">protocol</span>.&lt;/p<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb3-14" title="14">&lt;/body<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb3-15" title="15">&lt;/html<span class="op">&gt;</span></a></code></pre></div>
+<h2 id="activating">Activating</h2>
+<p>Now, anytime the user activates a link that uses the registered protocol, the browser will route the action to the URL supplied when the web application registered. Firefox will, by default, prompt the user before handling off the action.</p>
+<h3 id="example-1">Example</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb4-1" title="1"><span class="dt">&lt;!DOCTYPE </span>HTML PUBLIC &quot;-//W3C//DTD HTML 4.01//EN&quot;<span class="dt">&gt;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="kw">&lt;html</span><span class="ot"> lang=</span><span class="st">&quot;en&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="kw">&lt;head&gt;</span></a>
+<a class="sourceLine" id="cb4-4" title="4">  <span class="kw">&lt;title&gt;</span>Web Protocol Handler Sample - Test<span class="kw">&lt;/title&gt;</span></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="kw">&lt;/head&gt;</span></a>
+<a class="sourceLine" id="cb4-6" title="6"><span class="kw">&lt;body&gt;</span></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="kw">&lt;p&gt;</span>Hey have you seen <span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;web+burger:cheeseburger&quot;</span><span class="kw">&gt;</span>this<span class="kw">&lt;/a&gt;</span> before?<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb4-8" title="8"><span class="kw">&lt;/body&gt;</span></a>
+<a class="sourceLine" id="cb4-9" title="9"><span class="kw">&lt;/html&gt;</span></a></code></pre></div>
+<h2 id="handling">Handling</h2>
+<p>The next phase is handling the action. The browser extracts the <code>href</code> from the activated link, combines it with the URL template supplied during handler registration and performs an HTTP GET on the URL. So, using the above examples, the browser would perform a GET on this URL:</p>
+<pre><code>http://www.google.co.uk/?uri=web+burger:cheeseburger</code></pre>
+<p>Server side code can extract the query string parameters and perform the desired action.</p>
+<blockquote>
+<p><strong>Note:</strong> The server side code is passed the <strong>entire</strong> contents of the <code>href</code>. This means the server side code will have to parse out the protocol from the data.</p>
+</blockquote>
+<h3 id="example-2">Example</h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode php"><code class="sourceCode php"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">&lt;?php</span></a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="kw">$value</span> = <span class="st">&quot;&quot;</span><span class="ot">;</span></a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="kw">if</span> <span class="ot">(</span> <span class="kw">isset</span> <span class="ot">(</span> <span class="kw">$_GET</span><span class="ot">[</span><span class="st">&quot;value&quot;</span><span class="ot">]</span> <span class="ot">)</span> <span class="ot">)</span> {</a>
+<a class="sourceLine" id="cb6-4" title="4">  <span class="kw">$value</span> = <span class="kw">$_GET</span><span class="ot">[</span><span class="st">&quot;value&quot;</span><span class="ot">];</span></a>
+<a class="sourceLine" id="cb6-5" title="5">}</a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="kw">?&gt;</span></a>
+<a class="sourceLine" id="cb6-7" title="7"></a>
+<a class="sourceLine" id="cb6-8" title="8">&lt;!<span class="kw">DOCTYPE</span> <span class="kw">HTML</span> <span class="kw">PUBLIC</span> <span class="st">&quot;-//W3C//DTD HTML 4.01//EN&quot;</span>&gt;</a>
+<a class="sourceLine" id="cb6-9" title="9">&lt;html lang=<span class="st">&quot;en&quot;</span>&gt;</a>
+<a class="sourceLine" id="cb6-10" title="10">&lt;head&gt;</a>
+<a class="sourceLine" id="cb6-11" title="11">    &lt;title&gt;Web Protocol Handler Sample&lt;/title&gt;</a>
+<a class="sourceLine" id="cb6-12" title="12">&lt;/head&gt;</a>
+<a class="sourceLine" id="cb6-13" title="13">&lt;body&gt;</a>
+<a class="sourceLine" id="cb6-14" title="14">  &lt;h1&gt;Web Protocol Handler Sample - Handler&lt;/h1&gt;</a>
+<a class="sourceLine" id="cb6-15" title="15">  &lt;p&gt;This web page is called when handling a &lt;code&gt;web+burger:&lt;/code&gt; protocol action. The data sent:&lt;/p&gt;</a>
+<a class="sourceLine" id="cb6-16" title="16">  &lt;textarea&gt;</a>
+<a class="sourceLine" id="cb6-17" title="17">&lt;<span class="ot">?</span>php <span class="kw">echo</span><span class="ot">(</span><span class="fu">htmlspecialchars</span><span class="ot">(</span><span class="kw">$value</span><span class="ot">,</span> <span class="kw">ENT_QUOTES</span><span class="ot">,</span> <span class="st">&#39;UTF-8&#39;</span><span class="ot">));</span> <span class="kw">?&gt;</span></a>
+<a class="sourceLine" id="cb6-18" title="18">  &lt;/textarea&gt;</a>
+<a class="sourceLine" id="cb6-19" title="19">&lt;/body&gt;</a>
+<a class="sourceLine" id="cb6-20" title="20">&lt;/html&gt;</a></code></pre></div>
+<h2 id="references">References</h2>
+<ul>
+<li><a href="https://www.w3.org/TR/2011/WD-html5-20110525/timers.html#custom-handlers">http://www.w3.org/TR/2011/WD-html5-20110525/timers.html#custom-handlers</a></li>
+</ul>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/XPCOM_Interface_Reference/nsIProtocolHandler">nsIProtocolHandler</a> (XUL only)</li>
+<li><a href="http://blog.mozilla.com/webdev/2010/07/26/registerprotocolhandler-enhancing-the-federated-web/">RegisterProtocolHandler Enhancing the Federated Web</a> at Mozilla Webdev</li>
+<li><a href="https://developers.google.com/web/updates/2011/06/Registering-a-custom-protocol-handler">Register a custom protocolHandler</a> at Google Developers.</li>
+</ul>

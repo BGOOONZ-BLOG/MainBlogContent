@@ -1,0 +1,64 @@
+<p>{{DefaultAPISidebar(“Image Capture API”)}}{{SeeCompatTable}}</p>
+<p>The <strong>MediaStream Image Capture API</strong> is an API for capturing images or videos from a photographic device. In addition to capturing data, it also allows you to retrieve information about device capabilities such as image size, red-eye reduction and whether or not there is a flash and what they are currently set to. Conversely, the API allows the capabilities to be configured within the constraints what the device allows.</p>
+<h2 id="mediastream-image-capture-concepts-and-usage">MediaStream image capture concepts and usage</h2>
+<p>The process of retrieving an image or video stream happens as described below. The example code is adapted from <a href="https://googlechrome.github.io/samples/image-capture/">Chrome’s Image Capture examples</a>.</p>
+<p>First, get a reference to a device by calling {{domxref(“MediaDevices.getUserMedia()”)}}. The example below says give me whatever video device is available, though the <code>getUserMedia()</code> method allows more specific capabilities to be requested. This method returns a {{jsxref(“Promise”)}} that resolves with a {{domxref(“MediaStream”)}} object.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">navigator</span>.<span class="va">mediaDevices</span>.<span class="at">getUserMedia</span>(<span class="op">{</span> <span class="dt">video</span><span class="op">:</span> <span class="kw">true</span> <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb1-2" title="2">  .<span class="at">then</span>(mediaStream <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-3" title="3">    <span class="co">// Do something with the stream.</span></a>
+<a class="sourceLine" id="cb1-4" title="4">  <span class="op">}</span>)</a></code></pre></div>
+<p>Next, isolate the visual part of the media stream. Do this by calling {{domxref(“MediaStream.getVideoTracks()”)}}. This returns an array of {{domxref(“MediaStreamTrack”)}} objects. The code below assumes that the first item in the <code>MediaStreamTrack</code> array is the one to use. You can use the properties of the <code>MediaStreamTrack</code> objects to select the one you need.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> track <span class="op">=</span> <span class="va">mediaStream</span>.<span class="at">getVideoTracks</span>()[<span class="dv">0</span>]<span class="op">;</span></a></code></pre></div>
+<p>At this point, you might want to configure the device capabilities before capturing an image. You can do this by calling {{domxref(“MediaStreamTrack.applyConstraints”,“applyConstraints()”)}} on the track object before doing anything else.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">let</span> zoom <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#zoom&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">const</span> capabilities <span class="op">=</span> <span class="va">track</span>.<span class="at">getCapabilities</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="co">// Check whether zoom is supported or not.</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="cf">if</span>(<span class="op">!</span><span class="va">capabilities</span>.<span class="at">zoom</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-5" title="5">  <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-7" title="7"><span class="va">track</span>.<span class="at">applyConstraints</span>(<span class="op">{</span> <span class="dt">advanced </span><span class="op">:</span> [<span class="op">{</span> <span class="dt">zoom</span><span class="op">:</span> <span class="va">zoom</span>.<span class="at">value</span> <span class="op">}</span>] <span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>Finally, pass the <code>MediaStreamTrack</code> object to the {{domxref(“ImageCapture.ImageCapture()”, “ImageCapture()”)}} constructor. Though a <code>MediaStream</code> holds several types of tracks and provides multiple methods for retrieving them, the ImageCapture constructor will throw a {{domxref(“DOMException”)}} of type <code>NotSupportedError</code> if {{domxref(“MediaStreamTrack.kind”)}} is not <code>"video"</code>.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">let</span> imageCapture <span class="op">=</span> <span class="kw">new</span> <span class="at">ImageCapture</span>(track)<span class="op">;</span></a></code></pre></div>
+<h2 id="interfaces">Interfaces</h2>
+<ul>
+<li>{{domxref(“ImageCapture”)}}
+<ul>
+<li>: An interface for capturing images from a photographic device referenced through a valid {{domxref(“MediaStreamTrack”)}}.</li>
+</ul></li>
+<li>{{domxref(“PhotoCapabilities”)}}
+<ul>
+<li>: Provides available configuration options for an attached photographic device. Retrieve a <code>PhotoCapabilities</code> object by calling {{domxref(“ImageCapture.getPhotoCapabilities()”)}}.</li>
+</ul></li>
+</ul>
+<h2 id="specifications">Specifications</h2>
+<table>
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 38%" />
+<col style="width: 18%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Specification</th>
+<th>Status</th>
+<th>Comment</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>{{SpecName(‘MediaStream Image’)}}</td>
+<td>{{Spec2(‘MediaStream Image’)}}</td>
+<td>Initial definition.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<h3 id="imagecapture"><code>ImageCapture</code></h3>
+<p>{{Compat(“api.ImageCapture”)}}</p>
+<h3 id="photocapabilities"><code>PhotoCapabilities</code></h3>
+<p>{{Compat(“api.PhotoCapabilities”)}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{domxref(“MediaStream”)}}</li>
+<li>{{domxref(“MediaStreamTrack”)}}</li>
+</ul>

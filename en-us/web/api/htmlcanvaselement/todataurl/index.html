@@ -1,0 +1,95 @@
+<p>{{APIRef(“Canvas API”)}}</p>
+<p>The <strong><code>HTMLCanvasElement.toDataURL()</code></strong> method returns a <a href="/en-US/docs/Web/HTTP/Basics_of_HTTP/Data_URIs">data URI</a> containing a representation of the image in the format specified by the <code>type</code> parameter.</p>
+<p>The desired file format and image quality may be specified. If the file format is not specified, or if the given format is not supported, then the data will be exported as <code>image/png</code>. In other words, if the returned value starts with <code>data:image/png</code> for any other requested <code>type</code>, then that format is not supported.</p>
+<p>Browsers are required to support <code>image/png</code>; many will support additional formats including <code>image/jpg</code> and <code>image/webp</code>.</p>
+<p>The created image data will have a resolution of 96dpi for file formats that support encoding resolution metadata.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">canvas</span>.<span class="at">toDataURL</span>(type<span class="op">,</span> encoderOptions)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>type</code> {{optional_inline}}
+<ul>
+<li>: A {{domxref(“DOMString”)}} indicating the image format. The default type is <code>image/png</code>; this image format will be also used if the specified type is not supported.</li>
+</ul></li>
+<li><code>encoderOptions</code> {{optional_inline}}
+<ul>
+<li>: A {{jsxref(“Number”)}} between <code>0</code> and <code>1</code> indicating the image quality to be used when creating images using file formats that support lossy compression (such as <code>image/jpeg</code> or <code>image/webp</code>). A user agent will use its default quality value if this option is not specified, or if the number is outside the allowed range.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A {{domxref(“DOMString”)}} containing the requested <a href="/en-US/docs/Web/HTTP/Basics_of_HTTP/Data_URIs">data URI</a>.</p>
+<p>If the height or width of the canvas is <code>0</code> or larger than the <a href="/en-US/docs/Web/HTML/Element/canvas#maximum_canvas_size">maximum canvas size</a>, the string <code>"data:,"</code> is returned.</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><code>SecurityError</code>
+<ul>
+<li>: The canvas’s bitmap is not origin clean; at least some of its contents have or may have been loaded from a site other than the one from which the document itself was loaded.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>Given this {{HTMLElement(“canvas”)}} element:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">&lt;canvas</span><span class="ot"> id=</span><span class="st">&quot;canvas&quot;</span><span class="ot"> width=</span><span class="st">&quot;5&quot;</span><span class="ot"> height=</span><span class="st">&quot;5&quot;</span><span class="kw">&gt;&lt;/canvas&gt;</span></a></code></pre></div>
+<p>You can get a data-URL of the canvas with the following lines:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">var</span> canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;canvas&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">var</span> dataURL <span class="op">=</span> <span class="va">canvas</span>.<span class="at">toDataURL</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="va">console</span>.<span class="at">log</span>(dataURL)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="co">// &quot;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNby</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="co">// blAAAADElEQVQImWNgoBMAAABpAAFEI8ARAAAAAElFTkSuQmCC&quot;</span></a></code></pre></div>
+<h3 id="setting-image-quality-with-jpegs">Setting image quality with jpegs</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">var</span> fullQuality <span class="op">=</span> <span class="va">canvas</span>.<span class="at">toDataURL</span>(<span class="st">&#39;image/jpeg&#39;</span><span class="op">,</span> <span class="fl">1.0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="co">// data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ...9oADAMBAAIRAxEAPwD/AD/6AP/Z&quot;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="kw">var</span> mediumQuality <span class="op">=</span> <span class="va">canvas</span>.<span class="at">toDataURL</span>(<span class="st">&#39;image/jpeg&#39;</span><span class="op">,</span> <span class="fl">0.5</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="kw">var</span> lowQuality <span class="op">=</span> <span class="va">canvas</span>.<span class="at">toDataURL</span>(<span class="st">&#39;image/jpeg&#39;</span><span class="op">,</span> <span class="fl">0.1</span>)<span class="op">;</span></a></code></pre></div>
+<h3 id="example-dynamically-change-images">Example: Dynamically change images</h3>
+<p>You can use this technique in coordination with mouse events in order to dynamically change images (gray-scale vs. color in this example):</p>
+<h4 id="html">HTML</h4>
+<div class="sourceCode" id="cb5"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">&lt;img</span><span class="ot"> class=</span><span class="st">&quot;grayscale&quot;</span><span class="ot"> src=</span><span class="st">&quot;myPicture.png&quot;</span><span class="ot"> alt=</span><span class="st">&quot;Description of my picture&quot;</span> <span class="kw">/&gt;</span></a></code></pre></div>
+<h4 id="javascript">JavaScript</h4>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="va">window</span>.<span class="at">addEventListener</span>(<span class="st">&#39;load&#39;</span><span class="op">,</span> removeColors)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-2" title="2"></a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="kw">function</span> <span class="at">showColorImg</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-4" title="4">  <span class="kw">this</span>.<span class="va">style</span>.<span class="at">display</span> <span class="op">=</span> <span class="st">&#39;none&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-5" title="5">  <span class="kw">this</span>.<span class="va">nextSibling</span>.<span class="va">style</span>.<span class="at">display</span> <span class="op">=</span> <span class="st">&#39;inline&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="op">}</span></a>
+<a class="sourceLine" id="cb6-7" title="7"></a>
+<a class="sourceLine" id="cb6-8" title="8"><span class="kw">function</span> <span class="at">showGrayImg</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-9" title="9">  <span class="kw">this</span>.<span class="va">previousSibling</span>.<span class="va">style</span>.<span class="at">display</span> <span class="op">=</span> <span class="st">&#39;inline&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-10" title="10">  <span class="kw">this</span>.<span class="va">style</span>.<span class="at">display</span> <span class="op">=</span> <span class="st">&#39;none&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-11" title="11"><span class="op">}</span></a>
+<a class="sourceLine" id="cb6-12" title="12"></a>
+<a class="sourceLine" id="cb6-13" title="13"><span class="kw">function</span> <span class="at">removeColors</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-14" title="14">  <span class="kw">var</span> aImages <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementsByClassName</span>(<span class="st">&#39;grayscale&#39;</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb6-15" title="15">      nImgsLen <span class="op">=</span> <span class="va">aImages</span>.<span class="at">length</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb6-16" title="16">      oCanvas <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;canvas&#39;</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb6-17" title="17">      oCtx <span class="op">=</span> <span class="va">oCanvas</span>.<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-18" title="18">  <span class="cf">for</span> (<span class="kw">var</span> nWidth<span class="op">,</span> nHeight<span class="op">,</span> oImgData<span class="op">,</span> oGrayImg<span class="op">,</span> nPixel<span class="op">,</span> aPix<span class="op">,</span> nPixLen<span class="op">,</span> nImgId <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> nImgId <span class="op">&lt;</span> nImgsLen<span class="op">;</span> nImgId<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-19" title="19">    oColorImg <span class="op">=</span> aImages[nImgId]<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-20" title="20">    nWidth <span class="op">=</span> <span class="va">oColorImg</span>.<span class="at">offsetWidth</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-21" title="21">    nHeight <span class="op">=</span> <span class="va">oColorImg</span>.<span class="at">offsetHeight</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-22" title="22">    <span class="va">oCanvas</span>.<span class="at">width</span> <span class="op">=</span> nWidth<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-23" title="23">    <span class="va">oCanvas</span>.<span class="at">height</span> <span class="op">=</span> nHeight<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-24" title="24">    <span class="va">oCtx</span>.<span class="at">drawImage</span>(oColorImg<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-25" title="25">    oImgData <span class="op">=</span> <span class="va">oCtx</span>.<span class="at">getImageData</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> nWidth<span class="op">,</span> nHeight)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-26" title="26">    aPix <span class="op">=</span> <span class="va">oImgData</span>.<span class="at">data</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-27" title="27">    nPixLen <span class="op">=</span> <span class="va">aPix</span>.<span class="at">length</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-28" title="28">    <span class="cf">for</span> (nPixel <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> nPixel <span class="op">&lt;</span> nPixLen<span class="op">;</span> nPixel <span class="op">+=</span> <span class="dv">4</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-29" title="29">      aPix[nPixel <span class="op">+</span> <span class="dv">2</span>] <span class="op">=</span> aPix[nPixel <span class="op">+</span> <span class="dv">1</span>] <span class="op">=</span> aPix[nPixel] <span class="op">=</span> (aPix[nPixel] <span class="op">+</span> aPix[nPixel <span class="op">+</span> <span class="dv">1</span>] <span class="op">+</span> aPix[nPixel <span class="op">+</span> <span class="dv">2</span>]) / <span class="dv">3</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-30" title="30">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-31" title="31">    <span class="va">oCtx</span>.<span class="at">putImageData</span>(oImgData<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-32" title="32">    oGrayImg <span class="op">=</span> <span class="kw">new</span> <span class="at">Image</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-33" title="33">    <span class="va">oGrayImg</span>.<span class="at">src</span> <span class="op">=</span> <span class="va">oCanvas</span>.<span class="at">toDataURL</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-34" title="34">    <span class="va">oGrayImg</span>.<span class="at">onmouseover</span> <span class="op">=</span> showColorImg<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-35" title="35">    <span class="va">oColorImg</span>.<span class="at">onmouseout</span> <span class="op">=</span> showGrayImg<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-36" title="36">    <span class="va">oCtx</span>.<span class="at">clearRect</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> nWidth<span class="op">,</span> nHeight)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-37" title="37">    <span class="va">oColorImg</span>.<span class="va">style</span>.<span class="at">display</span> <span class="op">=</span> <span class="st">&quot;none&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-38" title="38">    <span class="va">oColorImg</span>.<span class="va">parentNode</span>.<span class="at">insertBefore</span>(oGrayImg<span class="op">,</span> oColorImg)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-39" title="39">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-40" title="40"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/HTTP/Basics_of_HTTP/Data_URIs">Data URIs</a> in the <a href="/en-US/docs/Web/HTTP">HTTP</a> reference.</li>
+</ul>

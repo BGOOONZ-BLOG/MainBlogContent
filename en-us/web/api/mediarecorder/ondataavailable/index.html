@@ -1,0 +1,45 @@
+<p>{{APIRef(“MediaStream Recording”)}}</p>
+<p>The <strong><code>MediaRecorder.ondataavailable</code></strong> event handler (part of the <a href="/en-US/docs/Web/API/MediaStream_Recording_API">MediaStream Recording API</a>) handles the {{event(“dataavailable”)}} event, letting you run code in response to {{domxref(“Blob”)}} data being made available for use.</p>
+<p>The <code>dataavailable</code> event is fired when the MediaRecorder delivers media data to your application for its use. The data is provided in a {{domxref(“Blob”)}} object that contains the data. This occurs in four situations:</p>
+<ul>
+<li>When the media stream ends, any media data not already delivered to your <code>ondataavailable</code> handler is passed in a single {{domxref(“Blob”)}}.</li>
+<li>When {{domxref(“MediaRecorder.stop()”)}} is called, all media data which has been captured since recording began or the last time a <code>dataavailable</code> event occurred is delivered in a {{domxref(“Blob”)}}; after this, capturing ends.</li>
+<li>When {{domxref(“MediaRecorder.requestData()”)}} is called, all media data which has been captured since recording began or the last time a <code>dataavailable</code> event occurred is delivered; then a new <code>Blob</code> is created and media capture continues into that blob.</li>
+<li>If a <code>timeslice</code> property was passed into the {{domxref(“MediaRecorder.start()”)}} method that started media capture, a <code>dataavailable</code> event is fired every <code>timeslice</code> milliseconds. That means that each blob will have a specific time duration (except the last blob, which might be shorter, since it would be whatever is left over since the last event). So if the method call looked like this — <code>recorder.start(1000);</code> — the <code>dataavailable</code> event would fire after each second of media capture, and our event handler would be called every second with a blob of media data that’s one second long. You can use <code>timeslice</code> alongside {{domxref(“MediaRecorder.stop()”)}} and {{domxref(“MediaRecorder.requestData()”)}} to produce multiple same-length blobs plus other shorter blobs as well.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> The {{domxref(“Blob”)}} containing the media data is available in the {{event(“dataavailable”)}} event’s <code>data</code> property.</p>
+</blockquote>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">mediaRecorder</span>.<span class="at">ondataavailable</span> <span class="op">=</span> functionRef<span class="op">;</span></a></code></pre></div>
+<h2 id="example">Example</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1">...</a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">var</span> chunks <span class="op">=</span> []<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="va">mediaRecorder</span>.<span class="at">onstop</span> <span class="op">=</span> <span class="kw">function</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;data available after MediaRecorder.stop() called.&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6"></a>
+<a class="sourceLine" id="cb2-7" title="7">    <span class="kw">var</span> audio <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;audio&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">    <span class="va">audio</span>.<span class="at">controls</span> <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9">    <span class="kw">var</span> blob <span class="op">=</span> <span class="kw">new</span> <span class="at">Blob</span>(chunks<span class="op">,</span> <span class="op">{</span> <span class="st">&#39;type&#39;</span> <span class="op">:</span> <span class="st">&#39;audio/ogg; codecs=opus&#39;</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10">    <span class="kw">var</span> audioURL <span class="op">=</span> <span class="va">window</span>.<span class="va">URL</span>.<span class="at">createObjectURL</span>(blob)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11">    <span class="va">audio</span>.<span class="at">src</span> <span class="op">=</span> audioURL<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;recorder stopped&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-14" title="14"></a>
+<a class="sourceLine" id="cb2-15" title="15">  <span class="va">mediaRecorder</span>.<span class="at">ondataavailable</span> <span class="op">=</span> <span class="kw">function</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-16" title="16">    <span class="va">chunks</span>.<span class="at">push</span>(<span class="va">e</span>.<span class="at">data</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-17" title="17">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-18" title="18"></a>
+<a class="sourceLine" id="cb2-19" title="19">...</a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/MediaStream_Recording_API">Using the MediaStream Recording API</a></li>
+<li><a href="https://mdn.github.io/web-dictaphone/">Web Dictaphone</a>: MediaRecorder + getUserMedia + Web Audio API visualization demo, by <a href="https://twitter.com/chrisdavidmills">Chris Mills</a> (<a href="https://github.com/mdn/web-dictaphone/">source on Github</a>.)</li>
+<li><a href="http://simpl.info/mediarecorder/">simpl.info MediaStream Recording demo</a>, by <a href="https://twitter.com/sw12">Sam Dutton</a>.</li>
+<li>{{domxref(“Navigator.getUserMedia”)}}</li>
+</ul>

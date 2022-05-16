@@ -1,0 +1,70 @@
+<p>{{APIRef(“Media Source Extensions”)}}</p>
+<p>The <strong><code>addSourceBuffer()</code></strong> method of the {{domxref(“MediaSource”)}} interface creates a new {{domxref(“SourceBuffer”)}} of the given {{Glossary(“MIME type”)}} and adds it to the <code>MediaSource</code>’s {{domxref(“MediaSource.sourceBuffers”, “sourceBuffers”)}} list. The new <code>SourceBuffer</code> is also returned.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> sourceBuffer <span class="op">=</span> <span class="va">mediaSource</span>.<span class="at">addSourceBuffer</span>(mimeType)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>mimeType</code>
+<ul>
+<li>: A {{domxref(“DOMString”)}} specifying the MIME type of the {{domxref(“SourceBuffer”)}} to create and add to the {{domxref(“MediaSource”)}}.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A {{domxref(“SourceBuffer”)}} object representing the new source buffer that has been created and added to the media source.</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><code>InvalidAccessError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the value specified for <code>mimeType</code> is an empty string rather than a valid MIME type.</li>
+</ul></li>
+<li><code>InvalidStateError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the {{domxref(“MediaSource”)}} is not in the <code>"open"</code> {{domxref(“MediaSource.readyState”, “readyState”)}}.</li>
+</ul></li>
+<li><code>NotSupportedError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the specified <code>mimeType</code> isn’t supported by the {{Glossary(“user agent”)}}, or is not compatible with the MIME types of other {{domxref(“SourceBuffer”)}} objects that are already included in the media source’s {{domxref(“MediaSource.sourceBuffers”, “sourceBuffers”)}} list.</li>
+</ul></li>
+<li><code>QuotaExceededError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the user agent can’t handle any more <code>SourceBuffer</code> objects, or creating a new <code>SourceBuffer</code> using the given <code>mimeType</code> would result in an <a href="https://w3c.github.io/media-source/#sourcebuffer-configuration">unsupported configuration of <code>SourceBuffer</code>s</a>.</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<p>The following snippet is from a simple example written by Nick Desaulniers (<a href="https://nickdesaulniers.github.io/netfix/demo/bufferAll.html">view the full demo live</a>, or <a href="https://github.com/nickdesaulniers/netfix/blob/gh-pages/demo/bufferAll.html">download the source</a> for further investigation.)</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> assetURL <span class="op">=</span> <span class="st">&#39;frag_bunny.mp4&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="co">// Need to be specific for Blink regarding codecs</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="co">// ./mp4info frag_bunny.mp4 | grep Codec</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="kw">var</span> mimeCodec <span class="op">=</span> <span class="st">&#39;video/mp4; codecs=&quot;avc1.42E01E, mp4a.40.2&quot;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="cf">if</span> (<span class="st">&#39;MediaSource&#39;</span> <span class="kw">in</span> window <span class="op">&amp;&amp;</span> <span class="va">MediaSource</span>.<span class="at">isTypeSupported</span>(mimeCodec)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="kw">var</span> mediaSource <span class="op">=</span> <span class="kw">new</span> MediaSource<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="co">//console.log(mediaSource.readyState); // closed</span></a>
+<a class="sourceLine" id="cb2-9" title="9">  <span class="va">video</span>.<span class="at">src</span> <span class="op">=</span> <span class="va">URL</span>.<span class="at">createObjectURL</span>(mediaSource)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="va">mediaSource</span>.<span class="at">addEventListener</span>(<span class="st">&#39;sourceopen&#39;</span><span class="op">,</span> sourceOpen)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-12" title="12">  <span class="va">console</span>.<span class="at">error</span>(<span class="st">&#39;Unsupported MIME type or codec: &#39;</span><span class="op">,</span> mimeCodec)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-14" title="14"></a>
+<a class="sourceLine" id="cb2-15" title="15"><span class="kw">function</span> <span class="at">sourceOpen</span> (_) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-16" title="16">  <span class="co">//console.log(this.readyState); // open</span></a>
+<a class="sourceLine" id="cb2-17" title="17">  <span class="kw">var</span> mediaSource <span class="op">=</span> <span class="kw">this</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">  <span class="kw">var</span> sourceBuffer <span class="op">=</span> <span class="va">mediaSource</span>.<span class="at">addSourceBuffer</span>(mimeCodec)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-19" title="19">  <span class="at">fetchAB</span>(assetURL<span class="op">,</span> <span class="kw">function</span> (buf) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-20" title="20">    <span class="va">sourceBuffer</span>.<span class="at">addEventListener</span>(<span class="st">&#39;updateend&#39;</span><span class="op">,</span> <span class="kw">function</span> (_) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-21" title="21">      <span class="va">mediaSource</span>.<span class="at">endOfStream</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-22" title="22">      <span class="va">video</span>.<span class="at">play</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-23" title="23">      <span class="co">//console.log(mediaSource.readyState); // ended</span></a>
+<a class="sourceLine" id="cb2-24" title="24">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-25" title="25">    <span class="va">sourceBuffer</span>.<span class="at">appendBuffer</span>(buf)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-26" title="26">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-27" title="27"><span class="op">};</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{domxref(“SourceBuffer”)}}</li>
+<li>{{domxref(“SourceBufferList”)}}</li>
+</ul>

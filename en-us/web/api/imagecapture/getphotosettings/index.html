@@ -1,0 +1,44 @@
+<p>{{APIRef(“MediaStream Image”)}}</p>
+<p>The <strong><code>getPhotoSettings()</code></strong> method of the {{domxref(“ImageCapture”)}} interface returns a {{jsxref(“Promise”)}} that resolves with a {{domxref(“PhotoSettings”)}} object containing the current photo configuration settings.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> settingsPromise <span class="op">=</span> <span class="va">imageCapture</span>.<span class="at">getPhotoSettings</span>()</a></code></pre></div>
+<h3 id="return-value">Return value</h3>
+<p>A {{jsxref(“Promise”)}} that resolves with a {{domxref(“PhotoSettings”)}} object containing the following properties:</p>
+<ul>
+<li><code>fillLightMode</code>:  The flash setting of the capture device, one of <code>"auto"</code>, <code>"off"</code>, or <code>"on"</code>.</li>
+<li><code>imageHeight</code>: The desired image height as an integer. The user agent selects the closest width value to this setting if it only supports discrete heights.</li>
+<li><code>imageWidth</code>: The desired image width as an integer. The user agent selects the closest width value to this setting if it only supports discrete widths.</li>
+<li><code>redEyeReduction</code>: A boolean indicating whether the red-eye reduction should be used if it is available.</li>
+</ul>
+<h2 id="example">Example</h2>
+<p>The following example, extracted from <a href="https://googlechrome.github.io/samples/image-capture/photo-resolution.html">Chrome’s Image Capture / Photo Resolution Sample</a>, uses the results from <code>getPhotoSettings()</code> to modify the size of an input range. This example also shows how the {{domxref(“ImageCapture”)}} object is created using a {{domxref(“MediaStreamTrack”)}} retrieved from a device’s {{domxref(“MediaStream”)}}.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> input <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;input[type=&quot;range&quot;]&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">var</span> imageCapture<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="va">navigator</span>.<span class="va">mediaDevices</span>.<span class="at">getUserMedia</span>(<span class="op">{</span><span class="dt">video</span><span class="op">:</span> <span class="kw">true</span><span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-6" title="6">.<span class="at">then</span>(mediaStream <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;video&#39;</span>).<span class="at">srcObject</span> <span class="op">=</span> mediaStream<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8"></a>
+<a class="sourceLine" id="cb2-9" title="9">  <span class="kw">const</span> track <span class="op">=</span> <span class="va">mediaStream</span>.<span class="at">getVideoTracks</span>()[<span class="dv">0</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  imageCapture <span class="op">=</span> <span class="kw">new</span> <span class="at">ImageCapture</span>(track)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11"></a>
+<a class="sourceLine" id="cb2-12" title="12">  <span class="cf">return</span> <span class="va">imageCapture</span>.<span class="at">getPhotoCapabilities</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-14" title="14">.<span class="at">then</span>(photoCapabilities <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-15" title="15">  <span class="kw">const</span> settings <span class="op">=</span> <span class="va">imageCapture</span>.<span class="va">track</span>.<span class="at">getSettings</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-16" title="16"></a>
+<a class="sourceLine" id="cb2-17" title="17">  <span class="va">input</span>.<span class="at">min</span> <span class="op">=</span> <span class="va">photoCapabilities</span>.<span class="va">imageWidth</span>.<span class="at">min</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">  <span class="va">input</span>.<span class="at">max</span> <span class="op">=</span> <span class="va">photoCapabilities</span>.<span class="va">imageWidth</span>.<span class="at">max</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-19" title="19">  <span class="va">input</span>.<span class="at">step</span> <span class="op">=</span> <span class="va">photoCapabilities</span>.<span class="va">imageWidth</span>.<span class="at">step</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-20" title="20"></a>
+<a class="sourceLine" id="cb2-21" title="21">  <span class="cf">return</span> <span class="va">imageCapture</span>.<span class="at">getPhotoSettings</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-22" title="22"><span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-23" title="23">.<span class="at">then</span>(photoSettings <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-24" title="24">  <span class="va">input</span>.<span class="at">value</span> <span class="op">=</span> <span class="va">photoSettings</span>.<span class="at">imageWidth</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-25" title="25"><span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-26" title="26">.<span class="at">catch</span>(error <span class="kw">=&gt;</span> <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Argh!&#39;</span><span class="op">,</span> <span class="va">error</span>.<span class="at">name</span> <span class="op">||</span> error))<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

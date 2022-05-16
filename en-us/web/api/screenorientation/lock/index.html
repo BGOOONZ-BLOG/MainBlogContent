@@ -1,0 +1,109 @@
+<p>{{APIRef(“Screen Orientation”)}}</p>
+<p>The <strong><code>lock()</code></strong> property of the {{domxref(“ScreenOrientation”)}} interface locks the orientation of the containing document to the specified orientation.</p>
+<p>Typically orientation locking is only enabled on mobile devices, and when the browser context is full screen. If locking is supported, then it must work for all the parameter values listed below.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">screen</span>.<span class="va">orientation</span>.<span class="at">lock</span>(orientation)</a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>orientation</code>
+<ul>
+<li><p>: An orientation lock type. One of the following:</p>
+<ul>
+<li><code>"any"</code>
+<ul>
+<li>: Any of <code>portrait-primary</code>, <code>portrait-secondary</code>, <code>landscape-primary</code> or <code>landscape-secondary</code>.</li>
+</ul></li>
+<li><code>"natural"</code>
+<ul>
+<li>: The natural orientation of the screen from the underlying operating system: either <code>portrait-primary</code> or <code>landscape-primary</code>.</li>
+</ul></li>
+<li><code>"landscape"</code>
+<ul>
+<li>: An orientation where screen width is greater than the screen height. Depending on the platform convention, this may be <code>landscape-primary</code>, <code>landscape-secondary</code>, or both.</li>
+</ul></li>
+<li><code>"portrait"</code>
+<ul>
+<li>: An orientation where screen height is greater than the screen width. Depending on the platform convention, this may be <code>portrait-primary</code>, <code>portrait-secondary</code>, or both.</li>
+</ul></li>
+<li><code>"portrait-primary"</code>
+<ul>
+<li>: The “primary” portrait mode. If the natural orientation is a portrait mode (screen height is greater than width), this will be the same as the natural orientation, and correspond to an angle of 0 degrees. If the natural orientation is a landscape mode, then the user agent can choose either portrait orientation as the <code>portrait-primary</code> and <code>portrait-secondary</code>; one of those will be assigned the angle of 90 degrees and the other will have an angle of 270 degrees.</li>
+</ul></li>
+<li><code>"portrait-secondary"</code>
+<ul>
+<li>: The secondary portrait orientation. If the natural orientation is a portrait mode, this will have an angle of 180 degrees (in other words, the device is upside down relative to its natural orientation). If the natural orientation is a landscape mode, this can be either orientation as selected by the user agent: whichever was not selected for <code>landscape-primary</code>.</li>
+</ul></li>
+<li><code>"landscape-primary"</code>
+<ul>
+<li>: The “primary” landscape mode. If the natural orientation is a landscape mode (screen width is greater than height), this will be the same as the natural orientation, and correspond to an angle of 0 degrees. If the natural orientation is a portrait mode, then the user agent can choose either portrait orientation as the <code>landscape-primary</code> with an angle of either 90 or 270 degrees (<code>portrait-secondary</code> will be the other orientation and angle).</li>
+</ul></li>
+<li><code>"landscape-secondary"</code>
+<ul>
+<li>: The secondary landscape mode. If the natural orientation is a landscape mode, this orientation is upside down relative to the natural orientation, and will have an angle of 180 degrees. If the natural orientation is a portrait mode, this can be either orientation as selected by the user agent: whichever was not selected for <code>landscape-primary</code>.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A {{jsxref(“Promise”)}} that resolves after locking succeeds.</p>
+<h3 id="exceptions">Exceptions</h3>
+<p>The promise may be rejected with the following exceptions:</p>
+<ul>
+<li><code>NotSupportedError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: The user agent does not support locking the screen orientation.</li>
+</ul></li>
+<li><code>SecurityError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: The user-agent’s pre-lock conditions are not met. For example, a browser may require that the top-level browsing context’s <code>Document</code> is full screen. The promise may also be rejected with this error if the document has the sandboxed orientation lock browsing context flag set.</li>
+</ul></li>
+<li><code>TypeError</code>
+<ul>
+<li>: The <code>orientation</code> argument was not supplied.</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<p>This example shows how to lock the screen to the opposite orientation of the current one. Note that this example will only work on mobile devices and other devices that support orientation changes.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;example_container&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">&lt;button</span><span class="ot"> id=</span><span class="st">&quot;fullscreen_button&quot;</span><span class="kw">&gt;</span>Fullscreen<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">&lt;button</span><span class="ot"> id=</span><span class="st">&quot;lock_button&quot;</span><span class="kw">&gt;</span>Lock<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="kw">&lt;button</span><span class="ot"> id=</span><span class="st">&quot;unlock_button&quot;</span><span class="kw">&gt;</span>Unlock<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="kw">&lt;textarea</span><span class="ot"> id=</span><span class="st">&quot;log&quot;</span><span class="ot"> rows=</span><span class="st">&quot;7&quot;</span><span class="ot"> cols=</span><span class="st">&quot;85&quot;</span><span class="kw">&gt;&lt;/textarea&gt;</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> log <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;log&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="co">// Lock button: Lock the screen to the other orientation (rotated by 90 degrees) </span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="kw">const</span> rotate_btn <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#lock_button&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="va">rotate_btn</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> <span class="op">{</span> </a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="va">log</span>.<span class="at">textContent</span><span class="op">+=</span><span class="vs">`Lock pressed </span><span class="sc">\n</span><span class="vs">`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7"></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="kw">const</span> oppositeOrientation <span class="op">=</span> <span class="va">screen</span>.<span class="va">orientation</span>.<span class="va">type</span>.<span class="at">startsWith</span>(<span class="st">&quot;portrait&quot;</span>) <span class="op">?</span> <span class="st">&quot;landscape&quot;</span> : <span class="st">&quot;portrait&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">  <span class="va">screen</span>.<span class="va">orientation</span>.<span class="at">lock</span>(oppositeOrientation)</a>
+<a class="sourceLine" id="cb3-10" title="10">    .<span class="at">then</span>( () <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-11" title="11">      <span class="va">log</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="vs">`Locked to </span><span class="sc">${</span>oppositeOrientation<span class="sc">}\n</span><span class="vs">`</span></a>
+<a class="sourceLine" id="cb3-12" title="12">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-13" title="13">    )</a>
+<a class="sourceLine" id="cb3-14" title="14">    .<span class="at">catch</span> ( error <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-15" title="15">      <span class="va">log</span>.<span class="at">textContent</span> <span class="op">+=</span> <span class="vs">`</span><span class="sc">${</span>error<span class="sc">}\n</span><span class="vs">`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-16" title="16">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-17" title="17"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-18" title="18"></a>
+<a class="sourceLine" id="cb3-19" title="19"><span class="co">// Unlock button: Unlock the screen orientation (if locked)</span></a>
+<a class="sourceLine" id="cb3-20" title="20"><span class="kw">const</span> unlock_btn <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#unlock_button&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-21" title="21"><span class="va">unlock_btn</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> <span class="op">{</span> </a>
+<a class="sourceLine" id="cb3-22" title="22">  <span class="va">log</span>.<span class="at">textContent</span><span class="op">+=</span><span class="st">&#39;Unlock pressed </span><span class="sc">\n</span><span class="st">&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-23" title="23">  <span class="va">screen</span>.<span class="va">orientation</span>.<span class="at">unlock</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-24" title="24"><span class="op">}</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-25" title="25"></a>
+<a class="sourceLine" id="cb3-26" title="26"><span class="co">// Full screen button: Set the example to full-screen.</span></a>
+<a class="sourceLine" id="cb3-27" title="27"><span class="kw">const</span> fullscreen_btn <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#fullscreen_button&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-28" title="28"><span class="va">fullscreen_btn</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> <span class="op">{</span> </a>
+<a class="sourceLine" id="cb3-29" title="29">  <span class="va">log</span>.<span class="at">textContent</span><span class="op">+=</span><span class="st">&#39;Fullscreen pressed </span><span class="sc">\n</span><span class="st">&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-30" title="30">  <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;#example_container&quot;</span>).<span class="at">requestFullscreen</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-31" title="31"><span class="op">}</span> )<span class="op">;</span></a></code></pre></div>
+<p>To test the example, first press the Fullscreen button. Once the example is full screen, press the Lock button to switch the orientation, and Unlock to return to the natural orientation.</p>
+<p>{{EmbedLiveSample(‘Example’)}}</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

@@ -1,0 +1,166 @@
+<p>{{DefaultAPISidebar(“Performance Timeline API”)}}</p>
+<p>The <strong><a href="https://w3c.github.io/performance-timeline/">Performance Timeline</a></strong> standard defines extensions to the {{domxref(“Performance”)}} interface to support client-side latency measurements within applications. The standard also includes interfaces that allow an application to be notified when specific performance events occur. Together, these interfaces can be used to help identify an application’s performance bottlenecks.</p>
+<h2 id="performance-extensions">Performance extensions</h2>
+<p><strong>Performance Timeline</strong> extends the {{domxref(“Performance”)}} object with three methods that provide different mechanisms to get a set of {{domxref(“PerformanceEntry”,“performance records (metrics)”)}}, depending on the specified filter criteria. The following example show the usage of these methods {{domxref(“Performance.getEntries”,“getEntries()”)}}, {{domxref(“Performance.getEntriesByName”,“getEntriesByName()”)}} and {{domxref(“Performance.getEntriesByType”,“getEntriesByType()”)}}.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">function</span> <span class="at">log</span>(s) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="kw">var</span> o <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementsByTagName</span>(<span class="st">&quot;output&quot;</span>)[<span class="dv">0</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="va">o</span>.<span class="at">innerHTML</span> <span class="op">+=</span> s <span class="op">+</span> <span class="st">&quot; &lt;br&gt;&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="op">}</span></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="kw">function</span> <span class="at">do_work</span> (n) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-6" title="6">  <span class="cf">for</span> (<span class="kw">var</span> i<span class="op">=</span><span class="dv">0</span> <span class="op">;</span> i <span class="op">&lt;</span> n<span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-7" title="7">     <span class="kw">var</span> m <span class="op">=</span> <span class="va">Math</span>.<span class="at">random</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-8" title="8">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-9" title="9"><span class="op">}</span></a>
+<a class="sourceLine" id="cb1-10" title="10"><span class="kw">function</span> <span class="at">print_perf_entry</span>(pe) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-11" title="11">  <span class="at">log</span>(<span class="st">&quot;..name: &quot;</span>        <span class="op">+</span> <span class="va">pe</span>.<span class="at">name</span>      <span class="op">+</span></a>
+<a class="sourceLine" id="cb1-12" title="12">      <span class="st">&quot;; entryType: &quot;</span> <span class="op">+</span> <span class="va">pe</span>.<span class="at">entryType</span> <span class="op">+</span></a>
+<a class="sourceLine" id="cb1-13" title="13">      <span class="st">&quot;; startTime: &quot;</span> <span class="op">+</span> <span class="va">pe</span>.<span class="at">startTime</span> <span class="op">+</span></a>
+<a class="sourceLine" id="cb1-14" title="14">      <span class="st">&quot;; duration: &quot;</span>  <span class="op">+</span> <span class="va">pe</span>.<span class="at">duration</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-15" title="15"><span class="op">}</span></a>
+<a class="sourceLine" id="cb1-16" title="16"><span class="kw">function</span> <span class="at">print_PerformanceEntries</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-17" title="17">  <span class="cf">if</span> (<span class="va">performance</span>.<span class="at">mark</span> <span class="op">===</span> <span class="kw">undefined</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-18" title="18">    <span class="at">log</span>(<span class="st">&quot;... performance.mark Not supported&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-19" title="19">    <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-20" title="20">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-21" title="21"></a>
+<a class="sourceLine" id="cb1-22" title="22">  <span class="co">// Create some performance entries via the mark() and measure() methods</span></a>
+<a class="sourceLine" id="cb1-23" title="23">  <span class="va">performance</span>.<span class="at">mark</span>(<span class="st">&quot;Begin&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-24" title="24">  <span class="at">do_work</span>(<span class="dv">50000</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-25" title="25">  <span class="va">performance</span>.<span class="at">mark</span>(<span class="st">&quot;End&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-26" title="26">  <span class="at">do_work</span>(<span class="dv">50000</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-27" title="27">  <span class="va">performance</span>.<span class="at">measure</span>(<span class="st">&quot;Measure1&quot;</span><span class="op">,</span> <span class="st">&quot;Begin&quot;</span><span class="op">,</span> <span class="st">&quot;End&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-28" title="28"></a>
+<a class="sourceLine" id="cb1-29" title="29">  <span class="co">// Use getEntries() to iterate all entries</span></a>
+<a class="sourceLine" id="cb1-30" title="30">  <span class="kw">var</span> p <span class="op">=</span> <span class="va">performance</span>.<span class="at">getEntries</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-31" title="31">  <span class="cf">for</span> (<span class="kw">var</span> i<span class="op">=</span><span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">p</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-32" title="32">    <span class="at">log</span>(<span class="st">&quot;All Entry[&quot;</span> <span class="op">+</span> i <span class="op">+</span> <span class="st">&quot;]&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-33" title="33">    <span class="at">print_perf_entry</span>(p[i])<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-34" title="34">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-35" title="35"></a>
+<a class="sourceLine" id="cb1-36" title="36">  <span class="co">// Use getEntries(name, entryType) to get specific entries</span></a>
+<a class="sourceLine" id="cb1-37" title="37">  p <span class="op">=</span> <span class="va">performance</span>.<span class="at">getEntries</span>(<span class="op">{</span><span class="dt">name </span><span class="op">:</span> <span class="st">&quot;Measure1&quot;</span><span class="op">,</span> <span class="dt">entryType</span><span class="op">:</span> <span class="st">&quot;measure&quot;</span><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-38" title="38">  <span class="cf">for</span> (<span class="kw">var</span> i<span class="op">=</span><span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">p</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-39" title="39">    <span class="at">log</span>(<span class="st">&quot;Begin and Measure [&quot;</span> <span class="op">+</span> i <span class="op">+</span> <span class="st">&quot;]&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-40" title="40">    <span class="at">print_perf_entry</span>(p[i])<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-41" title="41">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-42" title="42"></a>
+<a class="sourceLine" id="cb1-43" title="43">  <span class="co">// Use getEntriesByType() to get all &quot;mark&quot; entries</span></a>
+<a class="sourceLine" id="cb1-44" title="44">  p <span class="op">=</span> <span class="va">performance</span>.<span class="at">getEntriesByType</span>(<span class="st">&quot;mark&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-45" title="45">  <span class="cf">for</span> (<span class="kw">var</span> i<span class="op">=</span><span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">p</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-46" title="46">    <span class="at">log</span> (<span class="st">&quot;Mark only [&quot;</span> <span class="op">+</span> i <span class="op">+</span> <span class="st">&quot;]&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-47" title="47">    <span class="at">print_perf_entry</span>(p[i])<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-48" title="48">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-49" title="49"></a>
+<a class="sourceLine" id="cb1-50" title="50">  <span class="co">// Use getEntriesByName() to get all &quot;mark&quot; entries named &quot;Begin&quot;</span></a>
+<a class="sourceLine" id="cb1-51" title="51">  p <span class="op">=</span> <span class="va">performance</span>.<span class="at">getEntriesByName</span>(<span class="st">&quot;Begin&quot;</span><span class="op">,</span> <span class="st">&quot;mark&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-52" title="52">  <span class="cf">for</span> (<span class="kw">var</span> i<span class="op">=</span><span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">p</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-53" title="53">    <span class="at">log</span> (<span class="st">&quot;Begin and Mark [&quot;</span> <span class="op">+</span> i <span class="op">+</span> <span class="st">&quot;]&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-54" title="54">    <span class="at">print_perf_entry</span>(p[i])<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-55" title="55">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-56" title="56"><span class="op">}</span></a></code></pre></div>
+<h2 id="performanceentry-interface">PerformanceEntry interface</h2>
+<p>The <code>{{domxref("PerformanceEntry")}}</code> interface encapsulates a single <em>performance entry</em> i.e. a single performance metric. This interface has four properties and a JSON <em>serializer</em> ({{domxref(“Performance.toJSON”,“toJSON()”)}}. The following example shows the use of these properties.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">function</span> <span class="at">print_PerformanceEntry</span>(ev) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">var</span> properties <span class="op">=</span> [<span class="st">&quot;name&quot;</span><span class="op">,</span> <span class="st">&quot;entryType&quot;</span><span class="op">,</span> <span class="st">&quot;startTime&quot;</span><span class="op">,</span> <span class="st">&quot;duration&quot;</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="co">// Create a few performance entries</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="va">performance</span>.<span class="at">mark</span>(<span class="st">&quot;Start&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="at">do_work</span>(<span class="dv">50000</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="va">performance</span>.<span class="at">mark</span>(<span class="st">&quot;Stop&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="va">performance</span>.<span class="at">measure</span>(<span class="st">&quot;measure-1&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="kw">var</span> p <span class="op">=</span> <span class="va">performance</span>.<span class="at">getEntries</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11">  <span class="cf">for</span> (<span class="kw">var</span> i<span class="op">=</span><span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">p</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-12" title="12">    <span class="at">log</span>(<span class="st">&quot;PerfEntry[&quot;</span> <span class="op">+</span> i <span class="op">+</span> <span class="st">&quot;]&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13">    <span class="cf">for</span> (<span class="kw">var</span> j<span class="op">=</span><span class="dv">0</span><span class="op">;</span> j <span class="op">&lt;</span> <span class="va">properties</span>.<span class="at">length</span><span class="op">;</span> j<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-14" title="14">      <span class="co">// check each property in window.performance</span></a>
+<a class="sourceLine" id="cb2-15" title="15">      <span class="kw">var</span> supported <span class="op">=</span> properties[j] <span class="kw">in</span> p[i]<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-16" title="16">      <span class="cf">if</span> (supported) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-17" title="17">        <span class="kw">var</span> pe <span class="op">=</span> p[i]<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">        <span class="at">log</span>(<span class="st">&quot;... &quot;</span> <span class="op">+</span> properties[j] <span class="op">+</span> <span class="st">&quot; = &quot;</span> <span class="op">+</span> pe[properties[j]])<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-19" title="19">      <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-20" title="20">        <span class="at">log</span>(<span class="st">&quot;... &quot;</span> <span class="op">+</span> properties[j] <span class="op">+</span> <span class="st">&quot; = Not supported&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-21" title="21">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-22" title="22">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-23" title="23">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-24" title="24"><span class="op">}</span></a></code></pre></div>
+<p>This interface also includes a {{domxref(“PerformanceEntry.toJSON”,“toJSON()”)}} method that returns the serialization of the {{domxref(“PerformanceEntry”)}} object. The following examples show the use of this method.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">function</span> <span class="at">PerfEntry_toJSON</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="co">// Create a few performance entries</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="va">performance</span>.<span class="at">mark</span>(<span class="st">&quot;mark-1&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">  <span class="va">performance</span>.<span class="at">mark</span>(<span class="st">&quot;mark-2&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="va">performance</span>.<span class="at">measure</span>(<span class="st">&quot;meas-1&quot;</span><span class="op">,</span> <span class="st">&quot;mark-1&quot;</span><span class="op">,</span> <span class="st">&quot;mark-2&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7"></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="kw">var</span> peList <span class="op">=</span> <span class="va">performance</span>.<span class="at">getEntries</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">  <span class="kw">var</span> pe <span class="op">=</span> peList[<span class="dv">0</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10"></a>
+<a class="sourceLine" id="cb3-11" title="11">  <span class="cf">if</span> (<span class="va">pe</span>.<span class="at">toJSON</span> <span class="op">===</span> <span class="kw">undefined</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-12" title="12">    <span class="at">log</span> (<span class="st">&quot;PerformanceEntry.toJSON() is NOT supported&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-13" title="13">    <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-14" title="14">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-15" title="15"></a>
+<a class="sourceLine" id="cb3-16" title="16">  <span class="co">// Print the PerformanceEntry object</span></a>
+<a class="sourceLine" id="cb3-17" title="17">  <span class="kw">var</span> json <span class="op">=</span> <span class="va">pe</span>.<span class="at">toJSON</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-18" title="18">  <span class="kw">var</span> s <span class="op">=</span> <span class="va">JSON</span>.<span class="at">stringify</span>(json)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-19" title="19">  <span class="at">log</span>(<span class="st">&quot;PerformanceEntry.toJSON = &quot;</span> <span class="op">+</span> s)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-20" title="20"><span class="op">}</span></a></code></pre></div>
+<h2 id="performance-observers">Performance Observers</h2>
+<p>{{SeeCompatTable}}</p>
+<p>The <em>performance observer</em> interfaces allow an application to register an <em>observer</em> for specific performance event types, and when one of those event types is recorded, the application is <em>notified</em> of the event via the observer’s callback function that was specified at the time, the observer was created. When the observer (callback) is invoked  the callback’s parameters include a <em>{{domxref(“PerformanceObserverEntryList”,“performance observer entry list”)}}</em> that only contains <em>observed</em> {{domxref(“PerformanceEntry”,“performance entries”)}}. That is, the list only contains entries for the event types that were specified when the observer’s {{domxref(“PerformanceObserver.observe”,“observe()”)}} method was invoked.</p>
+<p>The following example shows how to register two observers: the first one registers for several event types and the second observer only registers for one event type.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">function</span> <span class="at">PerformanceObservers</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="co">// Create observer for all performance event types</span></a>
+<a class="sourceLine" id="cb4-3" title="3">  <span class="kw">var</span> observe_all <span class="op">=</span> <span class="kw">new</span> <span class="at">PerformanceObserver</span>(<span class="kw">function</span>(list<span class="op">,</span> obs) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-4" title="4">    <span class="kw">var</span> perfEntries<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5"></a>
+<a class="sourceLine" id="cb4-6" title="6">    <span class="co">// Print all entries</span></a>
+<a class="sourceLine" id="cb4-7" title="7">    perfEntries <span class="op">=</span> <span class="va">list</span>.<span class="at">getEntries</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-8" title="8">    <span class="cf">for</span> (<span class="kw">var</span> i<span class="op">=</span><span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">perfEntries</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-9" title="9">      <span class="at">print_perf_entry</span>(perfEntries[i])<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-10" title="10">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-11" title="11"></a>
+<a class="sourceLine" id="cb4-12" title="12">    <span class="co">// Print entries named &quot;Begin&quot; with type &quot;mark&quot;</span></a>
+<a class="sourceLine" id="cb4-13" title="13">    perfEntries <span class="op">=</span> <span class="va">list</span>.<span class="at">getEntriesByName</span>(<span class="st">&quot;Begin&quot;</span><span class="op">,</span> <span class="st">&quot;mark&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-14" title="14">    <span class="cf">for</span> (<span class="kw">var</span> i<span class="op">=</span><span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">perfEntries</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-15" title="15">      <span class="at">print_perf_entry</span>(perfEntries[i])<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-16" title="16">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-17" title="17"></a>
+<a class="sourceLine" id="cb4-18" title="18">    <span class="co">// Print entries with type &quot;mark&quot;</span></a>
+<a class="sourceLine" id="cb4-19" title="19">    perfEntries <span class="op">=</span> <span class="va">list</span>.<span class="at">getEntriesByType</span>(<span class="st">&quot;mark&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-20" title="20">    <span class="cf">for</span> (<span class="kw">var</span> i<span class="op">=</span><span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">perfEntries</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-21" title="21">      <span class="at">print_perf_entry</span>(perfEntries[i])<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-22" title="22">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-23" title="23">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-24" title="24">  <span class="co">// subscribe to all performance event types</span></a>
+<a class="sourceLine" id="cb4-25" title="25">  <span class="va">observe_all</span>.<span class="at">observe</span>(<span class="op">{</span><span class="dt">entryTypes</span><span class="op">:</span> [<span class="st">&#39;frame&#39;</span><span class="op">,</span> <span class="st">&#39;mark&#39;</span><span class="op">,</span> <span class="st">&#39;measure&#39;</span><span class="op">,</span> <span class="st">&#39;navigation&#39;</span><span class="op">,</span> <span class="st">&#39;resource&#39;</span><span class="op">,</span> <span class="st">&#39;server&#39;</span>]<span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-26" title="26"></a>
+<a class="sourceLine" id="cb4-27" title="27">  <span class="co">// Create observer for just the &quot;mark&quot; event type</span></a>
+<a class="sourceLine" id="cb4-28" title="28">  <span class="kw">var</span> observe_mark <span class="op">=</span> <span class="kw">new</span> <span class="at">PerformanceObserver</span>(<span class="kw">function</span>(list<span class="op">,</span> obs) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-29" title="29">    <span class="kw">var</span> perfEntries <span class="op">=</span> <span class="va">list</span>.<span class="at">getEntries</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-30" title="30">    <span class="co">// Should only have &#39;mark&#39; entries</span></a>
+<a class="sourceLine" id="cb4-31" title="31">    <span class="cf">for</span> (<span class="kw">var</span> i<span class="op">=</span><span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">perfEntries</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-32" title="32">      <span class="at">print_perf_entry</span>(perfEntries[i])<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-33" title="33">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-34" title="34">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-35" title="35">  <span class="co">// subscribe to only the &#39;mark&#39; event</span></a>
+<a class="sourceLine" id="cb4-36" title="36">  <span class="va">observe_mark</span>.<span class="at">observe</span>(<span class="op">{</span><span class="dt">entryTypes</span><span class="op">:</span> [<span class="st">&#39;mark&#39;</span>]<span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-37" title="37"><span class="op">}</span></a>
+<a class="sourceLine" id="cb4-38" title="38"><span class="kw">function</span> <span class="at">print_perf_entry</span>(pe) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-39" title="39">  <span class="at">log</span>(<span class="st">&quot;name: &quot;</span>        <span class="op">+</span> <span class="va">pe</span>.<span class="at">name</span>      <span class="op">+</span></a>
+<a class="sourceLine" id="cb4-40" title="40">      <span class="st">&quot;; entryType: &quot;</span> <span class="op">+</span> <span class="va">pe</span>.<span class="at">entryType</span> <span class="op">+</span></a>
+<a class="sourceLine" id="cb4-41" title="41">      <span class="st">&quot;; startTime: &quot;</span> <span class="op">+</span> <span class="va">pe</span>.<span class="at">startTime</span> <span class="op">+</span></a>
+<a class="sourceLine" id="cb4-42" title="42">      <span class="st">&quot;; duration: &quot;</span>  <span class="op">+</span> <span class="va">pe</span>.<span class="at">duration</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-43" title="43"><span class="op">}</span></a></code></pre></div>
+<p>The {{domxref(“PerformanceObserverEntryList”,“performance observer entry list”)}} interface has the same three <code>getEntries*()</code> methods as the {{domxref(“Performance”)}} interface and these methods are used to retrieve <em>observed</em> performance entries within the observer callback. These methods have been used in the above stated example.</p>
+<h2 id="specifications">Specifications</h2>
+<p>The interfaces described in this document are defined in the <strong>Performance Timeline</strong> standard which has two levels:</p>
+<ul>
+<li><a href="https://w3c.github.io/performance-timeline/">Performance Timeline Level 2</a>; Editors Draft; Work In Progress. This version introduces <em>performance observers</em> (and the {{domxref(“PerformanceObserver”)}} and {{domxref(“PerformanceObserverEntryList”)}} interfaces).</li>
+<li><a href="https://www.w3.org/TR/performance-timeline/">Performance Timeline</a>; W3C Recommendation 12 December 2013</li>
+</ul>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Performance_Timeline">Performance Timeline (Overview)</a></li>
+<li><a href="https://siusin.github.io/perf-timing-primer/">A Primer for Web Performance Timing APIs</a></li>
+</ul>

@@ -1,0 +1,40 @@
+<p>{{APIRef(“WebRTC”)}}</p>
+<p>The <strong>{{domxref(“RTCIceCandidate”)}}</strong> interface’s read-only <strong><code>relatedPort</code></strong> property indicates the port number of reflexive or relay candidates.</p>
+<p>If the candidate is a host candidate (that is, its {{domxref(“RTCIceCandidate/address”, “address”)}} is in fact the real IP address of the remote peer), <code>relatedPort</code> is <code>null</code>.</p>
+<p>The <code>relatedPort</code> field’s value is set from the <code>candidateInfo</code> options object passed to the {{domxref(“RTCIceCandidate.RTCIceCandidate”, “RTCIceCandidate()”)}} constructor. You can’t specify the value of <code>relatedPort</code> directly in the options object, but its value is automatically extracted from the object’s <code>candidate</code> a-line, if it’s formatted properly (the <code>rel-port</code> field).</p>
+<p>The related address ({{domxref(“RTCIceCandidate.relatedAddress”, “relatedAddress”)}}) and port are not used at all by {{Glossary(“ICE”)}} itself; they are provided for analysis and diagnostic purposes only, and their inclusion may be blocked by security systems, so do not rely on them having non-<code>null</code> values.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> relPort <span class="op">=</span> <span class="va">RTCIceCandidate</span>.<span class="at">relatedPort</span><span class="op">;</span></a></code></pre></div>
+<h3 id="value">Value</h3>
+<p>An unsigned 16-bit value containing the candidate’s related port number, if any. For both peer and server reflexive candidates, the related address and port describe the base for that candidate. For relay candidates, the related address and port provide the mapped address selected by the TURN server.</p>
+<p>For host candidates, <code>relatedPort</code> is <code>null</code>, meaning the field is not included in the candidate’s a-line.</p>
+<h2 id="usage-notes">Usage notes</h2>
+<p>The related address and port are not used by ICE itself, and are only present for diagnostic and Quality-of-Service purposes. They may in fact be omitted for security reasons, but if present can be a useful tool during debugging. See the {{anch(“Example”, “example”)}}, which shows a bit of this.</p>
+<p>Here’s an {{Glossary(“SDP”)}} attribute line (a-line) describing an ICE candidate discovered by the STUN server:</p>
+<pre><code>a=candidate:4234997325 1 udp 2043278322 192.168.0.56 6502 typ srflx raddr 192.168.2.77 rport 32768 generation 0</code></pre>
+<p>The remote port, <code>relatedPort</code>, is the number immediately following the <code>"rport"</code> label on the a-line, or 32768.</p>
+<h2 id="example">Example</h2>
+<p>In this example, the candidate’s {{domxref(“RTCIceCandidate.type”, “type”)}} is checked, and then debugging output is presented, based on the candidate type, including the candidate’s type, address (<code>ip</code> and {{domxref(“RTCIceCandidate.port”, “port”)}}), and related address ({{domxref(“RTCIceCandidate.relatedAddress”, “relatedAddress”)}} and <code>relatedPort</code>).</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">var</span> ip <span class="op">=</span> <span class="va">candidate</span>.<span class="at">ip</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">var</span> port <span class="op">=</span> <span class="va">candidate</span>.<span class="at">port</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw">var</span> relIP <span class="op">=</span> <span class="va">candidate</span>.<span class="at">relatedAddress</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="kw">var</span> relPort <span class="op">=</span> <span class="va">candidate</span>.<span class="at">relatedPort</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"></a>
+<a class="sourceLine" id="cb3-6" title="6"><span class="cf">if</span> (relIP <span class="op">&amp;&amp;</span> relPort) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Candidate type &#39;&quot;</span> <span class="op">+</span> type <span class="op">+</span> <span class="st">&quot;&#39; -- contact address: &quot;</span> <span class="op">+</span> ip <span class="op">+</span> <span class="st">&quot; &quot;</span> <span class="op">+</span> port <span class="op">+</span> <span class="st">&quot;, related address: &quot;</span> <span class="op">+</span> relIP <span class="op">+</span> <span class="st">&quot; &quot;</span> <span class="op">+</span> relPort)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-9" title="9">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Host candidate address is &quot;</span> <span class="op">+</span> ip <span class="op">+</span> <span class="st">&quot; &quot;</span> <span class="op">+</span> port)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/WebRTC_API">WebRTC API</a></li>
+<li><a href="/en-US/docs/Web/API/WebRTC_API/Protocols">Introduction to WebRTC protocols</a></li>
+<li><a href="/en-US/docs/Web/API/WebRTC_API/Connectivity">WebRTC connectivity</a></li>
+<li><a href="/en-US/docs/Web/API/WebRTC_API/Session_lifetime">Lifetime of a WebRTC session</a></li>
+<li>{{domxref(“RTCIceCandidate.relatedAddress”)}}</li>
+<li>{{domxref(“RTCIceCandidate.address”)}} and {{domxref(“RTCIceCandidate.port”)}}</li>
+</ul>

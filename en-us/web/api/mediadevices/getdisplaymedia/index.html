@@ -1,0 +1,83 @@
+<p>{{DefaultAPISidebar(“Screen Capture API”)}}</p>
+<p>The {{domxref(“MediaDevices”)}} interface’s <strong><code>getDisplayMedia()</code></strong> method prompts the user to select and grant permission to capture the contents of a display or portion thereof (such as a window) as a {{domxref(“MediaStream”)}}.</p>
+<p>The resulting stream can then be recorded using the <a href="/en-US/docs/Web/API/MediaStream_Recording_API">MediaStream Recording API</a> or transmitted as part of a <a href="/en-US/docs/Web/API/WebRTC_API">WebRTC</a> session.</p>
+<p>See <a href="/en-US/docs/Web/API/Screen_Capture_API/Using_Screen_Capture">Using the Screen Capture API</a> for more details and an example.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> promise <span class="op">=</span> <span class="va">navigator</span>.<span class="va">mediaDevices</span>.<span class="at">getDisplayMedia</span>(constraints)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>constraints</code> {{optional_inline}}
+<ul>
+<li>: An optional object specifying requirements for the returned {{domxref(“MediaStream”)}}. Since <code>getDisplayMedia()</code> requires a video track, the returned stream will have one even if no video track is expressly requested by the <code>constraints</code> object. For more details, see the <a href="/en-US/docs/Web/API/MediaDevices/getUserMedia#parameters">constraints</a> section under the {{domxref(“MediaDevices.getUserMedia()”)}} method, as well as the article <a href="/en-US/docs/Web/API/Media_Streams_API/Constraints">Capabilities, constraints, and settings</a>.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A {{jsxref(“Promise”)}} that resolves to a {{domxref(“MediaStream”)}} containing a video track whose contents come from a user-selected screen area, as well as an optional audio track.</p>
+<blockquote>
+<p><strong>Note:</strong> Browser support for audio tracks varies, both in terms of whether or not they’re supported at all by the media recorder and in terms of the audio sources supported. Check the {{anch(“Browser compatibility”, “compatibility table”)}} for details for each browser.</p>
+</blockquote>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><code>AbortError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if an error or failure does not match any of the other exceptions listed here.</li>
+</ul></li>
+<li><code>InvalidStateError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if the call to <code>getDisplayMedia()</code> was not made from code running due to a user action, such as an event handler. Another potential cause for this event: the {{domxref(“document”)}} in whose context <code>getDisplayMedia()</code> was called is not fully active; for example, perhaps it is not the frontmost tab.</li>
+</ul></li>
+<li><code>NotAllowedError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if the permission to access a screen area was denied by the user, or the current browsing instance is not permitted access to screen sharing.</li>
+</ul></li>
+<li><code>NotFoundError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if no sources of screen video are available for capture.</li>
+</ul></li>
+<li><code>NotReadableError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if the user selected a screen, window, tab, or other source of screen data, but a hardware or operating system level error or lockout occurred, preventing the sharing of the selected source.</li>
+</ul></li>
+<li><code>OverconstrainedError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if, after creating the stream, applying the specified <code>constraints</code> fails because no compatible stream could be generated.</li>
+</ul></li>
+<li><code>TypeError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if the specified <code>constraints</code> include constraints which are not permitted when calling <code>getDisplayMedia()</code>. These unsupported constraints are <code>advanced</code> and any constraints which in turn have a member named <code>min</code> or <code>exact</code>.</li>
+</ul></li>
+</ul>
+<h2 id="usage-notes">Usage notes</h2>
+<h3 id="privacy-and-security">Privacy and security</h3>
+<p>Because <code>getDisplayMedia()</code> could be used in nefarious ways, it can be a source of significant privacy and security concerns. For that reason, the specification details measures browsers are required to take in order to fully support <code>getDisplayMedia()</code>.</p>
+<ul>
+<li>The specified <code>constraints</code> can’t be used to limit the options available to the user. Instead, they must be applied after the user chooses a source, in order to generate output that matches the constraints.</li>
+<li>The go-ahead permission to use <code>getDisplayMedia()</code> cannot be persisted for reuse. The user must be prompted for permission every time.</li>
+<li>The call to <code>getDisplayMedia()</code> must be made from code which is running in response to a user action, such as in an event handler.</li>
+<li>Browsers are encouraged to provide a warning to users about sharing displays or windows that contain browsers, and to keep a close eye on what other content might be getting captured and shown to other users.</li>
+</ul>
+<h2 id="example">Example</h2>
+<p>In the example below, a <code>startCapture()</code> method is created which initiates screen capture given a set of options specified by the <code>displayMediaOptions</code> parameter. The options are specified in an object which specifies the preferred stream configuration and the <a href="/en-US/docs/Web/API/Screen_Capture_API/Using_Screen_Capture#visible_vs_logical_display_surfaces">display surface</a> from which video is to be captured.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">async</span> <span class="kw">function</span> <span class="at">startCapture</span>(displayMediaOptions) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">let</span> captureStream <span class="op">=</span> <span class="kw">null</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="cf">try</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">    captureStream <span class="op">=</span> <span class="cf">await</span> <span class="va">navigator</span>.<span class="va">mediaDevices</span>.<span class="at">getDisplayMedia</span>(displayMediaOptions)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="op">}</span> <span class="cf">catch</span>(err) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-7" title="7">    <span class="va">console</span>.<span class="at">error</span>(<span class="st">&quot;Error: &quot;</span> <span class="op">+</span> err)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-9" title="9">  <span class="cf">return</span> captureStream<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="op">}</span></a></code></pre></div>
+<p>This uses {{jsxref(“await”)}} to asynchronously wait for <code>getDisplayMedia()</code> to resolve with a {{domxref(“MediaStream”)}} which contains the display contents as requested by the specified options. The stream is then returned to the caller for use, perhaps for adding to a WebRTC call using {{domxref(“RTCPeerConnection.addTrack()”)}} to add the video track from the stream.</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Screen_Capture_API">Screen Capture API</a></li>
+<li><a href="/en-US/docs/Web/API/Screen_Capture_API/Using_Screen_Capture">Using the Screen Capture API</a></li>
+<li><a href="/en-US/docs/Web/API/Media_Streams_API">Media Capture and Streams API</a></li>
+<li><a href="/en-US/docs/Web/API/WebRTC_API">WebRTC API</a></li>
+<li>{{domxref(“MediaDevices.getUserMedia”, “getUserMedia()”)}}: Capturing media from a camera and/or microphone</li>
+</ul>

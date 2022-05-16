@@ -1,0 +1,33 @@
+<p>{{DefaultAPISidebar(“Insertable Streams for MediaStreamTrack API”)}}</p>
+<p>The <strong>Insertable Streams for MediaStreamTrack API</strong> provides a method of adding new components to a {{domxref(“MediaStreamTrack”)}}.</p>
+<h2 id="concepts-and-usage">Concepts and Usage</h2>
+<p>When processing video or audio, you sometimes want to insert additional elements or otherwise process the stream. For example, an application might include two tracks that need to be combined, such as a weather map and video of a presenter explaining the map. Or, you may want to do processing on a track to blur backgrounds, remove background noise, or introduce other elements (such as adding funny hats to people, and so on). This API provides a method to do this by giving direct access to the stream, thus allowing it to be manipulated.</p>
+<h2 id="interfaces">Interfaces</h2>
+<ul>
+<li>{{domxref(“MediaStreamTrackGenerator”)}}
+<ul>
+<li>: Creates a {{domxref(“WritableStream”)}} that acts as a {{domxref(“MediaStreamTrack”)}} source.</li>
+</ul></li>
+<li>{{domxref(“MediaStreamTrackProcessor”)}}
+<ul>
+<li>: Consumes a {{domxref(“MediaStreamTrack”)}} object’s source and generates a stream of media frames.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>The following example is from the article <a href="https://web.dev/mediastreamtrack-insertable-media-processing/">Insertable streams for MediaStreamTrack</a>, and demonstrates a barcode scanner application that highlights a barcode in a video stream. This transforms the stream accessed via {{domxref(“MediaStreamTrackProcessor.readable”)}}.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> stream <span class="op">=</span> <span class="cf">await</span> <span class="at">getUserMedia</span>(<span class="op">{</span> <span class="dt">video</span><span class="op">:</span> <span class="kw">true</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">const</span> videoTrack <span class="op">=</span> <span class="va">stream</span>.<span class="at">getVideoTracks</span>()[<span class="dv">0</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="kw">const</span> trackProcessor <span class="op">=</span> <span class="kw">new</span> <span class="at">MediaStreamTrackProcessor</span>(<span class="op">{</span> <span class="dt">track</span><span class="op">:</span> videoTrack <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="kw">const</span> trackGenerator <span class="op">=</span> <span class="kw">new</span> <span class="at">MediaStreamTrackGenerator</span>(<span class="op">{</span> <span class="dt">kind</span><span class="op">:</span> <span class="st">&#39;video&#39;</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-6" title="6"></a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="kw">const</span> transformer <span class="op">=</span> <span class="kw">new</span> <span class="at">TransformStream</span>(<span class="op">{</span></a>
+<a class="sourceLine" id="cb1-8" title="8">  <span class="kw">async</span> <span class="at">transform</span>(videoFrame<span class="op">,</span> controller) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-9" title="9">    <span class="kw">const</span> barcodes <span class="op">=</span> <span class="cf">await</span> <span class="at">detectBarcodes</span>(videoFrame)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-10" title="10">    <span class="kw">const</span> newFrame <span class="op">=</span> <span class="at">highlightBarcodes</span>(videoFrame<span class="op">,</span> barcodes)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-11" title="11">    <span class="va">videoFrame</span>.<span class="at">close</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-12" title="12">    <span class="va">controller</span>.<span class="at">enqueue</span>(newFrame)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-13" title="13">  <span class="op">},</span></a>
+<a class="sourceLine" id="cb1-14" title="14"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-15" title="15"></a>
+<a class="sourceLine" id="cb1-16" title="16"><span class="va">trackProcessor</span>.<span class="va">readable</span>.<span class="at">pipeThrough</span>(transformer).<span class="at">pipeTo</span>(<span class="va">trackGenerator</span>.<span class="at">writable</span>)<span class="op">;</span></a></code></pre></div>

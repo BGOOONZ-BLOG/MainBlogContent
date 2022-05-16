@@ -1,0 +1,74 @@
+<p>{{ APIRef(“Web Audio API”) }}</p>
+<p>The <code>getFrequencyResponse()</code> method of the {{ domxref(“IIRFilterNode”) }} interface takes the current filtering algorithm’s settings and calculates the frequency response for frequencies specified in a specified array of frequencies.</p>
+<p>The two output arrays, <code>magResponseOutput</code> and <code>phaseResponseOutput</code>, must be created before calling this method; they must be the same size as the array of input frequency values (<code>frequencyArray</code>).</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">IIRFilterNode</span>.<span class="at">getFrequencyResponse</span>(frequencyArray<span class="op">,</span> magResponseOutput<span class="op">,</span> phaseResponseOutput)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>frequencyArray</code>
+<ul>
+<li>: A {{jsxref(“Float32Array”)}} containing an array of frequencies, specified in Hertz, which you want to filter.</li>
+</ul></li>
+<li><code>magResponseOutput</code>
+<ul>
+<li>: A {{jsxref(“Float32Array”)}} to receive the computed magnitudes of the frequency response for each frequency value in the <code>frequencyArray</code>.</li>
+</ul></li>
+<li><code>phaseResponseOutput</code>
+<ul>
+<li>: A {{jsxref(“Float32Array”)}} to receive the computed phase response values in radians for each frequency value in the input <code>frequencyArray</code>.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>None.</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><code>NotSupportedError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the three arrays provided are not all of the same length.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>In the following example we are using an IIR filter on a media stream (for a complete full demo, see our <a href="https://mdn.github.io/stream-source-buffer/">stream-source-buffer demo</a> live, or <a href="https://github.com/mdn/stream-source-buffer/blob/gh-pages/index.html">read its source</a>.) As part of this demo, we get the frequency responses for this IIR filter, for five sample frequencies. We first create the {{jsxref(“Float32Array”)}} objects we need, one containing the input frequencies, and two to receive the output magnitude and phase values:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> myFrequencyArray <span class="op">=</span> <span class="kw">new</span> <span class="at">Float32Array</span>(<span class="dv">5</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2">myFrequencyArray[<span class="dv">0</span>] <span class="op">=</span> <span class="dv">1000</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">myFrequencyArray[<span class="dv">1</span>] <span class="op">=</span> <span class="dv">2000</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">myFrequencyArray[<span class="dv">2</span>] <span class="op">=</span> <span class="dv">3000</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5">myFrequencyArray[<span class="dv">3</span>] <span class="op">=</span> <span class="dv">4000</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">myFrequencyArray[<span class="dv">4</span>] <span class="op">=</span> <span class="dv">5000</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="kw">var</span> magResponseOutput <span class="op">=</span> <span class="kw">new</span> <span class="at">Float32Array</span>(<span class="dv">5</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="kw">var</span> phaseResponseOutput <span class="op">=</span> <span class="kw">new</span> <span class="at">Float32Array</span>(<span class="dv">5</span>)<span class="op">;</span></a></code></pre></div>
+<p>Next we create a {{ htmlelement(“ul”) }} element in our HTML to contain our results, and grab a reference to it in our JavaScript:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">&lt;p&gt;</span>IIR filter frequency response for: <span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">&lt;ul</span><span class="ot"> class=</span><span class="st">&quot;freq-response-output&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw">&lt;/ul&gt;</span></a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">var</span> freqResponseOutput <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;.freq-response-output&#39;</span>)<span class="op">;</span></a></code></pre></div>
+<p>Finally, after creating our filter, we use <code>getFrequencyResponse()</code> to generate the response data and put it in our arrays, then loop through each data set and output them in a human-readable list at the bottom of the page:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">var</span> feedforwardCoefficients <span class="op">=</span> [<span class="fl">0.1</span><span class="op">,</span> <span class="fl">0.2</span><span class="op">,</span> <span class="fl">0.3</span><span class="op">,</span> <span class="fl">0.4</span><span class="op">,</span> <span class="fl">0.5</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="kw">var</span> feedbackCoefficients <span class="op">=</span> [<span class="fl">0.5</span><span class="op">,</span> <span class="fl">0.4</span><span class="op">,</span> <span class="fl">0.3</span><span class="op">,</span> <span class="fl">0.2</span><span class="op">,</span> <span class="fl">0.1</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3"></a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="kw">var</span> iirFilter <span class="op">=</span> <span class="va">audioCtx</span>.<span class="at">createIIRFilter</span>(feedforwardCoefficients<span class="op">,</span> feedbackCoefficients)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-5" title="5"></a>
+<a class="sourceLine" id="cb5-6" title="6">  ...</a>
+<a class="sourceLine" id="cb5-7" title="7"></a>
+<a class="sourceLine" id="cb5-8" title="8"><span class="kw">function</span> <span class="at">calcFrequencyResponse</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-9" title="9">  <span class="va">iirFilter</span>.<span class="at">getFrequencyResponse</span>(myFrequencyArray<span class="op">,</span> magResponseOutput<span class="op">,</span> phaseResponseOutput)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-10" title="10"></a>
+<a class="sourceLine" id="cb5-11" title="11">  <span class="cf">for</span>(i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;=</span> <span class="va">myFrequencyArray</span>.<span class="at">length</span><span class="dv">-1</span><span class="op">;</span>i<span class="op">++</span>)<span class="op">{</span></a>
+<a class="sourceLine" id="cb5-12" title="12">    <span class="kw">var</span> listItem <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;li&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-13" title="13">    <span class="va">listItem</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="st">&#39;&lt;strong&gt;&#39;</span> <span class="op">+</span> myFrequencyArray[i] <span class="op">+</span> <span class="st">&#39;Hz&lt;/strong&gt;: Magnitude &#39;</span> <span class="op">+</span> magResponseOutput[i] <span class="op">+</span> <span class="st">&#39;, Phase &#39;</span> <span class="op">+</span> phaseResponseOutput[i] <span class="op">+</span> <span class="st">&#39; radians.&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-14" title="14">    <span class="va">freqResponseOutput</span>.<span class="at">appendChild</span>(listItem)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-15" title="15">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-16" title="16"><span class="op">}</span></a>
+<a class="sourceLine" id="cb5-17" title="17"></a>
+<a class="sourceLine" id="cb5-18" title="18"><span class="at">calcFrequencyResponse</span>()<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API">Using the Web Audio API</a></li>
+<li>{{domxref(“IIRFilterNode”)}}</li>
+<li>{{domxref(“AudioNode”)}}</li>
+</ul>

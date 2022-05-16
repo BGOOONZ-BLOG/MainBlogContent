@@ -1,0 +1,65 @@
+<p>{{APIRef(“MediaStream Recording”)}}</p>
+<p>The <strong><code>MediaRecorder()</code></strong> constructor creates a new {{domxref(“MediaRecorder”)}} object that will record a specified {{domxref(“MediaStream”)}}.</p>
+<p>The object can optionally be configured to record using a specific media container (file type), and, further, can specify the exact codec and codec configuration(s) to use by specifying <a href="/en-US/docs/Web/Media/Formats/codecs_parameter">the <code>codecs</code> parameter</a>.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> mediaRecorder <span class="op">=</span> <span class="kw">new</span> <span class="at">MediaRecorder</span>(stream[<span class="op">,</span> options])<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>stream</code>
+<ul>
+<li>: The {{domxref(“MediaStream”)}} that will be recorded. This source media can come from a stream created using {{domxref(“MediaDevices.getUserMedia”, “navigator.mediaDevices.getUserMedia()”)}} or from an {{HTMLElement(“audio”)}}, {{HTMLElement(“video”)}} or {{HTMLElement(“canvas”)}} element.</li>
+</ul></li>
+<li><p><code>options</code> {{optional_inline}}</p>
+<ul>
+<li><p>: A dictionary object that can contain the following properties:</p>
+<ul>
+<li><code>mimeType</code>: A MIME type specifying the format for the resulting media; you may specify the container format (the browser will select its preferred codecs for audio and/or video), or you may <a href="/en-US/docs/Web/Media/Formats/codecs_parameter">use the <code>codecs</code> parameter</a> and/or the <code>profiles</code> parameter to provide detailed information about which codecs to use and how to configure them. Applications can check in advance if a <code>mimeType</code> is supported by the {{Glossary(“user agent”)}} by calling {{domxref(“MediaRecorder.isTypeSupported()”)}}.</li>
+<li><code>audioBitsPerSecond</code>: The chosen bitrate for the audio component of the media.</li>
+<li><code>videoBitsPerSecond</code>: The chosen bitrate for the video component of the media.</li>
+<li><code>bitsPerSecond</code>: The chosen bitrate for the audio and video components of the media. This can be specified instead of the above two properties. If this is specified along with one or the other of the above properties, this will be used for the one that isn’t specified.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> If bits per second values are not specified for video and/or audio, the default adopted for video is 2.5Mbps, while the audio default is adaptive, depending upon the sample rate and the number of channels.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> Video resolution, frame rate and similar settings are specified as constraints when calling {{domxref(“MediaDevices.getUserMedia”, “getUserMedia()”)}}, not here in the MediaRecorder API.</p>
+</blockquote></li>
+</ul></li>
+</ul>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><code>NotSupportedError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the specified MIME type is not supported by the user agent.</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<p>This example shows how to create a media recorder for a specified stream, whose audio bit rate is set to 128 Kbit/sec and whose video bit rate is set to 2.5 Mbit/sec. The recorded media data will be stored in an MP4 wrapper (so if you gather the chunks of media data and save them to disk, they will be in an MP4 file).</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1">...</a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="cf">if</span> (<span class="va">navigator</span>.<span class="va">mediaDevices</span>.<span class="at">getUserMedia</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="kw">var</span> constraints <span class="op">=</span> <span class="op">{</span> <span class="dt">audio</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span> <span class="dt">video</span><span class="op">:</span> <span class="kw">true</span> <span class="op">};</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="kw">var</span> chunks <span class="op">=</span> []<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="kw">var</span> onSuccess <span class="op">=</span> <span class="kw">function</span>(stream) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-7" title="7">    <span class="kw">var</span> options <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-8" title="8">      <span class="dt">audioBitsPerSecond </span><span class="op">:</span> <span class="dv">128000</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-9" title="9">      <span class="dt">videoBitsPerSecond </span><span class="op">:</span> <span class="dv">2500000</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-10" title="10">      <span class="dt">mimeType </span><span class="op">:</span> <span class="st">&#39;video/mp4&#39;</span></a>
+<a class="sourceLine" id="cb2-11" title="11">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-12" title="12">    <span class="kw">var</span> mediaRecorder <span class="op">=</span> <span class="kw">new</span> <span class="at">MediaRecorder</span>(stream<span class="op">,</span>options)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13">    m <span class="op">=</span> mediaRecorder<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14"></a>
+<a class="sourceLine" id="cb2-15" title="15">...</a>
+<a class="sourceLine" id="cb2-16" title="16">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-17" title="17"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/MediaStream_Recording_API/Using_the_MediaStream_Recording_API">Using the MediaRecorder API</a></li>
+<li><a href="https://mdn.github.io/web-dictaphone/">Web Dictaphone</a>: MediaRecorder + getUserMedia + Web Audio API visualization demo, by <a href="https://twitter.com/chrisdavidmills">Chris Mills</a> (<a href="https://github.com/mdn/web-dictaphone/">source on Github</a>.)</li>
+<li><a href="http://simpl.info/mediarecorder/">simpl.info MediaStream Recording demo</a>, by <a href="https://twitter.com/sw12">Sam Dutton</a>.</li>
+<li>{{domxref(“MediaDevices.getUserMedia”)}}</li>
+</ul>

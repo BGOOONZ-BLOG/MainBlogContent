@@ -1,0 +1,160 @@
+<p>{{DefaultAPISidebar(“IndexedDB”)}}</p>
+<p>In this article we look at a complex example involving checking the current time and date against a deadline stored via IndexedDB. The main complication here is checking the stored deadline info (month, hour, day, etc.) against the current time and date taken from a <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date">Date</a> object.</p>
+<figure>
+<img src="to-do-app.png" alt="A screenshot of the sample app. A red main title saying To do app, a test to-do item, and a red form for users to enter new tasks" /><figcaption>A screenshot of the sample app. A red main title saying To do app, a test to-do item, and a red form for users to enter new tasks</figcaption>
+</figure>
+<p>The main example application we will be referring to in this article is <strong>To-do list notifications</strong>, a simple to-do list application that stores task titles and deadline times and dates via <a href="/en-US/docs/Web/API/IndexedDB_API">IndexedDB</a>, and then provides users with notifications when deadline dates are reached, via the <a href="/en-US/docs/Web/API/Notification">Notification</a>, and <a href="/en-US/docs/Web/API/Vibration_API">Vibration</a> APIs. You can <a href="https://github.com/chrisdavidmills/to-do-notifications/tree/gh-pages">download the To-do list notifications app from github</a> and play around with the source code, or <a href="https://mdn.github.io/to-do-notifications/">view the app running live</a>.</p>
+<h2 id="the-basic-problem">The basic problem</h2>
+<p>In the to-do app, we wanted to first record time and date information in a format that is both machine readable and human understandable when displayed, and then check whether each time and date is occurring at the current moment. Basically, we want to check what the time and date is right now, and then check each stored event to see if any of their deadlines match the current time and date. If they do, we want to let the user know with some kind of notification.</p>
+<p>This would be easy if we were just comparing two {{jsxref(“Global_Objects/Date”, “Date”)}} objects, but of course humans don’t want to enter deadline information in the same format JavaScript understands. Human-readable dates are quite different, with a number of different representations.</p>
+<h3 id="recording-the-date-information">Recording the date information</h3>
+<p>To provide a reasonable user experience on mobile devices, and to cut down on ambiguities, I decided to create an HTML form with:</p>
+<figure>
+<img src="to-do-app-form2.png" alt="The form of the to-do app, containing fields to fill in a task title, and minute, hour, day, month and year values for the deadline." /><figcaption>The form of the to-do app, containing fields to fill in a task title, and minute, hour, day, month and year values for the deadline.</figcaption>
+</figure>
+<ul>
+<li>A text input for entering a title for your to-do list. This is the least avoidable bit of user typing.</li>
+<li>Number inputs for the hour and minute parts of the deadline. On browsers that support <code>type="number"</code>, you get a nice little up and down arrow number picker. On mobile platforms you tend to get a numeric keypad for entering data, which is helpful. On others you just get a standard text input, which is okay.</li>
+<li>{{HTMLElement(“select”)}} elements for inputting the day, month and year of the deadline. Because these values are the most ambiguous for users to enter (7, sunday, sun? 04, 4, April, Apr? 2013, ’13, 13?), I decided the best solution was to give them a choice to pick from, which also saves on annoying typing for mobile users. The days are recorded as numerical days of the month, the months are recorded as full month names, and the years are recorded as full four digit year numbers.</li>
+</ul>
+<p>When the form’s submit button is pressed, we run the <code>addData()</code> function, which starts like this:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">function</span> <span class="at">addData</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="va">e</span>.<span class="at">preventDefault</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"></a>
+<a class="sourceLine" id="cb1-4" title="4">  <span class="cf">if</span>(<span class="va">title</span>.<span class="at">value</span> <span class="op">==</span> <span class="st">&#39;&#39;</span> <span class="op">||</span> <span class="va">hours</span>.<span class="at">value</span> <span class="op">==</span> <span class="kw">null</span> <span class="op">||</span> <span class="va">minutes</span>.<span class="at">value</span> <span class="op">==</span> <span class="kw">null</span> <span class="op">||</span> <span class="va">day</span>.<span class="at">value</span> <span class="op">==</span> <span class="st">&#39;&#39;</span> <span class="op">||</span> <span class="va">month</span>.<span class="at">value</span> <span class="op">==</span> <span class="st">&#39;&#39;</span> <span class="op">||</span> <span class="va">year</span>.<span class="at">value</span> <span class="op">==</span> <span class="kw">null</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-5" title="5">    <span class="va">note</span>.<span class="at">innerHTML</span> <span class="op">+=</span> <span class="st">&#39;&lt;li&gt;Data not submitted — form incomplete.&lt;/li&gt;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-6" title="6">    <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-7" title="7">  <span class="op">}</span></a></code></pre></div>
+<p>In this segment, we check to see if the form fields have all been filled in. If not, we drop a message into our developer notifications pane (see the bottom left of the app UI) to tell the user what is going on, and exit out of the function. This step is mainly for browsers that don’t support HTML form validation (I have used the <code>required</code> attribute in my HTML to force validation, in those that do.)</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1">   <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">    <span class="kw">var</span> newItem <span class="op">=</span> [</a>
+<a class="sourceLine" id="cb2-3" title="3">      <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">        <span class="dt">taskTitle</span><span class="op">:</span> <span class="va">title</span>.<span class="at">value</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-5" title="5">        <span class="dt">hours    </span><span class="op">:</span> <span class="va">hours</span>.<span class="at">value</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-6" title="6">        <span class="dt">minutes  </span><span class="op">:</span> <span class="va">minutes</span>.<span class="at">value</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-7" title="7">        <span class="dt">day      </span><span class="op">:</span> <span class="va">day</span>.<span class="at">value</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-8" title="8">        <span class="dt">month    </span><span class="op">:</span> <span class="va">month</span>.<span class="at">value</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-9" title="9">        <span class="dt">year     </span><span class="op">:</span> <span class="va">year</span>.<span class="at">value</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-10" title="10">        <span class="dt">notified </span><span class="op">:</span> <span class="st">&quot;no&quot;</span></a>
+<a class="sourceLine" id="cb2-11" title="11">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-12" title="12">    ]<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13"></a>
+<a class="sourceLine" id="cb2-14" title="14">    <span class="co">// open a read/write db transaction, ready for adding the data</span></a>
+<a class="sourceLine" id="cb2-15" title="15">    <span class="kw">var</span> transaction <span class="op">=</span> <span class="va">db</span>.<span class="at">transaction</span>([<span class="st">&quot;toDoList&quot;</span>]<span class="op">,</span> <span class="st">&quot;readwrite&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-16" title="16"></a>
+<a class="sourceLine" id="cb2-17" title="17">    <span class="co">// report on the success of opening the transaction</span></a>
+<a class="sourceLine" id="cb2-18" title="18">    <span class="va">transaction</span>.<span class="at">oncomplete</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-19" title="19">      <span class="va">note</span>.<span class="at">innerHTML</span> <span class="op">+=</span> <span class="st">&#39;&lt;li&gt;Transaction opened for task addition.&lt;/li&gt;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-20" title="20">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb2-21" title="21"></a>
+<a class="sourceLine" id="cb2-22" title="22">    <span class="va">transaction</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-23" title="23">      <span class="va">note</span>.<span class="at">innerHTML</span> <span class="op">+=</span> <span class="st">&#39;&lt;li&gt;Transaction not opened due to error. Duplicate items not allowed.&lt;/li&gt;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-24" title="24">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb2-25" title="25"></a>
+<a class="sourceLine" id="cb2-26" title="26">    <span class="co">// create an object store on the transaction</span></a>
+<a class="sourceLine" id="cb2-27" title="27">    <span class="kw">var</span> objectStore <span class="op">=</span> <span class="va">transaction</span>.<span class="at">objectStore</span>(<span class="st">&quot;toDoList&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-28" title="28"></a>
+<a class="sourceLine" id="cb2-29" title="29">    <span class="co">// add our newItem object to the object store</span></a>
+<a class="sourceLine" id="cb2-30" title="30">    <span class="kw">var</span> request <span class="op">=</span> <span class="va">objectStore</span>.<span class="at">add</span>(newItem[<span class="dv">0</span>])<span class="op">;</span></a></code></pre></div>
+<p>In this section we create an object called <code>newItem</code> that stores the data in the format required to insert it into the database. The next few lines open the database transaction and provide messages to notify the user if this was successful or failed.Then an <code>objectStore</code> is created into which the new item is added. The <code>notified</code> property of the data object indicates that the to-do list item’s deadline has not yet come up and been notified - more on this later!</p>
+<blockquote>
+<p><strong>Note:</strong> The <code>db</code> variable stores a reference to the IndexedDB database instance; we can then use various properties of this variable to manipulate the data.</p>
+</blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1">    <span class="va">request</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3">      <span class="va">note</span>.<span class="at">innerHTML</span> <span class="op">+=</span> <span class="st">&#39;&lt;li&gt;New item added to database.&lt;/li&gt;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4"></a>
+<a class="sourceLine" id="cb3-5" title="5">      <span class="va">title</span>.<span class="at">value</span> <span class="op">=</span> <span class="st">&#39;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6">      <span class="va">hours</span>.<span class="at">value</span> <span class="op">=</span> <span class="kw">null</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">      <span class="va">minutes</span>.<span class="at">value</span> <span class="op">=</span> <span class="kw">null</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">      <span class="va">day</span>.<span class="at">value</span> <span class="op">=</span> <span class="dv">01</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">      <span class="va">month</span>.<span class="at">value</span> <span class="op">=</span> <span class="st">&#39;January&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10">      <span class="va">year</span>.<span class="at">value</span> <span class="op">=</span> <span class="dv">2020</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-11" title="11">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb3-12" title="12">  }</a></code></pre></div>
+<p>This next section creates a log message to say the new item addition is successful, and resets the form so it’s ready for the next task to be entered.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1">  <span class="co">// update the display of data to show the newly added item, by running displayData() again.</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="at">displayData</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3">}<span class="op">;</span></a></code></pre></div>
+<p>Last of all, we run the <code>displayData()</code> function, which updates the display of data in the app to show the new task that was just entered.</p>
+<h3 id="checking-whether-a-deadline-has-been-reached">Checking whether a deadline has been reached</h3>
+<p>At this point our data is in the database; now we want to check whether any of the deadlines have been reached. This is done by our <code>checkDeadlines()</code> function:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">function</span> <span class="at">checkDeadlines</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="kw">var</span> now <span class="op">=</span> <span class="kw">new</span> <span class="at">Date</span>()<span class="op">;</span></a></code></pre></div>
+<p>First we grab the current date and time by creating a blank <code>Date</code> object. Easy huh? It’s about to get a bit more complex.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1">  <span class="kw">var</span> minuteCheck  <span class="op">=</span> <span class="va">now</span>.<span class="at">getMinutes</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="kw">var</span> hourCheck    <span class="op">=</span> <span class="va">now</span>.<span class="at">getHours</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-3" title="3">  <span class="kw">var</span> dayCheck     <span class="op">=</span> <span class="va">now</span>.<span class="at">getDate</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-4" title="4">  <span class="kw">var</span> monthCheck   <span class="op">=</span> <span class="va">now</span>.<span class="at">getMonth</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-5" title="5">  <span class="kw">var</span> yearCheck    <span class="op">=</span> <span class="va">now</span>.<span class="at">getFullYear</span>()<span class="op">;</span></a></code></pre></div>
+<p>The <code>Date</code> object has a number of methods to extract various parts of the date and time inside it. Here we fetch the current minutes (gives an easy numerical value), hours (gives an easy numerical value), day of the month (<code>getDate()</code> is needed for this, as <code>getDay()</code> returns the day of the week, 1-7), month (returns a number from 0-11, see below), and year (<code>getFullYear()</code> is needed; <code>getYear()</code> is deprecated, and returns a weird value that is not much use to anyone!)</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1">   <span class="kw">var</span> objectStore <span class="op">=</span> <span class="va">db</span>.<span class="at">transaction</span>([<span class="st">&#39;toDoList&#39;</span>]<span class="op">,</span> <span class="st">&quot;readwrite&quot;</span>).<span class="at">objectStore</span>(<span class="st">&#39;toDoList&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-2" title="2"></a>
+<a class="sourceLine" id="cb7-3" title="3">  <span class="va">objectStore</span>.<span class="at">openCursor</span>().<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-4" title="4">    <span class="kw">var</span> cursor <span class="op">=</span> <span class="va">event</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb7-5" title="5"></a>
+<a class="sourceLine" id="cb7-6" title="6">    <span class="cf">if</span>(cursor) <span class="op">{</span></a></code></pre></div>
+<p>Next we create another IndexedDB <code>objectStore</code>, and use the <code>openCursor()</code> method to open a cursor, which is basically a way in IndexedDB to iterate through all the items in the store. We then loop through all the items in the cursor for as long as there is a valid item left in the cursor.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1">      <span class="cf">switch</span>(<span class="va">cursor</span>.<span class="va">value</span>.<span class="at">month</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-2" title="2">        <span class="cf">case</span> <span class="st">&quot;January&quot;</span><span class="op">:</span></a>
+<a class="sourceLine" id="cb8-3" title="3">          <span class="kw">var</span> monthNumber <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-4" title="4">          <span class="cf">break</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-5" title="5">        <span class="cf">case</span> <span class="st">&quot;February&quot;</span><span class="op">:</span></a>
+<a class="sourceLine" id="cb8-6" title="6">          <span class="kw">var</span> monthNumber <span class="op">=</span> <span class="dv">1</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-7" title="7">          <span class="cf">break</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-8" title="8"></a>
+<a class="sourceLine" id="cb8-9" title="9">        <span class="co">// other lines removed from listing for brevity</span></a>
+<a class="sourceLine" id="cb8-10" title="10"></a>
+<a class="sourceLine" id="cb8-11" title="11">        <span class="cf">case</span> <span class="st">&quot;December&quot;</span><span class="op">:</span></a>
+<a class="sourceLine" id="cb8-12" title="12">          <span class="kw">var</span> monthNumber <span class="op">=</span> <span class="dv">11</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-13" title="13">          <span class="cf">break</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-14" title="14">        <span class="cf">default</span><span class="op">:</span></a>
+<a class="sourceLine" id="cb8-15" title="15">          <span class="at">alert</span>(<span class="st">&#39;Incorrect month entered in database.&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-16" title="16">      <span class="op">}</span></a></code></pre></div>
+<p>The first thing we do is convert the month names we have stored in the database into a month number that JavaScript will understand. As we saw before, the JavaScript <code>Date</code> object creates month values as a number between 0 and 11.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1">      <span class="cf">if</span>(<span class="op">+</span>(<span class="va">cursor</span>.<span class="va">value</span>.<span class="at">hours</span>) <span class="op">==</span> hourCheck <span class="op">&amp;&amp;</span></a>
+<a class="sourceLine" id="cb9-2" title="2">         <span class="op">+</span>(<span class="va">cursor</span>.<span class="va">value</span>.<span class="at">minutes</span>) <span class="op">==</span> minuteCheck <span class="op">&amp;&amp;</span></a>
+<a class="sourceLine" id="cb9-3" title="3">         <span class="op">+</span>(<span class="va">cursor</span>.<span class="va">value</span>.<span class="at">day</span>) <span class="op">==</span> dayCheck <span class="op">&amp;&amp;</span></a>
+<a class="sourceLine" id="cb9-4" title="4">         monthNumber <span class="op">==</span> monthCheck <span class="op">&amp;&amp;</span></a>
+<a class="sourceLine" id="cb9-5" title="5">         <span class="va">cursor</span>.<span class="va">value</span>.<span class="at">year</span> <span class="op">==</span> yearCheck <span class="op">&amp;&amp;</span></a>
+<a class="sourceLine" id="cb9-6" title="6">         notified <span class="op">==</span> <span class="st">&quot;no&quot;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-7" title="7"></a>
+<a class="sourceLine" id="cb9-8" title="8">        <span class="co">// If the numbers all do match, run the createNotification()</span></a>
+<a class="sourceLine" id="cb9-9" title="9">        <span class="co">// function to create a system notification</span></a>
+<a class="sourceLine" id="cb9-10" title="10">        <span class="at">createNotification</span>(<span class="va">cursor</span>.<span class="va">value</span>.<span class="at">taskTitle</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-11" title="11">      <span class="op">}</span></a></code></pre></div>
+<p>With the current time and date segments that we want to check against the IndexedDB stored values all assembled, it is time to perform the checks. We want all the values to match before we show the user some kind of notification to tell them their deadline is up.</p>
+<p>The <code>+</code> operator in this case converts numbers with leading zeros into their non leading zero equivalents, e.g. 09 -&gt; 9. This is needed because JavaScript <code>Date</code> number values never have leading zeros, but our data might.</p>
+<p>The <code>notified == "no"</code> check is designed to make sure you will only get one notification per to-do item. When a notification is fired for each item object, its <code>notification</code> property is set to <code>"yes"</code> so this check will not pass on the next iteration, via the following code inside the <code>createNotification()</code> function (read <a href="/en-US/docs/Web/API/IndexedDB_API/Using_IndexedDB">Using IndexedDB</a> for an explanation):</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1">    <span class="co">// now we need to update the value of notified to &quot;yes&quot; in this particular data object, so the</span></a>
+<a class="sourceLine" id="cb10-2" title="2">    <span class="co">// notification won&#39;t be set off on it again</span></a>
+<a class="sourceLine" id="cb10-3" title="3"></a>
+<a class="sourceLine" id="cb10-4" title="4">    <span class="co">// first open up a transaction as usual</span></a>
+<a class="sourceLine" id="cb10-5" title="5">    <span class="kw">var</span> objectStore <span class="op">=</span> <span class="va">db</span>.<span class="at">transaction</span>([<span class="st">&#39;toDoList&#39;</span>]<span class="op">,</span> <span class="st">&quot;readwrite&quot;</span>).<span class="at">objectStore</span>(<span class="st">&#39;toDoList&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-6" title="6"></a>
+<a class="sourceLine" id="cb10-7" title="7">    <span class="co">// get the to-do list object that has this title as it&#39;s title</span></a>
+<a class="sourceLine" id="cb10-8" title="8">    <span class="kw">var</span> request <span class="op">=</span> <span class="va">objectStore</span>.<span class="at">get</span>(title)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-9" title="9"></a>
+<a class="sourceLine" id="cb10-10" title="10">    <span class="va">request</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-11" title="11">      <span class="co">// grab the data object returned as the result</span></a>
+<a class="sourceLine" id="cb10-12" title="12">      <span class="kw">var</span> data <span class="op">=</span> <span class="va">request</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-13" title="13"></a>
+<a class="sourceLine" id="cb10-14" title="14">      <span class="co">// update the notified value in the object to &quot;yes&quot;</span></a>
+<a class="sourceLine" id="cb10-15" title="15">      <span class="va">data</span>.<span class="at">notified</span> <span class="op">=</span> <span class="st">&quot;yes&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-16" title="16"></a>
+<a class="sourceLine" id="cb10-17" title="17">      <span class="co">// create another request that inserts the item back into the database</span></a>
+<a class="sourceLine" id="cb10-18" title="18">      <span class="kw">var</span> requestUpdate <span class="op">=</span> <span class="va">objectStore</span>.<span class="at">put</span>(data)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-19" title="19"></a>
+<a class="sourceLine" id="cb10-20" title="20">      <span class="co">// when this new request succeeds, run the displayData() function again to update the display</span></a>
+<a class="sourceLine" id="cb10-21" title="21">      <span class="va">requestUpdate</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-22" title="22">        <span class="at">displayData</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-23" title="23">      <span class="op">}</span></a></code></pre></div>
+<p>If the checks all match, we then run the <code>createNotification()</code> function to provide a notification to the user.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1">       <span class="va">cursor</span>.<span class="at">continue</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-2" title="2">    }</a>
+<a class="sourceLine" id="cb11-3" title="3">  }</a>
+<a class="sourceLine" id="cb11-4" title="4">}</a></code></pre></div>
+<p>The last line of the function moves the cursor on, which causes the above deadline checking mechanism to be run for the next task stored in the IndexedDB.</p>
+<h3 id="keep-on-checking">Keep on checking!</h3>
+<p>Of course, it is no use to just run the above deadline checking function once! We want to keep constantly checking all the deadlines to see if any of them are being reached. To do this, we are using <code>setInterval()</code> to run <code>checkDeadlines()</code> once per second:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb12-1" title="1"><span class="at">setInterval</span>(checkDeadlines<span class="op">,</span> <span class="dv">1000</span>)<span class="op">;</span></a></code></pre></div>

@@ -1,0 +1,78 @@
+<p>{{APIRef(“WebRTC”)}}</p>
+<p>A <strong><code>negotiationneeded</code></strong> event is sent to the {{domxref(“RTCPeerConnection”)}} when negotiation of the connection through the signaling channel is required. This occurs both during the initial setup of the connection as well as any time a change to the communication environment requires reconfiguring the connection.</p>
+<table class="properties">
+<tbody>
+<tr>
+<th scope="row">
+Bubbles
+</th>
+<td>
+No
+</td>
+</tr>
+<tr>
+<th scope="row">
+Cancelable
+</th>
+<td>
+No
+</td>
+</tr>
+<tr>
+<th scope="row">
+Interface
+</th>
+<td>
+{{DOMxRef(“Event”)}}
+</td>
+</tr>
+<tr>
+<th scope="row">
+Event handler property
+</th>
+<td>
+{{DOMxRef(“RTCPeerConnection.onnegotiationneeded”)}}
+</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>negotiationneeded</code> event is first dispatched to the {{domxref(“RTCPeerConnection”)}} when media is first added to the connection. This starts the process of {{Glossary(“ICE”)}} negotiation by instructing your code to begin exchanging ICE candidates through the signaling server. See {{SectionOnPage(“/en-US/docs/Web/API/WebRTC_API/Signaling_and_video_calling”, “Signaling transaction flow”)}} for a description of the signaling process that begins with a <code>negotiationneeded</code> event.</p>
+<h2 id="examples">Examples</h2>
+<p>In this example, we use {{domxref(“EventTarget.addEventListener”, “addEventListener()”)}} to create an event handler for <code>negotiationneeded</code>. Its role is to create an {{Glossary(“SDP”)}} offer and send it through the signaling channel to the remote peer.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">pc</span>.<span class="at">addEventListener</span>(<span class="st">&quot;negotiationneeded&quot;</span><span class="op">,</span> ev <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="va">pc</span>.<span class="at">createOffer</span>()</a>
+<a class="sourceLine" id="cb1-3" title="3">  .<span class="at">then</span>(offer <span class="kw">=&gt;</span> <span class="cf">return</span> <span class="va">pc</span>.<span class="at">setLocalDescription</span>(offer))</a>
+<a class="sourceLine" id="cb1-4" title="4">  .<span class="at">then</span>(() <span class="kw">=&gt;</span> <span class="at">sendSignalingMessage</span>(<span class="op">{</span></a>
+<a class="sourceLine" id="cb1-5" title="5">    <span class="dt">type</span><span class="op">:</span> <span class="st">&quot;video-offer&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb1-6" title="6">    <span class="dt">sdp</span><span class="op">:</span> <span class="va">pc</span>.<span class="at">localDescription</span></a>
+<a class="sourceLine" id="cb1-7" title="7">  <span class="op">}</span>))</a>
+<a class="sourceLine" id="cb1-8" title="8">  .<span class="at">catch</span>(err <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-9" title="9">    <span class="co">/* handle error */</span></a>
+<a class="sourceLine" id="cb1-10" title="10">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-11" title="11"><span class="op">},</span> <span class="kw">false</span>)<span class="op">;</span></a></code></pre></div>
+<p>After creating the offer, the local end is configured by calling {{domxref(“RTCPeerConnection.setLocalDescription()”)}}; then a signaling message is created and sent to the remote peer through the signaling server, to share that offer with the other peer. The other peer should recognize this message and follow up by creating its own {{domxref(“RTCPeerConnection”)}}, setting the remote description with {{domxref(“RTCPeerConnection.setRemoteDescription”, “setRemoteDescription()”)}}, and then creating an answer to send back to the offering peer.</p>
+<p>You can also set an event handler for the <code>negotiationneeded</code> event by assigning the event handler function to the {{domxref(“RTCPeerConnection.onnegotiationneeded”)}} property:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">pc</span>.<span class="at">onnegotiationneeded</span> <span class="op">=</span> ev <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="va">pc</span>.<span class="at">createOffer</span>()</a>
+<a class="sourceLine" id="cb2-3" title="3">  .<span class="at">then</span>(offer <span class="kw">=&gt;</span> <span class="cf">return</span> <span class="va">pc</span>.<span class="at">setLocalDescription</span>(offer))</a>
+<a class="sourceLine" id="cb2-4" title="4">  .<span class="at">then</span>(() <span class="kw">=&gt;</span> <span class="at">sendSignalingMessage</span>(<span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="dt">type</span><span class="op">:</span> <span class="st">&quot;video-offer&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-6" title="6">    <span class="dt">sdp</span><span class="op">:</span> <span class="va">pc</span>.<span class="at">localDescription</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="op">}</span>))</a>
+<a class="sourceLine" id="cb2-8" title="8">  .<span class="at">catch</span>(err <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-9" title="9">    <span class="co">/* handle error */</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="op">};</span></a></code></pre></div>
+<p>For a more detailed example, see {{SectionOnPage(“/en-US/docs/Web/API/WebRTC_API/Signaling_and_video_calling”, “Starting negotiation”)}}.</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/WebRTC_API">WebRTC API</a></li>
+<li><a href="/en-US/docs/Web/API/WebRTC_API/Signaling_and_video_calling">Signaling and video calling</a></li>
+<li><a href="/en-US/docs/Web/API/WebRTC_API/Session_lifetime">Lifetime of a WebRTC session</a></li>
+<li><a href="/en-US/docs/Web/API/WebRTC_API/Connectivity">WebRTC connectivity</a></li>
+<li><a href="/en-US/docs/Web/API/WebRTC_API/Protocols">Introduction to WebRTC protocols</a></li>
+</ul>

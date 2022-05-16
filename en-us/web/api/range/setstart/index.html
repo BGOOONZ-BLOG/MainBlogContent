@@ -1,0 +1,75 @@
+<p>{{ApiRef(“DOM”)}}</p>
+<p>The <strong><code>Range.setStart()</code></strong> method sets the start position of a {{ domxref(“Range”) }}.</p>
+<p>If the <code>startNode</code> is a {{domxref(“Node”)}} of type {{domxref(“Text”)}}, {{domxref(“Comment”)}}, or {{domxref(“CDataSection”)}}, then <code>startOffset</code> is the number of characters from the start of <code>startNode</code>. For other <code>Node</code> types, <code>startOffset</code> is the number of child nodes between the start of the <code>startNode</code>.</p>
+<p>Setting the start point below (lower in the document) the end point will result in a collapsed range with the start and end points both set to the specified start position.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">range</span>.<span class="at">setStart</span>(startNode<span class="op">,</span> startOffset)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><em>startNode</em>
+<ul>
+<li>: The {{ domxref(“Node”) }} where the {{ domxref(“Range”) }} should start.</li>
+</ul></li>
+<li><em>startOffset</em>
+<ul>
+<li>: An integer greater than or equal to zero representing the offset for the start of the {{ domxref(“Range”) }} from the start of <code>startNode</code>.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<h3 id="highlight-part-of-an-element">Highlight part of an element</h3>
+<p>This example uses the <code>Range.setStart()</code> and {{domxref(“Range.setEnd()”)}} methods to add part of an address to a range. The selected range is then highlighted using  {{domxref(“Range.surroundContents()”)}}.</p>
+<p>The address contains nine nodes: five text nodes, and four {{htmlElement(“br”)}} elements.</p>
+<h4 id="html">HTML</h4>
+<div class="sourceCode" id="cb2"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">&lt;p</span><span class="ot"> id=</span><span class="st">&quot;address&quot;</span><span class="kw">&gt;</span>Wyatt Earp<span class="kw">&lt;br&gt;</span></a>
+<a class="sourceLine" id="cb2-2" title="2">101 E. Main St.<span class="kw">&lt;br&gt;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">Dodge City, KS<span class="kw">&lt;br&gt;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">67801<span class="kw">&lt;br&gt;</span></a>
+<a class="sourceLine" id="cb2-5" title="5">USA<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb2-6" title="6"></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="kw">&lt;hr&gt;</span></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="kw">&lt;p&gt;</span>Nodes in the original address:<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="kw">&lt;ol</span><span class="ot"> id=</span><span class="st">&quot;log&quot;</span><span class="kw">&gt;&lt;/ol&gt;</span></a></code></pre></div>
+<h4 id="javascript">JavaScript</h4>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> address <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;address&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">const</span> log <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;log&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="co">// Log info</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="va">address</span>.<span class="va">childNodes</span>.<span class="at">forEach</span>(node <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="kw">const</span> li <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;li&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="va">li</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="vs">`</span><span class="sc">${</span><span class="va">node</span>.<span class="at">nodeName</span><span class="sc">}</span><span class="vs">, </span><span class="sc">${</span><span class="va">node</span>.<span class="at">nodeValue</span><span class="sc">}</span><span class="vs">`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="va">log</span>.<span class="at">appendChild</span>(li)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10"></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="co">// Highlight the street and city</span></a>
+<a class="sourceLine" id="cb3-12" title="12"><span class="kw">const</span> startOffset <span class="op">=</span> <span class="dv">2</span><span class="op">;</span>  <span class="co">// Start at third node: 101 E. Main St.</span></a>
+<a class="sourceLine" id="cb3-13" title="13"><span class="kw">const</span> endOffset <span class="op">=</span> <span class="dv">5</span><span class="op">;</span>    <span class="co">// End at fifth node: Dodge City, KS</span></a>
+<a class="sourceLine" id="cb3-14" title="14"><span class="kw">const</span> range <span class="op">=</span> <span class="va">document</span>.<span class="at">createRange</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-15" title="15"><span class="va">range</span>.<span class="at">setStart</span>(address<span class="op">,</span> startOffset)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-16" title="16"><span class="va">range</span>.<span class="at">setEnd</span>(address<span class="op">,</span> endOffset)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-17" title="17"></a>
+<a class="sourceLine" id="cb3-18" title="18"><span class="kw">const</span> mark <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;mark&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-19" title="19"><span class="va">range</span>.<span class="at">surroundContents</span>(mark)<span class="op">;</span></a></code></pre></div>
+<h4 id="result">Result</h4>
+<p>{{EmbedLiveSample(“Highlight_part_of_an_element”, 700, 400)}}</p>
+<h3 id="get-characters-from-a-text-node">Get characters from a text node</h3>
+<p>This example uses the <code>Range.setStart()</code> and {{domxref(“Range.setEnd()”)}} methods to define the contents of a range. The resulting range contains the first through fifth characters within a text node.</p>
+<h4 id="html-1">HTML</h4>
+<div class="sourceCode" id="cb4"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">&lt;p</span><span class="ot"> id=</span><span class="st">&quot;content&quot;</span><span class="kw">&gt;</span>0123456789<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="kw">&lt;p</span><span class="ot"> id=</span><span class="st">&quot;log&quot;</span><span class="kw">&gt;&lt;/p&gt;</span></a></code></pre></div>
+<h4 id="javascript-1">JavaScript</h4>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">const</span> element <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;content&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="kw">const</span> textNode <span class="op">=</span> <span class="va">element</span>.<span class="at">childNodes</span>[<span class="dv">0</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="kw">const</span> range <span class="op">=</span> <span class="va">document</span>.<span class="at">createRange</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="va">range</span>.<span class="at">setStart</span>(textNode<span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span>  <span class="co">// Start at first character</span></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="va">range</span>.<span class="at">setEnd</span>(textNode<span class="op">,</span> <span class="dv">5</span>)<span class="op">;</span>    <span class="co">// End at fifth character</span></a>
+<a class="sourceLine" id="cb5-6" title="6"><span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;log&#39;</span>).<span class="at">textContent</span> <span class="op">=</span> range<span class="op">;</span></a></code></pre></div>
+<h4 id="result-1">Result</h4>
+<p>{{EmbedLiveSample(“Get_characters_from_a_text_node”, 700, 100)}}</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Document_Object_Model">The DOM interfaces index</a></li>
+</ul>

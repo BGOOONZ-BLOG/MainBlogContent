@@ -1,0 +1,50 @@
+<p>{{non-standard_header}}{{APIRef(“IndexedDB”)}}{{SeeCompatTable}}</p>
+<p>The <strong><code>IDBLocaleAwareKeyRange</code></strong> interface of the <a href="/en-US/docs/Web/API/IndexedDB_API">IndexedDB API</a> is a Firefox-specific version of {{domxref(“IDBKeyRange”)}} — it functions in exactly the same fashion, and has the same properties and methods, but it is intended for use with {{domxref(“IDBIndex”)}} objects when the original index had a <code>locale</code> value specified upon its creation (see <a href="/en-US/docs/Web/API/IDBObjectStore/createIndex#parameters"><code>createIndex()</code>’s optionalParameters</a>) — that is, it has <a href="/en-US/docs/Web/API/IndexedDB_API/Using_IndexedDB#locale-aware_sorting">locale aware sorting</a> enabled.</p>
+<h2 id="methods">Methods</h2>
+<p><em>This interface inherits all the methods of its parent interface, {{domxref(“IDBKeyRange”)}}.</em></p>
+<h2 id="properties">Properties</h2>
+<p><em>This interface inherits all the properties of its parent interface, {{domxref(“IDBKeyRange”)}}.</em></p>
+<p>Bear in mind however that <code>IDBLocaleAwareKeyRange</code> has its own implementation of {{domxref(“IDBKeyRange.bound”)}}. This is because when you use <code>bound()</code>, it checks if lower bound &lt; upper bound, and throws an exception if that’s not the case. With locale-aware indexes, the meaning of &lt; depends on the locale, so for example in Lithuanian Y is sorted between I and K. The only difference between <code>IDBKeyRange</code> and <code>IDBLocaleAwareKeyRange</code> is that the latter doesn’t do the aforementioned check.</p>
+<p>Developers should always use <code>IDBLocaleAwareKeyRange</code> when dealing with locale-aware indexes.</p>
+<h2 id="examples">Examples</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">function</span> <span class="at">displayData</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="kw">var</span> keyRangeValue <span class="op">=</span> <span class="va">IDBLocaleAwareKeyRange</span>.<span class="at">bound</span>(<span class="st">&quot;A&quot;</span><span class="op">,</span> <span class="st">&quot;F&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"></a>
+<a class="sourceLine" id="cb1-4" title="4">  <span class="kw">var</span> transaction <span class="op">=</span> <span class="va">db</span>.<span class="at">transaction</span>([<span class="st">&#39;fThings&#39;</span>]<span class="op">,</span> <span class="st">&#39;readonly&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-5" title="5">  <span class="kw">var</span> objectStore <span class="op">=</span> <span class="va">transaction</span>.<span class="at">objectStore</span>(<span class="st">&#39;fThings&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-6" title="6"></a>
+<a class="sourceLine" id="cb1-7" title="7">  <span class="kw">var</span> myIndex <span class="op">=</span> <span class="va">objectStore</span>.<span class="at">index</span>(<span class="st">&#39;lName&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-8" title="8">  <span class="va">myIndex</span>.<span class="at">openCursor</span>(keyRangeValue).<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-9" title="9">    <span class="kw">var</span> cursor <span class="op">=</span> <span class="va">event</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-10" title="10">    <span class="cf">if</span>(cursor) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-11" title="11">      <span class="kw">var</span> tableRow <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;tr&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-12" title="12">      <span class="va">tableRow</span>.<span class="at">innerHTML</span> <span class="op">=</span>   <span class="st">&#39;&amp;lt;td&amp;gt;&#39;</span> <span class="op">+</span> <span class="va">cursor</span>.<span class="va">value</span>.<span class="at">id</span> <span class="op">+</span> <span class="st">&#39;&amp;lt;/td&amp;gt;&#39;</span></a>
+<a class="sourceLine" id="cb1-13" title="13">                           <span class="op">+</span> <span class="st">&#39;&amp;lt;td&amp;gt;&#39;</span> <span class="op">+</span> <span class="va">cursor</span>.<span class="va">value</span>.<span class="at">lName</span> <span class="op">+</span> <span class="st">&#39;&amp;lt;/td&amp;gt;&#39;</span></a>
+<a class="sourceLine" id="cb1-14" title="14">                           <span class="op">+</span> <span class="st">&#39;&amp;lt;td&amp;gt;&#39;</span> <span class="op">+</span> <span class="va">cursor</span>.<span class="va">value</span>.<span class="at">fName</span> <span class="op">+</span> <span class="st">&#39;&amp;lt;/td&amp;gt;&#39;</span></a>
+<a class="sourceLine" id="cb1-15" title="15">                           <span class="op">+</span> <span class="st">&#39;&amp;lt;td&amp;gt;&#39;</span> <span class="op">+</span> <span class="va">cursor</span>.<span class="va">value</span>.<span class="at">jTitle</span> <span class="op">+</span> <span class="st">&#39;&amp;lt;/td&amp;gt;&#39;</span></a>
+<a class="sourceLine" id="cb1-16" title="16">                           <span class="op">+</span> <span class="st">&#39;&amp;lt;td&amp;gt;&#39;</span> <span class="op">+</span> <span class="va">cursor</span>.<span class="va">value</span>.<span class="at">company</span> <span class="op">+</span> <span class="st">&#39;&amp;lt;/td&amp;gt;&#39;</span></a>
+<a class="sourceLine" id="cb1-17" title="17">                           <span class="op">+</span> <span class="st">&#39;&amp;lt;td&amp;gt;&#39;</span> <span class="op">+</span> <span class="va">cursor</span>.<span class="va">value</span>.<span class="at">eMail</span> <span class="op">+</span> <span class="st">&#39;&amp;lt;/td&amp;gt;&#39;</span></a>
+<a class="sourceLine" id="cb1-18" title="18">                           <span class="op">+</span> <span class="st">&#39;&amp;lt;td&amp;gt;&#39;</span> <span class="op">+</span> <span class="va">cursor</span>.<span class="va">value</span>.<span class="at">phone</span> <span class="op">+</span> <span class="st">&#39;&amp;lt;/td&amp;gt;&#39;</span></a>
+<a class="sourceLine" id="cb1-19" title="19">                           <span class="op">+</span> <span class="st">&#39;&amp;lt;td&amp;gt;&#39;</span> <span class="op">+</span> <span class="va">cursor</span>.<span class="va">value</span>.<span class="at">age</span> <span class="op">+</span> <span class="st">&#39;&amp;lt;/td&amp;gt;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-20" title="20">      <span class="va">tableEntry</span>.<span class="at">appendChild</span>(tableRow)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-21" title="21"></a>
+<a class="sourceLine" id="cb1-22" title="22">      <span class="va">cursor</span>.<span class="at">continue</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-23" title="23">    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-24" title="24">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Entries all displayed.&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-25" title="25">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-26" title="26">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb1-27" title="27"><span class="op">};</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>Not currently part of any specification.</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/IndexedDB_API/Using_IndexedDB">Using IndexedDB</a></li>
+<li>Starting transactions: {{domxref(“IDBDatabase”)}}</li>
+<li>Using transactions: {{domxref(“IDBTransaction”)}}</li>
+<li>Setting a range of keys: {{domxref(“IDBKeyRange”)}}</li>
+<li>Retrieving and making changes to your data: {{domxref(“IDBObjectStore”)}}</li>
+<li>Using cursors: {{domxref(“IDBCursor”)}}</li>
+<li>Reference example: <a href="https://github.com/mdn/to-do-notifications/tree/gh-pages">To-do Notifications</a> (<a href="https://mdn.github.io/to-do-notifications/">view example live</a>.)</li>
+</ul>

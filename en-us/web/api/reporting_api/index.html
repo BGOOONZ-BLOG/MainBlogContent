@@ -1,0 +1,124 @@
+<p>{{draft}}{{SeeCompatTable}}{{APIRef(“Reporting API”)}}</p>
+<p>The Reporting API provides a generic reporting mechanism for web applications to use to make reports available based on various platform features (for example <a href="/en-US/docs/Web/HTTP/CSP">Content Security Policy</a>, <a href="/en-US/docs/Web/HTTP/Headers/Feature-Policy">Feature-Policy</a>, or feature deprecation reports) in a consistent manner.</p>
+<h2 id="concepts-and-usage">Concepts and usage</h2>
+<p>There are a number of different features and problems on the web platform that generate information useful to web developers when they are trying to fix bugs or improve their websites in other ways. Such information can include:</p>
+<ul>
+<li><a href="/en-US/docs/Web/HTTP/CSP">Content Security Policy</a> violations.</li>
+<li><a href="/en-US/docs/Web/HTTP/Headers/Feature-Policy">Feature-Policy</a> violations.</li>
+<li>Deprecated feature usage (when you are using something that will stop working soon in browsers).</li>
+<li>Occurrence of crashes.</li>
+<li>Occurrence of user-agent interventions (when the browser blocks something your code is trying to do because it is deemed a security risk for example, or just plain annoying, like auto-playing audio).</li>
+</ul>
+<p>The Reporting API’s purpose is to provide a consistent reporting mechanism that can be used to make such information available to developers in the form of reports represented by JavaScript objects. There are a few ways to use it, which are detailed in the sections below.</p>
+<h3 id="origins-and-endpoints">Origins and endpoints</h3>
+<p>Each unique origin you want to retrieve reports for can be given a series of endpoints, which are URLs that can receive given reports from a user agent.</p>
+<p>The {{httpheader(“Report-To”)}} HTTP header is used to specify details about the different endpoints that a user-agent has available to it for delivering reports to. You can then retrieve reports by making a request to those URLs.</p>
+<p>The endpoints are arranged into groups; an endpoint group can work together to provide load balancing (each endpoint will receive a specified proportion of report traffic) and safeguarding against failure (fallback endpoints can be specified to use if the primary ones fail).</p>
+<blockquote>
+<p><strong>Note:</strong> There is no absolute guarantee of report delivery — a report could still fail to be collected if a serious error occurs.</p>
+</blockquote>
+<p>Reports sent to endpoints can be retrieved independently of the running of the websites they relate to, which is useful — a crash for example could bring down a web site and stop anything running, but a report could still be obtained to give the developer some clues as to why it happened.</p>
+<h3 id="reporting-observers">Reporting observers</h3>
+<p>Reports can also be obtained via {{domxref(“ReportingObserver”)}} objects created via JavaScript inside the website you are aiming to get reports on. This method is not as failsafe as the <code>Report-To</code> method described above — any page crash could stop you retrieving the reports — but it is easier to set up, and more flexible.</p>
+<p>A <code>ReportingObserver</code> object is created using the {{domxref(“ReportingObserver.ReportingObserver”, “ReportingObserver()”)}} constructor, which is passed two parameters:</p>
+<ul>
+<li>A callback function that has available as parameters the reports available in the observer’s report queue, and a copy of the same <code>ReportingObserver</code> object, so observation can be controlled directly from inside the callback. The callback runs when observation starts</li>
+<li>An options dictionary that allows you to specify the type of reports to collect, and whether the reports that were generated before the observer was able to be created should be observable (<code>buffered: true</code>).</li>
+</ul>
+<p>Methods are then available on the observer to start collecting reports ({{domxref(“ReportingObserver.observe()”)}}), retrieve the reports currently in the report queue ({{domxref(“ReportingObserver.takeRecords()”)}}), and disconnect the observer so it can no longer collect records ({{domxref(“ReportingObserver.disconnect()”)}}).</p>
+<h3 id="generating-reports-via-webdriver">Generating reports via WebDriver</h3>
+<p>The Reporting API spec also defines a Generate Test Report <a href="/en-US/docs/Web/WebDriver">WebDriver</a> extension, which allows you to simulate report generation during automation. Reports generated via WebDriver are observed by any registered <code>ReportObserver</code> objects present in the loaded website. This is not yet documented.</p>
+<h2 id="reporting-api-interfaces">Reporting API interfaces</h2>
+<ul>
+<li>{{domxref(“ReportingObserver”)}}
+<ul>
+<li>: Create <code>ReportingObserver</code> instances using its constructor, which can then be used to collect and access reports.</li>
+</ul></li>
+<li>{{domxref(“Report”)}}
+<ul>
+<li>: An object representing a single report.</li>
+</ul></li>
+</ul>
+<h3 id="reporting-api-dictionaries">Reporting API dictionaries</h3>
+<ul>
+<li>{{domxref(“ReportingObserverOptions”)}}
+<ul>
+<li>: Allows options to be set in the constructor when creating a reporting observer.</li>
+</ul></li>
+</ul>
+<h3 id="available-report-types">Available report types</h3>
+<p>The spec defines the following report types:</p>
+<ul>
+<li>Deprecation report
+<ul>
+<li>: Indicates that a WebAPI or other browser feature being used in the website is expected to stop working in a future release. Indicated by a {{domxref(“Report.body”)}} property with a {{domxref(“DeprecationReportBody”)}} return value.</li>
+</ul></li>
+<li>Intervention report
+<ul>
+<li>: Indicates that a request made by the website has been denied by the browser, e.g. for security or user annoyance reasons. Indicated by a {{domxref(“Report.body”)}} property with a {{domxref(“InterventionReportBody”)}} return value.</li>
+</ul></li>
+<li>Crash report
+<ul>
+<li>: Indicates that the website stopped running due to a browser crash. Indicated by a {{domxref(“Report.body”)}} property with a {{domxref(“CrashReportBody”)}} return value.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>In our <a href="https://mdn.github.io/dom-examples/reporting-api/deprecation_report.html">deprecation_report.html</a> example, we create a simple reporting observer to observe usage of deprecated features on our web page:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">let</span> options <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="dt">types</span><span class="op">:</span> [<span class="st">&#39;deprecation&#39;</span>]<span class="op">,</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="dt">buffered</span><span class="op">:</span> <span class="kw">true</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="op">}</span></a>
+<a class="sourceLine" id="cb1-5" title="5"></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="kw">let</span> observer <span class="op">=</span> <span class="kw">new</span> <span class="at">ReportingObserver</span>(<span class="kw">function</span>(reports<span class="op">,</span> observer) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-7" title="7">  <span class="va">reportBtn</span>.<span class="at">onclick</span> <span class="op">=</span> () <span class="kw">=&gt;</span> <span class="at">displayReports</span>(reports)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-8" title="8"><span class="op">},</span> options)<span class="op">;</span></a></code></pre></div>
+<p>We then tell it to start observing reports using {{domxref(“ReportingObserver.observe()”)}}; this tells the observer to start collecting reports in its report queue, and runs the callback function specified inside the constructor:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">observer</span>.<span class="at">observe</span>()<span class="op">;</span></a></code></pre></div>
+<p>Later on in the example we deliberately use the deprecated version of {{domxref(“MediaDevices.getUserMedia()”)}}:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="cf">if</span>(<span class="va">navigator</span>.<span class="at">mozGetUserMedia</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="va">navigator</span>.<span class="at">mozGetUserMedia</span>(</a>
+<a class="sourceLine" id="cb3-3" title="3">    constraints<span class="op">,</span></a>
+<a class="sourceLine" id="cb3-4" title="4">    success<span class="op">,</span></a>
+<a class="sourceLine" id="cb3-5" title="5">    failure)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="va">navigator</span>.<span class="at">getUserMedia</span>(</a>
+<a class="sourceLine" id="cb3-8" title="8">    constraints<span class="op">,</span></a>
+<a class="sourceLine" id="cb3-9" title="9">    success<span class="op">,</span></a>
+<a class="sourceLine" id="cb3-10" title="10">    failure)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="op">}</span></a></code></pre></div>
+<p>This causes a deprecation report to be generated; because of the event handler we set up inside the <code>ReportingObserver()</code> constructor, we can now click the button to display the report details.</p>
+<figure>
+<img src="reporting_api_example.png" alt="image of a jolly bearded man with various stats displayed below it about a deprecated feature" /><figcaption>image of a jolly bearded man with various stats displayed below it about a deprecated feature</figcaption>
+</figure>
+<blockquote>
+<p><strong>Note:</strong> If you look at the <a href="https://github.com/mdn/dom-examples/blob/master/reporting-api/deprecation_report.html">complete source code</a>, you’ll notice that we actually call the deprecated <code>getUserMedia()</code> method twice. After the first time we call {{domxref(“ReportingObserver.takeRecords()”)}}, which returns the first generated report and empties the queue. Because of this, when the button is pressed only the second report is listed.</p>
+</blockquote>
+<h2 id="specifications">Specifications</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Specification</th>
+<th>Status</th>
+<th>Comment</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="https://w3c.github.io/reporting/#intro">Reporting API spec</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>Support is at an early stage right now. Firefox supports the JavaScript API and the <code>Report-To</code> header behind prefs:</p>
+<ul>
+<li>JavaScript API: <code>dom.reporting.enabled</code> (enabled in nightly only)</li>
+<li>HTTP header: <code>dom.reporting.header.enabled</code></li>
+</ul>
+<p>Chrome is also working on an implementation: <a href="https://developers.google.com/web/updates/2018/09/reportingapi">information about Chrome implementation</a>.</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/HTTP/CSP">Content Security Policy</a></li>
+<li><a href="/en-US/docs/Web/HTTP/Headers/Feature-Policy"><code>Feature-Policy</code></a></li>
+</ul>

@@ -1,0 +1,318 @@
+<p>{{ServiceWorkerSidebar}}</p>
+<p>This article provides information on getting started with service workers, including basic architecture, registering a service worker, the install and activation process for a new service worker, updating your service worker, cache control and custom responses, all in the context of a simple app with offline functionality.</p>
+<h2 id="the-premise-of-service-workers">The premise of service workers</h2>
+<p>One overriding problem that web users have suffered with for years is loss of connectivity. The best web app in the world will provide a terrible user experience if you can’t download it. There have been various attempts to create technologies to solve this problem, and some of the issues have been solved. But the overriding problem is that there still isn’t a good overall control mechanism for asset caching and custom network requests.</p>
+<p>The previous attempt, <em>AppCache</em>, seemed to be a good idea because it allowed you to specify assets to cache really easily. However, it made many assumptions about what you were trying to do and then broke horribly when your app didn’t follow those assumptions exactly. Read Jake Archibald’s (unfortunately-titled but well-written) <a href="https://alistapart.com/article/application-cache-is-a-douchebag">Application Cache is a Douchebag</a> for more details.</p>
+<blockquote>
+<p><strong>Note:</strong> From Firefox 84, AppCache has been removed ({{bug(“1619673”)}}). It is also planned for removal in Chomium 90, and is deprecated in Safari.</p>
+</blockquote>
+<p>Service workers should finally fix these issues. Service worker syntax is more complex than that of AppCache, but the trade off is that you can use JavaScript to control your AppCache-implied behaviors with a fine degree of granularity, allowing you to handle this problem and many more. Using a Service worker you can easily set an app up to use cached assets first, thus providing a default experience even when offline, before then getting more data from the network (commonly known as <a href="http://offlinefirst.org/">Offline First</a>). This is already available with native apps, which is one of the main reasons native apps are often chosen over web apps.</p>
+<h2 id="setting-up-to-play-with-service-workers">Setting up to play with service workers</h2>
+<p>These days, service workers are enabled by default in all modern browsers. To run code using service workers, you’ll need to serve your code via HTTPS — Service workers are restricted to running across HTTPS for security reasons. GitHub is therefore a good place to host experiments, as it supports HTTPS. In order to facilitate local development, <code>localhost</code> is considered a secure origin by browsers as well.</p>
+<h2 id="basic-architecture">Basic architecture</h2>
+<p>With service workers, the following steps are generally observed for basic set up:</p>
+<ol type="1">
+<li>The service worker URL is fetched and registered via {{domxref(“serviceWorkerContainer.register()”)}}.</li>
+<li>If successful, the service worker is executed in a {{domxref(“ServiceWorkerGlobalScope”) }}; this is basically a special kind of worker context, running off the main script execution thread, with no DOM access.</li>
+<li>The service worker is now ready to process events.</li>
+<li>Installation of the worker is attempted when service worker-controlled pages are accessed subsequently. An Install event is always the first one sent to a service worker (this can be used to start the process of populating an IndexedDB, and caching site assets). This is really the same kind of procedure as installing a native or Firefox OS app — making everything available for use offline.</li>
+<li>When the <code>oninstall</code> handler completes, the service worker is considered installed.</li>
+<li>Next is activation. When the service worker is installed, it then receives an activate event. The primary use of <code>onactivate</code> is for cleanup of resources used in previous versions of a Service worker script.</li>
+<li>The Service worker will now control pages, but only those opened after the <code>register()</code> is successful. i.e. a document starts life with or without a Service worker and maintains that for its lifetime. So documents will have to be reloaded to actually be controlled.</li>
+</ol>
+<p><img src="sw-lifecycle.png" /></p>
+<p>The below graphic shows a summary of the available service worker events:</p>
+<figure>
+<img src="sw-events.png" alt="install, activate, message, fetch, sync, push" /><figcaption>install, activate, message, fetch, sync, push</figcaption>
+</figure>
+<h3 id="promises">Promises</h3>
+<p><a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promises</a> are a great mechanism for running async operations, with success dependant on one another. This is central to the way service workers work.</p>
+<p>Promises can do a variety of things, but all you need to know for now is that if something returns a promise, you can attach <code>.then()</code> to the end and include callbacks inside it for success cases, or you can insert <code>.catch()</code> on the end if you want to include a failure callback.</p>
+<p>Let’s compare a traditional synchronous callback structure to its asynchronous promise equivalent.</p>
+<h4 id="sync">sync</h4>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="cf">try</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="kw">const</span> value <span class="op">=</span> <span class="at">myFunction</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="va">console</span>.<span class="at">log</span>(value)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="op">}</span> <span class="cf">catch</span>(err) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-5" title="5">  <span class="va">console</span>.<span class="at">log</span>(err)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="op">}</span></a></code></pre></div>
+<h4 id="async">async</h4>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="at">myFunction</span>().<span class="at">then</span>((value) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="va">console</span>.<span class="at">log</span>(value)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="op">}</span>).<span class="at">catch</span>((err) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="va">console</span>.<span class="at">log</span>(err)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>In the first example, we have to wait for <code>myFunction()</code> to run and return <code>value</code> before any more of the code can execute. In the second example, <code>myFunction()</code> returns a promise for <code>value</code>, then the rest of the code can carry on running. When the promise resolves, the code inside <code>then</code> will be run, asynchronously.</p>
+<p>Now for a real example — what if we wanted to load images dynamically, but we wanted to make sure the images were loaded before we tried to display them? This is a standard thing to do, but it can be a bit of a pain. We can use <code>.onload</code> to only display the image after it’s loaded, but what about events that start happening before we start listening to them? We could try to work around this using <code>.complete</code>, but it’s still not foolproof, and what about multiple images? And, ummm, it’s still synchronous, so blocks the main thread.</p>
+<p>Instead, we could build our own promise to handle this kind of case. (See our <a href="https://github.com/mdn/js-examples/tree/master/promises-test">Promises test</a> example for the source code, or <a href="https://mdn.github.io/js-examples/promises-test/">look at it running live</a>.)</p>
+<blockquote>
+<p><strong>Note:</strong> A real service worker implementation would use caching and onfetch rather than the XMLHttpRequest API. Those features are not used here so that you can focus on understanding Promises.</p>
+</blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> imgLoad <span class="op">=</span> (url) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="cf">return</span> <span class="kw">new</span> <span class="at">Promise</span>((resolve<span class="op">,</span> reject) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="kw">var</span> request <span class="op">=</span> <span class="kw">new</span> <span class="at">XMLHttpRequest</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="va">request</span>.<span class="at">open</span>(<span class="st">&#39;GET&#39;</span><span class="op">,</span> url)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">    <span class="va">request</span>.<span class="at">responseType</span> <span class="op">=</span> <span class="st">&#39;blob&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6"></a>
+<a class="sourceLine" id="cb3-7" title="7">    <span class="va">request</span>.<span class="at">onload</span> <span class="op">=</span> () <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-8" title="8">      <span class="cf">if</span> (<span class="va">request</span>.<span class="at">status</span> <span class="op">==</span> <span class="dv">200</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-9" title="9">        <span class="at">resolve</span>(<span class="va">request</span>.<span class="at">response</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10">      <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-11" title="11">        <span class="at">reject</span>(<span class="at">Error</span>(<span class="st">&#39;Image didn</span><span class="sc">\&#39;</span><span class="st">t load successfully; error code:&#39;</span> <span class="op">+</span> <span class="va">request</span>.<span class="at">statusText</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-12" title="12">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-13" title="13">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb3-14" title="14"></a>
+<a class="sourceLine" id="cb3-15" title="15">    <span class="va">request</span>.<span class="at">onerror</span> <span class="op">=</span> () <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-16" title="16">      <span class="at">reject</span>(<span class="at">Error</span>(<span class="st">&#39;There was a network error.&#39;</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-17" title="17">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb3-18" title="18"></a>
+<a class="sourceLine" id="cb3-19" title="19">    <span class="va">request</span>.<span class="at">send</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-20" title="20">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-21" title="21"><span class="op">}</span></a></code></pre></div>
+<p>We return a new promise using the <code>Promise()</code> constructor, which takes as an argument a callback function with <code>resolve</code> and <code>reject</code> parameters. Somewhere in the function, we need to define what happens for the promise to resolve successfully or be rejected — in this case return a 200 OK status or not — and then call <code>resolve</code> on success, or <code>reject</code> on failure. The rest of the contents of this function is fairly standard XHR stuff, so we won’t worry about that for now.</p>
+<p>When we come to call the <code>imgLoad()</code> function, we call it with the url to the image we want to load, as we might expect, but the rest of the code is a little different:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">let</span> body <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;body&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="kw">let</span> myImage <span class="op">=</span> <span class="kw">new</span> <span class="at">Image</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="at">imgLoad</span>(<span class="st">&#39;myLittleVader.jpg&#39;</span>).<span class="at">then</span>((response) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="kw">var</span> imageURL <span class="op">=</span> <span class="va">window</span>.<span class="va">URL</span>.<span class="at">createObjectURL</span>(response)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-6" title="6">  <span class="va">myImage</span>.<span class="at">src</span> <span class="op">=</span> imageURL<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="va">body</span>.<span class="at">appendChild</span>(myImage)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-8" title="8"><span class="op">},</span> (Error) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-9" title="9">  <span class="va">console</span>.<span class="at">log</span>(Error)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-10" title="10"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>On to the end of the function call, we chain the promise <code>then()</code> method, which contains two functions — the first one is executed when the promise successfully resolves, and the second is called when the promise is rejected. In the resolved case, we display the image inside <code>myImage</code> and append it to the body (its argument is the <code>request.response</code> contained inside the promise’s <code>resolve</code> method); in the rejected case we return an error to the console.</p>
+<p>This all happens asynchronously.</p>
+<blockquote>
+<p><strong>Note:</strong> You can also chain promise calls together, for example: <code>myPromise().then(success, failure).then(success).catch(failure);</code></p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> You can find a lot more out about promises by reading Jake Archibald’s excellent <a href="https://www.html5rocks.com/en/tutorials/es6/promises/">JavaScript Promises: there and back again</a>.</p>
+</blockquote>
+<h2 id="service-workers-demo">Service workers demo</h2>
+<p>To demonstrate just the very basics of registering and installing a service worker, we have created a simple demo called <a href="https://github.com/mdn/sw-test">sw-test</a>, which is a simple Star wars Lego image gallery. It uses a promise-powered function to read image data from a JSON object and load the images using Ajax, before displaying the images in a line down the page. We’ve kept things static and simple for now. It also registers, installs, and activates a service worker, and when more of the spec is supported by browsers it will cache all the files required so it will work offline!</p>
+<p><img src="demo-screenshot.png" /></p>
+<p>You can see the <a href="https://github.com/mdn/sw-test/">source code on GitHub</a>, and <a href="https://mdn.github.io/sw-test/">view the example live</a>. The one bit we’ll call out here is the promise (see <a href="https://github.com/mdn/sw-test/blob/gh-pages/app.js#L22-L47">app.js lines 22-47</a>), which is a modified version of what you read about above, in the <a href="https://mdn.github.io/js-examples/promises-test/">Promises test demo</a>. It is different in the following ways:</p>
+<ol type="1">
+<li>In the original, we only passed in a URL to an image we wanted to load. In this version, we pass in a JSON fragment containing all the data for a single image (see what they look like in <a href="https://github.com/mdn/sw-test/blob/gh-pages/image-list.js">image-list.js</a>). This is because all the data for each promise resolve has to be passed in with the promise, as it is asynchronous. If you just passed in the url, and then tried to access the other items in the JSON separately when the <code>for()</code> loop is being iterated through later on, it wouldn’t work, as the promise wouldn’t resolve at the same time as the iterations are being done (that is a synchronous process.)</li>
+<li>We actually resolve the promise with an array, as we want to make the loaded image blob available to the resolving function later on in the code, but also the image name, credits and alt text (see <a href="https://github.com/mdn/sw-test/blob/gh-pages/app.js#L31-L34">app.js lines 31-34</a>). Promises will only resolve with a single argument, so if you want to resolve with multiple values, you need to use an array/object.</li>
+<li>To access the resolved promise values, we then access this function as you’d then expect (see <a href="https://github.com/mdn/sw-test/blob/gh-pages/app.js#L60-L64">app.js lines 60-64</a>). This may seem a bit odd at first, but this is the way promises work.</li>
+</ol>
+<h2 id="enter-service-workers">Enter service workers</h2>
+<blockquote>
+<p><strong>Note:</strong> We’re using the <a href="http://es6-features.org/">es6</a> <strong>arrow functions</strong> syntax in the Service Worker Implementation.</p>
+</blockquote>
+<p>Now let’s get on to service workers!</p>
+<h3 id="registering-your-worker">Registering your worker</h3>
+<p>The first block of code in our app’s JavaScript file — <code>app.js</code> — is as follows. This is our entry point into using service workers.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="cf">if</span> (<span class="st">&#39;serviceWorker&#39;</span> <span class="kw">in</span> navigator) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="va">navigator</span>.<span class="va">serviceWorker</span>.<span class="at">register</span>(<span class="st">&#39;./sw-test/sw.js&#39;</span><span class="op">,</span> <span class="op">{</span><span class="dt">scope</span><span class="op">:</span> <span class="st">&#39;./sw-test/&#39;</span><span class="op">}</span>)</a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="va"> </span> .<span class="at">then</span>((reg) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-4" title="4">    <span class="co">// registration worked</span></a>
+<a class="sourceLine" id="cb5-5" title="5">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Registration succeeded. Scope is &#39;</span> <span class="op">+</span> <span class="va">reg</span>.<span class="at">scope</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-6" title="6">  <span class="op">}</span>).<span class="at">catch</span>((error) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-7" title="7">    <span class="co">// registration failed</span></a>
+<a class="sourceLine" id="cb5-8" title="8">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Registration failed with &#39;</span> <span class="op">+</span> error)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-9" title="9">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-10" title="10"><span class="op">}</span></a></code></pre></div>
+<ol type="1">
+<li>The outer block performs a feature detection test to make sure service workers are supported before trying to register one.</li>
+<li>Next, we use the {{domxref(“ServiceWorkerContainer.register()”) }} function to register the service worker for this site, which is just a JavaScript file residing inside our app (note this is the file’s URL relative to the origin, not the JS file that references it.)</li>
+<li>The <code>scope</code> parameter is optional, and can be used to specify the subset of your content that you want the service worker to control. In this case, we have specified ’<code>/sw-test/'</code>, which means all content under the app’s origin. If you leave it out, it will default to this value anyway, but we specified it here for illustration purposes.</li>
+<li>The <code>.then()</code> promise function is used to chain a success case onto our promise structure.  When the promise resolves successfully, the code inside it executes.</li>
+<li>Finally, we chain a <code>.catch()</code> function onto the end that will run if the promise is rejected.</li>
+</ol>
+<p>This registers a service worker, which runs in a worker context, and therefore has no DOM access. You then run code in the service worker outside of your normal pages to control their loading.</p>
+<p>A single service worker can control many pages. Each time a page within your scope is loaded, the service worker is installed against that page and operates on it. Bear in mind therefore that you need to be careful with global variables in the service worker script: each page doesn’t get its own unique worker.</p>
+<blockquote>
+<p><strong>Note:</strong> Your service worker functions like a proxy server, allowing you to modify requests and responses, replace them with items from its own cache, and more.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> One great thing about service workers is that if you use feature detection like we’ve shown above, browsers that don’t support service workers can just use your app online in the normal expected fashion. Furthermore, if you use AppCache and SW on a page, browsers that don’t support SW but do support AppCache will use that, and browsers that support both will ignore the AppCache and let SW take over.</p>
+</blockquote>
+<h4 id="why-is-my-service-worker-failing-to-register">Why is my service worker failing to register?</h4>
+<p>This could be for the following reasons:</p>
+<ol type="1">
+<li>You are not running your application through HTTPS.</li>
+<li>The path to your service worker file is not written correctly — it needs to be written relative to the origin, not your app’s root directory. In our example, the worker is at <code>https://mdn.github.io/sw-test/sw.js</code>, and the app’s root is <code>https://mdn.github.io/sw-test/</code>. But the path needs to be written as <code>/sw-test/sw.js</code>, not <code>/sw.js</code>.</li>
+<li>It is also not allowed to point to a service worker of a different origin than that of your app.</li>
+</ol>
+<p><img src="important-notes.png" /></p>
+<p>Also note:</p>
+<ul>
+<li>The service worker will only catch requests from clients under the service worker’s scope.</li>
+<li>The max scope for a service worker is the location of the worker.</li>
+<li>If your service worker is active on a client being served with the <code>Service-Worker-Allowed</code> header, you can specify a list of max scopes for that worker.</li>
+<li>In Firefox, Service Worker APIs are hidden and cannot be used when the user is in <a href="https://support.mozilla.org/en-US/kb/private-browsing-use-firefox-without-history">private browsing mode</a>.</li>
+</ul>
+<h3 id="install-and-activate-populating-your-cache">Install and activate: populating your cache</h3>
+<p>After your service worker is registered, the browser will attempt to install then activate the service worker for your page/site.</p>
+<p>The install event is fired when an install is successfully completed. The install event is generally used to populate your browser’s offline caching capabilities with the assets you need to run your app offline. To do this, we use Service Worker’s storage API — {{domxref(“cache”)}} — a global object on the service worker that allows us to store assets delivered by responses, and keyed by their requests. This API works in a similar way to the browser’s standard cache, but it is specific to your domain. It persists until you tell it not to — again, you have full control.</p>
+<p>Let’s start this section by looking at a code sample — this is the <a href="https://github.com/mdn/sw-test/blob/gh-pages/sw.js#L1-L18">first block you’ll find in our service worker</a>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="va">self</span>.<span class="at">addEventListener</span>(<span class="st">&#39;install&#39;</span><span class="op">,</span> (event) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="va">event</span>.<span class="at">waitUntil</span>(</a>
+<a class="sourceLine" id="cb6-3" title="3">    <span class="va">caches</span>.<span class="at">open</span>(<span class="st">&#39;v1&#39;</span>).<span class="at">then</span>((cache) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-4" title="4">      <span class="cf">return</span> <span class="va">cache</span>.<span class="at">addAll</span>([</a>
+<a class="sourceLine" id="cb6-5" title="5">        <span class="st">&#39;./sw-test/&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb6-6" title="6">        <span class="st">&#39;./sw-test/index.html&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb6-7" title="7">        <span class="st">&#39;./sw-test/style.css&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb6-8" title="8">        <span class="st">&#39;./sw-test/app.js&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb6-9" title="9">        <span class="st">&#39;./sw-test/image-list.js&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb6-10" title="10">        <span class="st">&#39;./sw-test/star-wars-logo.jpg&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb6-11" title="11">        <span class="st">&#39;./sw-test/gallery/&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb6-12" title="12">        <span class="st">&#39;./sw-test/gallery/bountyHunters.jpg&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb6-13" title="13">        <span class="st">&#39;./sw-test/gallery/myLittleVader.jpg&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb6-14" title="14">        <span class="st">&#39;./sw-test/gallery/snowTroopers.jpg&#39;</span></a>
+<a class="sourceLine" id="cb6-15" title="15">      ])<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-16" title="16">    <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb6-17" title="17">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-18" title="18"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<ol type="1">
+<li>Here we add an <code>install</code> event listener to the service worker (hence <code>self</code>), and then chain a {{domxref(“ExtendableEvent.waitUntil()”) }} method onto the event — this ensures that the service worker will not install until the code inside <code>waitUntil()</code> has successfully occurred.</li>
+<li>Inside <code>waitUntil()</code> we use the <a href="/en-US/docs/Web/API/CacheStorage/open"><code>caches.open()</code></a> method to create a new cache called <code>v1</code>, which will be version 1 of our site resources cache. This returns a promise for a created cache; once resolved, we then call a function that calls <code>addAll()</code> on the created cache, which for its parameter takes an array of origin-relative URLs to all the resources you want to cache.</li>
+<li>If the promise is rejected, the install fails, and the worker won’t do anything. This is OK, as you can fix your code and then try again the next time registration occurs.</li>
+<li>After a successful installation, the service worker activates. This doesn’t have much of a distinct use the first time your service worker is installed/activated, but it means more when the service worker is updated (see the {{anch(“Updating your service worker”) }} section later on.)</li>
+</ol>
+<blockquote>
+<p><strong>Note:</strong> <a href="/en-US/docs/Web/API/Web_Storage_API">localStorage</a> works in a similar way to service worker cache, but it is synchronous, so not allowed in service workers.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> <a href="/en-US/docs/Web/API/IndexedDB_API">IndexedDB</a> can be used inside a service worker for data storage if you require it.</p>
+</blockquote>
+<h3 id="custom-responses-to-requests">Custom responses to requests</h3>
+<p>Now you’ve got your site assets cached, you need to tell service workers to do something with the cached content. This is easily done with the <code>fetch</code> event.</p>
+<p><img src="sw-fetch.png" /></p>
+<p>A <code>fetch</code> event fires every time any resource controlled by a service worker is fetched, which includes the documents inside the specified scope, and any resources referenced in those documents (for example if <code>index.html</code> makes a cross origin request to embed an image, that still goes through its service worker.)</p>
+<p>You can attach a <code>fetch</code> event listener to the service worker, then call the <code>respondWith()</code> method on the event to hijack our HTTP responses and update them with your own magic.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="va">self</span>.<span class="at">addEventListener</span>(<span class="st">&#39;fetch&#39;</span><span class="op">,</span> (event) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="va">event</span>.<span class="at">respondWith</span>(</a>
+<a class="sourceLine" id="cb7-3" title="3">    <span class="co">// magic goes here</span></a>
+<a class="sourceLine" id="cb7-4" title="4">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-5" title="5"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>We could start by responding with the resource whose url matches that of the network request, in each case:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="va">self</span>.<span class="at">addEventListener</span>(<span class="st">&#39;fetch&#39;</span><span class="op">,</span> (event) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-2" title="2">  <span class="va">event</span>.<span class="at">respondWith</span>(</a>
+<a class="sourceLine" id="cb8-3" title="3">    <span class="va">caches</span>.<span class="at">match</span>(<span class="va">event</span>.<span class="at">request</span>)</a>
+<a class="sourceLine" id="cb8-4" title="4">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-5" title="5"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p><code>caches.match(event.request)</code> allows us to match each resource requested from the network with the equivalent resource available in the cache, if there is a matching one available. The matching is done via URL and various headers, just like with normal HTTP requests.</p>
+<p>Let’s look at a few other options we have when defining our magic (see our <a href="/en-US/docs/Web/API/Fetch_API">Fetch API documentation</a> for more information about {{domxref(“Request”)}} and {{domxref(“Response”)}} objects.)</p>
+<ol type="1">
+<li><p>The <code>{{domxref("Response.Response","Response()")}}</code> constructor allows you to create a custom response. In this case, we are just returning a simple text string:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">new</span> <span class="at">Response</span>(<span class="st">&#39;Hello from your friendly neighborhood service worker!&#39;</span>)<span class="op">;</span></a></code></pre></div></li>
+<li><p>This more complex <code>Response</code> below shows that you can optionally pass a set of headers in with your response, emulating standard HTTP response headers. Here we are just telling the browser what the content type of our synthetic response is:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">new</span> <span class="at">Response</span>(<span class="st">&#39;&lt;p&gt;Hello from your friendly neighborhood service worker!&lt;/p&gt;&#39;</span><span class="op">,</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-2" title="2">  <span class="dt">headers</span><span class="op">:</span> <span class="op">{</span> <span class="st">&#39;Content-Type&#39;</span><span class="op">:</span> <span class="st">&#39;text/html&#39;</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-3" title="3"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div></li>
+<li><p>If a match wasn’t found in the cache, you could tell the browser to {{domxref(“fetch()”)}} the default network request for that resource, to get the new resource from the network if it is available:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1"><span class="at">fetch</span>(<span class="va">event</span>.<span class="at">request</span>)<span class="op">;</span></a></code></pre></div></li>
+<li><p>If a match wasn’t found in the cache, and the network isn’t available, you could just match the request with some kind of default fallback page as a response using {{domxref(“CacheStorage.match”,“match()”)}}, like this:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb12-1" title="1"><span class="va">caches</span>.<span class="at">match</span>(<span class="st">&#39;./fallback.html&#39;</span>)<span class="op">;</span></a></code></pre></div></li>
+<li><p>You can retrieve a lot of information about each request by calling parameters of the {{domxref(“Request”)}} object returned by the {{domxref(“FetchEvent”)}}:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb13-1" title="1"><span class="va">event</span>.<span class="va">request</span>.<span class="at">url</span></a>
+<a class="sourceLine" id="cb13-2" title="2"><span class="va">event</span>.<span class="va">request</span>.<span class="at">method</span></a>
+<a class="sourceLine" id="cb13-3" title="3"><span class="va">event</span>.<span class="va">request</span>.<span class="at">headers</span></a>
+<a class="sourceLine" id="cb13-4" title="4"><span class="va">event</span>.<span class="va">request</span>.<span class="at">body</span></a></code></pre></div></li>
+</ol>
+<h2 id="recovering-failed-requests">Recovering failed requests</h2>
+<p>So <code>caches.match(event.request)</code> is great when there is a match in the service worker cache, but what about cases when there isn’t a match? If we didn’t provide any kind of failure handling, our promise would resolve with <code>undefined</code> and we wouldn’t get anything returned.</p>
+<p>Fortunately, service workers’ promise-based structure makes it trivial to provide further options towards success. We could do this:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb14-1" title="1"><span class="va">self</span>.<span class="at">addEventListener</span>(<span class="st">&#39;fetch&#39;</span><span class="op">,</span> (event) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb14-2" title="2">  <span class="va">event</span>.<span class="at">respondWith</span>(</a>
+<a class="sourceLine" id="cb14-3" title="3">    <span class="va">caches</span>.<span class="at">match</span>(<span class="va">event</span>.<span class="at">request</span>).<span class="at">then</span>((response) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb14-4" title="4">      <span class="cf">return</span> response <span class="op">||</span> <span class="at">fetch</span>(<span class="va">event</span>.<span class="at">request</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-5" title="5">    <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb14-6" title="6">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-7" title="7"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>If the resources aren’t in the cache, they are requested from the network.</p>
+<p>If we were being really clever, we would not only request the resource from the network; we would also save it into the cache so that later requests for that resource could be retrieved offline too! This would mean that if extra images were added to the Star Wars gallery, our app could automatically grab them and cache them. The following would do the trick:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb15-1" title="1"><span class="va">self</span>.<span class="at">addEventListener</span>(<span class="st">&#39;fetch&#39;</span><span class="op">,</span> (event) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb15-2" title="2">  <span class="va">event</span>.<span class="at">respondWith</span>(</a>
+<a class="sourceLine" id="cb15-3" title="3">    <span class="va">caches</span>.<span class="at">match</span>(<span class="va">event</span>.<span class="at">request</span>).<span class="at">then</span>((resp) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb15-4" title="4">      <span class="cf">return</span> resp <span class="op">||</span> <span class="at">fetch</span>(<span class="va">event</span>.<span class="at">request</span>).<span class="at">then</span>((response) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb15-5" title="5">        <span class="cf">return</span> <span class="va">caches</span>.<span class="at">open</span>(<span class="st">&#39;v1&#39;</span>).<span class="at">then</span>((cache) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb15-6" title="6">          <span class="va">cache</span>.<span class="at">put</span>(<span class="va">event</span>.<span class="at">request</span><span class="op">,</span> <span class="va">response</span>.<span class="at">clone</span>())<span class="op">;</span></a>
+<a class="sourceLine" id="cb15-7" title="7">          <span class="cf">return</span> response<span class="op">;</span></a>
+<a class="sourceLine" id="cb15-8" title="8">        <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb15-9" title="9">      <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb15-10" title="10">    <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb15-11" title="11">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb15-12" title="12"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>Here we return the default network request with <code>return fetch(event.request)</code>, which returns a promise. When this promise is resolved, we respond by running a function that grabs our cache using <code>caches.open('v1')</code>; this also returns a promise. When that promise resolves, <code>cache.put()</code> is used to add the resource to the cache. The resource is grabbed from <code>event.request</code>, and the response is then cloned with <code>response.clone()</code> and added to the cache. The clone is put in the cache, and the original response is returned to the browser to be given to the page that called it.</p>
+<p>Cloning the response is necessary because request and response streams can only be read once.  In order to return the response to the browser and put it in the cache we have to clone it. So the original gets returned to the browser and the clone gets sent to the cache.  They are each read once.</p>
+<p>The only trouble we have now is that if the request doesn’t match anything in the cache, and the network is not available, our request will still fail. Let’s provide a default fallback so that whatever happens, the user will at least get something:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb16-1" title="1"><span class="va">self</span>.<span class="at">addEventListener</span>(<span class="st">&#39;fetch&#39;</span><span class="op">,</span> (event) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-2" title="2">  <span class="va">event</span>.<span class="at">respondWith</span>(</a>
+<a class="sourceLine" id="cb16-3" title="3">    <span class="va">caches</span>.<span class="at">match</span>(<span class="va">event</span>.<span class="at">request</span>).<span class="at">then</span>((resp) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-4" title="4">      <span class="cf">return</span> resp <span class="op">||</span> <span class="at">fetch</span>(<span class="va">event</span>.<span class="at">request</span>).<span class="at">then</span>((response) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-5" title="5">        <span class="kw">let</span> responseClone <span class="op">=</span> <span class="va">response</span>.<span class="at">clone</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-6" title="6">        <span class="va">caches</span>.<span class="at">open</span>(<span class="st">&#39;v1&#39;</span>).<span class="at">then</span>((cache) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-7" title="7">          <span class="va">cache</span>.<span class="at">put</span>(<span class="va">event</span>.<span class="at">request</span><span class="op">,</span> responseClone)<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-8" title="8">        <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-9" title="9"></a>
+<a class="sourceLine" id="cb16-10" title="10">        <span class="cf">return</span> response<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-11" title="11">      <span class="op">}</span>).<span class="at">catch</span>(() <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-12" title="12">        <span class="cf">return</span> <span class="va">caches</span>.<span class="at">match</span>(<span class="st">&#39;./sw-test/gallery/myLittleVader.jpg&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-13" title="13">      <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb16-14" title="14">    <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb16-15" title="15">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-16" title="16"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>We have opted for this fallback image because the only updates that are likely to fail are new images, as everything else is depended on for installation in the <code>install</code> event listener we saw earlier.</p>
+<h2 id="updating-your-service-worker">Updating your service worker</h2>
+<p>If your service worker has previously been installed, but then a new version of the worker is available on refresh or page load, the new version is installed in the background, but not yet activated. It is only activated when there are no longer any pages loaded that are still using the old service worker. As soon as there are no more such pages still loaded, the new service worker activates.</p>
+<p>You’ll want to update your <code>install</code> event listener in the new service worker to something like this (notice the new version number):</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb17-1" title="1"><span class="va">self</span>.<span class="at">addEventListener</span>(<span class="st">&#39;install&#39;</span><span class="op">,</span> (event) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb17-2" title="2">  <span class="va">event</span>.<span class="at">waitUntil</span>(</a>
+<a class="sourceLine" id="cb17-3" title="3">    <span class="va">caches</span>.<span class="at">open</span>(<span class="st">&#39;v2&#39;</span>).<span class="at">then</span>((cache) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb17-4" title="4">      <span class="cf">return</span> <span class="va">cache</span>.<span class="at">addAll</span>([</a>
+<a class="sourceLine" id="cb17-5" title="5">        <span class="st">&#39;./sw-test/&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb17-6" title="6">        <span class="st">&#39;./sw-test/index.html&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb17-7" title="7">        <span class="st">&#39;./sw-test/style.css&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb17-8" title="8">        <span class="st">&#39;./sw-test/app.js&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb17-9" title="9">        <span class="st">&#39;./sw-test/image-list.js&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb17-10" title="10"></a>
+<a class="sourceLine" id="cb17-11" title="11">        …</a>
+<a class="sourceLine" id="cb17-12" title="12"></a>
+<a class="sourceLine" id="cb17-13" title="13">        <span class="co">// include other new resources for the new version...</span></a>
+<a class="sourceLine" id="cb17-14" title="14">      ])<span class="op">;</span></a>
+<a class="sourceLine" id="cb17-15" title="15">    <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb17-16" title="16">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb17-17" title="17"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>While this happens, the previous version is still responsible for fetches. The new version is installing in the background. We are calling the new cache <code>v2</code>, so the previous <code>v1</code> cache isn’t disturbed.</p>
+<p>When no pages are using the current version, the new worker activates and becomes responsible for fetches.</p>
+<h3 id="deleting-old-caches">Deleting old caches</h3>
+<p>You also get an <code>activate</code> event. This is a generally used to do stuff that would have broken the previous version while it was still running, for example getting rid of old caches. This is also useful for removing data that is no longer needed to avoid filling up too much disk space — each browser has a hard limit on the amount of cache storage that a given service worker can use. The browser does its best to manage disk space, but it may delete the Cache storage for an origin.  The browser will generally delete all of the data for an origin or none of the data for an origin.</p>
+<p>Promises passed into <code>waitUntil()</code> will block other events until completion, so you can rest assured that your clean-up operation will have completed by the time you get your first <code>fetch</code> event on the new service worker.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb18-1" title="1"><span class="va">self</span>.<span class="at">addEventListener</span>(<span class="st">&#39;activate&#39;</span><span class="op">,</span> (event) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb18-2" title="2">  <span class="kw">var</span> cacheKeeplist <span class="op">=</span> [<span class="st">&#39;v2&#39;</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-3" title="3"></a>
+<a class="sourceLine" id="cb18-4" title="4">  <span class="va">event</span>.<span class="at">waitUntil</span>(</a>
+<a class="sourceLine" id="cb18-5" title="5">    <span class="va">caches</span>.<span class="at">keys</span>().<span class="at">then</span>((keyList) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb18-6" title="6">      <span class="cf">return</span> <span class="va">Promise</span>.<span class="at">all</span>(<span class="va">keyList</span>.<span class="at">map</span>((key) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb18-7" title="7">        <span class="cf">if</span> (<span class="va">cacheKeeplist</span>.<span class="at">indexOf</span>(key) <span class="op">===</span> <span class="dv">-1</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb18-8" title="8">          <span class="cf">return</span> <span class="va">caches</span>.<span class="at">delete</span>(key)<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-9" title="9">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb18-10" title="10">      <span class="op">}</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-11" title="11">    <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb18-12" title="12">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-13" title="13"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="developer-tools">Developer tools</h2>
+<p>Chrome has <code>chrome://inspect/#service-workers</code>, which shows current service worker activity and storage on a device, and <code>chrome://serviceworker-internals</code>, which shows more detail and allows you to start/stop/debug the worker process. In the future they will have throttling/offline modes to simulate bad or non-existent connections, which will be a really good thing.</p>
+<p>Firefox has also started to implement some useful tools related to service workers:</p>
+<ul>
+<li>You can navigate to <a href="/en-US/docs/Tools/about:debugging"><code>about:debugging</code></a> to see what SWs are registered and update/remove them.</li>
+<li>When testing you can get around the HTTPS restriction by checking the “Enable Service Workers over HTTP (when toolbox is open)” option in the <a href="/en-US/docs/Tools/Settings">Firefox Developer Tools settings</a>.</li>
+<li>The “Forget” button, available in Firefox’s customization options, can be used to clear service workers and their caches ({{bug(1252998)}}).</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> You may serve your app from <code>http://localhost</code> (e.g. using <code>me@localhost:/my/app$ python -m SimpleHTTPServer</code>) for local development. See <a href="https://www.w3.org/TR/service-workers/#security-considerations">Security considerations</a></p>
+</blockquote>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="http://blog.88mph.io/2017/07/28/understanding-service-workers/">Understanding Service Workers</a></li>
+<li><a href="https://github.com/mozilla/serviceworker-cookbook">The Service Worker Cookbook</a></li>
+<li><a href="https://jakearchibald.github.io/isserviceworkerready/">Is ServiceWorker ready?</a></li>
+<li>Download the <a href="sw101.png">Service Workers 101 cheatsheet</a>.</li>
+<li><a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promises</a></li>
+<li><a href="/en-US/docs/Web/API/Web_Workers_API/Using_web_workers">Using web workers</a></li>
+</ul>

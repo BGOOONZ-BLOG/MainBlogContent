@@ -1,0 +1,62 @@
+<p>{{APIRef(“MediaStream Recording”)}}</p>
+<p>The read-only <code>error</code> property in the <strong>{{domxref(“MediaRecorderErrorEvent”)}}</strong> interface is a {{domxref(“DOMException”)}} object providing details about the exception that was thrown by a {{domxref(“MediaRecorder”)}} instance.</p>
+<p>When a <code>MediaRecorderErrorEvent</code> occurs, you can determine to some extent what went wrong by examining the <code>error</code> property within the <code>MediaRecorderErrorEvent</code> received by the <code>MediaRecorder</code>’s {{event(“error”)}} event handler, {{domxref(“MediaRecorder.onerror”, “onerror”)}}.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1">error <span class="op">=</span> <span class="va">MediaRecorderErrorEvent</span>.<span class="at">error</span><span class="op">;</span></a></code></pre></div>
+<h3 id="value">Value</h3>
+<p>A {{domxref(“DOMException”)}} describing the error represented by the event. The error’s {{domxref(“DOMException.name”, “name”)}} property’s value may be any exception that makes sense during the handling of media recording, including these specifically identified by the specification. The descriptions here are generic ones; you’ll find more specific ones to various scenarios in which they may occur in the corresponding method references.</p>
+<ul>
+<li><code>InvalidStateError</code>
+<ul>
+<li>: An operation was attempted in a context in which it isn’t allowed, or a request has been made on an object that’s deleted or removed.</li>
+</ul></li>
+<li><code>NotSupportedError</code>
+<ul>
+<li>: A <code>MediaRecorder</code> couldn’t be created because the specified options weren’t valid. The <code>message</code> atttribute should provide additional information, if it exists.</li>
+</ul></li>
+<li><code>SecurityError</code>
+<ul>
+<li>: The {{domxref(“MediaStream”)}} is configured to disallow recording. This may be the case, for example, with sources obtained using {{domxref(“MediaDevices.getUserMedia”, “getUserMedia()”)}} when the user denies permission to use an input device.</li>
+</ul></li>
+<li><code>InvalidModificationError</code>
+<ul>
+<li>: The number of tracks on the stream being recorded has changed. You can’t add or remove tracks while recording media.</li>
+</ul></li>
+<li><code>UnknownError</code>
+<ul>
+<li>: A non-security related error occurred that cannot otherwise be categorized. Recording stops, the <code>MediaRecorder</code>’s {{domxref(“MediaRecorder.state”, “state”)}} becomes <code>inactive</code>, one last {{event(“dataavailable”)}} event is sent to the <code>MediaRecorder</code> with the remaining received data, and finally a {{event(“stop”)}} event is sent.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<h3 id="basic-error-handling-example">Basic error-handling example</h3>
+<p>This function creates and returns a <code>MediaRecorder</code> for a given {{domxref(“MediaStream”)}}, configured to buffer data into an array and to watch for errors.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">function</span> <span class="at">recordStream</span>(stream) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">let</span> recorder <span class="op">=</span> <span class="kw">null</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="kw">let</span> bufferList <span class="op">=</span> []<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="cf">try</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-6" title="6">    recorder <span class="op">=</span> <span class="kw">new</span> <span class="at">MediaRecorder</span>(stream)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="op">}</span> <span class="cf">catch</span>(err) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-8" title="8">    <span class="co">/* exception while trying to create the recorder; handle that */</span></a>
+<a class="sourceLine" id="cb2-9" title="9">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-10" title="10"></a>
+<a class="sourceLine" id="cb2-11" title="11">  <span class="va">recorder</span>.<span class="at">ondataavailable</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-12" title="12">    <span class="va">bufferList</span>.<span class="at">push</span>(<span class="va">event</span>.<span class="at">data</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb2-14" title="14"></a>
+<a class="sourceLine" id="cb2-15" title="15">  <span class="va">recorder</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-16" title="16">    <span class="kw">let</span> error <span class="op">=</span> <span class="va">event</span>.<span class="at">error</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-17" title="17">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb2-18" title="18"></a>
+<a class="sourceLine" id="cb2-19" title="19">  <span class="va">recorder</span>.<span class="at">start</span>(<span class="dv">100</span>)<span class="op">;</span>  <span class="co">/* 100ms time slices per buffer */</span></a>
+<a class="sourceLine" id="cb2-20" title="20">  <span class="cf">return</span> recorder<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-21" title="21"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/MediaStream_Recording_API">MediaStream Recording API</a></li>
+<li><a href="/en-US/docs/Web/API/MediaStream_Recording_API/Using_the_MediaStream_Recording_API">Using the MediaStream Recording API</a></li>
+</ul>

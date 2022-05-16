@@ -1,0 +1,68 @@
+<p>{{securecontext_header}}{{SeeCompatTable}}{{APIRef()}}</p>
+<p>The <strong><code>NDEFReader</code></strong> interface of the <a href="/en-US/docs/Web/API/Web_NFC_API">Web NFC API</a> is used to read from and write data to compatible NFC devices, e.g. NFC tags supporting NDEF, when these devices are within the reader’s magnetic induction field.</p>
+<h2 id="constructor">Constructor</h2>
+<ul>
+<li>{{DOMxRef(“NDEFReader.NDEFReader”, “NDEFReader()”)}} {{Experimental_Inline}}
+<ul>
+<li>: Returns a new <code>NDEFReader</code> object.</li>
+</ul></li>
+</ul>
+<h2 id="properties">Properties</h2>
+<p><em>Inherits properties from its parent, {{DOMxRef(“EventTarget”)}}.</em></p>
+<ul>
+<li>{{DOMxRef(“NDEFReader.onreading”)}} {{Experimental_Inline}}
+<ul>
+<li>: An <a href="/en-US/docs/Web/Events/Event_handlers">event handler</a> called when the <code>reading</code> event is raised.</li>
+</ul></li>
+<li>{{DOMxRef(“NDEFReader.onreadingerror”)}} {{Experimental_Inline}}
+<ul>
+<li>: An <a href="/en-US/docs/Web/Events/Event_handlers">event handler</a> called when when the <code>readingerror</code> event is raised. This occurs when a tag is in proximity of a reading device, but cannot be read.</li>
+</ul></li>
+</ul>
+<h2 id="methods">Methods</h2>
+<p><em>The <code>NDEFReader</code> interface inherits the methods of {{domxref(“EventTarget”)}}, its parent interface.</em></p>
+<ul>
+<li>{{DOMxRef(“NDEFReader.scan”, “NDEFReader.scan()”)}} {{Experimental_Inline}}
+<ul>
+<li>: Activates a reading device and returns a {{jsxref(“Promise”)}} that either resolves when an NFC tag is read or rejects if a hardware or permission error is encountered. This method triggers a permission prompt if the “nfc” permission has not been previously granted.</li>
+</ul></li>
+<li>{{DOMxRef(“NDEFReader.write”, “NDEFReader.write()”)}} {{Experimental_Inline}}
+<ul>
+<li>: Attempts to write an NDEF message to a tag and returns a {{jsxref(“Promise”)}} that either resolves when a message has been written to the tag or rejects if a hardware or permission error is encountered. This method triggers a permission prompt if the “nfc” permission has not been previously granted.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<h3 id="handling-initial-reads-while-writing">Handling initial reads while writing</h3>
+<p>The example below shows how to coordinate between a common reading handler and one used specifically for a single write. In order to write, a tag needs to be found and read. This gives you the ability to check whether it is actually a tag that you want to write to. That’s why it’s recommended that you call <code>write()</code> from a reading event.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> ndef <span class="op">=</span> <span class="kw">new</span> <span class="at">NDEFReader</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">let</span> ignoreRead <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="va">ndef</span>.<span class="at">onreading</span> <span class="op">=</span> (event) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-5" title="5">  <span class="cf">if</span> (ignoreRead) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-6" title="6">    <span class="cf">return</span><span class="op">;</span> <span class="co">// write pending, ignore read.</span></a>
+<a class="sourceLine" id="cb1-7" title="7">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-8" title="8"></a>
+<a class="sourceLine" id="cb1-9" title="9">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;We read a tag, but not during pending write!&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-10" title="10"><span class="op">};</span></a>
+<a class="sourceLine" id="cb1-11" title="11"></a>
+<a class="sourceLine" id="cb1-12" title="12"><span class="kw">function</span> <span class="at">write</span>(data) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-13" title="13">  ignoreRead <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-14" title="14">  <span class="cf">return</span> <span class="kw">new</span> <span class="at">Promise</span>((resolve<span class="op">,</span> reject) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-15" title="15">    <span class="va">ndef</span>.<span class="at">addEventListener</span>(<span class="st">&quot;reading&quot;</span><span class="op">,</span> event <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-16" title="16">      <span class="co">// Check if we want to write to this tag, or reject.</span></a>
+<a class="sourceLine" id="cb1-17" title="17">      <span class="va">ndef</span>.<span class="at">write</span>(data).<span class="at">then</span>(resolve<span class="op">,</span> reject).<span class="at">finally</span>(() <span class="kw">=&gt;</span> ignoreRead <span class="op">=</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-18" title="18">    <span class="op">},</span> <span class="op">{</span> <span class="dt">once</span><span class="op">:</span> <span class="kw">true</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-19" title="19">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-20" title="20"><span class="op">}</span></a>
+<a class="sourceLine" id="cb1-21" title="21"></a>
+<a class="sourceLine" id="cb1-22" title="22"><span class="cf">await</span> <span class="va">ndef</span>.<span class="at">scan</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-23" title="23"><span class="cf">try</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-24" title="24">  <span class="cf">await</span> <span class="at">write</span>(<span class="st">&quot;Hello World&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-25" title="25">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;We wrote to a tag!&quot;</span>)</a>
+<a class="sourceLine" id="cb1-26" title="26"><span class="op">}</span> <span class="cf">catch</span>(err) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-27" title="27">  <span class="va">console</span>.<span class="at">error</span>(<span class="st">&quot;Something went wrong&quot;</span><span class="op">,</span> err)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-28" title="28"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

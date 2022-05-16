@@ -1,0 +1,173 @@
+<p>{{APIRef(“Web Crypto API”)}}{{SecureContext_header}}</p>
+<p>The <strong><code>encrypt()</code></strong> method of the {{domxref(“SubtleCrypto”)}} interface encrypts data.</p>
+<p>It takes as its arguments a {{glossary(“key”)}} to encrypt with, some algorithm-specific parameters, and the data to encrypt (also known as “plaintext”). It returns a {{jsxref(“Promise”)}} which will be fulfilled with the encrypted data (also known as “ciphertext”).</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> result <span class="op">=</span> <span class="va">crypto</span>.<span class="va">subtle</span>.<span class="at">encrypt</span>(algorithm<span class="op">,</span> key<span class="op">,</span> data)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><p><em><code>algorithm</code></em> is an object specifying the <a href="#supported_algorithms">algorithm</a> to be used and any extra parameters if required:</p>
+<ul>
+<li>To use <a href="#rsa-oaep">RSA-OAEP</a>, pass an {{domxref(“RsaOaepParams”)}} object.</li>
+<li>To use <a href="#aes-ctr">AES-CTR</a>, pass an {{domxref(“AesCtrParams”)}} object.</li>
+<li>To use <a href="#aes-cbc">AES-CBC</a>, pass an {{domxref(“AesCbcParams”)}} object.</li>
+<li>To use <a href="#aes-gcm">AES-GCM</a>, pass an {{domxref(“AesGcmParams”)}} object.</li>
+</ul></li>
+<li><code>key</code> is a {{domxref(“CryptoKey”)}} containing the key to be used for encryption.</li>
+<li><p><em><code>data</code></em> is a {{domxref(“BufferSource”)}} containing the data to be encrypted (also known as the {{glossary(“plaintext”)}}).</p></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<ul>
+<li><code>result</code> is a {{jsxref(“Promise”)}} that fulfills with an {{jsxref(“ArrayBuffer”)}} containing the “ciphertext”.</li>
+</ul>
+<h3 id="exceptions">Exceptions</h3>
+<p>The promise is rejected when the following exceptions are encountered:</p>
+<ul>
+<li>InvalidAccessError
+<ul>
+<li>: Raised when the requested operation is not valid for the provided key (e.g. invalid encryption algorithm, or invalid key for the specified encryption algorithm<em>)</em>.</li>
+</ul></li>
+<li>OperationError
+<ul>
+<li>: Raised when the operation failed for an operation-specific reason (e.g. algorithm parameters of invalid sizes, or AES-GCM plaintext longer than 2³⁹−256 bytes).</li>
+</ul></li>
+</ul>
+<h2 id="supported-algorithms">Supported algorithms</h2>
+<p>The Web Crypto API provides four algorithms that support the <code>encrypt()</code> and <code>decrypt()</code> operations.</p>
+<p>One of these algorithms — RSA-OAEP — is a {{Glossary(“public-key cryptography”, “public-key cryptosystem”)}}.</p>
+<p>The other three encryption algorithms here are all {{Glossary(“Symmetric-key cryptography”, “symmetric algorithms”)}}, and they’re all based on the same underlying cipher, AES (Advanced Encryption Standard). The difference between them is the {{Glossary(“Block cipher mode of operation”, “mode”)}}. The Web Crypto API supports three different AES modes:</p>
+<ul>
+<li>CTR (Counter Mode)</li>
+<li>CBC (Cipher Block Chaining)</li>
+<li>GCM (Galois/Counter Mode)</li>
+</ul>
+<p>It’s strongly recommended to use <em>authenticated encryption</em>, which includes checks that the ciphertext has not been modified by an attacker. Authentication helps protect against <em>chosen-ciphertext</em> attacks, in which an attacker can ask the system to decrypt arbitrary messages, and use the result to deduce information about the secret key. While it’s possible to add authentication to CTR and CBC modes, they do not provide it by default and when implementing it manually one can easily make minor, but serious mistakes. GCM does provide built-in authentication, and for this reason it’s often recommended over the other two AES modes.</p>
+<h3 id="rsa-oaep">RSA-OAEP</h3>
+<p>The RSA-OAEP public-key encryption system is specified in <a href="https://datatracker.ietf.org/doc/html/rfc3447">RFC 3447</a>.</p>
+<h3 id="aes-ctr">AES-CTR</h3>
+<p>This represents AES in Counter Mode, as specified in <a href="https://csrc.nist.gov/publications/detail/sp/800-38a/final">NIST SP800-38A</a>.</p>
+<h3 id="aes-cbc">AES-CBC</h3>
+<p>This represents AES in Cipher Block Chaining Mode, as specified in <a href="https://csrc.nist.gov/publications/detail/sp/800-38a/final">NIST SP800-38A</a>.</p>
+<h3 id="aes-gcm">AES-GCM</h3>
+<p>This represents AES in Galois/Counter Mode, as specified in <a href="https://csrc.nist.gov/publications/detail/sp/800-38d/final">NIST SP800-38D</a>.</p>
+<p>One major difference between this mode and the others is that GCM is an “authenticated” mode, which means that it includes checks that the ciphertext has not been modified by an attacker.</p>
+<h2 id="examples">Examples</h2>
+<blockquote>
+<p><strong>Note:</strong> You can <a href="https://mdn.github.io/dom-examples/web-crypto/encrypt-decrypt/index.html">try the working examples</a> out on GitHub.</p>
+</blockquote>
+<h3 id="rsa-oaep-1">RSA-OAEP</h3>
+<p>This code fetches the contents of a text box, encodes it for encryption, and encrypts it with using RSA-OAEP. <a href="https://github.com/mdn/dom-examples/blob/master/web-crypto/encrypt-decrypt/rsa-oaep.js">See the complete code on GitHub.</a></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">function</span> <span class="at">getMessageEncoding</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">const</span> messageBox <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;.rsa-oaep #message&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="kw">let</span> message <span class="op">=</span> <span class="va">messageBox</span>.<span class="at">value</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="kw">let</span> enc <span class="op">=</span> <span class="kw">new</span> <span class="at">TextEncoder</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="cf">return</span> <span class="va">enc</span>.<span class="at">encode</span>(message)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-7" title="7"></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="kw">function</span> <span class="at">encryptMessage</span>(publicKey) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-9" title="9">  <span class="kw">let</span> encoded <span class="op">=</span> <span class="at">getMessageEncoding</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="cf">return</span> <span class="va">window</span>.<span class="va">crypto</span>.<span class="va">subtle</span>.<span class="at">encrypt</span>(</a>
+<a class="sourceLine" id="cb2-11" title="11">    <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-12" title="12">      <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;RSA-OAEP&quot;</span></a>
+<a class="sourceLine" id="cb2-13" title="13">    <span class="op">},</span></a>
+<a class="sourceLine" id="cb2-14" title="14">    publicKey<span class="op">,</span></a>
+<a class="sourceLine" id="cb2-15" title="15">    encoded</a>
+<a class="sourceLine" id="cb2-16" title="16">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-17" title="17"><span class="op">}</span></a></code></pre></div>
+<h3 id="aes-ctr-1">AES-CTR</h3>
+<p>This code fetches the contents of a text box, encodes it for encryption, and encrypts it using AES in CTR mode. <a href="https://github.com/mdn/dom-examples/blob/master/web-crypto/encrypt-decrypt/aes-ctr.js">See the complete code on GitHub.</a></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">function</span> <span class="at">getMessageEncoding</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">const</span> messageBox <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;.aes-ctr #message&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="kw">let</span> message <span class="op">=</span> <span class="va">messageBox</span>.<span class="at">value</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="kw">let</span> enc <span class="op">=</span> <span class="kw">new</span> <span class="at">TextEncoder</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">  <span class="cf">return</span> <span class="va">enc</span>.<span class="at">encode</span>(message)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-7" title="7"></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="kw">function</span> <span class="at">encryptMessage</span>(key) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-9" title="9">  <span class="kw">let</span> encoded <span class="op">=</span> <span class="at">getMessageEncoding</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10">  <span class="co">// counter will be needed for decryption</span></a>
+<a class="sourceLine" id="cb3-11" title="11">  counter <span class="op">=</span> <span class="va">window</span>.<span class="va">crypto</span>.<span class="at">getRandomValues</span>(<span class="kw">new</span> <span class="at">Uint8Array</span>(<span class="dv">16</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-12" title="12">  <span class="cf">return</span> <span class="va">window</span>.<span class="va">crypto</span>.<span class="va">subtle</span>.<span class="at">encrypt</span>(</a>
+<a class="sourceLine" id="cb3-13" title="13">    <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-14" title="14">      <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;AES-CTR&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-15" title="15">      counter<span class="op">,</span></a>
+<a class="sourceLine" id="cb3-16" title="16">      <span class="dt">length</span><span class="op">:</span> <span class="dv">64</span></a>
+<a class="sourceLine" id="cb3-17" title="17">    <span class="op">},</span></a>
+<a class="sourceLine" id="cb3-18" title="18">    key<span class="op">,</span></a>
+<a class="sourceLine" id="cb3-19" title="19">    encoded</a>
+<a class="sourceLine" id="cb3-20" title="20">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-21" title="21"><span class="op">}</span></a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">let</span> iv <span class="op">=</span> <span class="va">window</span>.<span class="va">crypto</span>.<span class="at">getRandomValues</span>(<span class="kw">new</span> <span class="at">Uint8Array</span>(<span class="dv">16</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="kw">let</span> key <span class="op">=</span> <span class="va">window</span>.<span class="va">crypto</span>.<span class="at">getRandomValues</span>(<span class="kw">new</span> <span class="at">Uint8Array</span>(<span class="dv">16</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="kw">let</span> data <span class="op">=</span> <span class="kw">new</span> <span class="at">Uint8Array</span>(<span class="dv">12345</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="co">//crypto functions are wrapped in promises so we have to use await and make sure the function that</span></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="co">//contains this code is an async function</span></a>
+<a class="sourceLine" id="cb4-6" title="6"><span class="co">//encrypt function wants a cryptokey object</span></a>
+<a class="sourceLine" id="cb4-7" title="7"><span class="kw">const</span> key_encoded <span class="op">=</span> <span class="cf">await</span> <span class="va">crypto</span>.<span class="va">subtle</span>.<span class="at">importKey</span>(  <span class="st">&quot;raw&quot;</span><span class="op">,</span>    <span class="va">key</span>.<span class="at">buffer</span><span class="op">,</span>   <span class="st">&#39;AES-CTR&#39;</span> <span class="op">,</span>  <span class="kw">false</span><span class="op">,</span>   [<span class="st">&quot;encrypt&quot;</span><span class="op">,</span> <span class="st">&quot;decrypt&quot;</span>])<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-8" title="8"><span class="kw">const</span> encrypted_content <span class="op">=</span> <span class="cf">await</span> <span class="va">window</span>.<span class="va">crypto</span>.<span class="va">subtle</span>.<span class="at">encrypt</span>(</a>
+<a class="sourceLine" id="cb4-9" title="9">    <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-10" title="10">      <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;AES-CTR&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb4-11" title="11">      <span class="dt">counter</span><span class="op">:</span> iv<span class="op">,</span></a>
+<a class="sourceLine" id="cb4-12" title="12">      <span class="dt">length</span><span class="op">:</span> <span class="dv">128</span></a>
+<a class="sourceLine" id="cb4-13" title="13">    <span class="op">},</span></a>
+<a class="sourceLine" id="cb4-14" title="14">    key_encoded<span class="op">,</span></a>
+<a class="sourceLine" id="cb4-15" title="15">    data</a>
+<a class="sourceLine" id="cb4-16" title="16">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-17" title="17"></a>
+<a class="sourceLine" id="cb4-18" title="18"><span class="co">//Uint8Array</span></a>
+<a class="sourceLine" id="cb4-19" title="19"><span class="va">console</span>.<span class="at">log</span>(encrypted_content)<span class="op">;</span></a></code></pre></div>
+<h3 id="aes-cbc-1">AES-CBC</h3>
+<p>This code fetches the contents of a text box, encodes it for encryption, and encrypts it using AES in CBC mode. <a href="https://github.com/mdn/dom-examples/blob/master/web-crypto/encrypt-decrypt/aes-cbc.js">See the complete code on GitHub.</a></p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">function</span> <span class="at">getMessageEncoding</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="kw">const</span> messageBox <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;.aes-cbc #message&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3">  <span class="kw">let</span> message <span class="op">=</span> <span class="va">messageBox</span>.<span class="at">value</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-4" title="4">  <span class="kw">let</span> enc <span class="op">=</span> <span class="kw">new</span> <span class="at">TextEncoder</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-5" title="5">  <span class="cf">return</span> <span class="va">enc</span>.<span class="at">encode</span>(message)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-6" title="6"><span class="op">}</span></a>
+<a class="sourceLine" id="cb5-7" title="7"></a>
+<a class="sourceLine" id="cb5-8" title="8"><span class="kw">function</span> <span class="at">encryptMessage</span>(key) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-9" title="9">  <span class="kw">let</span> encoded <span class="op">=</span> <span class="at">getMessageEncoding</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-10" title="10">  <span class="co">// iv will be needed for decryption</span></a>
+<a class="sourceLine" id="cb5-11" title="11">  iv <span class="op">=</span> <span class="va">window</span>.<span class="va">crypto</span>.<span class="at">getRandomValues</span>(<span class="kw">new</span> <span class="at">Uint8Array</span>(<span class="dv">16</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-12" title="12">  <span class="cf">return</span> <span class="va">window</span>.<span class="va">crypto</span>.<span class="va">subtle</span>.<span class="at">encrypt</span>(</a>
+<a class="sourceLine" id="cb5-13" title="13">    <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-14" title="14">      <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;AES-CBC&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb5-15" title="15">      iv</a>
+<a class="sourceLine" id="cb5-16" title="16">    <span class="op">},</span></a>
+<a class="sourceLine" id="cb5-17" title="17">    key<span class="op">,</span></a>
+<a class="sourceLine" id="cb5-18" title="18">    encoded</a>
+<a class="sourceLine" id="cb5-19" title="19">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-20" title="20"><span class="op">}</span></a></code></pre></div>
+<h3 id="aes-gcm-1">AES-GCM</h3>
+<p>This code fetches the contents of a text box, encodes it for encryption, and encrypts it using AES in GCM mode. <a href="https://github.com/mdn/dom-examples/blob/master/web-crypto/encrypt-decrypt/aes-gcm.js">See the complete code on GitHub.</a></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">function</span> <span class="at">getMessageEncoding</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="kw">const</span> messageBox <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;.aes-gcm #message&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-3" title="3">  <span class="kw">let</span> message <span class="op">=</span> <span class="va">messageBox</span>.<span class="at">value</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-4" title="4">  <span class="kw">let</span> enc <span class="op">=</span> <span class="kw">new</span> <span class="at">TextEncoder</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-5" title="5">  <span class="cf">return</span> <span class="va">enc</span>.<span class="at">encode</span>(message)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="op">}</span></a>
+<a class="sourceLine" id="cb6-7" title="7"></a>
+<a class="sourceLine" id="cb6-8" title="8"><span class="kw">function</span> <span class="at">encryptMessage</span>(key) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-9" title="9">  <span class="kw">let</span> encoded <span class="op">=</span> <span class="at">getMessageEncoding</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-10" title="10">  <span class="co">// iv will be needed for decryption</span></a>
+<a class="sourceLine" id="cb6-11" title="11">  iv <span class="op">=</span> <span class="va">window</span>.<span class="va">crypto</span>.<span class="at">getRandomValues</span>(<span class="kw">new</span> <span class="at">Uint8Array</span>(<span class="dv">12</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-12" title="12">  <span class="cf">return</span> <span class="va">window</span>.<span class="va">crypto</span>.<span class="va">subtle</span>.<span class="at">encrypt</span>(</a>
+<a class="sourceLine" id="cb6-13" title="13">    <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-14" title="14">      <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;AES-GCM&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb6-15" title="15">      <span class="dt">iv</span><span class="op">:</span> iv</a>
+<a class="sourceLine" id="cb6-16" title="16">    <span class="op">},</span></a>
+<a class="sourceLine" id="cb6-17" title="17">    key<span class="op">,</span></a>
+<a class="sourceLine" id="cb6-18" title="18">    encoded</a>
+<a class="sourceLine" id="cb6-19" title="19">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-20" title="20"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{domxref(“SubtleCrypto.decrypt()”)}}.</li>
+<li><a href="https://datatracker.ietf.org/doc/html/rfc3447">RFC 3447</a> specifies RSAOAEP.</li>
+<li><a href="https://csrc.nist.gov/publications/detail/sp/800-38a/final">NIST SP800-38A</a> specifies CTR mode.</li>
+<li><a href="https://csrc.nist.gov/publications/detail/sp/800-38a/final">NIST SP800-38A</a> specifies CBC mode.</li>
+<li><a href="https://csrc.nist.gov/publications/detail/sp/800-38d/final">NIST SP800-38D</a> specifies GCM mode.</li>
+</ul>

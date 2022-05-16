@@ -1,0 +1,69 @@
+<p>{{APIRef(“WebRTC”)}}</p>
+<p>The static <strong><code>RTCPeerConnection.generateCertificate()</code></strong> function creates an X.509 certificate and corresponding private key, returning a promise that resolves with the new {{domxref(“RTCCertificate”)}} once it’s generated.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">let</span> certPromise <span class="op">=</span> <span class="va">RTCPeerConnection</span>.<span class="at">generateCertificate</span>(keygenAlgorithm)</a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>keygenAlgorithm</code>
+<ul>
+<li>: A <a href="/en-US/docs/Web/API/Web_Crypto_API">Web Crypto API</a> {{domxref(“AlgorithmIdentifier”)}} string or an {{domxref(“Algorithm”)}} -subclassed object specifying an algorithm to use when creating the certificate’s key.</li>
+</ul></li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> <code>RTCPeerConnection.generateCertificate()</code> is a static method, so it is always called on the <code>RTCPeerConnection</code> interface itself, not an instance thereof.</p>
+</blockquote>
+<h3 id="return-value">Return value</h3>
+<p>A promise which resolves to a new {{domxref(“RTCCertificate”)}} object containing a new key based on the specified options.</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><code>NotSupportedError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the normalized form of <code>keygenAlgorithm</code> specifies an algorithm or algorithm settings that the browser doesn’t support, or which it does not allow for use with an {{domxref(“RTCPeerConnection”)}}.</li>
+</ul></li>
+</ul>
+<p>Other errors may occur; for example, if the specified <code>keygenAlgorithm</code> can’t be successfully converted into an {{domxref(“RTCCertificateExpiration”)}} dictionary, the error that occurs during that conversion will be thrown.</p>
+<h2 id="description">Description</h2>
+<p>If a string is specified, it must be a <a href="/en-US/docs/Web/API/Web_Crypto_API">Web Crypto API</a>-compatible algorithm name string. Alternatively, you can provide specific details for the algorithm’s configuration by providing an object based on one of the Web Crypto API’s {{domxref(“Algorithm”)}} class’s subclasses.</p>
+<h3 id="standard-configurations">Standard configurations</h3>
+<p>All browsers are required to support the following two configurations. It’s entirely possible that a browser’s <em>default</em> settings may be different, but these are always supported.</p>
+<h4 id="rsassa-pkcs1-v1_5">RSASSA-PKCS1-v1_5</h4>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">let</span> stdRSACertificate <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;RSASSA-PKCS1-v1_5&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="dt">modulusLength</span><span class="op">:</span> <span class="dv">2048</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="dt">publicExponent</span><span class="op">:</span> <span class="kw">new</span> <span class="at">Uint8Array</span>([<span class="dv">1</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">1</span>])<span class="op">,</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="dt">hash</span><span class="op">:</span> <span class="st">&quot;SHA-256&quot;</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="op">};</span></a></code></pre></div>
+<h4 id="ecdsa">ECDSA</h4>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">let</span> stdECDSACertificate <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;ECDSA&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="dt">namedCurve</span><span class="op">:</span> <span class="st">&quot;P-256&quot;</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="op">};</span></a></code></pre></div>
+<h3 id="certificate-expiration-time">Certificate expiration time</h3>
+<p>By default the new certificate is configured with <code>expires</code> set to a {{domxref(“DOMTimeStamp”)}} value of 2592000000, or 30 days. The expiration time cannot exceed 31536000000, or 365 days. It’s also useful to note that browsers may further restrict the expiration time of certificates if they choose.</p>
+<h2 id="examples">Examples</h2>
+<h3 id="specifying-algorithm-details">Specifying algorithm details</h3>
+<p>This example requests a new RSASSA-PKCS1-v1_5 certificate using a SHA-256 hash and a modulus length of 2048.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="va">RTCPeerConnection</span>.<span class="at">generateCertificate</span>(<span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">    <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;RSASSA-PKCS1-v1_5&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb4-3" title="3">    <span class="dt">hash</span><span class="op">:</span> <span class="st">&#39;SHA-256&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb4-4" title="4">    <span class="dt">modulusLength</span><span class="op">:</span> <span class="dv">2048</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb4-5" title="5">    <span class="dt">publicExponent</span><span class="op">:</span> <span class="kw">new</span> <span class="at">Uint8Array</span>([<span class="dv">1</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">1</span>])</a>
+<a class="sourceLine" id="cb4-6" title="6"><span class="op">}</span>).<span class="at">then</span>(<span class="kw">function</span>(cert) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="kw">var</span> pc <span class="op">=</span> <span class="kw">new</span> <span class="at">RTCPeerConnection</span>(<span class="op">{</span><span class="dt">certificates</span><span class="op">:</span> [cert]<span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-8" title="8"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h3 id="specifying-an-algorithm-by-name">Specifying an algorithm by name</h3>
+<p>The example below specifies a string requesting an <a href="https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm">ECDSA</a> certificate.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="va">RTCPeerConnection</span>.<span class="at">generateCertificate</span>(<span class="st">&quot;ECDSA&quot;</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/WebRTC_API">WebRTC API</a></li>
+<li><a href="/en-US/docs/Web/API/Web_Crypto_API">Web Crypto API</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/First_steps/Website_security">Web site security</a></li>
+<li><a href="/en-US/docs/Web/Security">Web security</a></li>
+<li>{{Glossary(“Symmetric-key cryptography”)}}</li>
+<li><a href="/en-US/docs/Web/API/crypto"><code>crypto</code></a></li>
+</ul>

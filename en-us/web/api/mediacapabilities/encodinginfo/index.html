@@ -1,0 +1,52 @@
+<p>{{APIRef(“MediaCapabilities”)}}</p>
+<p>The <strong><code>MediaCapabilities.encodingInfo()</code></strong> method, part of the {{domxref(“MediaCapabilities”)}} interface of the <a href="/en-US/docs/Web/API/MediaCapabilities">Media Capabilities API</a>, returns a promise with the tested media configuration’s capabilities information; this contains the three Boolean properties <code>supported</code>, <code>smooth</code>, and <code>powerefficient</code>, which describe how compatible the device is with the type of media.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">mediaCapabilities</span>.<span class="at">encodingInfo</span>(mediaEncodingConfiguration)</a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li>{{domxref(“mediaEncodingConfiguration”)}}
+<ul>
+<li>: A valid {{domxref(“MediaEncodingConfiguration”)}} dictionary containing a valid media encoding type of <code>record</code> or <code>transmission</code> and a valid media configuration: either an {{domxref(“AudioConfiguration”)}} or {{domxref(“VideoConfiguration”)}} dictionary.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A {{jsxref(“Promise”)}} fulfilling with an object containing three Boolean attributes:</p>
+<ul>
+<li><code>supported</code>: Given the properties defined in the {{domxref(“MediaConfiguration”)}}, can the specified piece of media content be encoded (if {{domxref(“MediaEncodingConfiguration”)}} is set) or decode (if {{domxref(“MediaDecodingConfiguration”)}} is set) at all? If yes, <code>supported</code> is <em>true</em>. Otherwise, it is <em>false</em>.</li>
+<li><code>smooth</code>: Given the properties defined in the {{domxref(“MediaConfiguration”)}}, will the playback of the specified piece of media be high quality? Will it be smooth?  If <code>supported</code> is <code>true</code>, and playback will be smooth, <code>smooth</code> is <em>true</em>, Otherwise, is it <em>false.</em></li>
+<li><code>powerEfficient</code>: Given the properties defined in the {{domxref(“MediaConfiguration”)}}, will the playback of the specified piece of media be power efficient? If <code>supported</code> is <code>true</code>, and playback will be power efficient, <code>powerEfficient</code> is <em>true</em>, Otherwise, is it <em>false.</em></li>
+</ul>
+<p>Browsers will report a supported media configuration as <code>smooth</code> and <code>powerEfficient</code> until stats on this device have been recorded. All supported audio codecs are reported to be power efficient.</p>
+<h3 id="exceptions">Exceptions</h3>
+<p>A <code>TypeError</code> is raised if the <code>MediaConfiguration</code> passed to the <code>encodingInfo()</code> method is invalid, either because the type is not video or audio, the <code>contentType</code> is not a valid codec MIME type, or any other error in the media configuration passed to the method, including omitting any of the <a href="/en-US/docs/Web/API/MediaEncodingConfiguration">media encoding configuration</a> elements.</p>
+<h2 id="example">Example</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">//Create media configuration to be tested</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">const</span> mediaConfig <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3">    <span class="dt">type </span><span class="op">:</span> <span class="st">&#39;record&#39;</span><span class="op">,</span> <span class="co">// or &#39;transmission&#39;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">    <span class="dt">video </span><span class="op">:</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">        <span class="dt">contentType </span><span class="op">:</span> <span class="st">&quot;video/webm;codecs=vp8.0&quot;</span><span class="op">,</span> <span class="co">// valid content type</span></a>
+<a class="sourceLine" id="cb2-6" title="6">        <span class="dt">width </span><span class="op">:</span> <span class="dv">1920</span><span class="op">,</span>     <span class="co">// width of the video</span></a>
+<a class="sourceLine" id="cb2-7" title="7">        <span class="dt">height </span><span class="op">:</span> <span class="dv">1080</span><span class="op">,</span>    <span class="co">// height of the video</span></a>
+<a class="sourceLine" id="cb2-8" title="8">        <span class="dt">bitrate </span><span class="op">:</span> <span class="dv">120000</span><span class="op">,</span> <span class="co">// number of bits used to encode 1s of video</span></a>
+<a class="sourceLine" id="cb2-9" title="9">        <span class="dt">framerate </span><span class="op">:</span> <span class="dv">48</span>   <span class="co">// number of frames making up that 1s.</span></a>
+<a class="sourceLine" id="cb2-10" title="10">     <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="op">};</span></a>
+<a class="sourceLine" id="cb2-12" title="12"></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="co">// check support and performance</span></a>
+<a class="sourceLine" id="cb2-14" title="14"><span class="va">navigator</span>.<span class="va">mediaCapabilities</span>.<span class="at">encodingInfo</span>(mediaConfig).<span class="at">then</span>(result <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-15" title="15">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;This configuration is &#39;</span> <span class="op">+</span></a>
+<a class="sourceLine" id="cb2-16" title="16">        (<span class="va">result</span>.<span class="at">supported</span> <span class="op">?</span> <span class="st">&#39;&#39;</span> : <span class="st">&#39;not &#39;</span>) <span class="op">+</span> <span class="st">&#39;supported, &#39;</span> <span class="op">+</span></a>
+<a class="sourceLine" id="cb2-17" title="17">        (<span class="va">result</span>.<span class="at">smooth</span> <span class="op">?</span> <span class="st">&#39;&#39;</span> : <span class="st">&#39;not &#39;</span>) <span class="op">+</span> <span class="st">&#39;smooth, and &#39;</span> <span class="op">+</span></a>
+<a class="sourceLine" id="cb2-18" title="18">        (<span class="va">result</span>.<span class="at">powerEfficient</span> <span class="op">?</span> <span class="st">&#39;&#39;</span> : <span class="st">&#39;not &#39;</span>) <span class="op">+</span> <span class="st">&#39;power efficient.&#39;</span>)</a>
+<a class="sourceLine" id="cb2-19" title="19"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{domxref(“MediaEncodingConfiguration”)}}</li>
+<li>{{domxref(“VideoConfiguration”)}}</li>
+<li>{{domxref(“AudioConfiguration”)}}</li>
+<li>{{domxref(“MediaCapabilities.decodingInfo()”)}}</li>
+</ul>

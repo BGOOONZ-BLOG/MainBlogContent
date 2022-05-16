@@ -1,0 +1,151 @@
+<p>{{APIRef(“Web Crypto API”)}}{{SecureContext_header}}</p>
+<p>The <strong><code>digest()</code></strong> method of the {{domxref(“SubtleCrypto”)}} interface generates a {{Glossary(“digest”)}} of the given data. A digest is a short fixed-length value derived from some variable-length input. Cryptographic digests should exhibit collision-resistance, meaning that it’s hard to come up with two different inputs that have the same digest value.</p>
+<p>It takes as its arguments an identifier for the digest algorithm to use and the data to digest. It returns a {{jsxref(“Promise”)}} which will be fulfilled with the digest.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> digest <span class="op">=</span> <span class="va">crypto</span>.<span class="va">subtle</span>.<span class="at">digest</span>(algorithm<span class="op">,</span> data)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><p><code>algorithm</code> is a {{domxref(“DOMString”)}} defining the hash function to use. Supported values are:</p>
+<ul>
+<li><code>SHA-1</code> (but don’t use this in cryptographic applications)</li>
+<li><code>SHA-256</code></li>
+<li><code>SHA-384</code></li>
+<li><code>SHA-512</code>.</li>
+</ul></li>
+<li><p><code>data</code> is an {{jsxref(“ArrayBuffer”)}} or {{domxref(“ArrayBufferView”)}} containing the data to be digested.</p></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<ul>
+<li><code>digest</code> is a {{jsxref(“Promise”)}} that fulfills with an {{jsxref(“ArrayBuffer”)}} containing the digest.</li>
+</ul>
+<h2 id="supported-algorithms">Supported algorithms</h2>
+<p>Digest algorithms, also known as <a href="/en-US/docs/Glossary/Cryptographic_hash_function">cryptographic hash functions</a>, transform an arbitrarily large block of data into a fixed-size output, usually much shorter than the input. They have a variety of applications in cryptography.</p>
+<table class="standard-table">
+<tbody>
+<tr>
+<th scope="col">
+Algorithm
+</th>
+<th scope="col">
+Output length (bits)
+</th>
+<th scope="col">
+Block size (bits)
+</th>
+<th scope="col">
+Specification
+</th>
+</tr>
+<tr>
+<th scope="row">
+SHA-1
+</th>
+<td>
+160
+</td>
+<td>
+512
+</td>
+<td>
+<a href="https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.180-4.pdf"
+          >FIPS 180-4</a
+        >, section 6.1
+</td>
+</tr>
+<tr>
+<th scope="row">
+SHA-256
+</th>
+<td>
+256
+</td>
+<td>
+512
+</td>
+<td>
+<a href="https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.180-4.pdf"
+          >FIPS 180-4</a
+        >, section 6.2
+</td>
+</tr>
+<tr>
+<th scope="row">
+SHA-384
+</th>
+<td>
+384
+</td>
+<td>
+1024
+</td>
+<td>
+<a href="https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.180-4.pdf"
+          >FIPS 180-4</a
+        >, section 6.5
+</td>
+</tr>
+<tr>
+<th scope="row">
+SHA-512
+</th>
+<td>
+512
+</td>
+<td>
+1024
+</td>
+<td>
+<a href="https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.180-4.pdf"
+          >FIPS 180-4</a
+        >, section 6.4
+</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Warning:</strong> SHA-1 is now considered vulnerable and should not be used for cryptographic applications.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> If you are looking here for how to create an keyed-hash message authentication code (<a href="/en-US/docs/Glossary/HMAC">HMAC</a>), you need to use the <a href="/en-US/docs/Web/API/SubtleCrypto/sign#hmac">SubtleCrypto.sign()</a> instead.</p>
+</blockquote>
+<h2 id="examples">Examples</h2>
+<h3 id="basic-example">Basic example</h3>
+<p>This example encodes a message, then calculates its SHA-256 digest and logs the digest length:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> text <span class="op">=</span> <span class="st">&#39;An obscure body in the S-K System, your majesty. The inhabitants refer to it as the planet Earth.&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">async</span> <span class="kw">function</span> <span class="at">digestMessage</span>(message) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="kw">const</span> encoder <span class="op">=</span> <span class="kw">new</span> <span class="at">TextEncoder</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="kw">const</span> data <span class="op">=</span> <span class="va">encoder</span>.<span class="at">encode</span>(message)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="kw">const</span> hash <span class="op">=</span> <span class="cf">await</span> <span class="va">crypto</span>.<span class="va">subtle</span>.<span class="at">digest</span>(<span class="st">&#39;SHA-256&#39;</span><span class="op">,</span> data)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="cf">return</span> hash<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-9" title="9"></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="at">digestMessage</span>(text)</a>
+<a class="sourceLine" id="cb2-11" title="11">  .<span class="at">then</span>(digestBuffer <span class="kw">=&gt;</span> <span class="va">console</span>.<span class="at">log</span>(<span class="va">digestBuffer</span>.<span class="at">byteLength</span>))<span class="op">;</span></a></code></pre></div>
+<h3 id="converting-a-digest-to-a-hex-string">Converting a digest to a hex string</h3>
+<p>The digest is returned as an <code>ArrayBuffer</code>, but for comparison and display digests are often represented as hex strings. This example calculates a digest, then converts the <code>ArrayBuffer</code> to a hex string:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> text <span class="op">=</span> <span class="st">&#39;An obscure body in the S-K System, your majesty. The inhabitants refer to it as the planet Earth.&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw">async</span> <span class="kw">function</span> <span class="at">digestMessage</span>(message) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="kw">const</span> msgUint8 <span class="op">=</span> <span class="kw">new</span> <span class="at">TextEncoder</span>().<span class="at">encode</span>(message)<span class="op">;</span>                           <span class="co">// encode as (utf-8) Uint8Array</span></a>
+<a class="sourceLine" id="cb3-5" title="5">  <span class="kw">const</span> hashBuffer <span class="op">=</span> <span class="cf">await</span> <span class="va">crypto</span>.<span class="va">subtle</span>.<span class="at">digest</span>(<span class="st">&#39;SHA-256&#39;</span><span class="op">,</span> msgUint8)<span class="op">;</span>           <span class="co">// hash the message</span></a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="kw">const</span> hashArray <span class="op">=</span> <span class="va">Array</span>.<span class="at">from</span>(<span class="kw">new</span> <span class="at">Uint8Array</span>(hashBuffer))<span class="op">;</span>                     <span class="co">// convert buffer to byte array</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="kw">const</span> hashHex <span class="op">=</span> <span class="va">hashArray</span>.<span class="at">map</span>(b <span class="kw">=&gt;</span> <span class="va">b</span>.<span class="at">toString</span>(<span class="dv">16</span>).<span class="at">padStart</span>(<span class="dv">2</span><span class="op">,</span> <span class="st">&#39;0&#39;</span>)).<span class="at">join</span>(<span class="st">&#39;&#39;</span>)<span class="op">;</span> <span class="co">// convert bytes to hex string</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="cf">return</span> hashHex<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-10" title="10"></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="at">digestMessage</span>(text)</a>
+<a class="sourceLine" id="cb3-12" title="12">  .<span class="at">then</span>(digestHex <span class="kw">=&gt;</span> <span class="va">console</span>.<span class="at">log</span>(digestHex))<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<blockquote>
+<p><strong>Note:</strong> Chrome 60 added a feature that disables crypto.subtle for non-TLS connections.</p>
+</blockquote>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Web_Crypto_API/Non-cryptographic_uses_of_subtle_crypto">Non-cryptographic uses of SubtleCrypto</a></li>
+<li><a href="https://www.chromium.org/Home/chromium-security/prefer-secure-origins-for-powerful-new-features">Chromium secure origins specification</a></li>
+<li><a href="https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.180-4.pdf">FIPS 180-4</a> specifies the SHA family of digest algorithms.</li>
+</ul>

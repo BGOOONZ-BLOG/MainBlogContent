@@ -1,0 +1,79 @@
+<p>{{APIRef(“Push API”)}}</p>
+<p>The <strong><code>pushsubscriptionchange</code></strong> event is sent to the <a href="/en-US/docs/Web/API/ServiceWorkerGlobalScope">global scope</a> of a {{domxref(“ServiceWorker”)}} to indicate a change in push subscription that was triggered outside the application’s control.</p>
+<p>This may occur if the subscription was refreshed by the browser, but it may also happen if the subscription has been revoked or lost.</p>
+<table class="properties">
+<tbody>
+<tr>
+<th scope="row">
+Bubbles
+</th>
+<td>
+No
+</td>
+</tr>
+<tr>
+<th scope="row">
+Cancelable
+</th>
+<td>
+No
+</td>
+</tr>
+<tr>
+<th scope="row">
+Interface
+</th>
+<td>
+{{domxref(“PushSubscriptionChangeEvent”)}}
+</td>
+</tr>
+<tr>
+<th scope="row">
+Event handler property
+</th>
+<td>
+{{domxref(“ServiceWorkerGlobalScope.onpushsubscriptionchange”, “onpushsubscriptionchange”)}}
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="usage-notes">Usage notes</h2>
+<p>Although examples demonstrating how to share subscription related information with the application server tend to use {{domxref(“fetch()”)}}, this is not necessarily the best choice for real-world use, since it will not work if the app is offline, for example.</p>
+<p>Consider using another method to synchronize subscription information between your service worker and the app server, or make sure your code using <code>fetch()</code> is robust enough to handle cases where attempts to exchange data fail.</p>
+<blockquote>
+<p><strong>Note:</strong> In earlier drafts of the specification, this event was defined to be sent when a {{domxref(“PushSubscription”)}} has expired.</p>
+</blockquote>
+<h2 id="examples">Examples</h2>
+<p>This example, run in the context of a service worker, listens for a <code>pushsubscriptionchange</code> event and re-subscribes to the lapsed subscription.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">self</span>.<span class="at">addEventListener</span>(<span class="st">&quot;pushsubscriptionchange&quot;</span><span class="op">,</span> event <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="va">event</span>.<span class="at">waitUntil</span>(<span class="va">swRegistration</span>.<span class="va">pushManager</span>.<span class="at">subscribe</span>(<span class="va">event</span>.<span class="va">oldSubscription</span>.<span class="at">options</span>)</a>
+<a class="sourceLine" id="cb1-3" title="3">    .<span class="at">then</span>(subscription <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-4" title="4">      <span class="cf">return</span> <span class="at">fetch</span>(<span class="st">&quot;register&quot;</span><span class="op">,</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-5" title="5">        <span class="dt">method</span><span class="op">:</span> <span class="st">&quot;post&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb1-6" title="6">        <span class="dt">headers</span><span class="op">:</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-7" title="7">          <span class="st">&quot;Content-type&quot;</span><span class="op">:</span> <span class="st">&quot;application/json&quot;</span></a>
+<a class="sourceLine" id="cb1-8" title="8">        <span class="op">},</span></a>
+<a class="sourceLine" id="cb1-9" title="9">        <span class="dt">body</span><span class="op">:</span> <span class="va">JSON</span>.<span class="at">stringify</span>(<span class="op">{</span></a>
+<a class="sourceLine" id="cb1-10" title="10">          <span class="dt">endpoint</span><span class="op">:</span> <span class="va">subscription</span>.<span class="at">endpoint</span></a>
+<a class="sourceLine" id="cb1-11" title="11">        <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb1-12" title="12">      <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-13" title="13">    <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb1-14" title="14">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-15" title="15"><span class="op">},</span> <span class="kw">false</span>)<span class="op">;</span></a></code></pre></div>
+<p>When a <code>pushsubscriptionchange</code> event arrives, indicating that the subscription has expired, we resubscribe by calling the push manager’s {{domxref(“PushManager.subscribe”, “subscribe()”)}} method. When the returned promise is resolved, we receive the new subscription. This is delivered to the app server using a {{domxref(“fetch()”)}} call to post a {{Glossary(“JSON”)}} formatted rendition of the subscription’s {{domxref(“PushSubscription.endpoint”, “endpoint”)}} to the app server.</p>
+<p>You can also use the {{domxref(“ServiceWorkerGlobalScope.onpushsubscriptionchange”, “onpushsubscriptionchange”)}} event handler property to set up the event handler:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">self</span>.<span class="at">onpushsubscriptionchange</span> <span class="op">=</span> event <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="va">event</span>.<span class="at">waitUntil</span>(<span class="va">swRegistration</span>.<span class="va">pushManager</span>.<span class="at">subscribe</span>(<span class="va">event</span>.<span class="va">oldSubscription</span>.<span class="at">options</span>)</a>
+<a class="sourceLine" id="cb2-3" title="3">    .<span class="at">then</span>(subscription <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">      <span class="co">/* ... */</span></a>
+<a class="sourceLine" id="cb2-5" title="5">    )</a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="op">};</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Push_API">Using the Push API</a></li>
+<li>{{domxref(“ServiceWorkerGlobalScope.onpushsubscriptionchange”, “onpushsubscriptionchange”)}} event handler property</li>
+</ul>

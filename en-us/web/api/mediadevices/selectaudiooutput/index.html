@@ -1,0 +1,66 @@
+<p>{{APIRef(“WebRTC”)}} {{SeeCompatTable}}</p>
+<p>The {{domxref(“MediaDevices”)}} method <strong><code>selectAudioOutput()</code></strong> prompts the user to select a specific audio output device, for example a speaker or headset. On success, the returned {{jsxref(“Promise”)}} is resolved with a {{domxref(“MediaDeviceInfo”)}} describing the selected device.</p>
+<p>The method must be triggered from some UI interaction like a button click (more precisely, it <em>requires</em> {{Glossary(“transient activation”)}}).</p>
+<p>Access to audio output devices is gated by the <a href="/en-US/docs/Web/API/Permissions_API">Permissions API</a>. The prompt will not be displayed if the <code>speaker-selection</code> permission has not been granted.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">navigator</span>.<span class="va">mediaDevices</span>.<span class="at">selectAudioOutput</span>()</a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="va">navigator</span>.<span class="va">mediaDevices</span>.<span class="at">selectAudioOutput</span>(options)</a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><p><code>options</code> {{Optional_Inline}}</p>
+<ul>
+<li><p>: An object that configures what device(s) may be offered in the user prompt.</p>
+<ul>
+<li><p><code>deviceId</code> {{Optional_Inline}}</p>
+<ul>
+<li><p>: A {{domxref(“DOMString”)}} representing the id of the (only) device to display in the prompt (with default value: "").</p>
+<blockquote>
+<p><strong>Note:</strong> A user agent may choose to skip prompting the user if a specified non-null id was previously exposed to the user by <code>selectAudioOutput()</code> in an earlier session. In this case the user agent may simply resolve with this device id, or a new id for the same device if it has changed.</p>
+<p>This is intended for applications that want to use persisted device ids. The ids <em>must be passed</em> through <code>selectAudioOutput()</code> successfully before they will work with {{domxref(“HTMLMediaElement.setSinkId”,“setSinkId()”)}}.</p>
+</blockquote></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A {{ jsxref(“Promise”) }} that receives a {{domxref(“MediaDeviceInfo”)}} object when the promise is fulfilled. The object describes the user-selected audio output device.</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><code>NotAllowedError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if the current page has not been granted the {{HTTPHeader(“Feature-Policy/speaker-selection”,“speaker-selection”)}} permission or the user closed the selection prompt without choosing a device.</li>
+</ul></li>
+<li><code>NotFoundError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if there are no available audio output devices.</li>
+</ul></li>
+<li><code>InvalidStateError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if there hasn’t been a {{Glossary(“transient activation”)}} (you must trigger it from some kind of UI event).</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<p>Here’s an example of using <code>selectAudioOutput()</code>, which you might call within a function that is triggered by a button click. It outputs the selected <a href="/en-US/docs/Web/API/MediaDeviceInfo/deviceId">device IDs</a> and labels (if available) or an error message.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="cf">if</span> (<span class="op">!</span><span class="va">navigator</span>.<span class="va">mediaDevices</span>.<span class="at">selectAudioOutput</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;selectAudioOutput() not supported.&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="co">//Display prompt and log selected device or error</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="va">navigator</span>.<span class="va">mediaDevices</span>.<span class="at">selectAudioOutput</span>()</a>
+<a class="sourceLine" id="cb2-8" title="8">.<span class="at">then</span>( (device) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-9" title="9">    <span class="va">console</span>.<span class="at">log</span>(<span class="va">device</span>.<span class="at">kind</span> <span class="op">+</span> <span class="st">&quot;: &quot;</span> <span class="op">+</span> <span class="va">device</span>.<span class="at">label</span> <span class="op">+</span> <span class="st">&quot; id = &quot;</span> <span class="op">+</span> <span class="va">device</span>.<span class="at">deviceId</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-11" title="11">.<span class="at">catch</span>(<span class="kw">function</span>(err) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-12" title="12">  <span class="va">console</span>.<span class="at">log</span>(<span class="va">err</span>.<span class="at">name</span> <span class="op">+</span> <span class="st">&quot;: &quot;</span> <span class="op">+</span> <span class="va">err</span>.<span class="at">message</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>On selection of an output this might produce:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb3-1" title="1"><span class="ex">audiooutput</span>: Realtek Digital Output (Realtek(R) <span class="ex">Audio</span>) <span class="fu">id</span> = 0wE6fURSZ20H0N2NbxqgowQJLWbwo+5ablCVVJwRM3k=</a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/WebRTC_API">WebRTC</a> - the introductory page to the API</li>
+</ul>

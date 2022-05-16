@@ -1,0 +1,95 @@
+<p>{{APIRef(“Streams”)}}</p>
+<p>The <strong><code>TransformStream()</code></strong> constructor creates a new {{domxref(“TransformStream”)}} object which represents a pair of streams: a {{domxref(“WritableStream”)}} representing the writable side, and a {{domxref(“ReadableStream”)}} representing the readable side.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">new</span> <span class="at">TransformStream</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">new</span> <span class="at">TransformStream</span>(transformer)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">new</span> <span class="at">TransformStream</span>(transformer<span class="op">,</span> writableStrategy)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="kw">new</span> <span class="at">TransformStream</span>(transformer<span class="op">,</span> writableStrategy<span class="op">,</span> readableStrategy)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><p><code>transformer</code>{{Optional_Inline}}</p>
+<ul>
+<li><p>: An object representing the <code>transformer</code>. If not supplied the resulting stream will be an <strong>identity transform stream</strong> which forwards all chunks written to its writable side to its readable side, without any changes.</p>
+<p>The transformer object can contain any of the following methods. In each method <code>controller</code> is an instance of {{domxref(“TransformStreamDefaultController”)}}.</p>
+<ul>
+<li><code>start(controller)</code>
+<ul>
+<li>: Called when the <code>TransformStream</code> is constructed. It is typically used to enqueue chunks using {{domxref(“TransformStreamDefaultController.enqueue()”)}}.</li>
+</ul></li>
+<li><code>transform(chunk, controller)</code>
+<ul>
+<li>: Called when a chunk written to the writable side is ready to be transformed, and performs the work of the transformation stream. If no <code>transform()</code> method is supplied, the identity transform is used, and the chunk will be enqueued with no changes.</li>
+</ul></li>
+<li><code>flush(controller)</code>
+<ul>
+<li>: Called after all chunks written to the writable side have been successfully transformed, and the writable side is about to be closed.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li><p><code>writableStrategy</code>{{Optional_Inline}}</p>
+<ul>
+<li><p>: An object that optionally defines a queuing strategy for the stream. This takes two parameters:</p>
+<ul>
+<li><code>highWaterMark</code>
+<ul>
+<li>: A non-negative integer. This defines the total number of chunks that can be contained in the internal queue before backpressure is applied.</li>
+</ul></li>
+<li><code>size(chunk)</code>
+<ul>
+<li>: A method containing a parameter <code>chunk</code>. This indicates the size to use for each chunk, in bytes.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li><p><code>readableStrategy</code>{{Optional_Inline}}</p>
+<ul>
+<li><p>: An object that optionally defines a queuing strategy for the stream. This takes two parameters:</p>
+<ul>
+<li><code>highWaterMark</code>
+<ul>
+<li>: A non-negative integer. This defines the total number of chunks that can be contained in the internal queue before backpressure is applied.</li>
+</ul></li>
+<li><code>size(chunk)</code>
+<ul>
+<li>: A method containing a parameter <code>chunk</code>. This indicates the size to use for each chunk, in bytes.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> You could define your own custom <code>readableStrategy</code> or <code>writableStrategy</code>, or use an instance of {{domxref(“ByteLengthQueuingStrategy”)}} or {{domxref(“CountQueuingStrategy”)}} for the object values.</p>
+</blockquote>
+<h2 id="examples">Examples</h2>
+<h3 id="transforming-text-to-uppercase">Transforming text to uppercase</h3>
+<p>The following example transforms text to uppercase chunk by chunk. This example is from <a href="https://web.dev/streams/">Streams—The Definitive Guide</a>, which has a number of examples of different types of streams.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">function</span> <span class="at">upperCaseStream</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="cf">return</span> <span class="kw">new</span> <span class="at">TransformStream</span>(<span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3">    <span class="at">transform</span>(chunk<span class="op">,</span> controller) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">      <span class="va">controller</span>.<span class="at">enqueue</span>(<span class="va">chunk</span>.<span class="at">toUpperCase</span>())<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="op">},</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-8" title="8"></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="kw">function</span> <span class="at">appendToDOMStream</span>(el) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="cf">return</span> <span class="kw">new</span> <span class="at">WritableStream</span>(<span class="op">{</span></a>
+<a class="sourceLine" id="cb2-11" title="11">    <span class="at">write</span>(chunk) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-12" title="12">      <span class="va">el</span>.<span class="at">append</span>(chunk)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-14" title="14">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-15" title="15"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-16" title="16"></a>
+<a class="sourceLine" id="cb2-17" title="17"><span class="at">fetch</span>(<span class="st">&#39;./lorem-ipsum.txt&#39;</span>).<span class="at">then</span>((response) <span class="kw">=&gt;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">  <span class="va">response</span>.<span class="at">body</span></a>
+<a class="sourceLine" id="cb2-19" title="19">    .<span class="at">pipeThrough</span>(<span class="kw">new</span> <span class="at">TextDecoderStream</span>())</a>
+<a class="sourceLine" id="cb2-20" title="20">    .<span class="at">pipeThrough</span>(<span class="at">upperCaseStream</span>())</a>
+<a class="sourceLine" id="cb2-21" title="21">    .<span class="at">pipeTo</span>(<span class="at">appendToDOMStream</span>(<span class="va">document</span>.<span class="at">body</span>))</a>
+<a class="sourceLine" id="cb2-22" title="22">)<span class="op">;</span></a></code></pre></div>
+<h3 id="creating-an-identity-transform-stream">Creating an identity transform stream</h3>
+<p>If no <code>transformer</code> argument is supplied then the result will be an identity transform stream which forwards all chunks written to the writable side to the readable side with no changes. In the following example an identity transform stream is used to add buffering to a pipe.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> writableStrategy <span class="op">=</span> <span class="kw">new</span> <span class="at">ByteLengthQueuingStrategy</span>(<span class="op">{</span> <span class="dt">highWaterMark</span><span class="op">:</span> <span class="dv">1024</span> <span class="op">*</span> <span class="dv">1024</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2">readableStream</a>
+<a class="sourceLine" id="cb3-3" title="3">  .<span class="at">pipeThrough</span>(<span class="kw">new</span> <span class="at">TransformStream</span>(<span class="kw">undefined</span><span class="op">,</span> writableStrategy))</a>
+<a class="sourceLine" id="cb3-4" title="4">  .<span class="at">pipeTo</span>(writableStream)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

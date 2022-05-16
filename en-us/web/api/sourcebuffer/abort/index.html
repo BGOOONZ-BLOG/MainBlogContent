@@ -1,0 +1,34 @@
+<p>{{draft}}{{APIRef(“Media Source Extensions”)}}{{SeeCompatTable}}</p>
+<p>The <strong><code>abort()</code></strong> method of the {{domxref(“SourceBuffer”)}} interface aborts the current segment and resets the segment parser.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">sourceBuffer</span>.<span class="at">abort</span>()<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<p>None.</p>
+<h3 id="return-value">Return value</h3>
+<p>{{jsxref(‘undefined’)}}.</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><code>InvalidStateError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the {{domxref(“MediaSource.readyState”)}} property of the parent media source is not equal to <code>open</code>, or this <code>SourceBuffer</code> has been removed from the {{domxref(“MediaSource”)}}.</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<p>The spec description of <code>abort()</code> is somewhat confusing — consider for example step 1 of <a href="https://w3c.github.io/media-source/index.html#sourcebuffer-reset-parser-state">reset parser state</a>. The MSE API is fully asynchronous, but this step seems to suggest a synchronous (blocking) operation, which doesn’t make sense.</p>
+<p>Saying that, current implementations can be useful in certain situations, when you want to stop the current append (or whatever) operation occurring on a sourcebuffer, and then immediately start performing operations on it again. For example, consider this code:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">sourceBuffer</span>.<span class="at">addEventListener</span>(<span class="st">&#39;updateend&#39;</span><span class="op">,</span> <span class="kw">function</span> (_) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  ...</a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="va">sourceBuffer</span>.<span class="at">appendBuffer</span>(buf)<span class="op">;</span></a></code></pre></div>
+<p>Let’s say that after the call to <code>appendBuffer</code> BUT before the <code>updateend</code> event fires (i.e. a buffer is being appended but the operation has not yet completed) a user “scrubs” the video seeking to a new point in time.  In this case you would want to manually call <code>abort()</code> on the source buffer to stop the decoding of the current buffer, then fetch and append the newly requested segment that relates to the current new position of the video.</p>
+<p>You can see something similar in action in Nick Desaulnier’s <a href="https://github.com/nickdesaulniers/netfix/blob/gh-pages/demo/bufferWhenNeeded.html">bufferWhenNeeded demo</a> — in <a href="https://github.com/nickdesaulniers/netfix/blob/gh-pages/demo/bufferWhenNeeded.html#L48">line 48, an event listener is added to the playing video</a> so a function called <code>seek()</code> is run when the <code>seeking</code> event fires. In <a href="https://github.com/nickdesaulniers/netfix/blob/gh-pages/demo/bufferWhenNeeded.html#L92-L101">lines 92-101, the seek() function is defined</a> — note that <code>abort()</code> is called if {{domxref(“MediaSource.readyState”)}} is set to <code>open</code>, which means that it is ready to receive new source buffers — at this point it is worth aborting the current segment and just getting the one for the new seek position (see <a href="https://github.com/nickdesaulniers/netfix/blob/gh-pages/demo/bufferWhenNeeded.html#L78-L90"><code>checkBuffer()</code></a> and <a href="https://github.com/nickdesaulniers/netfix/blob/gh-pages/demo/bufferWhenNeeded.html#L103-L105"><code>getCurrentSegment()</code></a>.)</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{domxref(“MediaSource”)}}</li>
+<li>{{domxref(“SourceBufferList”)}}</li>
+</ul>

@@ -1,0 +1,105 @@
+<p>{{APIRef(“DOM”)}}</p>
+<p>A <strong><code>NodeFilter</code></strong> interface represents an object used to filter the nodes in a {{domxref(“NodeIterator”)}} or {{domxref(“TreeWalker”)}}. A <code>NodeFilter</code> knows nothing about the document or traversing nodes; it only knows how to evaluate a single node against the provided filter.</p>
+<blockquote>
+<p><strong>Note:</strong> The browser doesn’t provide any object implementing this interface. It is the user who is expected to write one, tailoring the <code>acceptNode()</code> method to its needs, and using it with some {{domxref(“TreeWalker”)}} or {{domxref(“NodeIterator”)}} objects.</p>
+</blockquote>
+<h2 id="properties">Properties</h2>
+<p><em>This interface neither implements nor inherits any properties.</em></p>
+<h2 id="methods">Methods</h2>
+<p><em>This interface doesn’t inherit any methods.</em></p>
+<ul>
+<li><p>{{domxref(“NodeFilter.acceptNode()”)}}</p>
+<ul>
+<li><p>: Returns an <code>unsigned short</code> that will be used to tell if a given {{domxref(“Node”)}} must be accepted or not by the {{ domxref(“NodeIterator”) }} or {{ domxref(“TreeWalker”) }} iteration algorithm.</p>
+<p>This method is expected to be written by the user of a <code>NodeFilter</code>. Possible return values are:</p>
+<table class="standard-table">
+<thead>
+<tr>
+<th>
+Constant
+</th>
+<th>
+Description
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>FILTER_ACCEPT</code>
+</td>
+<td>
+Value returned by the {{domxref(“NodeFilter.acceptNode()”)}} method when a node should be accepted.
+</td>
+</tr>
+<tr>
+<td>
+<code>FILTER_REJECT</code>
+</td>
+<td>
+<p>
+Value to be returned by the {{domxref(“NodeFilter.acceptNode()”)}} method when a node should be rejected. For {{domxref(“TreeWalker”)}}, child nodes are also rejected.
+</p>
+<p>
+For {{ domxref(“NodeIterator”) }}, this flag is synonymous with <code>FILTER_SKIP</code>.
+</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>FILTER_SKIP</code>
+</td>
+<td>
+<p>
+Value to be returned by {{domxref(“NodeFilter.acceptNode()”)}} for nodes to be skipped by the {{domxref(“NodeIterator”)}} or {{domxref(“TreeWalker”)}} object.
+</p>
+<p>
+The children of skipped nodes are still considered. This is treated as “skip this node but not its children”.
+</p>
+</td>
+</tr>
+</tbody>
+</table></li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> nodeIterator <span class="op">=</span> <span class="va">document</span>.<span class="at">createNodeIterator</span>(</a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="co">// Node to use as root</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;someId&#39;</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb1-4" title="4"></a>
+<a class="sourceLine" id="cb1-5" title="5">  <span class="co">// Only consider nodes that are text nodes (nodeType 3)</span></a>
+<a class="sourceLine" id="cb1-6" title="6">  <span class="va">NodeFilter</span>.<span class="at">SHOW_TEXT</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb1-7" title="7"></a>
+<a class="sourceLine" id="cb1-8" title="8">  <span class="co">// Object containing the function to use for the acceptNode method</span></a>
+<a class="sourceLine" id="cb1-9" title="9">  <span class="co">// of the NodeFilter</span></a>
+<a class="sourceLine" id="cb1-10" title="10">  <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-11" title="11">    <span class="dt">acceptNode</span><span class="op">:</span> <span class="kw">function</span>(node) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-12" title="12">      <span class="co">// Logic to determine whether to accept, reject or skip node</span></a>
+<a class="sourceLine" id="cb1-13" title="13">      <span class="co">// In this case, only accept nodes that have content</span></a>
+<a class="sourceLine" id="cb1-14" title="14">      <span class="co">// other than whitespace</span></a>
+<a class="sourceLine" id="cb1-15" title="15">      <span class="cf">if</span> (<span class="ss">/</span><span class="sc">\S</span><span class="ss">/</span>.<span class="at">test</span>(<span class="va">node</span>.<span class="at">data</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-16" title="16">        <span class="cf">return</span> <span class="va">NodeFilter</span>.<span class="at">FILTER_ACCEPT</span></a>
+<a class="sourceLine" id="cb1-17" title="17">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-18" title="18">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-19" title="19">  <span class="op">},</span></a>
+<a class="sourceLine" id="cb1-20" title="20">  <span class="kw">false</span></a>
+<a class="sourceLine" id="cb1-21" title="21">)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-22" title="22"></a>
+<a class="sourceLine" id="cb1-23" title="23"><span class="co">// Show the content of every non-empty text node that is a child of root</span></a>
+<a class="sourceLine" id="cb1-24" title="24"><span class="kw">let</span> node<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-25" title="25"></a>
+<a class="sourceLine" id="cb1-26" title="26"><span class="cf">while</span> ((node <span class="op">=</span> <span class="va">nodeIterator</span>.<span class="at">nextNode</span>())) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-27" title="27">  <span class="at">alert</span>(<span class="va">node</span>.<span class="at">data</span>)</a>
+<a class="sourceLine" id="cb1-28" title="28"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><p><strong>Related interfaces</strong></p>
+<ul>
+<li>{{domxref(“TreeWalker”)}}</li>
+<li>{{domxref(“NodeIterator”)}}.</li>
+</ul></li>
+</ul>

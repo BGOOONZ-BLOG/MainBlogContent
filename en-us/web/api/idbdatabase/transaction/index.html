@@ -1,0 +1,107 @@
+<p>{{ APIRef(“IndexedDB”) }}</p>
+<p>The <strong><code>transaction</code></strong> method of the {{domxref(“IDBDatabase”)}} interface immediately returns a transaction object ({{domxref(“IDBTransaction”)}}) containing the {{domxref(“IDBTransaction.objectStore”)}} method, which you can use to access your object store.</p>
+<p>{{AvailableInWorkers}}</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">IDBDatabase</span>.<span class="at">transaction</span>(storeNames)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="va">IDBDatabase</span>.<span class="at">transaction</span>(storeNames<span class="op">,</span> mode)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="va">IDBDatabase</span>.<span class="at">transaction</span>(storeNames<span class="op">,</span> mode<span class="op">,</span> options)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><p><code>storeNames</code></p>
+<ul>
+<li><p>: The names of object stores that are in the scope of the new transaction, declared as an array of strings. Specify only the object stores that you need to access. If you need to access only one object store, you can specify its name as a string. Therefore the following lines are equivalent:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> transaction <span class="op">=</span> <span class="va">db</span>.<span class="at">transaction</span>([<span class="st">&#39;my-store-name&#39;</span>])<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">var</span> transaction <span class="op">=</span> <span class="va">db</span>.<span class="at">transaction</span>(<span class="st">&#39;my-store-name&#39;</span>)<span class="op">;</span></a></code></pre></div>
+<p>If you need to access all object stores in the database, you can use the property {{domxref(“IDBDatabase.objectStoreNames”)}}:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">var</span> transaction <span class="op">=</span> <span class="va">db</span>.<span class="at">transaction</span>(<span class="va">db</span>.<span class="at">objectStoreNames</span>)<span class="op">;</span></a></code></pre></div>
+<p>Passing an empty array will throw an exception.</p></li>
+</ul></li>
+<li><p><code>mode</code> {{optional_inline}}</p>
+<ul>
+<li><p>: The types of access that can be performed in the transaction. Transactions are opened in one of three modes: <code>readonly</code>, <code>readwrite</code> and <code>readwriteflush</code> (non-standard, Firefox-only.) <code>versionchange</code> mode can’t be specified here. If you don’t provide the parameter, the default access mode is <code>readonly</code>. To avoid slowing things down, don’t open a <code>readwrite</code> transaction unless you actually need to write into the database.</p>
+<p>If you need to open the object store in <code>readwrite</code> mode to change data, you would use the following:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">var</span> transaction <span class="op">=</span> <span class="va">db</span>.<span class="at">transaction</span>(<span class="st">&#39;my-store-name&#39;</span><span class="op">,</span> <span class="st">&quot;readwrite&quot;</span>)<span class="op">;</span></a></code></pre></div>
+<p>As of Firefox 40, IndexedDB transactions have relaxed durability guarantees to increase performance (see {{Bug(“1112702”)}}), which is the same behavior as other IndexedDB-supporting browsers. Previously in a <code>readwrite</code> transaction {{domxref(“IDBTransaction.oncomplete”)}} was fired only when all data was guaranteed to have been flushed to disk. In Firefox 40+ the <code>complete</code> event is fired after the OS has been told to write the data but potentially before that data has actually been flushed to disk. The <code>complete</code> event may thus be delivered quicker than before, however, there exists a small chance that the entire transaction will be lost if the OS crashes or there is a loss of system power before the data is flushed to disk. Since such catastrophic events are rare most consumers should not need to concern themselves further.</p>
+<blockquote>
+<p><strong>Note:</strong> In Firefox, if you wish to ensure durability for some reason (e.g. you’re storing critical data that cannot be recomputed later) you can force a transaction to flush to disk before delivering the <code>complete</code> event by creating a transaction using the experimental (non-standard) <code>readwriteflush</code> mode (see {{domxref(“IDBDatabase.transaction”)}}.) This is currently experimental, and can only be used if the <code>dom.indexedDB.experimental</code> pref is set to <code>true</code> in <code>about:config</code>.</p>
+</blockquote></li>
+</ul></li>
+<li><p><code>options</code> {{optional_inline}}</p>
+<ul>
+<li><p>: Dictionary of other options. Available options are:</p>
+<ul>
+<li><code>durability</code>: <code>"default"</code>, <code>"strict"</code>, or <code>"relaxed"</code>. The default is <code>"default"</code>. Using <code>"relaxed"</code> provides better performance, but with fewer guarantees. Web applications are encouraged to use <code>"relaxed"</code> for ephemeral data such as caches or quickly changing records, and <code>"strict"</code> in cases where reducing the risk of data loss outweighs the impact to performance and power.</li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>An {{domxref(“IDBTransaction”)}} object.</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><code>InvalidStateError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the {{domxref(“IDBDatabase.close”, “close()”)}} method has previously been called on this {{domxref(“IDBDatabase”)}} instance.</li>
+</ul></li>
+<li><code>NotFoundError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if an object store specified in the ‘storeNames’ parameter has been deleted or removed.</li>
+</ul></li>
+<li><code>TypeError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the value for the <code>mode</code> parameter is invalid.</li>
+</ul></li>
+<li><code>InvalidAccessError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if the function was called with an empty list of store names.</li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<p>In this example we open a database connection, then use transaction() to open a transaction on the database. For a complete example, see our <a href="https://github.com/mdn/to-do-notifications/">To-do Notifications</a> app (<a href="https://mdn.github.io/to-do-notifications/">view example live</a>.)</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">var</span> db<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-2" title="2"></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="co">// Let us open our database</span></a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="kw">var</span> DBOpenRequest <span class="op">=</span> <span class="va">window</span>.<span class="va">indexedDB</span>.<span class="at">open</span>(<span class="st">&quot;toDoList&quot;</span><span class="op">,</span> <span class="dv">4</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-5" title="5"></a>
+<a class="sourceLine" id="cb5-6" title="6"><span class="va">DBOpenRequest</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-7" title="7">  <span class="va">note</span>.<span class="at">innerHTML</span> <span class="op">+=</span> <span class="st">&#39;&lt;li&gt;Database initialised.&lt;/li&gt;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-8" title="8"></a>
+<a class="sourceLine" id="cb5-9" title="9">  <span class="co">// store the result of opening the database in the db variable.</span></a>
+<a class="sourceLine" id="cb5-10" title="10">  <span class="co">// This is used a lot below</span></a>
+<a class="sourceLine" id="cb5-11" title="11">  db <span class="op">=</span> <span class="va">DBOpenRequest</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-12" title="12"></a>
+<a class="sourceLine" id="cb5-13" title="13">  <span class="co">// Run the displayData() function to populate the task list with</span></a>
+<a class="sourceLine" id="cb5-14" title="14">  <span class="co">// all the to-do list data already in the IDB</span></a>
+<a class="sourceLine" id="cb5-15" title="15">  <span class="at">displayData</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-16" title="16"></a>
+<a class="sourceLine" id="cb5-17" title="17"><span class="op">};</span></a>
+<a class="sourceLine" id="cb5-18" title="18"></a>
+<a class="sourceLine" id="cb5-19" title="19"><span class="co">// open a read/write db transaction, ready for adding the data</span></a>
+<a class="sourceLine" id="cb5-20" title="20"><span class="kw">var</span> transaction <span class="op">=</span> <span class="va">db</span>.<span class="at">transaction</span>([<span class="st">&quot;toDoList&quot;</span>]<span class="op">,</span> <span class="st">&quot;readwrite&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-21" title="21"></a>
+<a class="sourceLine" id="cb5-22" title="22"><span class="co">// report on the success of opening the transaction</span></a>
+<a class="sourceLine" id="cb5-23" title="23"><span class="va">transaction</span>.<span class="at">oncomplete</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-24" title="24">  <span class="va">note</span>.<span class="at">innerHTML</span> <span class="op">+=</span> <span class="st">&#39;&lt;li&gt;Transaction completed: database modification finished.&lt;/li&gt;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-25" title="25"><span class="op">};</span></a>
+<a class="sourceLine" id="cb5-26" title="26"></a>
+<a class="sourceLine" id="cb5-27" title="27"><span class="va">transaction</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-28" title="28">  <span class="va">note</span>.<span class="at">innerHTML</span> <span class="op">+=</span> <span class="st">&#39;&lt;li&gt;Transaction not opened due to error. Duplicate items not allowed.&lt;/li&gt;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-29" title="29"><span class="op">};</span></a>
+<a class="sourceLine" id="cb5-30" title="30"></a>
+<a class="sourceLine" id="cb5-31" title="31"><span class="co">// you would then go on to do something to this database</span></a>
+<a class="sourceLine" id="cb5-32" title="32"><span class="co">// via an object store</span></a>
+<a class="sourceLine" id="cb5-33" title="33"><span class="kw">var</span> objectStore <span class="op">=</span> <span class="va">transaction</span>.<span class="at">objectStore</span>(<span class="st">&quot;toDoList&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-34" title="34"><span class="co">// etc.</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/IndexedDB_API/Using_IndexedDB">Using IndexedDB</a></li>
+<li>Starting transactions: {{domxref(“IDBDatabase”)}}</li>
+<li>Using transactions: {{domxref(“IDBTransaction”)}}</li>
+<li>Setting a range of keys: {{domxref(“IDBKeyRange”)}}</li>
+<li>Retrieving and making changes to your data: {{domxref(“IDBObjectStore”)}}</li>
+<li>Using cursors: {{domxref(“IDBCursor”)}}</li>
+<li>Reference example: <a href="https://github.com/mdn/to-do-notifications/tree/gh-pages">To-do Notifications</a> (<a href="https://mdn.github.io/to-do-notifications/">view example live</a>.)</li>
+</ul>

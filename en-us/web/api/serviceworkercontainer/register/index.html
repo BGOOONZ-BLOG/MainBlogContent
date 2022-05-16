@@ -1,0 +1,77 @@
+<p>{{APIRef(“Service Workers API”)}}</p>
+<p>The <strong><code>register()</code></strong> method of the {{domxref(“ServiceWorkerContainer”)}} interface creates or updates a {{domxref(“ServiceWorkerRegistration”)}} for the given <code>scriptURL</code>.</p>
+<p>If successful, a service worker registration ties the provided script URL to a <em>scope</em>, which is subsequently used for navigation matching. You can call this method unconditionally from the controlled page. I.e., you don’t need to first check whether there’s an active registration.</p>
+<p>There is frequent confusion surrounding the meaning and use of <em>scope</em>. Since a service worker can’t have a scope broader than its own location, only use the <code>scope</code> option when you need a scope that is narrower than the default.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">serviceWorkerContainer</span>.<span class="at">register</span>(scriptURL<span class="op">,</span> options)</a>
+<a class="sourceLine" id="cb1-2" title="2">  .<span class="at">then</span>(<span class="kw">function</span>(serviceWorkerRegistration) <span class="op">{</span> <span class="co">/* ... */</span> <span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>scriptURL</code>
+<ul>
+<li>: The URL of the service worker script. The registered service worker file needs to have a valid <a href="/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types#javascript_types">JavaScript MIME type</a>.</li>
+</ul></li>
+<li><p><code>options</code> {{optional_inline}}</p>
+<ul>
+<li><p>: An object containing registration options. Currently available options are:</p>
+<ul>
+<li><code>scope</code>: A {{domxref(“USVString”)}} representing a URL that defines a service worker’s registration scope; that is, what range of URLs a service worker can control. This is usually a relative URL. It is relative to the base URL of the application. By default, the <code>scope</code> value for a service worker registration is set to the directory where the service worker script is located. See the <a href="#examples">Examples</a> section for more information on how it works.</li>
+<li><p><code>type</code>: A {{domxref(“DOMString”)}} specifying the type of worker to create. Valid values are:</p>
+<ul>
+<li><code>'classic'</code>: The loaded service worker is in a standard script. This is the default.</li>
+<li><code>module</code>: The loaded service worker is in an <a href="/en-US/docs/Web/JavaScript/Guide/Modules">ES module</a> and the import statement is available on worker contexts.</li>
+</ul></li>
+<li><p><code>updateViaCache</code>: A string indicating how much of a service worker’s resources will be updated when a call is made to {{domxref(‘ServiceWorkerRegistration.updateViaCache’)}}. Valid values are:</p>
+<ul>
+<li><code>'all'</code>: The service worker script and all of its imports will be updated.</li>
+<li><code>'imports'</code>: Only imports referenced by the service worker script will be updated. This is the default.</li>
+<li><code>'none'</code>: Neither the service worker, nor its imports will be updated.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A {{jsxref(“Promise”)}} that resolves with a {{domxref(“ServiceWorkerRegistration”)}} object.</p>
+<h2 id="examples">Examples</h2>
+<p>The examples described here should be taken together to get a better understanding of how service workers scope applies to a page.</p>
+<p>The following example uses the default value of <code>scope</code> (by omitting it). The service worker code in this case, if included in <code>example.com/index.html</code>, will control <code>example.com/index.html</code>, as well as pages underneath it, like <code>example.com/product/description.html</code>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="cf">if</span> (<span class="st">&#39;serviceWorker&#39;</span> <span class="kw">in</span> navigator) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="co">// Register a service worker hosted at the root of the</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="co">// site using the default scope.</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="va">navigator</span>.<span class="va">serviceWorker</span>.<span class="at">register</span>(<span class="st">&#39;/sw.js&#39;</span>).<span class="at">then</span>(<span class="kw">function</span>(registration) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Service worker registration succeeded:&#39;</span><span class="op">,</span> registration)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="op">},</span> <span class="co">/*catch*/</span> <span class="kw">function</span>(error) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-7" title="7">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Service worker registration failed:&#39;</span><span class="op">,</span> error)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Service workers are not supported.&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="op">}</span></a></code></pre></div>
+<p>The following code, if included in <code>example.com/index.html</code>, at the root of a site, would apply to exactly the same pages as the example above. Remember the scope, when included, uses the page’s location as its base.</p>
+<p>Alternatively, if this code were included in a page at <code>example.com/product/description.html</code>, with the Javascript file residing at <code>example.com/product/sw.js</code>, then the service worker would only apply to resources under <code>example.com/product</code>.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="cf">if</span> (<span class="st">&#39;serviceWorker&#39;</span> <span class="kw">in</span> navigator) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="co">// declaring scope manually</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="va">  navigator</span>.<span class="va">serviceWorker</span>.<span class="at">register</span>(<span class="st">&#39;/sw.js&#39;</span><span class="op">,</span> <span class="op">{</span><span class="dt">scope</span><span class="op">:</span> <span class="st">&#39;./&#39;</span><span class="op">}</span>).<span class="at">then</span>(<span class="kw">function</span>(registration) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="va">    console</span>.<span class="at">log</span>(<span class="st">&#39;Service worker registration succeeded:&#39;</span><span class="op">,</span> registration)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">  <span class="op">},</span> <span class="co">/*catch*/</span> <span class="kw">function</span>(error) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-6" title="6"><span class="va">    console</span>.<span class="at">log</span>(<span class="st">&#39;Service worker registration failed:&#39;</span><span class="op">,</span> error)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-9" title="9"><span class="va">  console</span>.<span class="at">log</span>(<span class="st">&#39;Service workers are not supported.&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10"><span class="op">}</span></a></code></pre></div>
+<p>There is frequent confusion surrounding the meaning and use of <em>scope</em>. Since a service worker can’t have a scope broader than its own location, only use the <code>scope</code> option when you need a scope that is narrower than the default.</p>
+<p>The following code, if included in <code>example.com/index.html</code>, at the root of a site, would only apply to resources under <code>example.com/product</code>.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="cf">if</span> (<span class="st">&#39;serviceWorker&#39;</span> <span class="kw">in</span> navigator) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="co">// declaring scope manually</span></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="va">  navigator</span>.<span class="va">serviceWorker</span>.<span class="at">register</span>(<span class="st">&#39;/sw.js&#39;</span><span class="op">,</span> <span class="op">{</span><span class="dt">scope</span><span class="op">:</span> <span class="st">&#39;/product/&#39;</span><span class="op">}</span>).<span class="at">then</span>(<span class="kw">function</span>(registration) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="va">    console</span>.<span class="at">log</span>(<span class="st">&#39;Service worker registration succeeded:&#39;</span><span class="op">,</span> registration)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="op">},</span> <span class="co">/*catch*/</span> <span class="kw">function</span>(error) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-6" title="6"><span class="va">    console</span>.<span class="at">log</span>(<span class="st">&#39;Service worker registration failed:&#39;</span><span class="op">,</span> error)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-8" title="8"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-9" title="9"><span class="va">  console</span>.<span class="at">log</span>(<span class="st">&#39;Service workers are not supported.&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-10" title="10"><span class="op">}</span></a></code></pre></div>
+<p>However, Servers can remove this restriction by setting a <a href="https://w3c.github.io/ServiceWorker/#service-worker-allowed">Service-Worker-Allowed</a> header on the service worker script, and then you can specify a max scope for that service worker above the service worker’s location.</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

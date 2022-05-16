@@ -1,0 +1,108 @@
+<p>{{APIRef(“WebRTC”)}}</p>
+<p>The {{domxref(“RTCRemoteOutboundRtpStreamStats”)}} dictionary’s  <strong><code>localId</code></strong> property is a string which can be used to identify the {{domxref(“RTCInboundRtpStreamStats”)}} object whose {{domxref(“RTCInboundRtpStreamStats.remoteId”, “remoteId”)}} matches this value.</p>
+<p>Together, these two objects provide statistics about the inbound and outbound sides of the same synchronization source (SSRC).</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">let</span> localId <span class="op">=</span> <span class="va">rtcRemoteOutboundRtpStreamStats</span>.<span class="at">localId</span><span class="op">;</span></a></code></pre></div>
+<h3 id="value">Value</h3>
+<p>A {{domxref(“DOMString”)}} which can be compared to the value of an {{domxref(“RTCInboundRtpStreamStats”)}} object’s {{domxref(“RTCInboundRtpStreamStats.remoteId”, “remoteId”)}} property to see if the two represent statistics for each of the two sides of the same set of data received by the local peer.</p>
+<h2 id="usage-notes">Usage notes</h2>
+<p>You can think of the local and remote views of the same RTP stream as pairs, each of which has a reference back to the other one. Thus, if an {{domxref(“RTCStatsReport”)}} includes an <code>remote-outbound-rtp</code> statistics object (of type <code>RTCRemoteOutboundRtpStreamstats</code>), it should also have a corresponding <code>inbound-rtp</code> object. Both of these provide information about the same batch of packets being transmitted from the remote peer to the local device. The difference is that <code>remote-outbound-rtp</code> describes statistics about the transmission(s) from the perspective of the remote peer, while <code>inbound-rtp</code> offers statistics about the incoming data from the local peer’s perspective.</p>
+<p>You can {{anch(“Try it and fork it”, “examine, try out, and experiment”)}} with this example on Glitch.</p>
+<h2 id="example">Example</h2>
+<p>In this example, we have a pair of functions: the first, <code>networkTestStart()</code>, captures an initial report, and the second, <code>networkTestStop()</code>, captures a second report, then uses the two reports to output some information about the network conditions… XXX …</p>
+<h3 id="networkteststart">networkTestStart()</h3>
+<p>This function calls the {{domxref(“RTCPeerConnection”)}} method {{domxref(“RTCPeerConnection.getStats”, “getStats()”)}} to request an {{domxref(“RTCStatsReport”)}} and store it in the variable <code>startReport</code>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">let</span> startReport<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">async</span> <span class="kw">function</span> <span class="at">networkTestStart</span>(pc) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="cf">if</span> (pc) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">    startReport <span class="op">=</span> <span class="cf">await</span> <span class="va">pc</span>.<span class="at">getStats</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="op">}</span></a></code></pre></div>
+<p>Given an {{domxref(“RTCPeerConnection”)}}, <code>pc</code>, this calls its {{domxref(“RTCPeerConnection.getStats”, “getStats()”)}} method to obtain a statistics report object, which it stores in <code>startReport</code> for use once the end-of-test data has been collected by <code>networkTestStop()</code>.</p>
+<h3 id="networkteststop">networkTestStop()</h3>
+<p>The <code>networkTestStop()</code> function obtains a second report, <code>endReport</code>, then uses the two reports together to determine several… XXX …</p>
+<h4 id="finding-paired-statistics">Finding paired statistics</h4>
+<p>Each statistics record of {{domxref(“RTCStats.type”, “type”)}} <code>remote-outbound-rtp</code> (describing a remote peer’s statistics about sending data to the local peer) has a corresponding record of type <code>inbound-rtp</code> which describes the local peer’s perspective on the same data being moved between the two peers. Let’s create a utility function to help us look up the value of a key in the paired statistics object.</p>
+<p>The <code>findReportEntry()</code> function shown below examines an {{domxref(“RTCStatsReport”)}}, returning the {{domxref(“RTCStats”)}}-based statistics record which contains the specified <code>key</code> — <em>and</em> for which the key has the specified <code>value</code>. If no match is found (or the statistics report has no record corresponding to the statistics category indicated by <code>key</code>.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">function</span> <span class="at">findReportEntry</span>(report<span class="op">,</span> key<span class="op">,</span> value) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="cf">for</span> (<span class="kw">const</span> stats <span class="kw">of</span> <span class="va">report</span>.<span class="at">values</span>()) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="cf">if</span> (stats[key] <span class="op">===</span> value) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">      <span class="cf">return</span> stats<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="cf">return</span> <span class="kw">null</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="op">}</span></a></code></pre></div>
+<p>Since the <code>RTCStatsReport</code> is a JavaScript <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map"><code>Map</code></a>, we can iterate over the map’s <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map/values"><code>values()</code></a> to examine each of the <code>RTCStats</code>-based statistics records in the report until we find one that has the <code>key</code> property with the specified <code>value</code>. When a match is found, the statistics object is returned.</p>
+<p>If no match is found, the function returns <code>null</code>.</p>
+<h4 id="the-main-networkteststop-function">The main networkTestStop() function</h4>
+<p>Now let’s look at the <code>networkTestStop()</code> function itself. It takes as input the {{domxref(“RTCPeerConnection”)}} being tested, calls <code>getStats()</code> to get a new <code>RTCStatsReport</code> with current statistics, then computes the results it’s looking for, outputting those results as appropriate to the user by appending appropriate HTML to the contents of the {{HTMLElement(“div”)}} element whose class is <code>stats-box</code>.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">async</span> <span class="kw">function</span> <span class="at">networkTestStop</span>(pc) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="cf">if</span> (pc) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-3" title="3">    <span class="kw">let</span> statsBox <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;.stats-box&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-4" title="4">    <span class="kw">let</span> endReport <span class="op">=</span> <span class="cf">await</span> <span class="va">pc</span>.<span class="at">getStats</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5"></a>
+<a class="sourceLine" id="cb4-6" title="6">    <span class="cf">for</span> (<span class="kw">let</span> endRemoteOutbound <span class="kw">of</span> <span class="va">endReport</span>.<span class="at">values</span>()) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-7" title="7">      <span class="cf">if</span> (<span class="va">endRemoteOutbound</span>.<span class="at">type</span> <span class="op">===</span> <span class="st">&quot;remote-outbound-rtp&quot;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-8" title="8">        <span class="kw">let</span> startRemoteOutbound <span class="op">=</span> <span class="va">startReport</span>.<span class="at">get</span>(<span class="va">endRemoteOutbound</span>.<span class="at">id</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-9" title="9"></a>
+<a class="sourceLine" id="cb4-10" title="10">        <span class="cf">if</span> (startRemoteOutbound) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-11" title="11">          <span class="kw">let</span> startInboundStats <span class="op">=</span> <span class="at">findReportEntry</span>(startReport<span class="op">,</span> <span class="st">&quot;remoteId&quot;</span><span class="op">,</span> <span class="va">startRemoteOutbound</span>.<span class="at">id</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-12" title="12">          <span class="kw">let</span> endInboundStats <span class="op">=</span> <span class="at">findReportEntry</span>(endReport<span class="op">,</span> <span class="st">&quot;remoteId&quot;</span><span class="op">,</span> <span class="va">endRemoteOutbound</span>.<span class="at">id</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-13" title="13"></a>
+<a class="sourceLine" id="cb4-14" title="14">          <span class="kw">let</span> elapsedTime <span class="op">=</span> (<span class="va">endRemoteOutbound</span>.<span class="at">timestamp</span> <span class="op">-</span> <span class="va">startRemoteOutbound</span>.<span class="at">timestamp</span>) / <span class="dv">1000</span><span class="op">;</span>    <span class="co">/* in seconds */</span></a>
+<a class="sourceLine" id="cb4-15" title="15">          <span class="kw">let</span> packetsSent <span class="op">=</span> <span class="va">endRemoteOutbound</span>.<span class="at">packetsSent</span> <span class="op">-</span> <span class="va">startRemoteOutbound</span>.<span class="at">packetsSent</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-16" title="16">          <span class="kw">let</span> bytesSent <span class="op">=</span> <span class="va">endRemoteOutbound</span>.<span class="at">bytesSent</span> <span class="op">-</span> <span class="va">startRemoteOutbound</span>.<span class="at">bytesSent</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-17" title="17">          <span class="kw">let</span> framesDecoded <span class="op">=</span> <span class="va">endInboundStats</span>.<span class="at">framesDecoded</span> <span class="op">-</span> <span class="va">startInboundStats</span>.<span class="at">framesDecoded</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-18" title="18">          <span class="kw">let</span> frameRate <span class="op">=</span> framesDecoded / elapsedTime<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-19" title="19"></a>
+<a class="sourceLine" id="cb4-20" title="20">          <span class="kw">let</span> timeString <span class="op">=</span> <span class="st">&quot;&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-21" title="21">          <span class="cf">if</span> (<span class="op">!</span><span class="at">isNaN</span>(elapsedTime)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-22" title="22">            timeString <span class="op">=</span> <span class="vs">` representing </span><span class="sc">${</span>elapsedTime<span class="sc">}</span><span class="vs">s`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-23" title="23">          <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-24" title="24"></a>
+<a class="sourceLine" id="cb4-25" title="25">          <span class="kw">let</span> frameString <span class="op">=</span> <span class="st">&quot;&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-26" title="26">          <span class="cf">if</span> (<span class="op">!</span><span class="at">isNaN</span>(framesDecoded)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-27" title="27">            frameString <span class="op">=</span> <span class="vs">`Decoded </span><span class="sc">${</span>framesDecoded<span class="sc">}</span><span class="vs"> frames for a frame rate of </span><span class="sc">${</span><span class="va">frameRate</span>.<span class="at">toFixed</span>(<span class="dv">2</span>)<span class="sc">}</span><span class="vs"> FPS.&lt;br&gt;`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-28" title="28">          <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-29" title="29"></a>
+<a class="sourceLine" id="cb4-30" title="30">          <span class="kw">let</span> logEntry <span class="op">=</span> <span class="vs">`&lt;div class=&quot;stats-entry&quot;&gt;&lt;h2&gt;Report ID: </span><span class="sc">${</span><span class="va">endRemoteOutbound</span>.<span class="at">id</span><span class="sc">}</span><span class="vs">&lt;/h2&gt;`</span> <span class="op">+</span></a>
+<a class="sourceLine" id="cb4-31" title="31">                         <span class="vs">`Remote peer sent </span><span class="sc">${</span>packetsSent<span class="sc">}</span><span class="vs"> packets </span><span class="sc">${</span>timeString<span class="sc">}</span><span class="vs">.&lt;br&gt;`</span> <span class="op">+</span></a>
+<a class="sourceLine" id="cb4-32" title="32">                         <span class="vs">`</span><span class="sc">${</span>frameString<span class="sc">}</span><span class="vs">`</span> <span class="op">+</span></a>
+<a class="sourceLine" id="cb4-33" title="33">                         <span class="vs">`Data size: </span><span class="sc">${</span>bytesSent<span class="sc">}</span><span class="vs"> bytes.&lt;/div&gt;`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-34" title="34">          <span class="va">statsBox</span>.<span class="at">innerHTML</span> <span class="op">+=</span> logEntry<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-35" title="35">        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-36" title="36">          <span class="va">statsBox</span>.<span class="at">innerHTML</span> <span class="op">+=</span> <span class="vs">`&lt;div class=&quot;stats-error&quot;&gt;Unable to find initial statistics for ID </span><span class="sc">${</span><span class="va">endRemoteOutbound</span>.<span class="at">id</span><span class="sc">}</span><span class="vs">.&lt;/div&gt;`</span></a>
+<a class="sourceLine" id="cb4-37" title="37">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-38" title="38">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-39" title="39"></a>
+<a class="sourceLine" id="cb4-40" title="40">      <span class="va">statsBox</span>.<span class="at">scrollTo</span>(<span class="dv">0</span><span class="op">,</span> <span class="va">statsBox</span>.<span class="at">scrollHeight</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-41" title="41">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-42" title="42">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-43" title="43"><span class="op">}</span></a></code></pre></div>
+<p>Here’s what’s going on in the <code>networkTestStop()</code> function: after calling the {{domxref(“RTCPeerConnection”)}} method {{domxref(“RTCPeerConnection.getStats”, “getStats()”)}} to get the latest statistics report for the connection and storing it in <code>endReport</code>,  This is an {{domxref(“RTCStatsReport”)}} object, which maps strings taken from the {{domxref(“RTCStatsType”)}} enumerated type to objects of the corresponding {{domxref(“RTCStats”)}}-based type.</p>
+<p>Now we can begin to process the results, starting with the ending statistics found in <code>endReport</code>. In this case, we’re looking for statistics records whose <code>type</code> is <code>remote-outbound-rtp</code>, so we iterate over the entries in the statistics report until we find an entry of that type. This object is, specifically, of type {{domxref(“RTCRemoteOutboundRtpStreamStats”)}}, and it provides statistics giving details about the state of things <em>from the perspective of the remote peer</em>. This statistics record is stored in <code>endRemoteOutbound</code>.</p>
+<p>Once the ending <code>remote-outbound-rtp</code> record is found, we use its {{domxref(“RTCStats.id”, “id”)}} property to get its ID. WIth that in hand, we can look up the <code>remote-outbound-rtp</code> record in the starting statistics record (<code>startReport</code>), which we store into <code>startRemoteOutbound</code>.</p>
+<p>Now we obtain the <code>inbound-rtp</code> statistics that correspond to these two <code>remote-outbound-rtp</code> records by finding the <code>remoteId</code> property within them whose value is the ID of the <code>remote-outbound-rtp</code> record. We use the <code>findReportEntry()</code> function described in the previous section for that, storing the located <code>inbound-rtp</code> records in <code>startInboundStats</code> and <code>endInboundStats</code>.</p>
+<p>Now we have all the raw statistics needed to calculate the information we want to display, so we do so:</p>
+<ul>
+<li>We calculate the amount of time—<code>elapsedTime</code>—that elapsed between the two reports being sent by subtracting the {{domxref(“RTCStats.timestamp”, “timestamp”)}} <code>startReport</code> from that of <code>endReport</code>. We then divide by 1000 to convert the result from milliseconds to seconds.</li>
+<li>We compute the number of packets sent during this interval—<code>packetsSent</code>—by subtracting the two reports’ values for the {{domxref(“RTCSentRtpStreamStats.packetsSent”, “packetsSent”)}} property.</li>
+<li>Similarly, the number of bytes sent during this interval—<code>bytesSent</code>—is calculated by subtracting the starting statistics object’s {{domxref(“RTCSentRtpStreamStats.bytesSent”, “bytesSent”)}} property from that of the ending statistics.</li>
+<li>The number of frames decoded during this interval—<code>framesDecoded</code>—is determined by subtracting <code>startRecord</code>’s {{domxref(“RTCInboundRtpStreamStats.framesDecoded”, “framesDecoded”)}} from <code>endRecord.framesDecoded</code>.</li>
+<li>Finally, the frame rate over the elapsed time span is calculated by dividing <code>framesDecoded</code> by <code>elapsedTime</code>.</li>
+</ul>
+<p>The remainder of the <code>networkTestStop()</code> function constructs the HTML used to display the output of the collected and computed results to the user, then append it to the element <code>statsBox</code>, which we’re using to show the status updates to the user.</p>
+<p>The output log, given the styles used by the example, looks like this:</p>
+<figure>
+<img src="rtc-log-screenshot.png" alt="A screenshot of the example showing logged statistics taken from paired remote-outbound-rtp and inbound-rtp statistics records" /><figcaption>A screenshot of the example showing logged statistics taken from paired remote-outbound-rtp and inbound-rtp statistics records</figcaption>
+</figure>
+<p>In the screenshot, we see a heading followed by the scrollable {{HTMLElement(“div”)}} we refer to as <code>statsBox</code>. The box contains a number of log entries, the last handful of which are visible. Each one represents approximately one second of time (since that’s much time we’re waiting between calling <code>networkTestStart()</code> and <code>networkTestStop()</code>).</p>
+<h3 id="try-it-and-fork-it">Try it and fork it</h3>
+<p>This example is <a href="https://websocket-webrtc-chat-with-stats.glitch.me">available on Glitch for you to try out</a>, examine, or remix.  You can also <a href="https://33030790-3517-4d21-9b93-511347fa1ebd@api.glitch.com/git/websocket-webrtc-chat-with-stats">access it directly</a> using Glitch’s Git server.</p>
+<p><a href="https://glitch.com/edit/?utm_content=project_websocket-webrtc-chat-with-stats&amp;utm_source=remix_this&amp;utm_medium=button&amp;utm_campaign=glitchButton#!/remix/websocket-webrtc-chat-with-stats">Remix It</a></p>
+<p><a href="https://glitch.com/edit/?utm_content=project_websocket-webrtc-chat-with-stats&amp;utm_source=view_source&amp;utm_medium=button&amp;utm_campaign=glitchButton#!/websocket-webrtc-chat-with-stats">View Source</a></p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

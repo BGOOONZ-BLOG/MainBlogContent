@@ -1,0 +1,102 @@
+<p>{{APIRef(“IndexedDB”)}}</p>
+<p>The <strong><code>open()</code></strong> method of the {{domxref(“IDBFactory”)}} interface requests opening a <a href="/en-US/docs/Web/API/IndexedDB_API/Basic_Terminology#database_connection">connection to a database</a>.</p>
+<p>The method returns an {{domxref(“IDBOpenDBRequest”)}} object immediately, and performs the open operation asynchronously. If the operation is successful, a <code>success</code> event is fired on the request object that is returned from this method, with its <code>result</code> attribute set to the new {{domxref(“IDBDatabase”)}} object for the connection.</p>
+<p>May trigger <code>upgradeneeded</code>, <code>blocked</code> or <code>versionchange</code> events.</p>
+<p>{{AvailableInWorkers}}</p>
+<h2 id="syntax">Syntax</h2>
+<p>For the current standard:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> IDBOpenDBRequest <span class="op">=</span> <span class="va">indexedDB</span>.<span class="at">open</span>(name)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">var</span> IDBOpenDBRequest <span class="op">=</span> <span class="va">indexedDB</span>.<span class="at">open</span>(name<span class="op">,</span> version)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li>name
+<ul>
+<li>: The name of the database.</li>
+</ul></li>
+<li>version {{optional_inline}}
+<ul>
+<li>: Optional. The version to open the database with. If the version is not provided and the database exists, then a connection to the database will be opened without changing its version. If the version is not provided and the database does not exist, then it will be created with version <code>1</code>.</li>
+</ul></li>
+</ul>
+<h4 id="experimental-gecko-options-object">Experimental Gecko options object</h4>
+<ul>
+<li><p>options (version and storage) {{optional_inline}} {{deprecated_inline}}</p>
+<ul>
+<li><p>: In Gecko, since <a href="/en-US/docs/Mozilla/Firefox/Releases/26">version 26</a>, you can include a non-standard <code>options</code> object as a parameter of {{ domxref(“IDBFactory.open”) }} that contains the <code>version</code> number of the database, plus a storage value that specifies whether you want to use <code>persistent</code> or <code>temporary</code> storage.</p>
+<blockquote>
+<p><strong>Warning:</strong> The <code>storage</code> attribute is deprecated and will soon be removed from Gecko. You should use {{domxref(“StorageManager.persist()”)}} to get persistent storage instead.</p>
+</blockquote></li>
+</ul></li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> You can find out more information on the different available storage types, and how Firefox handles client-side data storage, at <a href="/en-US/docs/Web/API/IndexedDB_API/Browser_storage_limits_and_eviction_criteria">Browser storage limits and eviction criteria</a>.</p>
+</blockquote>
+<h3 id="return-value">Return value</h3>
+<p>A {{domxref(“IDBOpenDBRequest”)}} object on which subsequent events related to this request are fired.</p>
+<h3 id="exceptions">Exceptions</h3>
+<p>This method may raise a {{domxref(“DOMException”)}} of the following types:</p>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 85%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Exception</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>TypeError</code></td>
+<td>The value of version is zero or a negative number or not a number.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="example">Example</h2>
+<p>Example of calling <code>open</code> with the current specification’s <code>version</code> parameter:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> request <span class="op">=</span> <span class="va">window</span>.<span class="va">indexedDB</span>.<span class="at">open</span>(<span class="st">&quot;toDoList&quot;</span><span class="op">,</span> <span class="dv">4</span>)<span class="op">;</span></a></code></pre></div>
+<p>In the following code snippet, we make a request to open a database, and include handlers for the success and error cases. For a full working example, see our <a href="https://github.com/mdn/to-do-notifications/tree/gh-pages">To-do Notifications</a> app (<a href="https://mdn.github.io/to-do-notifications/">view example live</a>.)</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">var</span> note <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;ul&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="co">// In the following line, you should include the prefixes</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="co">// of implementations you want to test.</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="va">window</span>.<span class="at">indexedDB</span> <span class="op">=</span> <span class="va">window</span>.<span class="at">indexedDB</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">mozIndexedDB</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">webkitIndexedDB</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">msIndexedDB</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6"><span class="co">// DON&#39;T use &quot;var indexedDB = ...&quot; if you&#39;re not in a function.</span></a>
+<a class="sourceLine" id="cb3-7" title="7"><span class="co">// Moreover, you may need references to some window.IDB* objects:</span></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="va">window</span>.<span class="at">IDBTransaction</span> <span class="op">=</span> <span class="va">window</span>.<span class="at">IDBTransaction</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">webkitIDBTransaction</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">msIDBTransaction</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9"><span class="va">window</span>.<span class="at">IDBKeyRange</span> <span class="op">=</span> <span class="va">window</span>.<span class="at">IDBKeyRange</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">webkitIDBKeyRange</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">msIDBKeyRange</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10"><span class="co">// (Mozilla has never prefixed these objects, so we don&#39;t</span></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="co">//  need window.mozIDB*)</span></a>
+<a class="sourceLine" id="cb3-12" title="12"></a>
+<a class="sourceLine" id="cb3-13" title="13"><span class="co">// Let us open version 4 of our database</span></a>
+<a class="sourceLine" id="cb3-14" title="14"><span class="kw">var</span> DBOpenRequest <span class="op">=</span> <span class="va">window</span>.<span class="va">indexedDB</span>.<span class="at">open</span>(<span class="st">&quot;toDoList&quot;</span><span class="op">,</span> <span class="dv">4</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-15" title="15"></a>
+<a class="sourceLine" id="cb3-16" title="16"><span class="co">// these two event handlers act on the database being opened</span></a>
+<a class="sourceLine" id="cb3-17" title="17"><span class="co">// successfully, or not</span></a>
+<a class="sourceLine" id="cb3-18" title="18"><span class="va">DBOpenRequest</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-19" title="19">  <span class="va">note</span>.<span class="at">innerHTML</span> <span class="op">+=</span> <span class="st">&#39;&lt;li&gt;Error loading database.&lt;/li&gt;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-20" title="20"><span class="op">};</span></a>
+<a class="sourceLine" id="cb3-21" title="21"></a>
+<a class="sourceLine" id="cb3-22" title="22"><span class="va">DBOpenRequest</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-23" title="23">  <span class="va">note</span>.<span class="at">innerHTML</span> <span class="op">+=</span> <span class="st">&#39;&lt;li&gt;Database initialised.&lt;/li&gt;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-24" title="24"></a>
+<a class="sourceLine" id="cb3-25" title="25">  <span class="co">// store the result of opening the database in the db</span></a>
+<a class="sourceLine" id="cb3-26" title="26">  <span class="co">// variable. This is used a lot later on, for opening</span></a>
+<a class="sourceLine" id="cb3-27" title="27">  <span class="co">// transactions and suchlike.</span></a>
+<a class="sourceLine" id="cb3-28" title="28">  db <span class="op">=</span> <span class="va">DBOpenRequest</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-29" title="29"><span class="op">};</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/IndexedDB_API/Using_IndexedDB">Using IndexedDB</a></li>
+<li>Starting transactions: {{domxref(“IDBDatabase”)}}</li>
+<li>Using transactions: {{domxref(“IDBTransaction”)}}</li>
+<li>Setting a range of keys: {{domxref(“IDBKeyRange”)}}</li>
+<li>Retrieving and making changes to your data: {{domxref(“IDBObjectStore”)}}</li>
+<li>Using cursors: {{domxref(“IDBCursor”)}}</li>
+<li>Reference example: <a href="https://github.com/mdn/to-do-notifications/tree/gh-pages">To-do Notifications</a> (<a href="https://mdn.github.io/to-do-notifications/">view example live</a>.)</li>
+</ul>

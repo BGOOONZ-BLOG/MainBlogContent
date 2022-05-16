@@ -1,0 +1,76 @@
+<p>{{APIRef(“WebRTC”)}}</p>
+<p>The {{domxref(“RTCRtpSender”)}} method <strong><code>replaceTrack()</code></strong> replaces the track currently being used as the sender’s source with a new {{domxref(“MediaStreamTrack”)}}.</p>
+<p>The new track must be of the same media kind (audio, video, etc) and switching the track should not require negotiation.</p>
+<p>Among the use cases for <code>replaceTrack()</code> is the common need to switch between the rear- and front-facing cameras on a phone. With <code>replaceTrack()</code>, you can have a track object for each camera and switch between the two as needed. See the example {{anch(“Switching cameras”)}} below.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1">trackReplacedPromise <span class="op">=</span> <span class="va">sender</span>.<span class="at">replaceTrack</span>(newTrack)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>newTrack</code> {{optional_inline}}
+<ul>
+<li>: A {{domxref(“MediaStreamTrack”)}} specifying the track with which to replace the <code>RTCRtpSender</code>’s current source track. The new track’s {{domxref(“MediaStreamTrack.kind”, “kind”)}} must be the same as the current track’s, or the replace track request will fail.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A {{jsxref(“Promise”)}} which is fulfilled once the track has been successfully replaced. The promise is rejected if the track cannot be replaced for any reason; this is commonly because the change would require renegotiation of the codec, which is not allowed (see {{anch(“Things that require negotiation”)}}).</p>
+<p>If <code>newTrack</code> was omitted or was <code>null</code>, <code>replaceTrack()</code> stops the sender. No negotiation is required in this case.</p>
+<p>When the promise is fulfilled, the fulfillment handler receives a value of <code>undefined</code>.</p>
+<h3 id="exceptions">Exceptions</h3>
+<p>If the returned promise is rejected, one of the following exceptions is provided to the rejection handler:</p>
+<ul>
+<li><code>InvalidModificationError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if replacing the <code>RTCRtpSender</code>’s current track with the new one would require negotiation.</li>
+</ul></li>
+<li><code>InvalidStateError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if the track on which this method was called is stopped rather than running.</li>
+</ul></li>
+<li><code>TypeError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if the new track’s <code>kind</code> doesn’t match the original track.</li>
+</ul></li>
+</ul>
+<h2 id="usage-notes">Usage notes</h2>
+<h3 id="things-that-trigger-negotiation">Things that trigger negotiation</h3>
+<p>Not all track replacements require renegotiation. In fact, even changes that seem huge can be done without requiring negotation. Here are the changes that can trigger negotiaton:</p>
+<ul>
+<li>The new track has a resolution which is outside the bounds of the current track; that is, the new track is either wider or taller than the current one.</li>
+<li>The new track’s frame rate is high enough to cause the codec’s block rate to be exceeded.</li>
+<li>The new track is a video track and its raw or pre-encoded state differs from that of the original track.</li>
+<li>The new track is an audio track with a different number of channels fom the original.</li>
+<li>Media sources that have built-in encoders — such as hardware encoders — may not be able to provide the negotiated codec. Software sources may not implement the negotiated codec.</li>
+</ul>
+<h2 id="examples">Examples</h2>
+<h3 id="switching-video-cameras">Switching video cameras</h3>
+<pre><code>// example to change video camera, suppose selected value saved into window.selectedCamera
+
+navigator.mediaDevices
+  .getUserMedia({
+    video: {
+      deviceId: {
+        exact: window.selectedCamera
+      }
+    }
+  })
+  .then(function(stream) {
+    let videoTrack = stream.getVideoTracks()[0];
+    PCs.forEach(function(pc) {
+      var sender = pc.getSenders().find(function(s) {
+        return s.track.kind == videoTrack.kind;
+      });
+      console.log(&#39;found sender:&#39;, sender);
+      sender.replaceTrack(videoTrack);
+    });
+  })
+  .catch(function(err) {
+    console.error(&#39;Error happens:&#39;, err);
+  });</code></pre>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/WebRTC_API">WebRTC API</a></li>
+</ul>

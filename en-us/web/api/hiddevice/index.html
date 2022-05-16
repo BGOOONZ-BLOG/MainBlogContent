@@ -1,0 +1,87 @@
+<p>{{securecontext_header}}{{DefaultAPISidebar(“WebHID API”)}}</p>
+<p>The <strong><code>HIDDevice</code></strong> interface of the {{domxref(‘WebHID API’)}} represents a HID Device. It provides properties for accessing information about the device, methods for opening and closing the connection, and the sending and receiving of reports.</p>
+<p>{{InheritanceDiagram}}</p>
+<h2 id="properties">Properties</h2>
+<p>This interface also inherits properties from {{domxref(“EventTarget”)}}.</p>
+<ul>
+<li>{{domxref(“HIDDevice.opened”)}}{{ReadOnlyInline}}
+<ul>
+<li>: Returns a {{jsxref(“boolean”)}}, true if the device has an open connection.</li>
+</ul></li>
+<li>{{domxref(“HIDDevice.vendorId”)}}{{ReadOnlyInline}}
+<ul>
+<li>: Returns the vendorId of the HID device.</li>
+</ul></li>
+<li>{{domxref(“HIDDevice.productId”)}}{{ReadOnlyInline}}
+<ul>
+<li>: Returns the productID of the HID device.</li>
+</ul></li>
+<li>{{domxref(“HIDDevice.productName”)}}{{ReadOnlyInline}}
+<ul>
+<li>: Returns a {{domxref(“DOMString”,“string”)}} containing the product name of the HID device.</li>
+</ul></li>
+<li>{{domxref(“HIDDevice.collections”)}}{{ReadOnlyInline}}
+<ul>
+<li>: Returns an array of report formats for the HID device.</li>
+</ul></li>
+</ul>
+<h3 id="event-handlers">Event handlers</h3>
+<ul>
+<li>{{domxref(“HIDDevice.oninputreport”)}}
+<ul>
+<li>: An event handler that fires when a report is sent from the device.</li>
+</ul></li>
+</ul>
+<h2 id="methods">Methods</h2>
+<p>This interface also inherits methods from {{domxref(“EventTarget”)}}.</p>
+<ul>
+<li>{{domxref(“HIDDevice.open()”)}}
+<ul>
+<li>: Opens a connection to this HID device, and returns a {{jsxref(“Promise”)}} which resolves once the connection has been successful.</li>
+</ul></li>
+<li>{{domxref(“HIDDevice.close()”)}}
+<ul>
+<li>: Closes the connection to this HID device, and returns a {{jsxref(“Promise”)}} which resolves once the connection has been closed.</li>
+</ul></li>
+<li>{{domxref(“HIDDevice.sendReport()”)}}
+<ul>
+<li>: Sends an output report to this HID Device, and returns a {{jsxref(“Promise”)}} which resolves once the report has been sent.</li>
+</ul></li>
+<li>{{domxref(“HIDDevice.sendFeatureReport()”)}}
+<ul>
+<li>: Sends a feature report to this HID device, and returns a {{jsxref(“Promise”)}} which resolves once the report has been sent.</li>
+</ul></li>
+<li>{{domxref(“HIDDevice.receiveFeatureReport()”)}}
+<ul>
+<li>: Receives a feature report from this HID device in the form of a {{jsxref(“Promise”)}} which resolves with a {{jsxref(“DataView”)}}. This allows typed access to the contents of this message.</li>
+</ul></li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>The following example demonstrates listening for an <code>inputreport</code> event that will allow the application to detect which button is pressed on a Joy-Con Right device.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">device</span>.<span class="at">addEventListener</span>(<span class="st">&quot;inputreport&quot;</span><span class="op">,</span> event <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="kw">const</span> <span class="op">{</span> data<span class="op">,</span> device<span class="op">,</span> reportId <span class="op">}</span> <span class="op">=</span> event<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"></a>
+<a class="sourceLine" id="cb1-4" title="4">  <span class="co">// Handle only the Joy-Con Right device and a specific report ID.</span></a>
+<a class="sourceLine" id="cb1-5" title="5">  <span class="cf">if</span> (<span class="va">device</span>.<span class="at">productId</span> <span class="op">!==</span> <span class="bn">0x2007</span> <span class="op">&amp;&amp;</span> reportId <span class="op">!==</span> <span class="bn">0x3f</span>) <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-6" title="6"></a>
+<a class="sourceLine" id="cb1-7" title="7">  <span class="kw">const</span> value <span class="op">=</span> <span class="va">data</span>.<span class="at">getUint8</span>(<span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-8" title="8">  <span class="cf">if</span> (value <span class="op">===</span> <span class="dv">0</span>) <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-9" title="9"></a>
+<a class="sourceLine" id="cb1-10" title="10">  <span class="kw">const</span> someButtons <span class="op">=</span> <span class="op">{</span> <span class="dv">1</span><span class="op">:</span> <span class="st">&quot;A&quot;</span><span class="op">,</span> <span class="dv">2</span><span class="op">:</span> <span class="st">&quot;X&quot;</span><span class="op">,</span> <span class="dv">4</span><span class="op">:</span> <span class="st">&quot;B&quot;</span><span class="op">,</span> <span class="dv">8</span><span class="op">:</span> <span class="st">&quot;Y&quot;</span> <span class="op">};</span></a>
+<a class="sourceLine" id="cb1-11" title="11">  <span class="va">console</span>.<span class="at">log</span>(<span class="vs">`User pressed button </span><span class="sc">${</span>someButtons[value]<span class="sc">}</span><span class="vs">.`</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-12" title="12"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>In the following example <code>sendFeatureReport</code> is used to make a device blink.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> reportId <span class="op">=</span> <span class="dv">1</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="dv">10</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="co">// Turn off</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="cf">await</span> <span class="va">device</span>.<span class="at">sendFeatureReport</span>(reportId<span class="op">,</span> <span class="va">Uint32Array</span>.<span class="at">from</span>([<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span>]))<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="cf">await</span> <span class="at">waitFor</span>(<span class="dv">100</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="co">// Turn on</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="cf">await</span> <span class="va">device</span>.<span class="at">sendFeatureReport</span>(reportId<span class="op">,</span> <span class="va">Uint32Array</span>.<span class="at">from</span>([<span class="dv">512</span><span class="op">,</span> <span class="dv">0</span>]))<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="cf">await</span> <span class="at">waitFor</span>(<span class="dv">100</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="op">}</span></a></code></pre></div>
+<p>You can see more examples, and live demos in the article <a href="https://web.dev/hid/">Connecting to uncommon HID devices</a>.</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

@@ -1,0 +1,39 @@
+<p>{{APIRef(“Service Workers API”)}}</p>
+<p>An {{domxref(“EventListener”)}} property called whenever an event of type <code>statechange</code> is fired; it is basically fired anytime the {{domxref(“ServiceWorker.state”)}} changes.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">ServiceWorker</span>.<span class="at">onstatechange</span> <span class="op">=</span> <span class="kw">function</span>(statechangeevent) <span class="op">{</span> <span class="co">/* ... */</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="va">ServiceWorker</span>.<span class="at">addEventListener</span>(<span class="st">&#39;statechange&#39;</span><span class="op">,</span><span class="at"> function</span>(statechangeevent) <span class="op">{</span> <span class="co">/* ... */</span> <span class="op">}</span> )</a></code></pre></div>
+<h2 id="examples">Examples</h2>
+<p>This code snippet is from the <a href="https://github.com/GoogleChrome/samples/blob/gh-pages/service-worker/registration-events/index.html">service worker registration-events sample</a> (<a href="https://googlechrome.github.io/samples/service-worker/registration-events/">live demo</a>). The code listens for any change in the {{domxref(“ServiceWorker.state”)}} and returns its value.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> serviceWorker<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="cf">if</span> (<span class="va">registration</span>.<span class="at">installing</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  serviceWorker <span class="op">=</span> <span class="va">registration</span>.<span class="at">installing</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#kind&#39;</span>).<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;installing&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (<span class="va">registration</span>.<span class="at">waiting</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  serviceWorker <span class="op">=</span> <span class="va">registration</span>.<span class="at">waiting</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#kind&#39;</span>).<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;waiting&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (<span class="va">registration</span>.<span class="at">active</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-9" title="9">  serviceWorker <span class="op">=</span> <span class="va">registration</span>.<span class="at">active</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#kind&#39;</span>).<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;active&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-12" title="12"></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="cf">if</span> (serviceWorker) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-14" title="14">  <span class="at">logState</span>(<span class="va">serviceWorker</span>.<span class="at">state</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-15" title="15">  <span class="va">serviceWorker</span>.<span class="at">addEventListener</span>(<span class="st">&#39;statechange&#39;</span><span class="op">,</span> <span class="kw">function</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-16" title="16">  <span class="at">logState</span>(<span class="va">e</span>.<span class="va">target</span>.<span class="at">state</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-17" title="17">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18"><span class="op">}</span></a></code></pre></div>
+<p>Note that when <code>statechange</code> fires, the service worker’s references may have changed. For example:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="va">navigator</span>.<span class="va">serviceWorker</span>.<span class="at">register</span>(..).<span class="at">then</span>(<span class="kw">function</span>(swr) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="va">swr</span>.<span class="va">installing</span>.<span class="at">state</span> <span class="op">==</span> <span class="st">&quot;installing&quot;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="va">swr</span>.<span class="va">installing</span>.<span class="at">onstatechange</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="va">swr</span>.<span class="at">installing</span> <span class="op">==</span> <span class="kw">null</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">    <span class="co">// At this point, swr.waiting OR swr.active might be true. This is because the statechange</span></a>
+<a class="sourceLine" id="cb3-6" title="6">    <span class="co">// event gets queued, meanwhile the underlying worker may have gone into the waiting</span></a>
+<a class="sourceLine" id="cb3-7" title="7">    <span class="co">// state and will be immediately activated if possible.</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-9" title="9"><span class="op">}</span>)</a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

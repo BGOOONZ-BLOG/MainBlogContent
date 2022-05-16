@@ -1,0 +1,202 @@
+<p>{{securecontext_header}}{{APIRef(“Payment Request API”)}}</p>
+<p>The <strong>{{domxref(‘PaymentRequest’)}}</strong> interface’s <strong><code>show()</code></strong> method instructs the user agent to begin the process of showing and handling the user interface for the payment request to the user.</p>
+<p>For security reasons, the <code>PaymentRequest.show()</code> method can’t just be initiated at any time. It may only be called while handling events that represent user interactions, such as {{event(“click”)}}, {{event(“keyup”)}}, or the like.</p>
+<p>Only one payment request can be in the process of being handled at once, across all documents. Once one <code>PaymentRequest</code>’s <code>show()</code> method has been called, any other call to <code>show()</code> will by rejected with an <code>AbortError</code> until the returned promise has been concluded, either by being fulfilled with a {{domxref(“PaymentResponse”)}} indicating the results of the payment request, or by being rejected with an error.</p>
+<blockquote>
+<p><strong>Note:</strong> In reality, despite the fact that the specification says this can’t be done, some browsers, including Firefox, support multiple active payment requests at a time.</p>
+</blockquote>
+<p>If your architecture doesn’t necessarily have all of the data ready to go at the moment it instantiates the payment interface by calling <code>show()</code>, specify the <code>detailsPromise</code> parameter, providing a {{jsxref(“Promise”)}} that is fulfilled once the data is ready. If this is provided, <code>show()</code> will not allow the user to interact with the payment interface until the promise is fulfilled, so that data can be updated prior to the user engaging with the payment process.</p>
+<p>Processing the result and, if necessary, calling {{domxref(“PaymentResponse.retry()”)}} to retry a failed payment can all be done either asynchronously or synchronously, depending on your needs. For the best user experience, asynchronous solutions are typically the best way to go. Most examples on MDN and elsewhere use <a href="/en-US/docs/Web/JavaScript/Reference/Statements/async_function"><code>async</code></a>/<a href="/en-US/docs/Web/JavaScript/Reference/Operators/await"><code>await</code></a> to wait asynchronously while results are validated and so forth.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1">paymentPromise <span class="op">=</span> <span class="va">paymentRequest</span>.<span class="at">show</span>(detailsPromise)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><p><code>detailsPromise</code> {{optional_inline}}</p>
+<ul>
+<li><p>: An optional {{jsxref(“Promise”)}} that you can provide if your architecture requires that the payment request’s details need to be updated between instantiating the payment interface and the user beginning to interact with it. The promise should resolve with an object containing the updated information:</p>
+<ul>
+<li><code>displayItems</code> {{optional_inline}}
+<ul>
+<li><p>: An array of objects, each describing one line item for the payment request. These represent the line items on a receipt or invoice, each with the following properties:</p>
+<ul>
+<li><code>amount</code>
+<ul>
+<li>: An object describing the monetary value of the item. This object includes the following fields:
+<ul>
+<li><code>currency</code>: A string containing a valid 3-letter <a href="https://www.iso.org/iso-4217-currency-codes.html">ISO 4217</a> currency identifier ({{interwiki(“wikipedia”, “ISO 4217”)}}) indicating the currency used for the payment <code>value</code>.</li>
+<li><code>value</code>: A string containing a valid decimal value representing the mount of currency constituting the payment amount. This string must only contain an optional leading “-” to indicate a negative value, then one or more digits from 0 to 9, and an optional decimal point (“.”, regardless of locale) followed by at least one more digit. No whitespace is permitted.</li>
+</ul></li>
+</ul></li>
+<li><code>label</code>
+<ul>
+<li>: A string specifying a human-readable name or description of the item or service being charged for. This may be displayed to the user by the {{Glossary(“user agent”)}}, depending on the design of the interface.</li>
+</ul></li>
+<li><code>pending</code>
+<ul>
+<li>: A Boolean value which is <code>true</code> if the specified <code>amount</code> has not yet been finalized. This can be used to show items such as shipping or tax amounts that depend upon the selection of shipping address, shipping option, or so forth. The user agent may show this information but is not required to do so.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li><code>error</code> {{optional_inline}}{{deprecated_inline}}
+<ul>
+<li>: A {{domxref(“DOMString”)}} specifying an error message to present to the user<em>.</em> When calling {{domxref(“PaymentRequestUpdateEvent.updateWith”, “updateWith()”)}}, including <code>error</code> in the updated data causes the {{Glossary(“user agent”)}} to display the text as a general error message. For address field specific errors, use <code>shippingAddressErrors</code>.</li>
+</ul></li>
+<li><code>modifiers</code> {{optional_inline}}
+<ul>
+<li>: An array of {{domxref(“PaymentDetailsModifier”)}} objects, each describing a modifier for particular payment method identifiers. For example, you can use one to adjust the total payment amount based on the selected payment method (“5% cash discount!”).</li>
+</ul></li>
+<li><code>shippingAddressErrors</code> {{optional_inline}}{{deprecated_inline}}
+<ul>
+<li>: An {{domxref(“AddressErrors”)}} object which includes an error message for each property of the shipping address that could not be validated.</li>
+</ul></li>
+<li><code>shippingOptions</code> {{optional_inline}}
+<ul>
+<li>: An array of {{domxref(“PaymentShippingOption”)}} objects, each describing one available shipping option from which the user may choose.</li>
+</ul></li>
+<li><code>total</code> {{optional_inline}}
+<ul>
+<li>: An object with the same properties as the objects in <code>displayItems</code> providing an updated total for the payment. Make sure this equals the sum of all of the items in <code>displayItems</code>. <em>This is not calculated automatically</em>. You must update this value yourself anytime the total amount due changes. This lets you have flexibility for how to handle things like tax, discounts, and other adjustments to the total price charged.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>A {{jsxref(“Promise”)}} that eventually resolves with a {{domxref(“PaymentResponse”)}}. The promise is resolved when the user accepts the payment request (such as by clicking a “Pay” button in the browser’s payment sheet).</p>
+<h3 id="exceptions">Exceptions</h3>
+<p>Exceptions are not thrown but returned when the {{jsxref(“Promise”)}} rejects.</p>
+<ul>
+<li><code>AbortError</code> {{domxref(“DOMException”)}}
+<ul>
+<li><p>: Returned if the {{Glossary(“user agent”)}} is already showing a payment panel. Only one payment panel may be visible at a time <em>across all documents loaded by the user agent</em>.</p>
+The promise is also rejected with <code>AbortError</code> if the user cancels the payment request.</li>
+</ul></li>
+<li><code>InvalidStateError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if the same payment has already been shown for this request (its state is <code>interactive</code> because it is being shown already).</li>
+</ul></li>
+<li><code>NotSupportedError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if the user agent does not support the payment methods specified when the {{domxref(“PaymentRequest.PaymentRequest”,“PaymentRequest”)}} constructor was called.</li>
+</ul></li>
+<li><code>SecurityError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Returned if the call to <code>show()</code> was not in response to a user action, such as a {{event(“click”)}} or {{event(“keyup”)}} event. Other reasons a <code>SecurityError</code> may be thrown are at the discretion of the user agent, and may include situations such as too many calls to <code>show()</code> being made in a short time or <code>show()</code> being called while payment requests are blocked by parental controls.</li>
+</ul></li>
+</ul>
+<h2 id="usage-notes">Usage notes</h2>
+<p>The most common patterns for using <code>show()</code> involve either the <a href="/en-US/docs/Web/JavaScript/Reference/Statements/async_function"><code>async</code></a>/<a href="/en-US/docs/Web/JavaScript/Reference/Operators/await"><code>await</code></a> syntax or the use of <code>show().then().catch()</code> to handle the response and any possible rejection. Those look like this:</p>
+<h3 id="asyncawait-syntax">async/await syntax</h3>
+<p>Using <code>await</code> to wait for a promise to be resolved makes it possible to write the code to handle payments particularly cleanly:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">async</span> <span class="kw">function</span> <span class="at">processPayment</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="cf">try</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3">    <span class="kw">const</span> payRequest <span class="op">=</span> <span class="kw">new</span> <span class="at">PaymentRequest</span>(methodData<span class="op">,</span> details<span class="op">,</span> options)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="va">payRequest</span>.<span class="at">onshippingaddresschange</span> <span class="op">=</span> ev <span class="kw">=&gt;</span> <span class="va">ev</span>.<span class="at">updateWith</span>(<span class="at">checkAddress</span>(payRequest))<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">    <span class="va">payRequest</span>.<span class="at">onshippingoptionchange</span> <span class="op">=</span> ev <span class="kw">=&gt;</span> <span class="va">ev</span>.<span class="at">updateWith</span>(<span class="at">checkShipping</span>(payRequest))<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"></a>
+<a class="sourceLine" id="cb2-8" title="8">    <span class="kw">const</span> response <span class="op">=</span> <span class="cf">await</span> <span class="va">payRequest</span>.<span class="at">show</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9">    <span class="cf">await</span> <span class="at">validateResponse</span>(response)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="op">}</span> <span class="cf">catch</span>(err) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-11" title="11">    <span class="co">/* handle the error; AbortError usually means a user cancellation */</span></a>
+<a class="sourceLine" id="cb2-12" title="12">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="op">}</span></a></code></pre></div>
+<p>In this code, the methods <code>checkAddress()</code> and <code>checkShipping()</code>, respectively, check the shipping address and the shipping option changes and supply in response either an object or a promise to return one; this object contains the fields in the {{domxref(“PaymentResponse”)}} which have been or need to be changed.</p>
+<p>The <code>validateResponse()</code> method, below, is called once <code>show()</code> returns, in order to look at the returned <code>response</code> and either submit the payment or reject the payment as failed:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">async</span> <span class="kw">function</span> <span class="at">validateResponse</span>(response) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="cf">try</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="cf">if</span> (<span class="cf">await</span> <span class="at">checkAllValues</span>(response)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">      <span class="cf">await</span> <span class="va">response</span>.<span class="at">complete</span>(<span class="st">&quot;success&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-6" title="6">      <span class="cf">await</span> <span class="va">response</span>.<span class="at">complete</span>(<span class="st">&quot;fail&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="op">}</span> <span class="cf">catch</span>(err) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-9" title="9">    <span class="cf">await</span> <span class="va">response</span>.<span class="at">complete</span>(<span class="st">&quot;fail&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="op">}</span></a></code></pre></div>
+<p>Here, a custom function called <code>checkAllValues()</code> looks at each value in the <code>response</code> and ensures that they’re valid, returning <code>true</code> if every field is valid or <code>false</code> if any are not. If and only if every field is valid, the {{domxref(“PaymentResponse.complete”, “complete()”)}} method is called on the response with the string <code>"success"</code>, which indicates that everything is valid and that the payment can complete accordingly.</p>
+<p>If any fields have unacceptable values, or if an exception is thrown by the previous code, <code>complete()</code> is called with the string <code>"fail"</code>, which indicates that the payment process is complete and failed.</p>
+<p>Instead of immediately failing, you could choose to call {{domxref(“PaymentResponse.retry”, “retry()”)}} on the response object to ask the user agent to try to process the payment again; this should usually only be done after the user has made any needed corrections to the order.</p>
+<p>Starting the payment process, in the end, is as simple as calling the <code>processPayment()</code> method.</p>
+<h3 id="thencatch-syntax">then/catch syntax</h3>
+<p>You can also use the older promise-based approach to work with payments, using the {{jsxref(“Promise.then”, “then()”)}} and {{jsxref(“Promise.catch”, “catch()”)}} functions on the promise returned by <code>show()</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">function</span> <span class="at">processsPayment</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="kw">const</span> payRequest <span class="op">=</span> <span class="kw">new</span> <span class="at">PaymentRequest</span>(methodData<span class="op">,</span> details<span class="op">,</span> options)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"></a>
+<a class="sourceLine" id="cb4-4" title="4">  <span class="va">payRequest</span>.<span class="at">onshippingaddresschange</span> <span class="op">=</span> ev <span class="kw">=&gt;</span> <span class="va">ev</span>.<span class="at">updateWith</span>(<span class="at">checkAddress</span>(payRequest))<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="va">payRequest</span>.<span class="at">onshippingoptionchange</span> <span class="op">=</span> ev <span class="kw">=&gt;</span> <span class="va">ev</span>.<span class="at">updateWith</span>(<span class="at">checkShipping</span>(payRequest))<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-6" title="6"></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="va">payRequest</span>.<span class="at">show</span>()</a>
+<a class="sourceLine" id="cb4-8" title="8">    .<span class="at">then</span>(response <span class="kw">=&gt;</span> <span class="at">validateResponse</span>(response))</a>
+<a class="sourceLine" id="cb4-9" title="9">    .<span class="at">catch</span>(err <span class="kw">=&gt;</span> <span class="at">handleError</span>(err))<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-10" title="10"><span class="op">}</span></a></code></pre></div>
+<p>This is functionally equivalent to the <code>processPayment()</code> method using the <code>await</code> syntax.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">function</span> <span class="at">validateResponse</span>(response) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="at">checkAllValues</span>(response)</a>
+<a class="sourceLine" id="cb5-3" title="3">    .<span class="at">then</span>(response <span class="kw">=&gt;</span> <span class="va">response</span>.<span class="at">complete</span>(<span class="st">&quot;success&quot;</span>))</a>
+<a class="sourceLine" id="cb5-4" title="4">    .<span class="at">catch</span>(response <span class="kw">=&gt;</span> <span class="va">response</span>.<span class="at">complete</span>(<span class="st">&quot;fail&quot;</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="op">}</span></a></code></pre></div>
+<p>You could even have <code>checkAllValues()</code> be a synchronous function, although that may have performance implications you don’t want to deal with:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">function</span> <span class="at">validateResponse</span>(response) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="cf">if</span> (<span class="at">checkAllValues</span>(response) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-3" title="3">    <span class="va">response</span>.<span class="at">complete</span>(<span class="st">&quot;success&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-4" title="4">  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-5" title="5">    <span class="va">response</span>.<span class="at">complete</span>(<span class="st">&quot;fail&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-6" title="6">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-7" title="7"><span class="op">}</span></a></code></pre></div>
+<p>See the article <a href="/en-US/docs/Web/JavaScript/Guide/Using_promises">Using promises</a> for more information if you need more information about working with promises.</p>
+<h2 id="examples">Examples</h2>
+<p>In the following example, a <code>PaymentRequest</code> object is instantiated before the <code>show()</code> method is called. This method triggers the user agent’s built-in process for retrieving payment information from the user. The <code>show()</code> method returns a {{jsxref(‘Promise’)}} that resolves to a {{domxref(“PaymentResponse”)}} object when the user interaction is complete. The developer then uses the information in the <code>PaymentResponse</code> object to format and send payment data to the server. You should send the payment information to the server asynchronously so that the final call to {{domxref(“paymentResponse.complete()”)}} can indicate the success or failure of the payment.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="va">button</span>.<span class="at">onclick</span> <span class="op">=</span> <span class="kw">async</span> <span class="kw">function</span> <span class="at">handlePurchase</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="co">// Initialization of PaymentRequest arguments are excerpted for the sake of</span></a>
+<a class="sourceLine" id="cb7-3" title="3">  <span class="co">// brevity.</span></a>
+<a class="sourceLine" id="cb7-4" title="4">  <span class="kw">const</span> payment <span class="op">=</span> <span class="kw">new</span> <span class="at">PaymentRequest</span>(methods<span class="op">,</span> details<span class="op">,</span> options)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-5" title="5">  <span class="cf">try</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-6" title="6">    <span class="kw">const</span> response <span class="op">=</span> <span class="cf">await</span> <span class="va">payment</span>.<span class="at">show</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-7" title="7">    <span class="co">// Process response here, including sending payment instrument</span></a>
+<a class="sourceLine" id="cb7-8" title="8">    <span class="co">// (e.g., credit card) information to the server.</span></a>
+<a class="sourceLine" id="cb7-9" title="9">    <span class="co">// paymentResponse.methodName contains the selected payment method</span></a>
+<a class="sourceLine" id="cb7-10" title="10">    <span class="co">// paymentResponse.details contains a payment method specific response</span></a>
+<a class="sourceLine" id="cb7-11" title="11">    <span class="cf">await</span> <span class="va">response</span>.<span class="at">complete</span>(<span class="st">&quot;success&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-12" title="12">  <span class="op">}</span> <span class="cf">catch</span> (err) <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-13" title="13">    <span class="va">console</span>.<span class="at">error</span>(<span class="st">&quot;Uh oh, something bad happened&quot;</span><span class="op">,</span> <span class="va">err</span>.<span class="at">message</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-14" title="14">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb7-15" title="15"><span class="op">}</span></a></code></pre></div>
+<p>The following example shows how to update the payment sheet as it’s being presented to the end-user.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">async</span> <span class="kw">function</span> <span class="at">requestPayment</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-2" title="2">  <span class="co">// We start with AU$0 as the total.</span></a>
+<a class="sourceLine" id="cb8-3" title="3">  <span class="kw">const</span> initialDetails <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-4" title="4">    <span class="dt">total</span><span class="op">:</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-5" title="5">      <span class="dt">label</span><span class="op">:</span> <span class="st">&quot;Total&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb8-6" title="6">      <span class="dt">amount</span><span class="op">:</span> <span class="op">{</span> <span class="dt">value</span><span class="op">:</span> <span class="st">&quot;0&quot;</span><span class="op">,</span> <span class="dt">currency</span><span class="op">:</span> <span class="st">&quot;AUD&quot;</span> <span class="op">},</span></a>
+<a class="sourceLine" id="cb8-7" title="7">    <span class="op">},</span></a>
+<a class="sourceLine" id="cb8-8" title="8">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb8-9" title="9">  <span class="kw">const</span> request <span class="op">=</span> <span class="kw">new</span> <span class="at">PaymentRequest</span>(methods<span class="op">,</span> initialDetails<span class="op">,</span> options)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-10" title="10">  <span class="co">// Check if the user supports the `methods`</span></a>
+<a class="sourceLine" id="cb8-11" title="11">  <span class="cf">if</span> (<span class="op">!</span><span class="cf">await</span> <span class="va">request</span>.<span class="at">canMakePayment</span>()) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-12" title="12">    <span class="cf">return</span><span class="op">;</span> <span class="co">// no, so use a web form instead.</span></a>
+<a class="sourceLine" id="cb8-13" title="13">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb8-14" title="14">  <span class="co">// Let&#39;s update the total as the sheet is shown</span></a>
+<a class="sourceLine" id="cb8-15" title="15">  <span class="kw">const</span> updatedDetails <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-16" title="16">    <span class="dt">total</span><span class="op">:</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-17" title="17">      <span class="dt">label</span><span class="op">:</span> <span class="st">&quot;Total&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb8-18" title="18">      <span class="dt">amount</span><span class="op">:</span> <span class="op">{</span> <span class="dt">value</span><span class="op">:</span> <span class="st">&quot;20&quot;</span><span class="op">,</span> <span class="dt">currency</span><span class="op">:</span> <span class="st">&quot;AUD&quot;</span> <span class="op">},</span></a>
+<a class="sourceLine" id="cb8-19" title="19">    <span class="op">},</span></a>
+<a class="sourceLine" id="cb8-20" title="20">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb8-21" title="21">  <span class="kw">const</span> response <span class="op">=</span> <span class="cf">await</span> <span class="va">request</span>.<span class="at">show</span>(updatedDetails)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-22" title="22">  <span class="co">// Check response, etc...</span></a>
+<a class="sourceLine" id="cb8-23" title="23"><span class="op">}</span></a>
+<a class="sourceLine" id="cb8-24" title="24"></a>
+<a class="sourceLine" id="cb8-25" title="25"><span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;buyButton&quot;</span>).<span class="at">onclick</span> <span class="op">=</span> requestPayment<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Payment_Request_API">Payment Request API</a></li>
+<li><a href="/en-US/docs/Web/API/Payment_Request_API/Using_the_Payment_Request_API">Using the Payment Request API</a></li>
+<li>{{domxref(‘PaymentRequest.abort()’)}}</li>
+<li>{{domxref(“PaymentRequest.retry()”)}}</li>
+<li>{{domxref(“PaymentRequest.complete()”)}}</li>
+<li>{{domxref(“PaymentResponse”)}}</li>
+</ul>

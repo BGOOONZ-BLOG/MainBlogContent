@@ -1,0 +1,43 @@
+<p>{{APIRef(“WebRTC”)}}</p>
+<p>The read-only <strong>{{domxref(“RTCPeerConnection”)}}</strong> property <strong><code>canTrickleIceCandidates</code></strong> returns a boolean value which indicates whether or not the remote peer can accept <a href="https://datatracker.ietf.org/doc/html/draft-ietf-mmusic-trickle-ice">trickled ICE candidates</a>.</p>
+<p><strong>ICE trickling</strong> is the process of continuing to send candidates after the initial offer or answer has already been sent to the other peer.</p>
+<p>This property is only set after having called {{domxref(“RTCPeerConnection.setRemoteDescription()”)}}. Ideally, your signaling protocol provides a way to detect trickling support, so that you don’t need to rely on this property. A WebRTC browser will always support trickle ICE. If trickling isn’t supported, or you aren’t able to tell, you can check for a falsy value for this property and then wait until the value of {{domxref(“RTCPeerConnection.iceGatheringState”, “iceGatheringState”)}} changes to <code>"completed"</code> before creating and sending the initial offer. That way, the offer contains all of the candidates.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> canTrickle <span class="op">=</span> <span class="va">RTCPeerConnection</span>.<span class="at">canTrickleIceCandidates</span><span class="op">;</span></a></code></pre></div>
+<h3 id="value">Value</h3>
+<p>A boolean value that is <code>true</code> if the remote peer can accept trickled ICE candidates and <code>false</code> if it cannot. If no remote peer has been established, this value is <code>null</code>.</p>
+<blockquote>
+<p><strong>Note:</strong> This property’s value is determined once the local peer has called {{domxref(“RTCPeerConnection.setRemoteDescription()”)}}; the provided description is used by the ICE agent to determine whether or not the remote peer supports trickled ICE candidates.</p>
+</blockquote>
+<h2 id="example">Example</h2>
+<pre><code>const pc = new RTCPeerConnection();
+
+function waitToCompleteIceGathering(pc) {
+    return new Promise(resolve =&gt; {
+        pc.addEventListener(&#39;icegatheringstatechange&#39;, e =&gt; (e.target.iceGatheringState === &#39;complete&#39;) &amp;&amp; resolve(pc.localDescription));
+    });
+}
+
+// The following code might be used to handle an offer from a peer when
+// it isn&#39;t known whether it supports trickle ICE.
+async function newPeer(remoteOffer) {
+    await pc.setRemoteDescription(remoteOffer);
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    if (pc.canTrickleIceCandidates) return pc.localDescription;
+    const answer = await waitToCompleteIceGathering(pc);
+    sendAnswerToPeer(answer); //To peer via signaling channel
+}
+// Handle error with try/catch
+
+pc.addEventListener(&#39;icecandidate&#39;, e =&gt; (pc.canTrickleIceCandidates) &amp;&amp; sendCandidateToPeer(e.candidate));</code></pre>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/WebRTC_API">WebRTC</a></li>
+<li>{{domxref(“RTCPeerConnection.addIceCandidate()”)}}</li>
+<li><a href="/en-US/docs/Web/API/WebRTC_API/Session_lifetime">Lifetime of a WebRTC session</a></li>
+</ul>

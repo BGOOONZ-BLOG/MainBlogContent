@@ -1,0 +1,84 @@
+<p>{{APIRef}}</p>
+<p>The <code>message</code> event is fired on a {{domxref(‘MessagePort’)}} object when a message arrives on that channel.</p>
+<table class="properties">
+<tbody>
+<tr>
+<th scope="row">
+Bubbles
+</th>
+<td>
+No
+</td>
+</tr>
+<tr>
+<th scope="row">
+Cancelable
+</th>
+<td>
+No
+</td>
+</tr>
+<tr>
+<th scope="row">
+Interface
+</th>
+<td>
+{{domxref(“MessageEvent”)}}
+</td>
+</tr>
+<tr>
+<th scope="row">
+Event handler property
+</th>
+<td>
+<code
+          ><a href="/en-US/docs/Web/API/MessagePort/onmessage"
+            >onmessage</a
+          ></code
+        >
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="examples">Examples</h2>
+<p>Suppose a script creates a <a href="/en-US/docs/Web/API/MessageChannel"><code>MessageChannel</code></a> and sends one of the ports to a different browsing context, such as another <a href="/en-US/docs/Web/HTML/Element/iframe"><code>&lt;iframe&gt;</code></a>, using code like this:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> channel <span class="op">=</span> <span class="kw">new</span> <span class="at">MessageChannel</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">const</span> myPort <span class="op">=</span> <span class="va">channel</span>.<span class="at">port1</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">const</span> targetFrame <span class="op">=</span> <span class="va">window</span>.<span class="va">top</span>.<span class="at">frames</span>[<span class="dv">1</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="kw">const</span> targetOrigin <span class="op">=</span> <span class="st">&#39;https://example.org&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-5" title="5"></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="kw">const</span> messageControl <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#message&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="kw">const</span> channelMessageButton <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#channel-message&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-8" title="8"></a>
+<a class="sourceLine" id="cb1-9" title="9"><span class="va">channelMessageButton</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-10" title="10">    <span class="va">myPort</span>.<span class="at">postMessage</span>(<span class="va">messageControl</span>.<span class="at">value</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-11" title="11"><span class="op">}</span>)</a>
+<a class="sourceLine" id="cb1-12" title="12"></a>
+<a class="sourceLine" id="cb1-13" title="13"><span class="va">targetFrame</span>.<span class="at">postMessage</span>(<span class="st">&#39;init&#39;</span><span class="op">,</span> targetOrigin<span class="op">,</span> [<span class="va">channel</span>.<span class="at">port2</span>])<span class="op">;</span></a></code></pre></div>
+<p>The target can receive the port and start listening for messages on it using code like this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">window</span>.<span class="at">addEventListener</span>(<span class="st">&#39;message&#39;</span><span class="op">,</span> (event) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">    <span class="kw">const</span> myPort <span class="op">=</span> <span class="va">event</span>.<span class="at">ports</span>[<span class="dv">0</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4">    <span class="va">myPort</span>.<span class="at">addEventListener</span>(<span class="st">&#39;message&#39;</span><span class="op">,</span> (event) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">        <span class="va">received</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="va">event</span>.<span class="at">data</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"></a>
+<a class="sourceLine" id="cb2-8" title="8">    <span class="va">myPort</span>.<span class="at">start</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>Note that the listener must call <a href="/en-US/docs/Web/API/MessagePort/start"><code>MessagePort.start()</code></a> before any messages will be delivered to this port. This is only needed when using the <a href="/en-US/docs/Web/API/EventTarget/addEventListener"><code>addEventListener()</code></a> method: if the receiver uses <a href="/en-US/docs/Web/API/MessagePort/onmessage"><code>onmessage</code></a> instead, <code>start()</code> is called implicitly:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="va">window</span>.<span class="at">addEventListener</span>(<span class="st">&#39;message&#39;</span><span class="op">,</span> (event) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">    <span class="kw">const</span> myPort <span class="op">=</span> <span class="va">event</span>.<span class="at">ports</span>[<span class="dv">0</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"></a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="va">myPort</span>.<span class="at">onmessage</span> <span class="op">=</span> (event) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-5" title="5">        <span class="va">received</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="va">event</span>.<span class="at">data</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb3-7" title="7"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>Related events: <a href="/en-US/docs/Web/API/MessagePort/messageerror_event"><code>messageerror</code></a>.</li>
+<li><a href="/en-US/docs/Web/API/Channel_Messaging_API/Using_channel_messaging">Using channel messaging</a></li>
+</ul>

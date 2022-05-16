@@ -1,0 +1,61 @@
+<p>{{non-standard_header}}{{deprecated_header}}</p>
+<p>The parameter passed into the {{domxref(“ServiceWorkerGlobalScope.oninstall”, “oninstall”)}} handler, the <code>InstallEvent</code> interface represents an install action that is dispatched on the {{domxref(“ServiceWorkerGlobalScope”)}} of a {{domxref(“ServiceWorker”)}}. As a child of {{domxref(“ExtendableEvent”)}}, it ensures that functional events such as {{domxref(“FetchEvent”)}} are not dispatched during installation.</p>
+<p>This interface inherits from the {{domxref(“ExtendableEvent”)}} interface.</p>
+<p>{{InheritanceDiagram}}</p>
+<h2 id="constructor">Constructor</h2>
+<ul>
+<li>{{domxref(“InstallEvent.InstallEvent()”)}}
+<ul>
+<li>: Creates a new <code>InstallEvent</code> object.</li>
+</ul></li>
+</ul>
+<h2 id="properties">Properties</h2>
+<p><em>Inherits properties from its ancestor, {{domxref(“Event”)}}</em>.</p>
+<ul>
+<li>{{domxref(“InstallEvent.activeWorker”)}} {{readonlyInline}}
+<ul>
+<li>: Returns the {{domxref(“ServiceWorker”)}} that is currently controlling the page.</li>
+</ul></li>
+</ul>
+<h2 id="methods">Methods</h2>
+<p><em>Inherits methods from its parent, {{domxref(“ExtendableEvent”)}}</em>.</p>
+<h2 id="examples">Examples</h2>
+<p>This code snippet is from the <a href="https://github.com/GoogleChrome/samples/blob/gh-pages/service-worker/prefetch/service-worker.js">service worker prefetch sample</a> (see <a href="https://googlechrome.github.io/samples/service-worker/prefetch/">prefetch running live</a>.) The code calls {{domxref(“ExtendableEvent.waitUntil”, “ExtendableEvent.waitUntil()”)}} in {{domxref(“ServiceWorkerGlobalScope.oninstall”)}} and delays treating the {{domxref(“ServiceWorkerRegistration.installing”)}} worker as installed until the passed promise resolves successfully. The promise resolves when all resources have been fetched and cached, or when any exception occurs.</p>
+<p>The code snippet also shows a best practice for versioning caches used by the service worker. Although this example has only one cache, you can use this approach for multiple caches. The code maps a shorthand identifier for a cache to a specific, versioned cache name.</p>
+<blockquote>
+<p><strong>Note:</strong> Logging statements are visible in Google Chrome via the “Inspect” interface for the relevant service worker accessed via chrome://serviceworker-internals.</p>
+</blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> CACHE_VERSION <span class="op">=</span> <span class="dv">1</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">var</span> CURRENT_CACHES <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="dt">prefetch</span><span class="op">:</span> <span class="st">&#39;prefetch-cache-v&#39;</span> <span class="op">+</span> CACHE_VERSION</a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="op">};</span></a>
+<a class="sourceLine" id="cb1-5" title="5"></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="va">self</span>.<span class="at">addEventListener</span>(<span class="st">&#39;install&#39;</span><span class="op">,</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-7" title="7">  <span class="kw">var</span> urlsToPrefetch <span class="op">=</span> [</a>
+<a class="sourceLine" id="cb1-8" title="8">    <span class="st">&#39;./static/pre_fetched.txt&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb1-9" title="9">    <span class="st">&#39;./static/pre_fetched.html&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb1-10" title="10">    <span class="st">&#39;https://www.chromium.org/_/rsrc/1302286216006/config/customLogo.gif&#39;</span></a>
+<a class="sourceLine" id="cb1-11" title="11">  ]<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-12" title="12"></a>
+<a class="sourceLine" id="cb1-13" title="13"><span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Handling install event. Resources to pre-fetch:&#39;</span><span class="op">,</span> urlsToPrefetch)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-14" title="14"></a>
+<a class="sourceLine" id="cb1-15" title="15">  <span class="va">event</span>.<span class="at">waitUntil</span>(</a>
+<a class="sourceLine" id="cb1-16" title="16">    <span class="va">caches</span>.<span class="at">open</span>(CURRENT_CACHES[<span class="st">&#39;prefetch&#39;</span>]).<span class="at">then</span>(<span class="kw">function</span>(cache) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-17" title="17">      <span class="cf">return</span> <span class="va">cache</span>.<span class="at">addAll</span>(<span class="va">urlsToPrefetch</span>.<span class="at">map</span>(<span class="kw">function</span>(urlToPrefetch) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-18" title="18">        <span class="cf">return</span> <span class="kw">new</span> <span class="at">Request</span>(urlToPrefetch<span class="op">,</span> <span class="op">{</span><span class="dt">mode</span><span class="op">:</span> <span class="st">&#39;no-cors&#39;</span><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-19" title="19">      <span class="op">}</span>)).<span class="at">then</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-20" title="20">        <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;All resources have been fetched and cached.&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-21" title="21">      <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-22" title="22">    <span class="op">}</span>).<span class="at">catch</span>(<span class="kw">function</span>(error) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-23" title="23">      <span class="va">console</span>.<span class="at">error</span>(<span class="st">&#39;Pre-fetching failed:&#39;</span><span class="op">,</span> error)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-24" title="24">    <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb1-25" title="25">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-26" title="26"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{domxref(“NotificationEvent”)}}</li>
+<li>{{jsxref(“Promise”)}}</li>
+<li><a href="/en-US/docs/Web/API/Fetch_API">Fetch API</a></li>
+</ul>

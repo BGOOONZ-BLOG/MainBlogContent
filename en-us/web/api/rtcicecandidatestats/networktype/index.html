@@ -1,0 +1,38 @@
+<p>{{APIRef(“WebRTC”)}}{{deprecated_header}}</p>
+<p>The {{domxref(“RTCIceCandidateStats”)}} dictionary’s <strong><code>networkType</code></strong> property specifies the type of network used by a local candidate to communicate with a remote peer.</p>
+<blockquote>
+<p><strong>Note:</strong> The <code>networkType</code> property is only included in <code>RTCIceCandidateStats</code> objects for local candidates (that is, candidates generated locally and included in an {{Glossary(“SDP”)}} offer or answer that has been sent to the remote peer).</p>
+</blockquote>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1">networkType <span class="op">=</span> <span class="va">rtcIceCandidateStats</span>.<span class="at">networkType</span><span class="op">;</span></a></code></pre></div>
+<h3 id="value">Value</h3>
+<p>A {{domxref(“DOMString”)}} whose value is taken from the {{domxref(“RTCNetworkType”)}} enumerated type. The string indicates the type of network connection that the described candidate would use to communicate with the other peer.</p>
+<p>The permitted values are:</p>
+<p>{{page(“/en-US/docs/Web/API/RTCNetworkType”, “Values”)}}</p>
+<h2 id="example">Example</h2>
+<p>This example sets up a periodic function using {{domxref(“setInterval()”)}} that outputs statistics reports for candidates that use or would use a cellular data network to a log view.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">window</span>.<span class="at">setInterval</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="va">myPeerConnection</span>.<span class="at">getStats</span>(<span class="kw">null</span>).<span class="at">then</span>(stats <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3">    <span class="kw">let</span> statsOutput <span class="op">=</span> <span class="st">&quot;&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="va">stats</span>.<span class="at">forEach</span>(report <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-6" title="6">      <span class="cf">if</span> ((<span class="va">stats</span>.<span class="at">type</span> <span class="op">===</span> <span class="st">&quot;local-candidate&quot;</span> <span class="op">||</span> <span class="va">stats</span>.<span class="at">type</span> <span class="op">===</span> <span class="st">&quot;remote.candidate&quot;</span>) <span class="op">&amp;&amp;</span> <span class="va">stats</span>.<span class="at">networkType</span> <span class="op">===</span> <span class="st">&quot;cellular&quot;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-7" title="7">        statsOutput <span class="op">+=</span> <span class="vs">`&lt;h2&gt;Report: </span><span class="sc">${</span><span class="va">report</span>.<span class="at">type</span><span class="sc">}</span><span class="vs">&lt;/h3&gt;</span><span class="sc">\n</span><span class="vs">&lt;strong&gt;ID:&lt;/strong&gt; </span><span class="sc">${</span><span class="va">report</span>.<span class="at">id</span><span class="sc">}</span><span class="vs">&lt;br&gt;</span><span class="sc">\n</span><span class="vs">`</span> <span class="op">+</span></a>
+<a class="sourceLine" id="cb2-8" title="8">                       <span class="vs">`&lt;strong&gt;Timestamp:&lt;/strong&gt; </span><span class="sc">${</span><span class="va">report</span>.<span class="at">timestamp</span><span class="sc">}</span><span class="vs">&lt;br&gt;</span><span class="sc">\n</span><span class="vs">`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"></a>
+<a class="sourceLine" id="cb2-10" title="10">        <span class="co">// Now the statistics for this report; we intentially drop the ones we</span></a>
+<a class="sourceLine" id="cb2-11" title="11">        <span class="co">// sorted to the top above</span></a>
+<a class="sourceLine" id="cb2-12" title="12"></a>
+<a class="sourceLine" id="cb2-13" title="13">        <span class="va">Object</span>.<span class="at">keys</span>(report).<span class="at">forEach</span>(statName <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-14" title="14">          <span class="cf">if</span> (statName <span class="op">!==</span> <span class="st">&quot;id&quot;</span> <span class="op">&amp;&amp;</span> statName <span class="op">!==</span> <span class="st">&quot;timestamp&quot;</span> <span class="op">&amp;&amp;</span> statName <span class="op">!==</span> <span class="st">&quot;type&quot;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-15" title="15">            statsOutput <span class="op">+=</span> <span class="vs">`&lt;strong&gt;</span><span class="sc">${</span>statName<span class="sc">}</span><span class="vs">:&lt;/strong&gt; </span><span class="sc">${</span>report[statName]<span class="sc">}</span><span class="vs">&lt;br&gt;</span><span class="sc">\n</span><span class="vs">`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-16" title="16">          <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-17" title="17">        <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-19" title="19">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-20" title="20"></a>
+<a class="sourceLine" id="cb2-21" title="21">    <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;.stats-box&quot;</span>).<span class="at">innerHTML</span> <span class="op">=</span> statsOutput<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-22" title="22">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-23" title="23"><span class="op">},</span> <span class="dv">1000</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

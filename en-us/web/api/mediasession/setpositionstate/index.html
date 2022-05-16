@@ -1,0 +1,64 @@
+<p>{{APIRef(“Media Session API”)}}</p>
+<p>The {{domxref(“MediaSession”)}} method <strong><code>setPositionState()</code></strong> is used to update the current document’s media playback position and speed for presentation by user’s device in any kind of interface that provides details about ongoing media. This can be particularly useful if your code implements a player for type of media not directly supported by the browser.</p>
+<p>Call this method on the <code>navigator</code> object’s {{domxref(“navigator.mediaSession”, “mediaSession”)}} object.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">navigator</span>.<span class="va">mediaSession</span>.<span class="at">setPositionState</span>(stateDict)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><p><code>stateDict</code> {{optional_inline}}</p>
+<ul>
+<li><p>: An object providing updated information about the playback position and speed of the document’s ongoing media. If the object is empty, the existing playback state information is cleared. This object is a dictionary that contains the following parameters:</p>
+<ul>
+<li><code>duration</code>
+<ul>
+<li>: A floating-point value giving the total duration of the current media in seconds. This should always be a positive number, with positive infinity (<a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Infinity"><code>Infinity</code></a>) indicating media without a defined end, such as a live stream.</li>
+</ul></li>
+<li><code>playbackRate</code>
+<ul>
+<li>: A floating-point value indicating the rate at which the media is being played, as a ratio relative to its normal playback speed. Thus, a value of 1 is playing at normal speed, 2 is playing at double speed, and so forth. Negative values indicate that the media is playing in reverse; -1 indicates playback at the normal speed but backward, -2 is double speed in reverse, and so on.</li>
+</ul></li>
+<li><code>position</code>
+<ul>
+<li>: A floating-point value indicating the last reported playback position of the media in seconds. This must always be a positive value.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>{{jsxref(“undefined”)}}.</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><p><code>TypeError</code></p>
+<ul>
+<li><p>: This error can occur in an array of circumstances:</p>
+<ul>
+<li>The specified object’s <code>duration</code> is missing, negative, or <code>null</code>.</li>
+<li>Its <code>position</code> is missing or null, or is either negative or greater than <code>duration</code>.</li>
+<li>Its <code>playbackRate</code> is zero.</li>
+</ul></li>
+</ul></li>
+</ul>
+<h2 id="example">Example</h2>
+<p>Below is a function which updates the position state of the current {{domxref(‘MediaSession’)}} track.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">function</span> <span class="at">updatePositionState</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="va">navigator</span>.<span class="va">mediaSession</span>.<span class="at">setPositionState</span>(<span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3">    <span class="dt">duration</span><span class="op">:</span> <span class="va">audioEl</span>.<span class="at">duration</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-4" title="4">    <span class="dt">playbackRate</span><span class="op">:</span> <span class="va">audioEl</span>.<span class="at">playbackRate</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="dt">position</span><span class="op">:</span> <span class="va">audioEl</span>.<span class="at">currentTime</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="op">}</span></a></code></pre></div>
+<p>We can use this function when updating {{domxref(‘MediaMetadata’, ‘media session metadata’)}} and within callbacks for actions, such as below.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="va">navigator</span>.<span class="va">mediaSession</span>.<span class="at">setActionHandler</span>(<span class="st">&#39;seekbackward&#39;</span><span class="op">,</span> details <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="co">// our time to skip</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="kw">const</span> skipTime <span class="op">=</span> <span class="va">details</span>.<span class="at">seekOffset</span> <span class="op">||</span> <span class="dv">10</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"></a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="co">// set our position</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="va">audioEl</span>.<span class="at">currentTime</span> <span class="op">=</span> <span class="va">Math</span>.<span class="at">max</span>(<span class="va">audioEl</span>.<span class="at">currentTime</span> <span class="op">-</span> skipTime<span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="at">updatePositionState</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9"></a>
+<a class="sourceLine" id="cb3-10" title="10"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>

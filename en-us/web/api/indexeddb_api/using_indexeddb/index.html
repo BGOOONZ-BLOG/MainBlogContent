@@ -1,0 +1,1184 @@
+<p>{{DefaultAPISidebar(“IndexedDB”)}}</p>
+<p>IndexedDB is a way for you to persistently store data inside a user’s browser. Because it lets you create web applications with rich query abilities regardless of network availability, your applications can work both online and offline.</p>
+<h2 id="about-this-document">About this document</h2>
+<p>This tutorial walks you through using the asynchronous API of IndexedDB. If you are not familiar with IndexedDB, you should first read the <a href="/en-US/docs/Web/API/IndexedDB_API/Basic_Terminology">IndexedDB key characteristics and basic terminology</a> article.</p>
+<p>For the reference documentation on the IndexedDB API, see the <a href="/en-US/docs/Web/API/IndexedDB_API">IndexedDB API</a> article and its subpages. This article documents the types of objects used by IndexedDB, as well as the methods of the asynchronous API (the synchronous API was removed from spec).</p>
+<h2 id="basic-pattern">Basic pattern</h2>
+<p>The basic pattern that IndexedDB encourages is the following:</p>
+<ol type="1">
+<li>Open a database.</li>
+<li>Create an object store in the database.</li>
+<li>Start a transaction and make a request to do some database operation, like adding or retrieving data.</li>
+<li>Wait for the operation to complete by listening to the right kind of DOM event.</li>
+<li>Do something with the results (which can be found on the request object).</li>
+</ol>
+<p>With these big concepts under our belts, we can get to more concrete stuff.</p>
+<h2 id="creating-and-structuring-the-store">Creating and structuring the store</h2>
+<h3 id="using-an-experimental-version-of-indexeddb">Using an experimental version of IndexedDB</h3>
+<p>In case you want to test your code in browsers that still use a prefix, you can use the following code:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="co">// In the following line, you should include the prefixes of implementations you want to test.</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="va">window</span>.<span class="at">indexedDB</span> <span class="op">=</span> <span class="va">window</span>.<span class="at">indexedDB</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">mozIndexedDB</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">webkitIndexedDB</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">msIndexedDB</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="co">// DON&#39;T use &quot;var indexedDB = ...&quot; if you&#39;re not in a function.</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="co">// Moreover, you may need references to some window.IDB* objects:</span></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="va">window</span>.<span class="at">IDBTransaction</span> <span class="op">=</span> <span class="va">window</span>.<span class="at">IDBTransaction</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">webkitIDBTransaction</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">msIDBTransaction</span> <span class="op">||</span> <span class="op">{</span><span class="dt">READ_WRITE</span><span class="op">:</span> <span class="st">&quot;readwrite&quot;</span><span class="op">};</span> <span class="co">// This line should only be needed if it is needed to support the object&#39;s constants for older browsers</span></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="va">window</span>.<span class="at">IDBKeyRange</span> <span class="op">=</span> <span class="va">window</span>.<span class="at">IDBKeyRange</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">webkitIDBKeyRange</span> <span class="op">||</span> <span class="va">window</span>.<span class="at">msIDBKeyRange</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="co">// (Mozilla has never prefixed these objects, so we don&#39;t need window.mozIDB*)</span></a></code></pre></div>
+<p>Beware that implementations that use a prefix may be buggy, or incomplete, or following an old version of the specification. Therefore, it is not recommended to use it in production code. It may be preferable to not support a browser than to claim to support it and fail:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="cf">if</span> (<span class="op">!</span><span class="va">window</span>.<span class="at">indexedDB</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Your browser doesn&#39;t support a stable version of IndexedDB. Such and such feature will not be available.&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="op">}</span></a></code></pre></div>
+<h3 id="opening-a-database">Opening a database</h3>
+<p>We start the whole process like this:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="co">// Let us open our database</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">var</span> request <span class="op">=</span> <span class="va">window</span>.<span class="va">indexedDB</span>.<span class="at">open</span>(<span class="st">&quot;MyTestDatabase&quot;</span><span class="op">,</span> <span class="dv">3</span>)<span class="op">;</span></a></code></pre></div>
+<p>See that? Opening a database is just like any other operation — you have to “request” it.</p>
+<p>The open request doesn’t open the database or start the transaction right away. The call to the <code>open()</code> function returns an <a href="/en-US/docs/Web/API/IDBOpenDBRequest"><code>IDBOpenDBRequest</code></a> object with a result (success) or error value that you handle as an event. Most other asynchronous functions in IndexedDB do the same thing - return an <a href="/en-US/docs/Web/API/IDBRequest"><code>IDBRequest</code></a> object with the result or error. The result for the open function is an instance of an <code>IDBDatabase.</code></p>
+<p>The second parameter to the open method is the version of the database. The version of the database determines the database schema — the object stores in the database and their structure. If the database doesn’t already exist, it is created by the <code>open</code> operation, then an <code>onupgradeneeded</code> event is triggered and you create the database schema in the handler for this event. If the database does exist but you are specifying an upgraded version number, an <code>onupgradeneeded</code> event is triggered straight away, allowing you to provide an updated schema in its handler. More on this later in <a href="#updating_the_version_of_the_database">Updating the version of the database</a> below, and the {{ domxref(“IDBFactory.open”) }} reference page.</p>
+<blockquote>
+<p><strong>Warning:</strong> The version number is an <code>unsigned long long</code> number, which means that it can be a very big integer. It also means that you can’t use a float, otherwise it will be converted to the closest lower integer and the transaction may not start, nor the <code>upgradeneeded</code> event trigger. So for example, don’t use 2.4 as a version number: <code>var request = indexedDB.open("MyTestDatabase", 2.4); // don't do this, as the version will be rounded to 2</code></p>
+</blockquote>
+<h4 id="generating-handlers">Generating handlers</h4>
+<p>The first thing you’ll want to do with almost all of the requests you generate is to add success and error handlers:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="va">request</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="co">// Do something with request.errorCode!</span></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="op">};</span></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="va">request</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="co">// Do something with request.result!</span></a>
+<a class="sourceLine" id="cb4-6" title="6"><span class="op">};</span></a></code></pre></div>
+<p>Which of the two functions, <code>onsuccess()</code> or <code>onerror()</code>, gets called? If everything succeeds, a success event (that is, a DOM event whose <code>type</code> property is set to <code>"success"</code>) is fired with <code>request</code> as its <code>target</code>. Once it is fired, the <code>onsuccess()</code> function on <code>request</code> is triggered with the success event as its argument. Otherwise, if there was any problem, an error event (that is, a DOM event whose <code>type</code> property is set to <code>"error"</code>) is fired at <code>request</code>. This triggers the <code>onerror()</code> function with the error event as its argument.</p>
+<p>The IndexedDB API is designed to minimize the need for error handling, so you’re not likely to see many error events (at least, not once you’re used to the API!). In the case of opening a database, however, there are some common conditions that generate error events. The most likely problem is that the user decided not to give your web app permission to create a database. One of the main design goals of IndexedDB is to allow large amounts of data to be stored for offline use. (To learn more about how much storage you can have for each browser, see <a href="/en-US/docs/Web/API/IndexedDB_API/Browser_storage_limits_and_eviction_criteria#storage_limits">Storage limits</a>.)</p>
+<p>Obviously, browsers do not want to allow some advertising network or malicious website to pollute your computer, so browsers used to prompt the user the first time any given web app attempts to open an IndexedDB for storage. The user could choose to allow or deny access. Also, IndexedDB storage in browsers’ privacy modes only lasts in-memory until the incognito session is closed (Private Browsing mode for Firefox and Incognito mode for Chrome, but in Firefox this is <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=781982">not implemented yet</a> as of May 2021 so you can’t use IndexedDB in Firefox Private Browsing at all).</p>
+<p>Now, assuming that the user allowed your request to create a database, and you’ve received a success event to trigger the success callback; What’s next? The request here was generated with a call to <code>indexedDB.open()</code>, so <code>request.result</code> is an instance of <code>IDBDatabase</code>, and you definitely want to save that for later. Your code might look something like this:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">var</span> db<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="kw">var</span> request <span class="op">=</span> <span class="va">indexedDB</span>.<span class="at">open</span>(<span class="st">&quot;MyTestDatabase&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="va">request</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-4" title="4">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Why didn&#39;t you allow my web app to use IndexedDB?!&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="op">};</span></a>
+<a class="sourceLine" id="cb5-6" title="6"><span class="va">request</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-7" title="7">  db <span class="op">=</span> <span class="va">event</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-8" title="8"><span class="op">};</span></a></code></pre></div>
+<h4 id="handling-errors">Handling Errors</h4>
+<p>As mentioned above, error events bubble. Error events are targeted at the request that generated the error, then the event bubbles to the transaction, and then finally to the database object. If you want to avoid adding error handlers to every request, you can instead add a single error handler on the database object, like so:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="va">db</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="co">// Generic error handler for all errors targeted at this database&#39;s</span></a>
+<a class="sourceLine" id="cb6-3" title="3">  <span class="co">// requests!</span></a>
+<a class="sourceLine" id="cb6-4" title="4">  <span class="va">console</span>.<span class="at">error</span>(<span class="st">&quot;Database error: &quot;</span> <span class="op">+</span> <span class="va">event</span>.<span class="va">target</span>.<span class="at">errorCode</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-5" title="5"><span class="op">};</span></a></code></pre></div>
+<p>One of the common possible errors when opening a database is <code>VER_ERR</code>. It indicates that the version of the database stored on the disk is <em>greater</em> than the version that you are trying to open. This is an error case that must always be handled by the error handler.</p>
+<h3 id="creating-or-updating-the-version-of-the-database">Creating or updating the version of the database</h3>
+<p>When you create a new database or increase the version number of an existing database (by specifying a higher version number than you did previously, when {{ anch(“Opening a database”) }}), the <code>onupgradeneeded</code> event will be triggered and an <a href="/en-US/docs/Web/API/IDBVersionChangeEvent">IDBVersionChangeEvent</a> object will be passed to any <code>onversionchange</code> event handler set up on <code>request.result</code> (i.e., <code>db</code> in the example). In the handler for the <code>upgradeneeded</code> event, you should create the object stores needed for this version of the database:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="co">// This event is only implemented in recent browsers</span></a>
+<a class="sourceLine" id="cb7-2" title="2"><span class="va">request</span>.<span class="at">onupgradeneeded</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-3" title="3">  <span class="co">// Save the IDBDatabase interface</span></a>
+<a class="sourceLine" id="cb7-4" title="4">  <span class="kw">var</span> db <span class="op">=</span> <span class="va">event</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb7-5" title="5"></a>
+<a class="sourceLine" id="cb7-6" title="6">  <span class="co">// Create an objectStore for this database</span></a>
+<a class="sourceLine" id="cb7-7" title="7">  <span class="kw">var</span> objectStore <span class="op">=</span> <span class="va">db</span>.<span class="at">createObjectStore</span>(<span class="st">&quot;name&quot;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">keyPath</span><span class="op">:</span> <span class="st">&quot;myKey&quot;</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-8" title="8"><span class="op">};</span></a></code></pre></div>
+<p>In this case, the database will already have the object stores from the previous version of the database, so you do not have to create these object stores again. You only need to create any new object stores, or delete object stores from the previous version that are no longer needed. If you need to change an existing object store (e.g., to change the <code>keyPath</code>), then you must delete the old object store and create it again with the new options. (Note that this will delete the information in the object store! If you need to save that information, you should read it out and save it somewhere else before upgrading the database.)</p>
+<p>Trying to create an object store with a name that already exists (or trying to delete an object store with a name that does not already exist) will throw an error.</p>
+<p>If the <code>onupgradeneeded</code> event exits successfully, the <code>onsuccess</code> handler of the open database request will then be triggered.</p>
+<h3 id="structuring-the-database">Structuring the database</h3>
+<p>Now to structure the database. IndexedDB uses object stores rather than tables, and a single database can contain any number of object stores. Whenever a value is stored in an object store, it is associated with a key. There are several different ways that a key can be supplied depending on whether the object store uses a <a href="/en-US/docs/Web/API/IndexedDB_API/Basic_Terminology#key_path">key path</a> or a <a href="/en-US/docs/Web/API/IndexedDB_API/Basic_Terminology#key_generator">key generator</a>.</p>
+<p>The following table shows the different ways the keys are supplied:</p>
+<table class="no-markdown">
+<thead>
+<tr>
+<th scope="col">
+Key Path (<code>keyPath</code>)
+</th>
+<th scope="col">
+Key Generator (<code>autoIncrement</code>)
+</th>
+<th scope="col">
+Description
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+No
+</td>
+<td>
+No
+</td>
+<td>
+This object store can hold any kind of value, even primitive values like numbers and strings. You must supply a separate key argument whenever you want to add a new value.
+</td>
+</tr>
+<tr>
+<td>
+Yes
+</td>
+<td>
+No
+</td>
+<td>
+This object store can only hold JavaScript objects. The objects must have a property with the same name as the key path.
+</td>
+</tr>
+<tr>
+<td>
+No
+</td>
+<td>
+Yes
+</td>
+<td>
+This object store can hold any kind of value. The key is generated for you automatically, or you can supply a separate key argument if you want to use a specific key.
+</td>
+</tr>
+<tr>
+<td>
+Yes
+</td>
+<td>
+Yes
+</td>
+<td>
+This object store can only hold JavaScript objects. Usually a key is generated and the value of the generated key is stored in the object in a property with the same name as the key path. However, if such a property already exists, the value of that property is used as key rather than generating a new key.
+</td>
+</tr>
+</tbody>
+</table>
+<p>You can also create indices on any object store, provided the object store holds objects, not primitives. An index lets you look up the values stored in an object store using the value of a property of the stored object, rather than the object’s key.</p>
+<p>Additionally, indexes have the ability to enforce simple constraints on the stored data. By setting the unique flag when creating the index, the index ensures that no two objects are stored with both having the same value for the index’s key path. So, for example, if you have an object store which holds a set of people, and you want to ensure that no two people have the same email address, you can use an index with the unique flag set to enforce this.</p>
+<p>That may sound confusing, but this simple example should illustrate the concepts. First, we’ll define some customer data to use in our example:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="co">// This is what our customer data looks like.</span></a>
+<a class="sourceLine" id="cb8-2" title="2"><span class="kw">const</span> customerData <span class="op">=</span> [</a>
+<a class="sourceLine" id="cb8-3" title="3">  <span class="op">{</span> <span class="dt">ssn</span><span class="op">:</span> <span class="st">&quot;444-44-4444&quot;</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;Bill&quot;</span><span class="op">,</span> <span class="dt">age</span><span class="op">:</span> <span class="dv">35</span><span class="op">,</span> <span class="dt">email</span><span class="op">:</span> <span class="st">&quot;bill@company.com&quot;</span> <span class="op">},</span></a>
+<a class="sourceLine" id="cb8-4" title="4">  <span class="op">{</span> <span class="dt">ssn</span><span class="op">:</span> <span class="st">&quot;555-55-5555&quot;</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;Donna&quot;</span><span class="op">,</span> <span class="dt">age</span><span class="op">:</span> <span class="dv">32</span><span class="op">,</span> <span class="dt">email</span><span class="op">:</span> <span class="st">&quot;donna@home.org&quot;</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb8-5" title="5">]<span class="op">;</span></a></code></pre></div>
+<p>Of course, you wouldn’t use someone’s social security number as the primary key to a customer table because not everyone has a social security number, and you would store their birth date instead of their age, but let’s ignore those unfortunate choices for the sake of convenience and move along.</p>
+<p>Now let’s look at creating an IndexedDB to store our data:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">const</span> dbName <span class="op">=</span> <span class="st">&quot;the_name&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-2" title="2"></a>
+<a class="sourceLine" id="cb9-3" title="3"><span class="kw">var</span> request <span class="op">=</span> <span class="va">indexedDB</span>.<span class="at">open</span>(dbName<span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-4" title="4"></a>
+<a class="sourceLine" id="cb9-5" title="5"><span class="va">request</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-6" title="6">  <span class="co">// Handle errors.</span></a>
+<a class="sourceLine" id="cb9-7" title="7"><span class="op">};</span></a>
+<a class="sourceLine" id="cb9-8" title="8"><span class="va">request</span>.<span class="at">onupgradeneeded</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-9" title="9">  <span class="kw">var</span> db <span class="op">=</span> <span class="va">event</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-10" title="10"></a>
+<a class="sourceLine" id="cb9-11" title="11">  <span class="co">// Create an objectStore to hold information about our customers. We&#39;re</span></a>
+<a class="sourceLine" id="cb9-12" title="12">  <span class="co">// going to use &quot;ssn&quot; as our key path because it&#39;s guaranteed to be</span></a>
+<a class="sourceLine" id="cb9-13" title="13">  <span class="co">// unique - or at least that&#39;s what I was told during the kickoff meeting.</span></a>
+<a class="sourceLine" id="cb9-14" title="14">  <span class="kw">var</span> objectStore <span class="op">=</span> <span class="va">db</span>.<span class="at">createObjectStore</span>(<span class="st">&quot;customers&quot;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">keyPath</span><span class="op">:</span> <span class="st">&quot;ssn&quot;</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-15" title="15"></a>
+<a class="sourceLine" id="cb9-16" title="16">  <span class="co">// Create an index to search customers by name. We may have duplicates</span></a>
+<a class="sourceLine" id="cb9-17" title="17">  <span class="co">// so we can&#39;t use a unique index.</span></a>
+<a class="sourceLine" id="cb9-18" title="18">  <span class="va">objectStore</span>.<span class="at">createIndex</span>(<span class="st">&quot;name&quot;</span><span class="op">,</span> <span class="st">&quot;name&quot;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">unique</span><span class="op">:</span> <span class="kw">false</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-19" title="19"></a>
+<a class="sourceLine" id="cb9-20" title="20">  <span class="co">// Create an index to search customers by email. We want to ensure that</span></a>
+<a class="sourceLine" id="cb9-21" title="21">  <span class="co">// no two customers have the same email, so use a unique index.</span></a>
+<a class="sourceLine" id="cb9-22" title="22">  <span class="va">objectStore</span>.<span class="at">createIndex</span>(<span class="st">&quot;email&quot;</span><span class="op">,</span> <span class="st">&quot;email&quot;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">unique</span><span class="op">:</span> <span class="kw">true</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-23" title="23"></a>
+<a class="sourceLine" id="cb9-24" title="24">  <span class="co">// Use transaction oncomplete to make sure the objectStore creation is</span></a>
+<a class="sourceLine" id="cb9-25" title="25">  <span class="co">// finished before adding data into it.</span></a>
+<a class="sourceLine" id="cb9-26" title="26">  <span class="va">objectStore</span>.<span class="va">transaction</span>.<span class="at">oncomplete</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-27" title="27">    <span class="co">// Store values in the newly created objectStore.</span></a>
+<a class="sourceLine" id="cb9-28" title="28">    <span class="kw">var</span> customerObjectStore <span class="op">=</span> <span class="va">db</span>.<span class="at">transaction</span>(<span class="st">&quot;customers&quot;</span><span class="op">,</span> <span class="st">&quot;readwrite&quot;</span>).<span class="at">objectStore</span>(<span class="st">&quot;customers&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-29" title="29">    <span class="va">customerData</span>.<span class="at">forEach</span>(<span class="kw">function</span>(customer) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-30" title="30">      <span class="va">customerObjectStore</span>.<span class="at">add</span>(customer)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-31" title="31">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-32" title="32">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb9-33" title="33"><span class="op">};</span></a></code></pre></div>
+<p>As indicated previously, <code>onupgradeneeded</code> is the only place where you can alter the structure of the database. In it, you can create and delete object stores and build and remove indices.</p>
+<p>Object stores are created with a single call to <code>createObjectStore()</code>. The method takes a name of the store, and a parameter object. Even though the parameter object is optional, it is very important, because it lets you define important optional properties and refine the type of object store you want to create. In our case, we’ve asked for an object store named “customers” and defined a <code>keyPath</code>, which is the property that makes an individual object in the store unique. That property in this example is “ssn” since a social security number is guaranteed to be unique. “ssn” must be present on every object that is stored in the <code>objectStore</code>.</p>
+<p>We’ve also asked for an index named “name” that looks at the <code>name</code> property of the stored objects. As with <code>createObjectStore()</code>, <code>createIndex()</code> takes an optional <code>options</code> object that refines the type of index that you want to create. Adding objects that don’t have a <code>name</code> property still succeeds, but the objects won’t appear in the “name” index.</p>
+<p>We can now retrieve the stored customer objects using their <code>ssn</code> from the object store directly, or using their name by using the index. To learn how this is done, see the section on <a href="#using_an_index">using an index</a>.</p>
+<h3 id="using-a-key-generator">Using a key generator</h3>
+<p>Setting up an <code>autoIncrement</code> flag when creating the object store would enable the key generator for that object store. By default this flag is not set.</p>
+<p>With the key generator, the key would be generated automatically as you add the value to the object store. The current number of a key generator is always set to 1 when the object store for that key generator is first created. Basically the newly auto-generated key is increased by 1 based on the previous key. The current number for a key generator never decreases, other than as a result of database operations being reverted, for example, the database transaction is aborted. Therefore deleting a record or even clearing all records from an object store never affects the object store’s key generator.</p>
+<p>We can create another object store with the key generator as below:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1"><span class="co">// Open the indexedDB.</span></a>
+<a class="sourceLine" id="cb10-2" title="2"><span class="kw">var</span> request <span class="op">=</span> <span class="va">indexedDB</span>.<span class="at">open</span>(dbName<span class="op">,</span> <span class="dv">3</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-3" title="3"></a>
+<a class="sourceLine" id="cb10-4" title="4"><span class="va">request</span>.<span class="at">onupgradeneeded</span> <span class="op">=</span> <span class="kw">function</span> (event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-5" title="5"></a>
+<a class="sourceLine" id="cb10-6" title="6">    var db <span class="op">=</span> <span class="va">event</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-7" title="7"></a>
+<a class="sourceLine" id="cb10-8" title="8">    <span class="co">// Create another object store called &quot;names&quot; with the autoIncrement flag set as true.</span></a>
+<a class="sourceLine" id="cb10-9" title="9">    var objStore <span class="op">=</span> <span class="va">db</span>.<span class="at">createObjectStore</span>(<span class="st">&quot;names&quot;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">autoIncrement </span><span class="op">:</span> <span class="kw">true</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-10" title="10"></a>
+<a class="sourceLine" id="cb10-11" title="11">    <span class="co">// Because the &quot;names&quot; object store has the key generator, the key for the name value is generated automatically.</span></a>
+<a class="sourceLine" id="cb10-12" title="12">    <span class="co">// The added records would be like:</span></a>
+<a class="sourceLine" id="cb10-13" title="13">    <span class="co">// key : 1 =&gt; value : &quot;Bill&quot;</span></a>
+<a class="sourceLine" id="cb10-14" title="14">    <span class="co">// key : 2 =&gt; value : &quot;Donna&quot;</span></a>
+<a class="sourceLine" id="cb10-15" title="15">   <span class="va"> customerData</span>.<span class="at">forEach</span>(<span class="kw">function</span>(customer) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-16" title="16">       <span class="va"> objStore</span>.<span class="at">add</span>(<span class="va">customer</span>.<span class="at">name</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-17" title="17">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-18" title="18"><span class="op">};</span></a></code></pre></div>
+<p>For more details about the key generator, please see <a href="https://www.w3.org/TR/IndexedDB/#key-generator-concept">“W3C Key Generators”</a>.</p>
+<h2 id="adding-retrieving-and-removing-data">Adding, retrieving, and removing data</h2>
+<p>Before you can do anything with your new database, you need to start a transaction. Transactions come from the database object, and you have to specify which object stores you want the transaction to span. Once you are inside the transaction, you can access the object stores that hold your data and make your requests. Next, you need to decide if you’re going to make changes to the database or if you just need to read from it. Transactions have three available modes: <code>readonly</code>, <code>readwrite</code>, and <code>versionchange</code>.</p>
+<p>To change the “schema” or structure of the database—which involves creating or deleting object stores or indexes—the transaction must be in <code>versionchange</code> mode. This transaction is opened by calling the {{domxref(“IDBFactory.open”)}} method with a <code>version</code> specified.</p>
+<p>To read the records of an existing object store, the transaction can either be in <code>readonly</code> or <code>readwrite</code> mode. To make changes to an existing object store, the transaction must be in <code>readwrite</code> mode. You open such transactions with {{domxref(“IDBDatabase.transaction”)}}. The method accepts two parameters: the <code>storeNames</code> (the scope, defined as an array of object stores that you want to access) and the <code>mode</code> (<code>readonly</code> or <code>readwrite</code>) for the transaction. The method returns a transaction object containing the {{domxref(“IDBIndex.objectStore”)}} method, which you can use to access your object store. By default, where no mode is specified, transactions open in <code>readonly</code> mode.</p>
+<blockquote>
+<p><strong>Note:</strong> As of Firefox 40, IndexedDB transactions have relaxed durability guarantees to increase performance (see {{Bug(“1112702”)}}.) Previously in a <code>readwrite</code> transaction {{domxref(“IDBTransaction.oncomplete”)}} was fired only when all data was guaranteed to have been flushed to disk. In Firefox 40+ the <code>complete</code> event is fired after the OS has been told to write the data but potentially before that data has actually been flushed to disk. The <code>complete</code> event may thus be delivered quicker than before, however, there exists a small chance that the entire transaction will be lost if the OS crashes or there is a loss of system power before the data is flushed to disk. Since such catastrophic events are rare most consumers should not need to concern themselves further. If you must ensure durability for some reason (e.g. you’re storing critical data that cannot be recomputed later) you can force a transaction to flush to disk before delivering the <code>complete</code> event by creating a transaction using the experimental (non-standard) <code>readwriteflush</code> mode (see {{domxref(“IDBDatabase.transaction”)}}).</p>
+</blockquote>
+<p>You can speed up data access by using the right scope and mode in the transaction. Here are a couple of tips:</p>
+<ul>
+<li>When defining the scope, specify only the object stores you need. This way, you can run multiple transactions with non-overlapping scopes concurrently.</li>
+<li>Only specify a <code>readwrite</code> transaction mode when necessary. You can concurrently run multiple <code>readonly</code> transactions with overlapping scopes, but you can have only one <code>readwrite</code> transaction for an object store. To learn more, see the definition for <a href="/en-US/docs/Web/API/IndexedDB_API/Basic_Terminology#transaction">transaction</a> in the <a href="/en-US/docs/Web/API/IndexedDB_API/Basic_Terminology">IndexedDB key characteristics and basic terminology</a> article.</li>
+</ul>
+<h3 id="adding-data-to-the-database">Adding data to the database</h3>
+<p>If you’ve just created a database, then you probably want to write to it. Here’s what that looks like:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1"><span class="kw">var</span> transaction <span class="op">=</span> <span class="va">db</span>.<span class="at">transaction</span>([<span class="st">&quot;customers&quot;</span>]<span class="op">,</span> <span class="st">&quot;readwrite&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-2" title="2"><span class="co">// Note: Older experimental implementations use the deprecated constant IDBTransaction.READ_WRITE instead of &quot;readwrite&quot;.</span></a>
+<a class="sourceLine" id="cb11-3" title="3"><span class="co">// In case you want to support such an implementation, you can write:</span></a>
+<a class="sourceLine" id="cb11-4" title="4"><span class="co">// var transaction = db.transaction([&quot;customers&quot;], IDBTransaction.READ_WRITE);</span></a></code></pre></div>
+<p>The <code>transaction()</code> function takes two arguments (though one is optional) and returns a transaction object. The first argument is a list of object stores that the transaction will span. You can pass an empty array if you want the transaction to span all object stores, but don’t do it because the spec says an empty array should generate an InvalidAccessError. If you don’t specify anything for the second argument, you get a read-only transaction. Since you want to write to it here you need to pass the <code>"readwrite"</code> flag.</p>
+<p>Now that you have a transaction you need to understand its lifetime. Transactions are tied very closely to the event loop. If you make a transaction and return to the event loop without using it then the transaction will become inactive. The only way to keep the transaction active is to make a request on it. When the request is finished you’ll get a DOM event and, assuming that the request succeeded, you’ll have another opportunity to extend the transaction during that callback. If you return to the event loop without extending the transaction then it will become inactive, and so on. As long as there are pending requests the transaction remains active. Transaction lifetimes are really very simple but it might take a little time to get used to. A few more examples will help, too. If you start seeing <code>TRANSACTION_INACTIVE_ERR</code> error codes then you’ve messed something up.</p>
+<p>Transactions can receive DOM events of three different types: <code>error</code>, <code>abort</code>, and <code>complete</code>. We’ve talked about the way that <code>error</code> events bubble, so a transaction receives error events from any requests that are generated from it. A more subtle point here is that the default behavior of an error is to abort the transaction in which it occurred. Unless you handle the error by first calling <code>stopPropagation()</code> on the error event then doing something else, the entire transaction is rolled back. This design forces you to think about and handle errors, but you can always add a catchall error handler to the database if fine-grained error handling is too cumbersome. If you don’t handle an error event or if you call <code>abort()</code> on the transaction, then the transaction is rolled back and an <code>abort</code> event is fired on the transaction. Otherwise, after all pending requests have completed, you’ll get a <code>complete</code> event. If you’re doing lots of database operations, then tracking the transaction rather than individual requests can certainly aid your sanity.</p>
+<p>Now that you have a transaction, you’ll need to get the object store from it. Transactions only let you have an object store that you specified when creating the transaction. Then you can add all the data you need.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb12-1" title="1"><span class="co">// Do something when all the data is added to the database.</span></a>
+<a class="sourceLine" id="cb12-2" title="2"><span class="va">transaction</span>.<span class="at">oncomplete</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb12-3" title="3">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;All done!&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-4" title="4"><span class="op">};</span></a>
+<a class="sourceLine" id="cb12-5" title="5"></a>
+<a class="sourceLine" id="cb12-6" title="6"><span class="va">transaction</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb12-7" title="7">  <span class="co">// Don&#39;t forget to handle errors!</span></a>
+<a class="sourceLine" id="cb12-8" title="8"><span class="op">};</span></a>
+<a class="sourceLine" id="cb12-9" title="9"></a>
+<a class="sourceLine" id="cb12-10" title="10"><span class="kw">var</span> objectStore <span class="op">=</span> <span class="va">transaction</span>.<span class="at">objectStore</span>(<span class="st">&quot;customers&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-11" title="11"><span class="va">customerData</span>.<span class="at">forEach</span>(<span class="kw">function</span>(customer) <span class="op">{</span></a>
+<a class="sourceLine" id="cb12-12" title="12">  <span class="kw">var</span> request <span class="op">=</span> <span class="va">objectStore</span>.<span class="at">add</span>(customer)<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-13" title="13">  <span class="va">request</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb12-14" title="14">    <span class="co">// event.target.result === customer.ssn;</span></a>
+<a class="sourceLine" id="cb12-15" title="15">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb12-16" title="16"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>The <code>result</code> of a request generated from a call to <code>add()</code> is the key of the value that was added. So in this case, it should equal the <code>ssn</code> property of the object that was added, since the object store uses the <code>ssn</code> property for the key path. Note that the <code>add()</code> function requires that no object already be in the database with the same key. If you’re trying to modify an existing entry, or you don’t care if one exists already, you can use the <code>put()</code> function, as shown below in the {{ anch(“Updating an entry in the database”) }} section.</p>
+<h3 id="removing-data-from-the-database">Removing data from the database</h3>
+<p>Removing data is very similar:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb13-1" title="1"><span class="kw">var</span> request <span class="op">=</span> <span class="va">db</span>.<span class="at">transaction</span>([<span class="st">&quot;customers&quot;</span>]<span class="op">,</span> <span class="st">&quot;readwrite&quot;</span>)</a>
+<a class="sourceLine" id="cb13-2" title="2">                .<span class="at">objectStore</span>(<span class="st">&quot;customers&quot;</span>)</a>
+<a class="sourceLine" id="cb13-3" title="3">                .<span class="at">delete</span>(<span class="st">&quot;444-44-4444&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-4" title="4"><span class="va">request</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-5" title="5">  <span class="co">// It&#39;s gone!</span></a>
+<a class="sourceLine" id="cb13-6" title="6"><span class="op">};</span></a></code></pre></div>
+<h3 id="getting-data-from-the-database">Getting data from the database</h3>
+<p>Now that the database has some info in it, you can retrieve it in several ways. First, the simple <code>get()</code>. You need to provide the key to retrieve the value, like so:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb14-1" title="1"><span class="kw">var</span> transaction <span class="op">=</span> <span class="va">db</span>.<span class="at">transaction</span>([<span class="st">&quot;customers&quot;</span>])<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-2" title="2"><span class="kw">var</span> objectStore <span class="op">=</span> <span class="va">transaction</span>.<span class="at">objectStore</span>(<span class="st">&quot;customers&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-3" title="3"><span class="kw">var</span> request <span class="op">=</span> <span class="va">objectStore</span>.<span class="at">get</span>(<span class="st">&quot;444-44-4444&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-4" title="4"><span class="va">request</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb14-5" title="5">  <span class="co">// Handle errors!</span></a>
+<a class="sourceLine" id="cb14-6" title="6"><span class="op">};</span></a>
+<a class="sourceLine" id="cb14-7" title="7"><span class="va">request</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb14-8" title="8">  <span class="co">// Do something with the request.result!</span></a>
+<a class="sourceLine" id="cb14-9" title="9">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Name for SSN 444-44-4444 is &quot;</span> <span class="op">+</span> <span class="va">request</span>.<span class="va">result</span>.<span class="at">name</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-10" title="10"><span class="op">};</span></a></code></pre></div>
+<p>That’s a lot of code for a “simple” retrieval. Here’s how you can shorten it up a bit, assuming that you handle errors at the database level:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb15-1" title="1"><span class="va">db</span>.<span class="at">transaction</span>(<span class="st">&quot;customers&quot;</span>).<span class="at">objectStore</span>(<span class="st">&quot;customers&quot;</span>).<span class="at">get</span>(<span class="st">&quot;444-44-4444&quot;</span>).<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb15-2" title="2">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Name for SSN 444-44-4444 is &quot;</span> <span class="op">+</span> <span class="va">event</span>.<span class="va">target</span>.<span class="va">result</span>.<span class="at">name</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb15-3" title="3"><span class="op">};</span></a></code></pre></div>
+<p>See how this works? Since there’s only one object store, you can avoid passing a list of object stores you need in your transaction and just pass the name as a string. Also, you’re only reading from the database, so you don’t need a <code>"readwrite"</code> transaction. Calling <code>transaction()</code> with no mode specified gives you a <code>"readonly"</code> transaction. Another subtlety here is that you don’t actually save the request object to a variable. Since the DOM event has the request as its target you can use the event to get to the <code>result</code> property.</p>
+<p>Note that you can speed up data access by limiting the scope and mode in the transaction. Here are a couple of tips:</p>
+<ul>
+<li>When defining the <a href="#scope">scope</a>, specify only the object stores you need. This way, you can run multiple transactions with non-overlapping scopes concurrently.</li>
+<li>Only specify a readwrite transaction mode when necessary. You can concurrently run multiple readonly transactions with overlapping scopes, but you can have only one readwrite transaction for an object store. To learn more, see the definition for <a href="/en-US/docs/Web/API/IndexedDB_API/Basic_Terminology#transaction">transaction</a> in the <a href="/en-US/docs/Web/API/IndexedDB_API/Basic_Terminology">IndexedDB key characteristics and basic terminology</a> article.</li>
+</ul>
+<h3 id="updating-an-entry-in-the-database">Updating an entry in the database</h3>
+<p>Now we’ve retrieved some data, updating it and inserting it back into the IndexedDB is pretty simple. Let’s update the previous example somewhat:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb16-1" title="1"><span class="kw">var</span> objectStore <span class="op">=</span> <span class="va">db</span>.<span class="at">transaction</span>([<span class="st">&quot;customers&quot;</span>]<span class="op">,</span> <span class="st">&quot;readwrite&quot;</span>).<span class="at">objectStore</span>(<span class="st">&quot;customers&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-2" title="2"><span class="kw">var</span> request <span class="op">=</span> <span class="va">objectStore</span>.<span class="at">get</span>(<span class="st">&quot;444-44-4444&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-3" title="3"><span class="va">request</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-4" title="4">  <span class="co">// Handle errors!</span></a>
+<a class="sourceLine" id="cb16-5" title="5"><span class="op">};</span></a>
+<a class="sourceLine" id="cb16-6" title="6"><span class="va">request</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-7" title="7">  <span class="co">// Get the old value that we want to update</span></a>
+<a class="sourceLine" id="cb16-8" title="8">  <span class="kw">var</span> data <span class="op">=</span> <span class="va">event</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-9" title="9"></a>
+<a class="sourceLine" id="cb16-10" title="10">  <span class="co">// update the value(s) in the object that you want to change</span></a>
+<a class="sourceLine" id="cb16-11" title="11">  <span class="va">data</span>.<span class="at">age</span> <span class="op">=</span> <span class="dv">42</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-12" title="12"></a>
+<a class="sourceLine" id="cb16-13" title="13">  <span class="co">// Put this updated object back into the database.</span></a>
+<a class="sourceLine" id="cb16-14" title="14">  <span class="kw">var</span> requestUpdate <span class="op">=</span> <span class="va">objectStore</span>.<span class="at">put</span>(data)<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-15" title="15">   <span class="va">requestUpdate</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-16" title="16">     <span class="co">// Do something with the error</span></a>
+<a class="sourceLine" id="cb16-17" title="17">   <span class="op">};</span></a>
+<a class="sourceLine" id="cb16-18" title="18">   <span class="va">requestUpdate</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-19" title="19">     <span class="co">// Success - the data is updated!</span></a>
+<a class="sourceLine" id="cb16-20" title="20">   <span class="op">};</span></a>
+<a class="sourceLine" id="cb16-21" title="21"><span class="op">};</span></a></code></pre></div>
+<p>So here we’re creating an <code>objectStore</code> and requesting a customer record out of it, identified by its ssn value (<code>444-44-4444</code>). We then put the result of that request in a variable (<code>data</code>), update the <code>age</code> property of this object, then create a second request (<code>requestUpdate</code>) to put the customer record back into the <code>objectStore</code>, overwriting the previous value.</p>
+<blockquote>
+<p><strong>Note:</strong> In this case we’ve had to specify a <code>readwrite</code> transaction because we want to write to the database, not just read from it.</p>
+</blockquote>
+<h3 id="using-a-cursor">Using a cursor</h3>
+<p>Using <code>get()</code> requires that you know which key you want to retrieve. If you want to step through all the values in your object store, then you can use a cursor. Here’s what it looks like:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb17-1" title="1"><span class="kw">var</span> objectStore <span class="op">=</span> <span class="va">db</span>.<span class="at">transaction</span>(<span class="st">&quot;customers&quot;</span>).<span class="at">objectStore</span>(<span class="st">&quot;customers&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb17-2" title="2"></a>
+<a class="sourceLine" id="cb17-3" title="3"><span class="va">objectStore</span>.<span class="at">openCursor</span>().<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb17-4" title="4">  <span class="kw">var</span> cursor <span class="op">=</span> <span class="va">event</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb17-5" title="5">  <span class="cf">if</span> (cursor) <span class="op">{</span></a>
+<a class="sourceLine" id="cb17-6" title="6">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Name for SSN &quot;</span> <span class="op">+</span> <span class="va">cursor</span>.<span class="at">key</span> <span class="op">+</span> <span class="st">&quot; is &quot;</span> <span class="op">+</span> <span class="va">cursor</span>.<span class="va">value</span>.<span class="at">name</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb17-7" title="7">    <span class="va">cursor</span>.<span class="at">continue</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb17-8" title="8">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb17-9" title="9">  <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb17-10" title="10">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;No more entries!&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb17-11" title="11">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb17-12" title="12"><span class="op">};</span></a></code></pre></div>
+<p>The <code>openCursor()</code> function takes several arguments. First, you can limit the range of items that are retrieved by using a key range object that we’ll get to in a minute. Second, you can specify the direction that you want to iterate. In the above example, we’re iterating over all objects in ascending order. The success callback for cursors is a little special. The cursor object itself is the <code>result</code> of the request (above we’re using the shorthand, so it’s <code>event.target.result</code>). Then the actual key and value can be found on the <code>key</code> and <code>value</code> properties of the cursor object. If you want to keep going, then you have to call <code>continue()</code> on the cursor. When you’ve reached the end of the data (or if there were no entries that matched your <code>openCursor()</code> request) you still get a success callback, but the <code>result</code> property is <code>undefined</code>.</p>
+<p>One common pattern with cursors is to retrieve all objects in an object store and add them to an array, like this:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb18-1" title="1"><span class="kw">var</span> customers <span class="op">=</span> []<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-2" title="2"></a>
+<a class="sourceLine" id="cb18-3" title="3"><span class="va">objectStore</span>.<span class="at">openCursor</span>().<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb18-4" title="4">  <span class="kw">var</span> cursor <span class="op">=</span> <span class="va">event</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb18-5" title="5">  <span class="cf">if</span> (cursor) <span class="op">{</span></a>
+<a class="sourceLine" id="cb18-6" title="6">    <span class="va">customers</span>.<span class="at">push</span>(<span class="va">cursor</span>.<span class="at">value</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-7" title="7">    <span class="va">cursor</span>.<span class="at">continue</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-8" title="8">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb18-9" title="9">  <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb18-10" title="10">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Got all customers: &quot;</span> <span class="op">+</span> customers)<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-11" title="11">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb18-12" title="12"><span class="op">};</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> Alternatively, you can use <code>getAll()</code> to handle this case (and <code>getAllKeys()</code>) . The following code does precisely the same thing as above:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb19-1" title="1"><span class="va">objectStore</span>.<span class="at">getAll</span>().<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb19-2" title="2">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Got all customers: &quot;</span> <span class="op">+</span> <span class="va">event</span>.<span class="va">target</span>.<span class="at">result</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb19-3" title="3"><span class="op">};</span></a></code></pre></div>
+<p>There is a performance cost associated with looking at the <code>value</code> property of a cursor, because the object is created lazily. When you use <code>getAll()</code> for example, the browser must create all the objects at once. If you’re just interested in looking at each of the keys, for instance, it is much more efficient to use a cursor than to use <code>getAll()</code>. If you’re trying to get an array of all the objects in an object store, though, use <code>getAll()</code>.</p>
+</blockquote>
+<h3 id="using-an-index">Using an index</h3>
+<p>Storing customer data using the SSN as a key is logical since the SSN uniquely identifies an individual. (Whether this is a good idea for privacy is a different question, and outside the scope of this article.) If you need to look up a customer by name, however, you’ll need to iterate over every SSN in the database until you find the right one. Searching in this fashion would be very slow, so instead you can use an index.</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb20-1" title="1"><span class="co">// First, make sure you created index in request.onupgradeneeded:</span></a>
+<a class="sourceLine" id="cb20-2" title="2"><span class="co">// objectStore.createIndex(&quot;name&quot;, &quot;name&quot;);</span></a>
+<a class="sourceLine" id="cb20-3" title="3"><span class="co">// Otherwise you will get DOMException.</span></a>
+<a class="sourceLine" id="cb20-4" title="4"></a>
+<a class="sourceLine" id="cb20-5" title="5"><span class="kw">var</span> index <span class="op">=</span> <span class="va">objectStore</span>.<span class="at">index</span>(<span class="st">&quot;name&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb20-6" title="6"></a>
+<a class="sourceLine" id="cb20-7" title="7"><span class="va">index</span>.<span class="at">get</span>(<span class="st">&quot;Donna&quot;</span>).<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb20-8" title="8">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Donna&#39;s SSN is &quot;</span> <span class="op">+</span> <span class="va">event</span>.<span class="va">target</span>.<span class="va">result</span>.<span class="at">ssn</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb20-9" title="9"><span class="op">};</span></a></code></pre></div>
+<p>The “name” index isn’t unique, so there could be more than one entry with the <code>name</code> set to <code>"Donna"</code>. In that case you always get the one with the lowest key value.</p>
+<p>If you need to access all the entries with a given <code>name</code> you can use a cursor. You can open two different types of cursors on indexes. A normal cursor maps the index property to the object in the object store. A key cursor maps the index property to the key used to store the object in the object store. The differences are illustrated here:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb21-1" title="1"><span class="co">// Using a normal cursor to grab whole customer record objects</span></a>
+<a class="sourceLine" id="cb21-2" title="2"><span class="va">index</span>.<span class="at">openCursor</span>().<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb21-3" title="3">  <span class="kw">var</span> cursor <span class="op">=</span> <span class="va">event</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb21-4" title="4">  <span class="cf">if</span> (cursor) <span class="op">{</span></a>
+<a class="sourceLine" id="cb21-5" title="5">    <span class="co">// cursor.key is a name, like &quot;Bill&quot;, and cursor.value is the whole object.</span></a>
+<a class="sourceLine" id="cb21-6" title="6">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Name: &quot;</span> <span class="op">+</span> <span class="va">cursor</span>.<span class="at">key</span> <span class="op">+</span> <span class="st">&quot;, SSN: &quot;</span> <span class="op">+</span> <span class="va">cursor</span>.<span class="va">value</span>.<span class="at">ssn</span> <span class="op">+</span> <span class="st">&quot;, email: &quot;</span> <span class="op">+</span><span class="va"> cursor</span>.<span class="va">value</span>.<span class="at">email</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb21-7" title="7">    <span class="va">cursor</span>.<span class="at">continue</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb21-8" title="8">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb21-9" title="9"><span class="op">};</span></a>
+<a class="sourceLine" id="cb21-10" title="10"></a>
+<a class="sourceLine" id="cb21-11" title="11"><span class="co">// Using a key cursor to grab customer record object keys</span></a>
+<a class="sourceLine" id="cb21-12" title="12"><span class="va">index</span>.<span class="at">openKeyCursor</span>().<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb21-13" title="13">  <span class="kw">var</span> cursor <span class="op">=</span> <span class="va">event</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb21-14" title="14">  <span class="cf">if</span> (cursor) <span class="op">{</span></a>
+<a class="sourceLine" id="cb21-15" title="15">    <span class="co">// cursor.key is a name, like &quot;Bill&quot;, and cursor.value is the SSN.</span></a>
+<a class="sourceLine" id="cb21-16" title="16">    <span class="co">// No way to directly get the rest of the stored object.</span></a>
+<a class="sourceLine" id="cb21-17" title="17">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Name: &quot;</span> <span class="op">+</span> <span class="va">cursor</span>.<span class="at">key</span> <span class="op">+</span> <span class="st">&quot;, SSN: &quot;</span> <span class="op">+</span> <span class="va">cursor</span>.<span class="at">primaryKey</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb21-18" title="18">    <span class="va">cursor</span>.<span class="at">continue</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb21-19" title="19">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb21-20" title="20"><span class="op">};</span></a></code></pre></div>
+<h3 id="specifying-the-range-and-direction-of-cursors">Specifying the range and direction of cursors</h3>
+<p>If you would like to limit the range of values you see in a cursor, you can use an <code>IDBKeyRange</code> object and pass it as the first argument to <code>openCursor()</code> or <code>openKeyCursor()</code>. You can make a key range that only allows a single key, or one that has a lower or upper bound, or one that has both a lower and upper bound. The bound may be “closed” (i.e., the key range includes the given value(s)) or “open” (i.e., the key range does not include the given value(s)). Here’s how it works:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb22-1" title="1"><span class="co">// Only match &quot;Donna&quot;</span></a>
+<a class="sourceLine" id="cb22-2" title="2"><span class="kw">var</span> singleKeyRange <span class="op">=</span> <span class="va">IDBKeyRange</span>.<span class="at">only</span>(<span class="st">&quot;Donna&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb22-3" title="3"></a>
+<a class="sourceLine" id="cb22-4" title="4"><span class="co">// Match anything past &quot;Bill&quot;, including &quot;Bill&quot;</span></a>
+<a class="sourceLine" id="cb22-5" title="5"><span class="kw">var</span> lowerBoundKeyRange <span class="op">=</span> <span class="va">IDBKeyRange</span>.<span class="at">lowerBound</span>(<span class="st">&quot;Bill&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb22-6" title="6"></a>
+<a class="sourceLine" id="cb22-7" title="7"><span class="co">// Match anything past &quot;Bill&quot;, but don&#39;t include &quot;Bill&quot;</span></a>
+<a class="sourceLine" id="cb22-8" title="8"><span class="kw">var</span> lowerBoundOpenKeyRange <span class="op">=</span> <span class="va">IDBKeyRange</span>.<span class="at">lowerBound</span>(<span class="st">&quot;Bill&quot;</span><span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb22-9" title="9"></a>
+<a class="sourceLine" id="cb22-10" title="10"><span class="co">// Match anything up to, but not including, &quot;Donna&quot;</span></a>
+<a class="sourceLine" id="cb22-11" title="11"><span class="kw">var</span> upperBoundOpenKeyRange <span class="op">=</span> <span class="va">IDBKeyRange</span>.<span class="at">upperBound</span>(<span class="st">&quot;Donna&quot;</span><span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb22-12" title="12"></a>
+<a class="sourceLine" id="cb22-13" title="13"><span class="co">// Match anything between &quot;Bill&quot; and &quot;Donna&quot;, but not including &quot;Donna&quot;</span></a>
+<a class="sourceLine" id="cb22-14" title="14"><span class="kw">var</span> boundKeyRange <span class="op">=</span> <span class="va">IDBKeyRange</span>.<span class="at">bound</span>(<span class="st">&quot;Bill&quot;</span><span class="op">,</span> <span class="st">&quot;Donna&quot;</span><span class="op">,</span> <span class="kw">false</span><span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb22-15" title="15"></a>
+<a class="sourceLine" id="cb22-16" title="16"><span class="co">// To use one of the key ranges, pass it in as the first argument of openCursor()/openKeyCursor()</span></a>
+<a class="sourceLine" id="cb22-17" title="17"><span class="va">index</span>.<span class="at">openCursor</span>(boundKeyRange).<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb22-18" title="18">  <span class="kw">var</span> cursor <span class="op">=</span> <span class="va">event</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb22-19" title="19">  <span class="cf">if</span> (cursor) <span class="op">{</span></a>
+<a class="sourceLine" id="cb22-20" title="20">    <span class="co">// Do something with the matches.</span></a>
+<a class="sourceLine" id="cb22-21" title="21">    <span class="va">cursor</span>.<span class="at">continue</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb22-22" title="22">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb22-23" title="23"><span class="op">};</span></a></code></pre></div>
+<p>Sometimes you may want to iterate in descending order rather than in ascending order (the default direction for all cursors). Switching direction is accomplished by passing <code>prev</code> to the <code>openCursor()</code> function as the second argument:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb23-1" title="1"><span class="va">objectStore</span>.<span class="at">openCursor</span>(boundKeyRange<span class="op">,</span> <span class="st">&quot;prev&quot;</span>).<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb23-2" title="2">  <span class="kw">var</span> cursor <span class="op">=</span> <span class="va">event</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb23-3" title="3">  <span class="cf">if</span> (cursor) <span class="op">{</span></a>
+<a class="sourceLine" id="cb23-4" title="4">    <span class="co">// Do something with the entries.</span></a>
+<a class="sourceLine" id="cb23-5" title="5">    <span class="va">cursor</span>.<span class="at">continue</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb23-6" title="6">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb23-7" title="7"><span class="op">};</span></a></code></pre></div>
+<p>If you just want to specify a change of direction but not constrain the results shown, you can just pass in null as the first argument:</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb24-1" title="1"><span class="va">objectStore</span>.<span class="at">openCursor</span>(<span class="kw">null</span><span class="op">,</span> <span class="st">&quot;prev&quot;</span>).<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb24-2" title="2">  <span class="kw">var</span> cursor <span class="op">=</span> <span class="va">event</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb24-3" title="3">  <span class="cf">if</span> (cursor) <span class="op">{</span></a>
+<a class="sourceLine" id="cb24-4" title="4">    <span class="co">// Do something with the entries.</span></a>
+<a class="sourceLine" id="cb24-5" title="5">    <span class="va">cursor</span>.<span class="at">continue</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb24-6" title="6">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb24-7" title="7"><span class="op">};</span></a></code></pre></div>
+<p>Since the “name” index isn’t unique, there might be multiple entries where <code>name</code> is the same. Note that such a situation cannot occur with object stores since the key must always be unique. If you wish to filter out duplicates during cursor iteration over indexes, you can pass <code>nextunique</code> (or <code>prevunique</code> if you’re going backwards) as the direction parameter. When <code>nextunique</code> or <code>prevunique</code> is used, the entry with the lowest key is always the one returned.</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb25-1" title="1"><span class="va">index</span>.<span class="at">openKeyCursor</span>(<span class="kw">null</span><span class="op">,</span> <span class="st">&quot;nextunique&quot;</span>).<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb25-2" title="2">  <span class="kw">var</span> cursor <span class="op">=</span> <span class="va">event</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb25-3" title="3">  <span class="cf">if</span> (cursor) <span class="op">{</span></a>
+<a class="sourceLine" id="cb25-4" title="4">    <span class="co">// Do something with the entries.</span></a>
+<a class="sourceLine" id="cb25-5" title="5">    <span class="va">cursor</span>.<span class="at">continue</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb25-6" title="6">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb25-7" title="7"><span class="op">};</span></a></code></pre></div>
+<p>Please see “<a href="/en-US/docs/Web/API/IDBCursor#constants">IDBCursor Constants</a>” for the valid direction arguments.</p>
+<h2 id="version-changes-while-a-web-app-is-open-in-another-tab">Version changes while a web app is open in another tab</h2>
+<p>When your web app changes in such a way that a version change is required for your database, you need to consider what happens if the user has the old version of your app open in one tab and then loads the new version of your app in another. When you call <code>open()</code> with a greater version than the actual version of the database, all other open databases must explicitly acknowledge the request before you can start making changes to the database (an <code>onblocked</code> event is fired until they are closed or reloaded). Here’s how it works:</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb26-1" title="1"><span class="kw">var</span> openReq <span class="op">=</span> <span class="va">mozIndexedDB</span>.<span class="at">open</span>(<span class="st">&quot;MyTestDatabase&quot;</span><span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb26-2" title="2"></a>
+<a class="sourceLine" id="cb26-3" title="3"><span class="va">openReq</span>.<span class="at">onblocked</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb26-4" title="4">  <span class="co">// If some other tab is loaded with the database, then it needs to be closed</span></a>
+<a class="sourceLine" id="cb26-5" title="5">  <span class="co">// before we can proceed.</span></a>
+<a class="sourceLine" id="cb26-6" title="6">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Please close all other tabs with this site open!&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb26-7" title="7"><span class="op">};</span></a>
+<a class="sourceLine" id="cb26-8" title="8"></a>
+<a class="sourceLine" id="cb26-9" title="9"><span class="va">openReq</span>.<span class="at">onupgradeneeded</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb26-10" title="10">  <span class="co">// All other databases have been closed. Set everything up.</span></a>
+<a class="sourceLine" id="cb26-11" title="11">  <span class="va">db</span>.<span class="at">createObjectStore</span>(<span class="co">/* ... */</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb26-12" title="12">  <span class="at">useDatabase</span>(db)<span class="op">;</span></a>
+<a class="sourceLine" id="cb26-13" title="13"><span class="op">};</span></a>
+<a class="sourceLine" id="cb26-14" title="14"></a>
+<a class="sourceLine" id="cb26-15" title="15"><span class="va">openReq</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb26-16" title="16">  <span class="kw">var</span> db <span class="op">=</span> <span class="va">event</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb26-17" title="17">  <span class="at">useDatabase</span>(db)<span class="op">;</span></a>
+<a class="sourceLine" id="cb26-18" title="18">  <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb26-19" title="19"><span class="op">};</span></a>
+<a class="sourceLine" id="cb26-20" title="20"></a>
+<a class="sourceLine" id="cb26-21" title="21"><span class="kw">function</span> <span class="at">useDatabase</span>(db) <span class="op">{</span></a>
+<a class="sourceLine" id="cb26-22" title="22">  <span class="co">// Make sure to add a handler to be notified if another page requests a version</span></a>
+<a class="sourceLine" id="cb26-23" title="23">  <span class="co">// change. We must close the database. This allows the other page to upgrade the database.</span></a>
+<a class="sourceLine" id="cb26-24" title="24">  <span class="co">// If you don&#39;t do this then the upgrade won&#39;t happen until the user closes the tab.</span></a>
+<a class="sourceLine" id="cb26-25" title="25"> <span class="va"> db</span>.<span class="at">onversionchange</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb26-26" title="26">    <span class="va">db</span>.<span class="at">close</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb26-27" title="27">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;A new version of this page is ready. Please reload or close this tab!&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb26-28" title="28">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb26-29" title="29"></a>
+<a class="sourceLine" id="cb26-30" title="30">  <span class="co">// Do stuff with the database.</span></a>
+<a class="sourceLine" id="cb26-31" title="31"><span class="op">}</span></a></code></pre></div>
+<p>You should also listen for <code>VersionError</code> errors to handle the situation where already opened apps may initiate code leading to a new attempt to open the database, but using an outdated version.</p>
+<h2 id="security">Security</h2>
+<p>IndexedDB uses the same-origin principle, which means that it ties the store to the origin of the site that creates it (typically, this is the site domain or subdomain), so it cannot be accessed by any other origin.</p>
+<p>Third party window content (e.g. {{htmlelement(“iframe”)}} content) cannot access IndexedDB if the browser is set to <a href="https://support.mozilla.org/en-US/kb/disable-third-party-cookies">never accept third party cookies</a> (see {{bug(“1147821”)}}.)</p>
+<h2 id="warning-about-browser-shutdown">Warning about browser shutdown</h2>
+<p>When the browser shuts down (because the user chose the Quit or Exit option), the disk containing the database is removed unexpectedly, or permissions are lost to the database store, the following things happen:</p>
+<ol type="1">
+<li>Each transaction on every affected database (or all open databases, in the case of browser shutdown) is aborted with an <code>AbortError</code>. The effect is the same as if {{domxref(“IDBTransaction.abort()”)}} is called on each transaction.</li>
+<li>Once all of the transactions have completed, the database connection is closed.</li>
+<li>Finally, the {{domxref(“IDBDatabase”)}} object representing the database connection receives a {{event(“close”)}} event. You can use the {{domxref(“IDBDatabase.onclose”)}} event handler to listen for these events, so that you know when a database is unexpectedly closed.</li>
+</ol>
+<p>The behavior described above is new, and is only available as of the following browser releases: Firefox 50, Google Chrome 31 (approximately).</p>
+<p>Prior to these browser versions, the transactions are aborted silently, and no {{event(“close”)}} event is fired, so there is no way to detect an unexpected database closure.</p>
+<p>Since the user can exit the browser at any time, this means that you cannot rely upon any particular transaction to complete, and on older browsers, you don’t even get told when they don’t complete. There are several implications of this behavior.</p>
+<p>First, you should take care to always leave your database in a consistent state at the end of every transaction. For example, suppose that you are using IndexedDB to store a list of items that you allow the user to edit. You save the list after the edit by clearing the object store and then writing out the new list. If you clear the object store in one transaction and write the new list in another transaction, there is a danger that the browser will close after the clear but before the write, leaving you with an empty database. To avoid this, you should combine the clear and the write into a single transaction.</p>
+<p>Second, you should never tie database transactions to unload events. If the unload event is triggered by the browser closing, any transactions created in the unload event handler will never complete. An intuitive approach to maintaining some information across browser sessions is to read it from the database when the browser (or a particular page) is opened, update it as the user interacts with the browser, and then save it to the database when the browser (or page) closes. However, this will not work. The database transactions will be created in the unload event handler, but because they are asynchronous they will be aborted before they can execute.</p>
+<p>In fact, there is no way to guarantee that IndexedDB transactions will complete, even with normal browser shutdown. See {{ bug(870645) }}. As a workaround for this normal shutdown notification, you might track your transactions and add a <code>beforeunload</code> event to warn the user if any transactions have not yet completed at the time of unloading.</p>
+<p>At least with the addition of the abort notifications and {{domxref(“IDBDatabase.onclose”)}}, you can know when this has happened.</p>
+<h2 id="locale-aware-sorting">Locale-aware sorting</h2>
+<p>Mozilla has implemented the ability to perform locale-aware sorting of IndexedDB data in Firefox 43+. By default, IndexedDB didn’t handle internationalization of sorting strings at all, and everything was sorted as if it were English text. For example, b, á, z, a would be sorted as:</p>
+<ul>
+<li>a</li>
+<li>b</li>
+<li>z</li>
+<li>á</li>
+</ul>
+<p>which is obviously not how users want their data to be sorted — Aaron and Áaron for example should go next to one another in a contacts list. Achieving proper international sorting therefore required the entire dataset to be called into memory, and sorting to be performed by client-side JavaScript, which is not very efficient.</p>
+<p>This new functionality enables developers to specify a locale when creating an index using {{domxref(“IDBObjectStore.createIndex()”)}} (check out its parameters.) In such cases, when a cursor is then used to iterate through the dataset, and you want to specify locale-aware sorting, you can use a specialized {{domxref(“IDBLocaleAwareKeyRange”)}}.</p>
+<p>{{domxref(“IDBIndex”)}} has also had new properties added to it to specify if it has a locale specified, and what it is: <code>locale</code> (returns the locale if any, or null if none is specified) and <code>isAutoLocale</code> (returns <code>true</code> if the index was created with an auto locale, meaning that the platform’s default locale is used, <code>false</code> otherwise.)</p>
+<blockquote>
+<p><strong>Note:</strong> This feature is currently hidden behind a flag — to enable it and experiment, go to <code>about:config</code> and enable <code>dom.indexedDB.experimental</code>.</p>
+</blockquote>
+<h2 id="full-indexeddb-example">Full IndexedDB example</h2>
+<h3 id="html-content">HTML Content</h3>
+<div class="sourceCode" id="cb27"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb27-1" title="1"><span class="kw">&lt;script</span><span class="ot"> type=</span><span class="st">&quot;text/javascript&quot;</span><span class="ot"> src=</span><span class="st">&quot;https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js&quot;</span><span class="kw">&gt;&lt;/script&gt;</span></a>
+<a class="sourceLine" id="cb27-2" title="2"></a>
+<a class="sourceLine" id="cb27-3" title="3">    <span class="kw">&lt;h1&gt;</span>IndexedDB Demo: storing blobs, e-publication example<span class="kw">&lt;/h1&gt;</span></a>
+<a class="sourceLine" id="cb27-4" title="4">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;note&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb27-5" title="5">      <span class="kw">&lt;p&gt;</span></a>
+<a class="sourceLine" id="cb27-6" title="6">        Works and tested with:</a>
+<a class="sourceLine" id="cb27-7" title="7">      <span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb27-8" title="8">      <span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;compat&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb27-9" title="9">      <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb27-10" title="10">    <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb27-11" title="11"></a>
+<a class="sourceLine" id="cb27-12" title="12">    <span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;msg&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb27-13" title="13">    <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb27-14" title="14"></a>
+<a class="sourceLine" id="cb27-15" title="15">    <span class="kw">&lt;form</span><span class="ot"> id=</span><span class="st">&quot;register-form&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb27-16" title="16">      <span class="kw">&lt;table&gt;</span></a>
+<a class="sourceLine" id="cb27-17" title="17">        <span class="kw">&lt;tbody&gt;</span></a>
+<a class="sourceLine" id="cb27-18" title="18">          <span class="kw">&lt;tr&gt;</span></a>
+<a class="sourceLine" id="cb27-19" title="19">            <span class="kw">&lt;td&gt;</span></a>
+<a class="sourceLine" id="cb27-20" title="20">              <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;pub-title&quot;</span><span class="ot"> class=</span><span class="st">&quot;required&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb27-21" title="21">                Title:</a>
+<a class="sourceLine" id="cb27-22" title="22">              <span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb27-23" title="23">            <span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb27-24" title="24">            <span class="kw">&lt;td&gt;</span></a>
+<a class="sourceLine" id="cb27-25" title="25">              <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;text&quot;</span><span class="ot"> id=</span><span class="st">&quot;pub-title&quot;</span><span class="ot"> name=</span><span class="st">&quot;pub-title&quot;</span> <span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb27-26" title="26">            <span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb27-27" title="27">          <span class="kw">&lt;/tr&gt;</span></a>
+<a class="sourceLine" id="cb27-28" title="28">          <span class="kw">&lt;tr&gt;</span></a>
+<a class="sourceLine" id="cb27-29" title="29">            <span class="kw">&lt;td&gt;</span></a>
+<a class="sourceLine" id="cb27-30" title="30">              <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;pub-biblioid&quot;</span><span class="ot"> class=</span><span class="st">&quot;required&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb27-31" title="31">                Bibliographic ID:<span class="kw">&lt;br/&gt;</span></a>
+<a class="sourceLine" id="cb27-32" title="32">                <span class="kw">&lt;span</span><span class="ot"> class=</span><span class="st">&quot;note&quot;</span><span class="kw">&gt;</span>(ISBN, ISSN, etc.)<span class="kw">&lt;/span&gt;</span></a>
+<a class="sourceLine" id="cb27-33" title="33">              <span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb27-34" title="34">            <span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb27-35" title="35">            <span class="kw">&lt;td&gt;</span></a>
+<a class="sourceLine" id="cb27-36" title="36">              <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;text&quot;</span><span class="ot"> id=</span><span class="st">&quot;pub-biblioid&quot;</span><span class="ot"> name=</span><span class="st">&quot;pub-biblioid&quot;</span><span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb27-37" title="37">            <span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb27-38" title="38">          <span class="kw">&lt;/tr&gt;</span></a>
+<a class="sourceLine" id="cb27-39" title="39">          <span class="kw">&lt;tr&gt;</span></a>
+<a class="sourceLine" id="cb27-40" title="40">            <span class="kw">&lt;td&gt;</span></a>
+<a class="sourceLine" id="cb27-41" title="41">              <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;pub-year&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb27-42" title="42">                Year:</a>
+<a class="sourceLine" id="cb27-43" title="43">              <span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb27-44" title="44">            <span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb27-45" title="45">            <span class="kw">&lt;td&gt;</span></a>
+<a class="sourceLine" id="cb27-46" title="46">              <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;number&quot;</span><span class="ot"> id=</span><span class="st">&quot;pub-year&quot;</span><span class="ot"> name=</span><span class="st">&quot;pub-year&quot;</span> <span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb27-47" title="47">            <span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb27-48" title="48">          <span class="kw">&lt;/tr&gt;</span></a>
+<a class="sourceLine" id="cb27-49" title="49">        <span class="kw">&lt;/tbody&gt;</span></a>
+<a class="sourceLine" id="cb27-50" title="50">        <span class="kw">&lt;tbody&gt;</span></a>
+<a class="sourceLine" id="cb27-51" title="51">          <span class="kw">&lt;tr&gt;</span></a>
+<a class="sourceLine" id="cb27-52" title="52">            <span class="kw">&lt;td&gt;</span></a>
+<a class="sourceLine" id="cb27-53" title="53">              <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;pub-file&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb27-54" title="54">                File image:</a>
+<a class="sourceLine" id="cb27-55" title="55">              <span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb27-56" title="56">            <span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb27-57" title="57">            <span class="kw">&lt;td&gt;</span></a>
+<a class="sourceLine" id="cb27-58" title="58">              <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;file&quot;</span><span class="ot"> id=</span><span class="st">&quot;pub-file&quot;</span><span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb27-59" title="59">            <span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb27-60" title="60">          <span class="kw">&lt;/tr&gt;</span></a>
+<a class="sourceLine" id="cb27-61" title="61">          <span class="kw">&lt;tr&gt;</span></a>
+<a class="sourceLine" id="cb27-62" title="62">            <span class="kw">&lt;td&gt;</span></a>
+<a class="sourceLine" id="cb27-63" title="63">              <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;pub-file-url&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb27-64" title="64">                Online-file image URL:<span class="kw">&lt;br/&gt;</span></a>
+<a class="sourceLine" id="cb27-65" title="65">                <span class="kw">&lt;span</span><span class="ot"> class=</span><span class="st">&quot;note&quot;</span><span class="kw">&gt;</span>(same origin URL)<span class="kw">&lt;/span&gt;</span></a>
+<a class="sourceLine" id="cb27-66" title="66">              <span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb27-67" title="67">            <span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb27-68" title="68">            <span class="kw">&lt;td&gt;</span></a>
+<a class="sourceLine" id="cb27-69" title="69">              <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;text&quot;</span><span class="ot"> id=</span><span class="st">&quot;pub-file-url&quot;</span><span class="ot"> name=</span><span class="st">&quot;pub-file-url&quot;</span><span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb27-70" title="70">            <span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb27-71" title="71">          <span class="kw">&lt;/tr&gt;</span></a>
+<a class="sourceLine" id="cb27-72" title="72">        <span class="kw">&lt;/tbody&gt;</span></a>
+<a class="sourceLine" id="cb27-73" title="73">      <span class="kw">&lt;/table&gt;</span></a>
+<a class="sourceLine" id="cb27-74" title="74"></a>
+<a class="sourceLine" id="cb27-75" title="75">      <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;button-pane&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb27-76" title="76">        <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;button&quot;</span><span class="ot"> id=</span><span class="st">&quot;add-button&quot;</span><span class="ot"> value=</span><span class="st">&quot;Add Publication&quot;</span> <span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb27-77" title="77">        <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;reset&quot;</span><span class="ot"> id=</span><span class="st">&quot;register-form-reset&quot;</span><span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb27-78" title="78">      <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb27-79" title="79">    <span class="kw">&lt;/form&gt;</span></a>
+<a class="sourceLine" id="cb27-80" title="80"></a>
+<a class="sourceLine" id="cb27-81" title="81">    <span class="kw">&lt;form</span><span class="ot"> id=</span><span class="st">&quot;delete-form&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb27-82" title="82">      <span class="kw">&lt;table&gt;</span></a>
+<a class="sourceLine" id="cb27-83" title="83">        <span class="kw">&lt;tbody&gt;</span></a>
+<a class="sourceLine" id="cb27-84" title="84">          <span class="kw">&lt;tr&gt;</span></a>
+<a class="sourceLine" id="cb27-85" title="85">            <span class="kw">&lt;td&gt;</span></a>
+<a class="sourceLine" id="cb27-86" title="86">              <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;pub-biblioid-to-delete&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb27-87" title="87">                Bibliographic ID:<span class="kw">&lt;br/&gt;</span></a>
+<a class="sourceLine" id="cb27-88" title="88">                <span class="kw">&lt;span</span><span class="ot"> class=</span><span class="st">&quot;note&quot;</span><span class="kw">&gt;</span>(ISBN, ISSN, etc.)<span class="kw">&lt;/span&gt;</span></a>
+<a class="sourceLine" id="cb27-89" title="89">              <span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb27-90" title="90">            <span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb27-91" title="91">            <span class="kw">&lt;td&gt;</span></a>
+<a class="sourceLine" id="cb27-92" title="92">              <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;text&quot;</span><span class="ot"> id=</span><span class="st">&quot;pub-biblioid-to-delete&quot;</span></a>
+<a class="sourceLine" id="cb27-93" title="93"><span class="er">                    </span><span class="ot"> name=</span><span class="st">&quot;pub-biblioid-to-delete&quot;</span> <span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb27-94" title="94">            <span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb27-95" title="95">          <span class="kw">&lt;/tr&gt;</span></a>
+<a class="sourceLine" id="cb27-96" title="96">          <span class="kw">&lt;tr&gt;</span></a>
+<a class="sourceLine" id="cb27-97" title="97">            <span class="kw">&lt;td&gt;</span></a>
+<a class="sourceLine" id="cb27-98" title="98">              <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;key-to-delete&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb27-99" title="99">                Key:<span class="kw">&lt;br/&gt;</span></a>
+<a class="sourceLine" id="cb27-100" title="100">                <span class="kw">&lt;span</span><span class="ot"> class=</span><span class="st">&quot;note&quot;</span><span class="kw">&gt;</span>(for example 1, 2, 3, etc.)<span class="kw">&lt;/span&gt;</span></a>
+<a class="sourceLine" id="cb27-101" title="101">              <span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb27-102" title="102">            <span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb27-103" title="103">            <span class="kw">&lt;td&gt;</span></a>
+<a class="sourceLine" id="cb27-104" title="104">              <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;text&quot;</span><span class="ot"> id=</span><span class="st">&quot;key-to-delete&quot;</span></a>
+<a class="sourceLine" id="cb27-105" title="105"><span class="er">                    </span><span class="ot"> name=</span><span class="st">&quot;key-to-delete&quot;</span> <span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb27-106" title="106">            <span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb27-107" title="107">          <span class="kw">&lt;/tr&gt;</span></a>
+<a class="sourceLine" id="cb27-108" title="108">        <span class="kw">&lt;/tbody&gt;</span></a>
+<a class="sourceLine" id="cb27-109" title="109">      <span class="kw">&lt;/table&gt;</span></a>
+<a class="sourceLine" id="cb27-110" title="110">      <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;button-pane&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb27-111" title="111">        <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;button&quot;</span><span class="ot"> id=</span><span class="st">&quot;delete-button&quot;</span><span class="ot"> value=</span><span class="st">&quot;Delete Publication&quot;</span> <span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb27-112" title="112">        <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;button&quot;</span><span class="ot"> id=</span><span class="st">&quot;clear-store-button&quot;</span></a>
+<a class="sourceLine" id="cb27-113" title="113"><span class="er">              </span><span class="ot"> value=</span><span class="st">&quot;Clear the whole store&quot;</span><span class="ot"> class=</span><span class="st">&quot;destructive&quot;</span> <span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb27-114" title="114">      <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb27-115" title="115">    <span class="kw">&lt;/form&gt;</span></a>
+<a class="sourceLine" id="cb27-116" title="116"></a>
+<a class="sourceLine" id="cb27-117" title="117">    <span class="kw">&lt;form</span><span class="ot"> id=</span><span class="st">&quot;search-form&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb27-118" title="118">      <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;button-pane&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb27-119" title="119">        <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;button&quot;</span><span class="ot"> id=</span><span class="st">&quot;search-list-button&quot;</span></a>
+<a class="sourceLine" id="cb27-120" title="120"><span class="er">              </span><span class="ot"> value=</span><span class="st">&quot;List database content&quot;</span> <span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb27-121" title="121">      <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb27-122" title="122">    <span class="kw">&lt;/form&gt;</span></a>
+<a class="sourceLine" id="cb27-123" title="123"></a>
+<a class="sourceLine" id="cb27-124" title="124">    <span class="kw">&lt;div&gt;</span></a>
+<a class="sourceLine" id="cb27-125" title="125">      <span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;pub-msg&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb27-126" title="126">      <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb27-127" title="127">      <span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;pub-viewer&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb27-128" title="128">      <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb27-129" title="129">      <span class="kw">&lt;ul</span><span class="ot"> id=</span><span class="st">&quot;pub-list&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb27-130" title="130">      <span class="kw">&lt;/ul&gt;</span></a>
+<a class="sourceLine" id="cb27-131" title="131">    <span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<h3 id="css-content">CSS Content</h3>
+<div class="sourceCode" id="cb28"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb28-1" title="1">body {</a>
+<a class="sourceLine" id="cb28-2" title="2">  <span class="kw">font-size</span>: <span class="dv">0.8</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-3" title="3">  <span class="kw">font-family</span>: <span class="dv">Sans-Serif</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-4" title="4">}</a>
+<a class="sourceLine" id="cb28-5" title="5"></a>
+<a class="sourceLine" id="cb28-6" title="6">form {</a>
+<a class="sourceLine" id="cb28-7" title="7">  <span class="kw">background-color</span>: <span class="cn">#cccccc</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-8" title="8">  <span class="kw">border-radius</span>: <span class="dv">0.3</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-9" title="9">  <span class="kw">display</span>: <span class="dv">inline-block</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-10" title="10">  <span class="kw">margin-bottom</span>: <span class="dv">0.5</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-11" title="11">  <span class="kw">padding</span>: <span class="dv">1</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-12" title="12">}</a>
+<a class="sourceLine" id="cb28-13" title="13"></a>
+<a class="sourceLine" id="cb28-14" title="14">table {</a>
+<a class="sourceLine" id="cb28-15" title="15">  <span class="kw">border-collapse</span>: <span class="dv">collapse</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-16" title="16">}</a>
+<a class="sourceLine" id="cb28-17" title="17"></a>
+<a class="sourceLine" id="cb28-18" title="18">input {</a>
+<a class="sourceLine" id="cb28-19" title="19">  <span class="kw">padding</span>: <span class="dv">0.3</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-20" title="20">  <span class="kw">border-color</span>: <span class="cn">#cccccc</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-21" title="21">  <span class="kw">border-radius</span>: <span class="dv">0.3</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-22" title="22">}</a>
+<a class="sourceLine" id="cb28-23" title="23"></a>
+<a class="sourceLine" id="cb28-24" title="24"><span class="fu">.required</span><span class="in">:after</span> {</a>
+<a class="sourceLine" id="cb28-25" title="25">  <span class="kw">content</span>: <span class="st">&quot;*&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-26" title="26">  <span class="kw">color</span>: <span class="cn">red</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-27" title="27">}</a>
+<a class="sourceLine" id="cb28-28" title="28"></a>
+<a class="sourceLine" id="cb28-29" title="29"><span class="fu">.button-pane</span> {</a>
+<a class="sourceLine" id="cb28-30" title="30">  <span class="kw">margin-top</span>: <span class="dv">1</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-31" title="31">}</a>
+<a class="sourceLine" id="cb28-32" title="32"></a>
+<a class="sourceLine" id="cb28-33" title="33"><span class="pp">#pub-viewer</span> {</a>
+<a class="sourceLine" id="cb28-34" title="34">  <span class="kw">float</span>: <span class="dv">right</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-35" title="35">  <span class="kw">width</span>: <span class="dv">48</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-36" title="36">  <span class="kw">height</span>: <span class="dv">20</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-37" title="37">  <span class="kw">border</span>: <span class="dv">solid</span> <span class="cn">#d092ff</span> <span class="dv">0.1</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-38" title="38">}</a>
+<a class="sourceLine" id="cb28-39" title="39"><span class="pp">#pub-viewer</span> iframe {</a>
+<a class="sourceLine" id="cb28-40" title="40">  <span class="kw">width</span>: <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-41" title="41">  <span class="kw">height</span>: <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-42" title="42">}</a>
+<a class="sourceLine" id="cb28-43" title="43"></a>
+<a class="sourceLine" id="cb28-44" title="44"><span class="pp">#pub-list</span> {</a>
+<a class="sourceLine" id="cb28-45" title="45">  <span class="kw">width</span>: <span class="dv">46</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-46" title="46">  <span class="kw">background-color</span>: <span class="cn">#eeeeee</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-47" title="47">  <span class="kw">border-radius</span>: <span class="dv">0.3</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-48" title="48">}</a>
+<a class="sourceLine" id="cb28-49" title="49"><span class="pp">#pub-list</span> li {</a>
+<a class="sourceLine" id="cb28-50" title="50">  <span class="kw">padding-top</span>: <span class="dv">0.5</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-51" title="51">  <span class="kw">padding-bottom</span>: <span class="dv">0.5</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-52" title="52">  <span class="kw">padding-right</span>: <span class="dv">0.5</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-53" title="53">}</a>
+<a class="sourceLine" id="cb28-54" title="54"></a>
+<a class="sourceLine" id="cb28-55" title="55"><span class="pp">#msg</span> {</a>
+<a class="sourceLine" id="cb28-56" title="56">  <span class="kw">margin-bottom</span>: <span class="dv">1</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-57" title="57">}</a>
+<a class="sourceLine" id="cb28-58" title="58"></a>
+<a class="sourceLine" id="cb28-59" title="59"><span class="fu">.action-success</span> {</a>
+<a class="sourceLine" id="cb28-60" title="60">  <span class="kw">padding</span>: <span class="dv">0.5</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-61" title="61">  <span class="kw">color</span>: <span class="cn">#00d21e</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-62" title="62">  <span class="kw">background-color</span>: <span class="cn">#eeeeee</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-63" title="63">  <span class="kw">border-radius</span>: <span class="dv">0.2</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-64" title="64">}</a>
+<a class="sourceLine" id="cb28-65" title="65"></a>
+<a class="sourceLine" id="cb28-66" title="66"><span class="fu">.action-failure</span> {</a>
+<a class="sourceLine" id="cb28-67" title="67">  <span class="kw">padding</span>: <span class="dv">0.5</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-68" title="68">  <span class="kw">color</span>: <span class="cn">#ff1408</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-69" title="69">  <span class="kw">background-color</span>: <span class="cn">#eeeeee</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-70" title="70">  <span class="kw">border-radius</span>: <span class="dv">0.2</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-71" title="71">}</a>
+<a class="sourceLine" id="cb28-72" title="72"></a>
+<a class="sourceLine" id="cb28-73" title="73"><span class="fu">.note</span> {</a>
+<a class="sourceLine" id="cb28-74" title="74">  <span class="kw">font-size</span>: <span class="dv">smaller</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-75" title="75">}</a>
+<a class="sourceLine" id="cb28-76" title="76"></a>
+<a class="sourceLine" id="cb28-77" title="77"><span class="fu">.destructive</span> {</a>
+<a class="sourceLine" id="cb28-78" title="78">  <span class="kw">background-color</span>: <span class="cn">orange</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-79" title="79">}</a>
+<a class="sourceLine" id="cb28-80" title="80"><span class="fu">.destructive</span><span class="in">:hover</span> {</a>
+<a class="sourceLine" id="cb28-81" title="81">  <span class="kw">background-color</span>: <span class="cn">#ff8000</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-82" title="82">}</a>
+<a class="sourceLine" id="cb28-83" title="83"><span class="fu">.destructive</span><span class="in">:active</span> {</a>
+<a class="sourceLine" id="cb28-84" title="84">  <span class="kw">background-color</span>: <span class="cn">red</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb28-85" title="85">}</a></code></pre></div>
+<h3 id="javascript-content">JavaScript Content</h3>
+<div class="sourceCode" id="cb29"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb29-1" title="1">(<span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-2" title="2">  <span class="kw">var</span> COMPAT_ENVS <span class="op">=</span> [</a>
+<a class="sourceLine" id="cb29-3" title="3">    [<span class="st">&#39;Firefox&#39;</span><span class="op">,</span> <span class="st">&quot;&gt;= 16.0&quot;</span>]<span class="op">,</span></a>
+<a class="sourceLine" id="cb29-4" title="4">    [<span class="st">&#39;Google Chrome&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb29-5" title="5">     <span class="st">&quot;&gt;= 24.0 (you may need to get Google Chrome Canary), NO Blob storage support&quot;</span>]</a>
+<a class="sourceLine" id="cb29-6" title="6">  ]<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-7" title="7">  <span class="kw">var</span> compat <span class="op">=</span> <span class="at">$</span>(<span class="st">&#39;#compat&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-8" title="8">  <span class="va">compat</span>.<span class="at">empty</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-9" title="9">  <span class="va">compat</span>.<span class="at">append</span>(<span class="st">&#39;&lt;ul id=&quot;compat-list&quot;&gt;&lt;/ul&gt;&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-10" title="10">  <span class="va">COMPAT_ENVS</span>.<span class="at">forEach</span>(<span class="kw">function</span>(val<span class="op">,</span> idx<span class="op">,</span> array) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-11" title="11">    <span class="at">$</span>(<span class="st">&#39;#compat-list&#39;</span>).<span class="at">append</span>(<span class="st">&#39;&lt;li&gt;&#39;</span> <span class="op">+</span> val[<span class="dv">0</span>] <span class="op">+</span> <span class="st">&#39;: &#39;</span> <span class="op">+</span> val[<span class="dv">1</span>] <span class="op">+</span> <span class="st">&#39;&lt;/li&gt;&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-12" title="12">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-13" title="13"></a>
+<a class="sourceLine" id="cb29-14" title="14">  <span class="kw">const</span> DB_NAME <span class="op">=</span> <span class="st">&#39;mdn-demo-indexeddb-epublications&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb29-15" title="15">  <span class="kw">const</span> DB_VERSION <span class="op">=</span> <span class="dv">1</span><span class="op">;</span> <span class="co">// Use a long long for this value (don&#39;t use a float)</span></a>
+<a class="sourceLine" id="cb29-16" title="16">  <span class="kw">const</span> DB_STORE_NAME <span class="op">=</span> <span class="st">&#39;publications&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb29-17" title="17"></a>
+<a class="sourceLine" id="cb29-18" title="18">  <span class="kw">var</span> db<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-19" title="19"></a>
+<a class="sourceLine" id="cb29-20" title="20">  <span class="co">// Used to keep track of which view is displayed to avoid uselessly reloading it</span></a>
+<a class="sourceLine" id="cb29-21" title="21">  <span class="kw">var</span> current_view_pub_key<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-22" title="22"></a>
+<a class="sourceLine" id="cb29-23" title="23">  <span class="kw">function</span> <span class="at">openDb</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-24" title="24">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;openDb ...&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-25" title="25">    <span class="kw">var</span> req <span class="op">=</span> <span class="va">indexedDB</span>.<span class="at">open</span>(DB_NAME<span class="op">,</span> DB_VERSION)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-26" title="26">    <span class="va">req</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span> (evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-27" title="27">      <span class="co">// Equal to: db = req.result;</span></a>
+<a class="sourceLine" id="cb29-28" title="28">      db <span class="op">=</span> <span class="kw">this</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb29-29" title="29">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;openDb DONE&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-30" title="30">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb29-31" title="31">    <span class="va">req</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span> (evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-32" title="32">      <span class="va">console</span>.<span class="at">error</span>(<span class="st">&quot;openDb:&quot;</span><span class="op">,</span> <span class="va">evt</span>.<span class="va">target</span>.<span class="at">errorCode</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-33" title="33">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb29-34" title="34"></a>
+<a class="sourceLine" id="cb29-35" title="35">    <span class="va">req</span>.<span class="at">onupgradeneeded</span> <span class="op">=</span> <span class="kw">function</span> (evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-36" title="36">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;openDb.onupgradeneeded&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-37" title="37">      <span class="kw">var</span> store <span class="op">=</span> <span class="va">evt</span>.<span class="va">currentTarget</span>.<span class="va">result</span>.<span class="at">createObjectStore</span>(</a>
+<a class="sourceLine" id="cb29-38" title="38">        DB_STORE_NAME<span class="op">,</span> <span class="op">{</span> <span class="dt">keyPath</span><span class="op">:</span> <span class="st">&#39;id&#39;</span><span class="op">,</span> <span class="dt">autoIncrement</span><span class="op">:</span> <span class="kw">true</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-39" title="39"></a>
+<a class="sourceLine" id="cb29-40" title="40">      <span class="va">store</span>.<span class="at">createIndex</span>(<span class="st">&#39;biblioid&#39;</span><span class="op">,</span> <span class="st">&#39;biblioid&#39;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">unique</span><span class="op">:</span> <span class="kw">true</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-41" title="41">      <span class="va">store</span>.<span class="at">createIndex</span>(<span class="st">&#39;title&#39;</span><span class="op">,</span> <span class="st">&#39;title&#39;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">unique</span><span class="op">:</span> <span class="kw">false</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-42" title="42">      <span class="va">store</span>.<span class="at">createIndex</span>(<span class="st">&#39;year&#39;</span><span class="op">,</span> <span class="st">&#39;year&#39;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">unique</span><span class="op">:</span> <span class="kw">false</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-43" title="43">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb29-44" title="44">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-45" title="45"></a>
+<a class="sourceLine" id="cb29-46" title="46">  <span class="co">/**</span></a>
+<a class="sourceLine" id="cb29-47" title="47"><span class="co">   * </span><span class="an">@param</span><span class="co"> </span><span class="cv">{string}</span><span class="co"> store_name</span></a>
+<a class="sourceLine" id="cb29-48" title="48"><span class="co">   * </span><span class="an">@param</span><span class="co"> </span><span class="cv">{string}</span><span class="co"> mode either &quot;readonly&quot; or &quot;readwrite&quot;</span></a>
+<a class="sourceLine" id="cb29-49" title="49"><span class="co">   */</span></a>
+<a class="sourceLine" id="cb29-50" title="50">  <span class="kw">function</span> <span class="at">getObjectStore</span>(store_name<span class="op">,</span> mode) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-51" title="51">    <span class="kw">var</span> tx <span class="op">=</span> <span class="va">db</span>.<span class="at">transaction</span>(store_name<span class="op">,</span> mode)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-52" title="52">    <span class="cf">return</span> <span class="va">tx</span>.<span class="at">objectStore</span>(store_name)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-53" title="53">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-54" title="54"></a>
+<a class="sourceLine" id="cb29-55" title="55">  <span class="kw">function</span> <span class="at">clearObjectStore</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-56" title="56">    <span class="kw">var</span> store <span class="op">=</span> <span class="at">getObjectStore</span>(DB_STORE_NAME<span class="op">,</span> <span class="st">&#39;readwrite&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-57" title="57">    <span class="kw">var</span> req <span class="op">=</span> <span class="va">store</span>.<span class="at">clear</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-58" title="58">    <span class="va">req</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-59" title="59">      <span class="at">displayActionSuccess</span>(<span class="st">&quot;Store cleared&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-60" title="60">      <span class="at">displayPubList</span>(store)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-61" title="61">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb29-62" title="62">    <span class="va">req</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span> (evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-63" title="63">      <span class="va">console</span>.<span class="at">error</span>(<span class="st">&quot;clearObjectStore:&quot;</span><span class="op">,</span> <span class="va">evt</span>.<span class="va">target</span>.<span class="at">errorCode</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-64" title="64">      <span class="at">displayActionFailure</span>(<span class="kw">this</span>.<span class="at">error</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-65" title="65">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb29-66" title="66">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-67" title="67"></a>
+<a class="sourceLine" id="cb29-68" title="68">  <span class="kw">function</span> <span class="at">getBlob</span>(key<span class="op">,</span> store<span class="op">,</span> success_callback) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-69" title="69">    <span class="kw">var</span> req <span class="op">=</span> <span class="va">store</span>.<span class="at">get</span>(key)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-70" title="70">    <span class="va">req</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-71" title="71">      <span class="kw">var</span> value <span class="op">=</span> <span class="va">evt</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb29-72" title="72">      <span class="cf">if</span> (value)</a>
+<a class="sourceLine" id="cb29-73" title="73">        <span class="at">success_callback</span>(<span class="va">value</span>.<span class="at">blob</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-74" title="74">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb29-75" title="75">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-76" title="76"></a>
+<a class="sourceLine" id="cb29-77" title="77">  <span class="co">/**</span></a>
+<a class="sourceLine" id="cb29-78" title="78"><span class="co">   * </span><span class="an">@param</span><span class="co"> </span><span class="cv">{IDBObjectStore=}</span><span class="co"> store</span></a>
+<a class="sourceLine" id="cb29-79" title="79"><span class="co">   */</span></a>
+<a class="sourceLine" id="cb29-80" title="80">  <span class="kw">function</span> <span class="at">displayPubList</span>(store) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-81" title="81">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;displayPubList&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-82" title="82"></a>
+<a class="sourceLine" id="cb29-83" title="83">    <span class="cf">if</span> (<span class="kw">typeof</span> store <span class="op">==</span> <span class="st">&#39;undefined&#39;</span>)</a>
+<a class="sourceLine" id="cb29-84" title="84">      store <span class="op">=</span> <span class="at">getObjectStore</span>(DB_STORE_NAME<span class="op">,</span> <span class="st">&#39;readonly&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-85" title="85"></a>
+<a class="sourceLine" id="cb29-86" title="86">    <span class="kw">var</span> pub_msg <span class="op">=</span> <span class="at">$</span>(<span class="st">&#39;#pub-msg&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-87" title="87">    <span class="va">pub_msg</span>.<span class="at">empty</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-88" title="88">    <span class="kw">var</span> pub_list <span class="op">=</span> <span class="at">$</span>(<span class="st">&#39;#pub-list&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-89" title="89">    <span class="va">pub_list</span>.<span class="at">empty</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-90" title="90">    <span class="co">// Resetting the iframe so that it doesn&#39;t display previous content</span></a>
+<a class="sourceLine" id="cb29-91" title="91">    <span class="at">newViewerFrame</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-92" title="92"></a>
+<a class="sourceLine" id="cb29-93" title="93">    <span class="kw">var</span> req<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-94" title="94">    req <span class="op">=</span> <span class="va">store</span>.<span class="at">count</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-95" title="95">    <span class="co">// Requests are executed in the order in which they were made against the</span></a>
+<a class="sourceLine" id="cb29-96" title="96">    <span class="co">// transaction, and their results are returned in the same order.</span></a>
+<a class="sourceLine" id="cb29-97" title="97">    <span class="co">// Thus the count text below will be displayed before the actual pub list</span></a>
+<a class="sourceLine" id="cb29-98" title="98">    <span class="co">// (not that it is algorithmically important in this case).</span></a>
+<a class="sourceLine" id="cb29-99" title="99">    <span class="va">req</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-100" title="100">      <span class="va">pub_msg</span>.<span class="at">append</span>(<span class="st">&#39;&lt;p&gt;There are &lt;strong&gt;&#39;</span> <span class="op">+</span> <span class="va">evt</span>.<span class="va">target</span>.<span class="at">result</span> <span class="op">+</span></a>
+<a class="sourceLine" id="cb29-101" title="101">                     <span class="st">&#39;&lt;/strong&gt; record(s) in the object store.&lt;/p&gt;&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-102" title="102">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb29-103" title="103">    <span class="va">req</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-104" title="104">      <span class="va">console</span>.<span class="at">error</span>(<span class="st">&quot;add error&quot;</span><span class="op">,</span> <span class="kw">this</span>.<span class="at">error</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-105" title="105">      <span class="at">displayActionFailure</span>(<span class="kw">this</span>.<span class="at">error</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-106" title="106">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb29-107" title="107"></a>
+<a class="sourceLine" id="cb29-108" title="108">    <span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb29-109" title="109">    req <span class="op">=</span> <span class="va">store</span>.<span class="at">openCursor</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-110" title="110">    <span class="va">req</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-111" title="111">      <span class="kw">var</span> cursor <span class="op">=</span> <span class="va">evt</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb29-112" title="112"></a>
+<a class="sourceLine" id="cb29-113" title="113">      <span class="co">// If the cursor is pointing at something, ask for the data</span></a>
+<a class="sourceLine" id="cb29-114" title="114">      <span class="cf">if</span> (cursor) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-115" title="115">        <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;displayPubList cursor:&quot;</span><span class="op">,</span> cursor)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-116" title="116">        req <span class="op">=</span> <span class="va">store</span>.<span class="at">get</span>(<span class="va">cursor</span>.<span class="at">key</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-117" title="117">        <span class="va">req</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span> (evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-118" title="118">          <span class="kw">var</span> value <span class="op">=</span> <span class="va">evt</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb29-119" title="119">          <span class="kw">var</span> list_item <span class="op">=</span> <span class="at">$</span>(<span class="st">&#39;&lt;li&gt;&#39;</span> <span class="op">+</span></a>
+<a class="sourceLine" id="cb29-120" title="120">                            <span class="st">&#39;[&#39;</span> <span class="op">+</span> <span class="va">cursor</span>.<span class="at">key</span> <span class="op">+</span> <span class="st">&#39;] &#39;</span> <span class="op">+</span></a>
+<a class="sourceLine" id="cb29-121" title="121">                            <span class="st">&#39;(biblioid: &#39;</span> <span class="op">+</span> <span class="va">value</span>.<span class="at">biblioid</span> <span class="op">+</span> <span class="st">&#39;) &#39;</span> <span class="op">+</span></a>
+<a class="sourceLine" id="cb29-122" title="122">                            <span class="va">value</span>.<span class="at">title</span> <span class="op">+</span></a>
+<a class="sourceLine" id="cb29-123" title="123">                            <span class="st">&#39;&lt;/li&gt;&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-124" title="124">          <span class="cf">if</span> (<span class="va">value</span>.<span class="at">year</span> <span class="op">!=</span> <span class="kw">null</span>)</a>
+<a class="sourceLine" id="cb29-125" title="125">            <span class="va">list_item</span>.<span class="at">append</span>(<span class="st">&#39; - &#39;</span> <span class="op">+</span> <span class="va">value</span>.<span class="at">year</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-126" title="126"></a>
+<a class="sourceLine" id="cb29-127" title="127">          <span class="cf">if</span> (<span class="va">value</span>.<span class="at">hasOwnProperty</span>(<span class="st">&#39;blob&#39;</span>) <span class="op">&amp;&amp;</span></a>
+<a class="sourceLine" id="cb29-128" title="128">              <span class="kw">typeof</span> <span class="va">value</span>.<span class="at">blob</span> <span class="op">!=</span> <span class="st">&#39;undefined&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-129" title="129">            <span class="kw">var</span> link <span class="op">=</span> <span class="at">$</span>(<span class="st">&#39;&lt;a href=&quot;&#39;</span> <span class="op">+</span> <span class="va">cursor</span>.<span class="at">key</span> <span class="op">+</span> <span class="st">&#39;&quot;&gt;File&lt;/a&gt;&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-130" title="130">            <span class="va">link</span>.<span class="at">on</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> <span class="kw">function</span>() <span class="op">{</span> <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-131" title="131">            <span class="va">link</span>.<span class="at">on</span>(<span class="st">&#39;mouseenter&#39;</span><span class="op">,</span> <span class="kw">function</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-132" title="132">                      <span class="at">setInViewer</span>(<span class="va">evt</span>.<span class="va">target</span>.<span class="at">getAttribute</span>(<span class="st">&#39;href&#39;</span>))<span class="op">;</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-133" title="133">            <span class="va">list_item</span>.<span class="at">append</span>(<span class="st">&#39; / &#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-134" title="134">            <span class="va">list_item</span>.<span class="at">append</span>(link)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-135" title="135">          <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-136" title="136">            <span class="va">list_item</span>.<span class="at">append</span>(<span class="st">&quot; / No attached file&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-137" title="137">          <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-138" title="138">          <span class="va">pub_list</span>.<span class="at">append</span>(list_item)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-139" title="139">        <span class="op">};</span></a>
+<a class="sourceLine" id="cb29-140" title="140"></a>
+<a class="sourceLine" id="cb29-141" title="141">        <span class="co">// Move on to the next object in store</span></a>
+<a class="sourceLine" id="cb29-142" title="142">        <span class="va">cursor</span>.<span class="at">continue</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-143" title="143"></a>
+<a class="sourceLine" id="cb29-144" title="144">        <span class="co">// This counter serves only to create distinct ids</span></a>
+<a class="sourceLine" id="cb29-145" title="145">        i<span class="op">++;</span></a>
+<a class="sourceLine" id="cb29-146" title="146">      <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-147" title="147">        <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;No more entries&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-148" title="148">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-149" title="149">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb29-150" title="150">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-151" title="151"></a>
+<a class="sourceLine" id="cb29-152" title="152">  <span class="kw">function</span> <span class="at">newViewerFrame</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-153" title="153">    <span class="kw">var</span> viewer <span class="op">=</span> <span class="at">$</span>(<span class="st">&#39;#pub-viewer&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-154" title="154">    <span class="va">viewer</span>.<span class="at">empty</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-155" title="155">    <span class="kw">var</span> iframe <span class="op">=</span> <span class="at">$</span>(<span class="st">&#39;&lt;iframe /&gt;&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-156" title="156">    <span class="va">viewer</span>.<span class="at">append</span>(iframe)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-157" title="157">    <span class="cf">return</span> iframe<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-158" title="158">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-159" title="159"></a>
+<a class="sourceLine" id="cb29-160" title="160">  <span class="kw">function</span> <span class="at">setInViewer</span>(key) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-161" title="161">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;setInViewer:&quot;</span><span class="op">,</span> <span class="kw">arguments</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-162" title="162">    key <span class="op">=</span> <span class="at">Number</span>(key)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-163" title="163">    <span class="cf">if</span> (key <span class="op">==</span> current_view_pub_key)</a>
+<a class="sourceLine" id="cb29-164" title="164">      <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb29-165" title="165"></a>
+<a class="sourceLine" id="cb29-166" title="166">    current_view_pub_key <span class="op">=</span> key<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-167" title="167"></a>
+<a class="sourceLine" id="cb29-168" title="168">    <span class="kw">var</span> store <span class="op">=</span> <span class="at">getObjectStore</span>(DB_STORE_NAME<span class="op">,</span> <span class="st">&#39;readonly&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-169" title="169">    <span class="at">getBlob</span>(key<span class="op">,</span> store<span class="op">,</span> <span class="kw">function</span>(blob) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-170" title="170">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;setInViewer blob:&quot;</span><span class="op">,</span> blob)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-171" title="171">      <span class="kw">var</span> iframe <span class="op">=</span> <span class="at">newViewerFrame</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-172" title="172"></a>
+<a class="sourceLine" id="cb29-173" title="173">      <span class="co">// It is not possible to set a direct link to the</span></a>
+<a class="sourceLine" id="cb29-174" title="174">      <span class="co">// blob to provide a mean to directly download it.</span></a>
+<a class="sourceLine" id="cb29-175" title="175">      <span class="cf">if</span> (<span class="va">blob</span>.<span class="at">type</span> <span class="op">==</span> <span class="st">&#39;text/html&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-176" title="176">        <span class="kw">var</span> reader <span class="op">=</span> <span class="kw">new</span> <span class="at">FileReader</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-177" title="177">        <span class="va">reader</span>.<span class="at">onload</span> <span class="op">=</span> (<span class="kw">function</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-178" title="178">          <span class="kw">var</span> html <span class="op">=</span> <span class="va">evt</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb29-179" title="179">          <span class="va">iframe</span>.<span class="at">load</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-180" title="180">            <span class="at">$</span>(<span class="kw">this</span>).<span class="at">contents</span>().<span class="at">find</span>(<span class="st">&#39;html&#39;</span>).<span class="at">html</span>(html)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-181" title="181">          <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-182" title="182">        <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-183" title="183">        <span class="va">reader</span>.<span class="at">readAsText</span>(blob)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-184" title="184">      <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (<span class="va">blob</span>.<span class="va">type</span>.<span class="at">indexOf</span>(<span class="st">&#39;image/&#39;</span>) <span class="op">==</span> <span class="dv">0</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-185" title="185">        <span class="va">iframe</span>.<span class="at">load</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-186" title="186">          <span class="kw">var</span> img_id <span class="op">=</span> <span class="st">&#39;image-&#39;</span> <span class="op">+</span> key<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-187" title="187">          <span class="kw">var</span> img <span class="op">=</span> <span class="at">$</span>(<span class="st">&#39;&lt;img id=&quot;&#39;</span> <span class="op">+</span> img_id <span class="op">+</span> <span class="st">&#39;&quot;/&gt;&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-188" title="188">          <span class="at">$</span>(<span class="kw">this</span>).<span class="at">contents</span>().<span class="at">find</span>(<span class="st">&#39;body&#39;</span>).<span class="at">html</span>(img)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-189" title="189">          <span class="kw">var</span> obj_url <span class="op">=</span> <span class="va">window</span>.<span class="va">URL</span>.<span class="at">createObjectURL</span>(blob)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-190" title="190">          <span class="at">$</span>(<span class="kw">this</span>).<span class="at">contents</span>().<span class="at">find</span>(<span class="st">&#39;#&#39;</span> <span class="op">+</span> img_id).<span class="at">attr</span>(<span class="st">&#39;src&#39;</span><span class="op">,</span> obj_url)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-191" title="191">          <span class="va">window</span>.<span class="va">URL</span>.<span class="at">revokeObjectURL</span>(obj_url)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-192" title="192">        <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-193" title="193">      <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (<span class="va">blob</span>.<span class="at">type</span> <span class="op">==</span> <span class="st">&#39;application/pdf&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-194" title="194">        <span class="at">$</span>(<span class="st">&#39;*&#39;</span>).<span class="at">css</span>(<span class="st">&#39;cursor&#39;</span><span class="op">,</span> <span class="st">&#39;wait&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-195" title="195">        <span class="kw">var</span> obj_url <span class="op">=</span> <span class="va">window</span>.<span class="va">URL</span>.<span class="at">createObjectURL</span>(blob)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-196" title="196">        <span class="va">iframe</span>.<span class="at">load</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-197" title="197">          <span class="at">$</span>(<span class="st">&#39;*&#39;</span>).<span class="at">css</span>(<span class="st">&#39;cursor&#39;</span><span class="op">,</span> <span class="st">&#39;auto&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-198" title="198">        <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-199" title="199">        <span class="va">iframe</span>.<span class="at">attr</span>(<span class="st">&#39;src&#39;</span><span class="op">,</span> obj_url)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-200" title="200">        <span class="va">window</span>.<span class="va">URL</span>.<span class="at">revokeObjectURL</span>(obj_url)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-201" title="201">      <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-202" title="202">        <span class="va">iframe</span>.<span class="at">load</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-203" title="203">          <span class="at">$</span>(<span class="kw">this</span>).<span class="at">contents</span>().<span class="at">find</span>(<span class="st">&#39;body&#39;</span>).<span class="at">html</span>(<span class="st">&quot;No view available&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-204" title="204">        <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-205" title="205">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-206" title="206"></a>
+<a class="sourceLine" id="cb29-207" title="207">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-208" title="208">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-209" title="209"></a>
+<a class="sourceLine" id="cb29-210" title="210">  <span class="co">/**</span></a>
+<a class="sourceLine" id="cb29-211" title="211"><span class="co">   * </span><span class="an">@param</span><span class="co"> </span><span class="cv">{string}</span><span class="co"> biblioid</span></a>
+<a class="sourceLine" id="cb29-212" title="212"><span class="co">   * </span><span class="an">@param</span><span class="co"> </span><span class="cv">{string}</span><span class="co"> title</span></a>
+<a class="sourceLine" id="cb29-213" title="213"><span class="co">   * </span><span class="an">@param</span><span class="co"> </span><span class="cv">{number}</span><span class="co"> year</span></a>
+<a class="sourceLine" id="cb29-214" title="214"><span class="co">   * </span><span class="an">@param</span><span class="co"> </span><span class="cv">{string}</span><span class="co"> url the URL of the image to download and store in the local</span></a>
+<a class="sourceLine" id="cb29-215" title="215"><span class="co">   *   IndexedDB database. The resource behind this URL is subjected to the</span></a>
+<a class="sourceLine" id="cb29-216" title="216"><span class="co">   *   &quot;Same origin policy&quot;, thus for this method to work, the URL must come from</span></a>
+<a class="sourceLine" id="cb29-217" title="217"><span class="co">   *   the same origin as the web site/app this code is deployed on.</span></a>
+<a class="sourceLine" id="cb29-218" title="218"><span class="co">   */</span></a>
+<a class="sourceLine" id="cb29-219" title="219">  <span class="kw">function</span> <span class="at">addPublicationFromUrl</span>(biblioid<span class="op">,</span> title<span class="op">,</span> year<span class="op">,</span> url) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-220" title="220">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;addPublicationFromUrl:&quot;</span><span class="op">,</span> <span class="kw">arguments</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-221" title="221"></a>
+<a class="sourceLine" id="cb29-222" title="222">    <span class="kw">var</span> xhr <span class="op">=</span> <span class="kw">new</span> <span class="at">XMLHttpRequest</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-223" title="223">    <span class="va">xhr</span>.<span class="at">open</span>(<span class="st">&#39;GET&#39;</span><span class="op">,</span> url<span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-224" title="224">    <span class="co">// Setting the wanted responseType to &quot;blob&quot;</span></a>
+<a class="sourceLine" id="cb29-225" title="225">    <span class="co">// http://www.w3.org/TR/XMLHttpRequest2/#the-response-attribute</span></a>
+<a class="sourceLine" id="cb29-226" title="226">    <span class="va">xhr</span>.<span class="at">responseType</span> <span class="op">=</span> <span class="st">&#39;blob&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb29-227" title="227">    <span class="va">xhr</span>.<span class="at">onload</span> <span class="op">=</span> <span class="kw">function</span> (evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-228" title="228">      <span class="cf">if</span> (<span class="va">xhr</span>.<span class="at">status</span> <span class="op">==</span> <span class="dv">200</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-229" title="229">        <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Blob retrieved&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-230" title="230">        <span class="kw">var</span> blob <span class="op">=</span> <span class="va">xhr</span>.<span class="at">response</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb29-231" title="231">        <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Blob:&quot;</span><span class="op">,</span> blob)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-232" title="232">        <span class="at">addPublication</span>(biblioid<span class="op">,</span> title<span class="op">,</span> year<span class="op">,</span> blob)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-233" title="233">      <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-234" title="234">        <span class="va">console</span>.<span class="at">error</span>(<span class="st">&quot;addPublicationFromUrl error:&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb29-235" title="235">        <span class="va">xhr</span>.<span class="at">responseText</span><span class="op">,</span> <span class="va">xhr</span>.<span class="at">status</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-236" title="236">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-237" title="237">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb29-238" title="238">    <span class="va">xhr</span>.<span class="at">send</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-239" title="239"></a>
+<a class="sourceLine" id="cb29-240" title="240">    <span class="co">// We can&#39;t use jQuery here because as of jQuery 1.8.3 the new &quot;blob&quot;</span></a>
+<a class="sourceLine" id="cb29-241" title="241">    <span class="co">// responseType is not handled.</span></a>
+<a class="sourceLine" id="cb29-242" title="242">    <span class="co">// http://bugs.jquery.com/ticket/11461</span></a>
+<a class="sourceLine" id="cb29-243" title="243">    <span class="co">// http://bugs.jquery.com/ticket/7248</span></a>
+<a class="sourceLine" id="cb29-244" title="244">    <span class="co">// $.ajax({</span></a>
+<a class="sourceLine" id="cb29-245" title="245">    <span class="co">//   url: url,</span></a>
+<a class="sourceLine" id="cb29-246" title="246">    <span class="co">//   type: &#39;GET&#39;,</span></a>
+<a class="sourceLine" id="cb29-247" title="247">    <span class="co">//   xhrFields: { responseType: &#39;blob&#39; },</span></a>
+<a class="sourceLine" id="cb29-248" title="248">    <span class="co">//   success: function(data, textStatus, jqXHR) {</span></a>
+<a class="sourceLine" id="cb29-249" title="249">    <span class="co">//     console.log(&quot;Blob retrieved&quot;);</span></a>
+<a class="sourceLine" id="cb29-250" title="250">    <span class="co">//     console.log(&quot;Blob:&quot;, data);</span></a>
+<a class="sourceLine" id="cb29-251" title="251">    <span class="co">//     // addPublication(biblioid, title, year, data);</span></a>
+<a class="sourceLine" id="cb29-252" title="252">    <span class="co">//   },</span></a>
+<a class="sourceLine" id="cb29-253" title="253">    <span class="co">//   error: function(jqXHR, textStatus, errorThrown) {</span></a>
+<a class="sourceLine" id="cb29-254" title="254">    <span class="co">//     console.error(errorThrown);</span></a>
+<a class="sourceLine" id="cb29-255" title="255">    <span class="co">//     displayActionFailure(&quot;Error during blob retrieval&quot;);</span></a>
+<a class="sourceLine" id="cb29-256" title="256">    <span class="co">//   }</span></a>
+<a class="sourceLine" id="cb29-257" title="257">    <span class="co">// });</span></a>
+<a class="sourceLine" id="cb29-258" title="258">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-259" title="259"></a>
+<a class="sourceLine" id="cb29-260" title="260">  <span class="co">/**</span></a>
+<a class="sourceLine" id="cb29-261" title="261"><span class="co">   * </span><span class="an">@param</span><span class="co"> </span><span class="cv">{string}</span><span class="co"> biblioid</span></a>
+<a class="sourceLine" id="cb29-262" title="262"><span class="co">   * </span><span class="an">@param</span><span class="co"> </span><span class="cv">{string}</span><span class="co"> title</span></a>
+<a class="sourceLine" id="cb29-263" title="263"><span class="co">   * </span><span class="an">@param</span><span class="co"> </span><span class="cv">{number}</span><span class="co"> year</span></a>
+<a class="sourceLine" id="cb29-264" title="264"><span class="co">   * </span><span class="an">@param</span><span class="co"> </span><span class="cv">{Blob=}</span><span class="co"> blob</span></a>
+<a class="sourceLine" id="cb29-265" title="265"><span class="co">   */</span></a>
+<a class="sourceLine" id="cb29-266" title="266">  <span class="kw">function</span> <span class="at">addPublication</span>(biblioid<span class="op">,</span> title<span class="op">,</span> year<span class="op">,</span> blob) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-267" title="267">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;addPublication arguments:&quot;</span><span class="op">,</span> <span class="kw">arguments</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-268" title="268">    <span class="kw">var</span> obj <span class="op">=</span> <span class="op">{</span> <span class="dt">biblioid</span><span class="op">:</span> biblioid<span class="op">,</span> <span class="dt">title</span><span class="op">:</span> title<span class="op">,</span> <span class="dt">year</span><span class="op">:</span> year <span class="op">};</span></a>
+<a class="sourceLine" id="cb29-269" title="269">    <span class="cf">if</span> (<span class="kw">typeof</span> blob <span class="op">!=</span> <span class="st">&#39;undefined&#39;</span>)</a>
+<a class="sourceLine" id="cb29-270" title="270">      <span class="va">obj</span>.<span class="at">blob</span> <span class="op">=</span> blob<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-271" title="271"></a>
+<a class="sourceLine" id="cb29-272" title="272">    <span class="kw">var</span> store <span class="op">=</span> <span class="at">getObjectStore</span>(DB_STORE_NAME<span class="op">,</span> <span class="st">&#39;readwrite&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-273" title="273">    <span class="kw">var</span> req<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-274" title="274">    <span class="cf">try</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-275" title="275">      req <span class="op">=</span> <span class="va">store</span>.<span class="at">add</span>(obj)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-276" title="276">    <span class="op">}</span> <span class="cf">catch</span> (e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-277" title="277">      <span class="cf">if</span> (<span class="va">e</span>.<span class="at">name</span> <span class="op">==</span> <span class="st">&#39;DataCloneError&#39;</span>)</a>
+<a class="sourceLine" id="cb29-278" title="278">        <span class="at">displayActionFailure</span>(<span class="st">&quot;This engine doesn&#39;t know how to clone a Blob, &quot;</span> <span class="op">+</span></a>
+<a class="sourceLine" id="cb29-279" title="279">                             <span class="st">&quot;use Firefox&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-280" title="280">      <span class="cf">throw</span> e<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-281" title="281">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-282" title="282">    <span class="va">req</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span> (evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-283" title="283">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;Insertion in DB successful&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-284" title="284">      <span class="at">displayActionSuccess</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-285" title="285">      <span class="at">displayPubList</span>(store)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-286" title="286">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb29-287" title="287">    <span class="va">req</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-288" title="288">      <span class="va">console</span>.<span class="at">error</span>(<span class="st">&quot;addPublication error&quot;</span><span class="op">,</span> <span class="kw">this</span>.<span class="at">error</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-289" title="289">      <span class="at">displayActionFailure</span>(<span class="kw">this</span>.<span class="at">error</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-290" title="290">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb29-291" title="291">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-292" title="292"></a>
+<a class="sourceLine" id="cb29-293" title="293">  <span class="co">/**</span></a>
+<a class="sourceLine" id="cb29-294" title="294"><span class="co">   * </span><span class="an">@param</span><span class="co"> </span><span class="cv">{string}</span><span class="co"> biblioid</span></a>
+<a class="sourceLine" id="cb29-295" title="295"><span class="co">   */</span></a>
+<a class="sourceLine" id="cb29-296" title="296">  <span class="kw">function</span> <span class="at">deletePublicationFromBib</span>(biblioid) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-297" title="297">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;deletePublication:&quot;</span><span class="op">,</span> <span class="kw">arguments</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-298" title="298">    <span class="kw">var</span> store <span class="op">=</span> <span class="at">getObjectStore</span>(DB_STORE_NAME<span class="op">,</span> <span class="st">&#39;readwrite&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-299" title="299">    <span class="kw">var</span> req <span class="op">=</span> <span class="va">store</span>.<span class="at">index</span>(<span class="st">&#39;biblioid&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-300" title="300">    <span class="va">req</span>.<span class="at">get</span>(biblioid).<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-301" title="301">      <span class="cf">if</span> (<span class="kw">typeof</span> <span class="va">evt</span>.<span class="va">target</span>.<span class="at">result</span> <span class="op">==</span> <span class="st">&#39;undefined&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-302" title="302">        <span class="at">displayActionFailure</span>(<span class="st">&quot;No matching record found&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-303" title="303">        <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb29-304" title="304">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-305" title="305">      <span class="at">deletePublication</span>(<span class="va">evt</span>.<span class="va">target</span>.<span class="va">result</span>.<span class="at">id</span><span class="op">,</span> store)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-306" title="306">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb29-307" title="307">    <span class="va">req</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span> (evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-308" title="308">      <span class="va">console</span>.<span class="at">error</span>(<span class="st">&quot;deletePublicationFromBib:&quot;</span><span class="op">,</span> <span class="va">evt</span>.<span class="va">target</span>.<span class="at">errorCode</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-309" title="309">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb29-310" title="310">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-311" title="311"></a>
+<a class="sourceLine" id="cb29-312" title="312">  <span class="co">/**</span></a>
+<a class="sourceLine" id="cb29-313" title="313"><span class="co">   * </span><span class="an">@param</span><span class="co"> </span><span class="cv">{number}</span><span class="co"> key</span></a>
+<a class="sourceLine" id="cb29-314" title="314"><span class="co">   * </span><span class="an">@param</span><span class="co"> </span><span class="cv">{IDBObjectStore=}</span><span class="co"> store</span></a>
+<a class="sourceLine" id="cb29-315" title="315"><span class="co">   */</span></a>
+<a class="sourceLine" id="cb29-316" title="316">  <span class="kw">function</span> <span class="at">deletePublication</span>(key<span class="op">,</span> store) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-317" title="317">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;deletePublication:&quot;</span><span class="op">,</span> <span class="kw">arguments</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-318" title="318"></a>
+<a class="sourceLine" id="cb29-319" title="319">    <span class="cf">if</span> (<span class="kw">typeof</span> store <span class="op">==</span> <span class="st">&#39;undefined&#39;</span>)</a>
+<a class="sourceLine" id="cb29-320" title="320">      store <span class="op">=</span> <span class="at">getObjectStore</span>(DB_STORE_NAME<span class="op">,</span> <span class="st">&#39;readwrite&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-321" title="321"></a>
+<a class="sourceLine" id="cb29-322" title="322">    <span class="co">// As per spec http://www.w3.org/TR/IndexedDB/#object-store-deletion-operation</span></a>
+<a class="sourceLine" id="cb29-323" title="323">    <span class="co">// the result of the Object Store Deletion Operation algorithm is</span></a>
+<a class="sourceLine" id="cb29-324" title="324">    <span class="co">// undefined, so it&#39;s not possible to know if some records were actually</span></a>
+<a class="sourceLine" id="cb29-325" title="325">    <span class="co">// deleted by looking at the request result.</span></a>
+<a class="sourceLine" id="cb29-326" title="326">    <span class="kw">var</span> req <span class="op">=</span> <span class="va">store</span>.<span class="at">get</span>(key)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-327" title="327">    <span class="va">req</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-328" title="328">      <span class="kw">var</span> record <span class="op">=</span> <span class="va">evt</span>.<span class="va">target</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb29-329" title="329">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;record:&quot;</span><span class="op">,</span> record)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-330" title="330">      <span class="cf">if</span> (<span class="kw">typeof</span> record <span class="op">==</span> <span class="st">&#39;undefined&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-331" title="331">        <span class="at">displayActionFailure</span>(<span class="st">&quot;No matching record found&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-332" title="332">        <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb29-333" title="333">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-334" title="334">      <span class="co">// Warning: The exact same key used for creation needs to be passed for</span></a>
+<a class="sourceLine" id="cb29-335" title="335">      <span class="co">// the deletion. If the key was a Number for creation, then it needs to</span></a>
+<a class="sourceLine" id="cb29-336" title="336">      <span class="co">// be a Number for deletion.</span></a>
+<a class="sourceLine" id="cb29-337" title="337">      <span class="kw">var</span> deleteReq <span class="op">=</span> <span class="va">store</span>.<span class="at">delete</span>(key)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-338" title="338">      <span class="va">deleteReq</span>.<span class="at">onsuccess</span> <span class="op">=</span> <span class="kw">function</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-339" title="339">        <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;evt:&quot;</span><span class="op">,</span> evt)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-340" title="340">        <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;evt.target:&quot;</span><span class="op">,</span> <span class="va">evt</span>.<span class="at">target</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-341" title="341">        <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;evt.target.result:&quot;</span><span class="op">,</span> <span class="va">evt</span>.<span class="va">target</span>.<span class="at">result</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-342" title="342">        <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;delete successful&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-343" title="343">        <span class="at">displayActionSuccess</span>(<span class="st">&quot;Deletion successful&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-344" title="344">        <span class="at">displayPubList</span>(store)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-345" title="345">      <span class="op">};</span></a>
+<a class="sourceLine" id="cb29-346" title="346">      <span class="va">deleteReq</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span> (evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-347" title="347">        <span class="va">console</span>.<span class="at">error</span>(<span class="st">&quot;deletePublication:&quot;</span><span class="op">,</span> <span class="va">evt</span>.<span class="va">target</span>.<span class="at">errorCode</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-348" title="348">      <span class="op">};</span></a>
+<a class="sourceLine" id="cb29-349" title="349">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb29-350" title="350">    <span class="va">req</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span> (evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-351" title="351">      <span class="va">console</span>.<span class="at">error</span>(<span class="st">&quot;deletePublication:&quot;</span><span class="op">,</span> <span class="va">evt</span>.<span class="va">target</span>.<span class="at">errorCode</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-352" title="352">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb29-353" title="353">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-354" title="354"></a>
+<a class="sourceLine" id="cb29-355" title="355">  <span class="kw">function</span> <span class="at">displayActionSuccess</span>(msg) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-356" title="356">    msg <span class="op">=</span> <span class="kw">typeof</span> msg <span class="op">!=</span> <span class="st">&#39;undefined&#39;</span> <span class="op">?</span> <span class="st">&quot;Success: &quot;</span> <span class="op">+</span> msg : <span class="st">&quot;Success&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb29-357" title="357">    <span class="at">$</span>(<span class="st">&#39;#msg&#39;</span>).<span class="at">html</span>(<span class="st">&#39;&lt;span class=&quot;action-success&quot;&gt;&#39;</span> <span class="op">+</span> msg <span class="op">+</span> <span class="st">&#39;&lt;/span&gt;&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-358" title="358">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-359" title="359">  <span class="kw">function</span> <span class="at">displayActionFailure</span>(msg) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-360" title="360">    msg <span class="op">=</span> <span class="kw">typeof</span> msg <span class="op">!=</span> <span class="st">&#39;undefined&#39;</span> <span class="op">?</span> <span class="st">&quot;Failure: &quot;</span> <span class="op">+</span> msg : <span class="st">&quot;Failure&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb29-361" title="361">    <span class="at">$</span>(<span class="st">&#39;#msg&#39;</span>).<span class="at">html</span>(<span class="st">&#39;&lt;span class=&quot;action-failure&quot;&gt;&#39;</span> <span class="op">+</span> msg <span class="op">+</span> <span class="st">&#39;&lt;/span&gt;&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-362" title="362">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-363" title="363">  <span class="kw">function</span> <span class="at">resetActionStatus</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-364" title="364">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;resetActionStatus ...&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-365" title="365">    <span class="at">$</span>(<span class="st">&#39;#msg&#39;</span>).<span class="at">empty</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-366" title="366">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;resetActionStatus DONE&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-367" title="367">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-368" title="368"></a>
+<a class="sourceLine" id="cb29-369" title="369">  <span class="kw">function</span> <span class="at">addEventListeners</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-370" title="370">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;addEventListeners&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-371" title="371"></a>
+<a class="sourceLine" id="cb29-372" title="372">    <span class="at">$</span>(<span class="st">&#39;#register-form-reset&#39;</span>).<span class="at">click</span>(<span class="kw">function</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-373" title="373">      <span class="at">resetActionStatus</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-374" title="374">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-375" title="375"></a>
+<a class="sourceLine" id="cb29-376" title="376">    <span class="at">$</span>(<span class="st">&#39;#add-button&#39;</span>).<span class="at">click</span>(<span class="kw">function</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-377" title="377">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;add ...&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-378" title="378">      <span class="kw">var</span> title <span class="op">=</span> <span class="at">$</span>(<span class="st">&#39;#pub-title&#39;</span>).<span class="at">val</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-379" title="379">      <span class="kw">var</span> biblioid <span class="op">=</span> <span class="at">$</span>(<span class="st">&#39;#pub-biblioid&#39;</span>).<span class="at">val</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-380" title="380">      <span class="cf">if</span> (<span class="op">!</span>title <span class="op">||</span> <span class="op">!</span>biblioid) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-381" title="381">        <span class="at">displayActionFailure</span>(<span class="st">&quot;Required field(s) missing&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-382" title="382">        <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb29-383" title="383">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-384" title="384">      <span class="kw">var</span> year <span class="op">=</span> <span class="at">$</span>(<span class="st">&#39;#pub-year&#39;</span>).<span class="at">val</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-385" title="385">      <span class="cf">if</span> (year <span class="op">!=</span> <span class="st">&#39;&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-386" title="386">        <span class="co">// Better use Number.isInteger if the engine has EcmaScript 6</span></a>
+<a class="sourceLine" id="cb29-387" title="387">        <span class="cf">if</span> (<span class="at">isNaN</span>(year))  <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-388" title="388">          <span class="at">displayActionFailure</span>(<span class="st">&quot;Invalid year&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-389" title="389">          <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb29-390" title="390">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-391" title="391">        year <span class="op">=</span> <span class="at">Number</span>(year)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-392" title="392">      <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-393" title="393">        year <span class="op">=</span> <span class="kw">null</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb29-394" title="394">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-395" title="395"></a>
+<a class="sourceLine" id="cb29-396" title="396">      <span class="kw">var</span> file_input <span class="op">=</span> <span class="at">$</span>(<span class="st">&#39;#pub-file&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-397" title="397">      <span class="kw">var</span> selected_file <span class="op">=</span> <span class="va">file_input</span>.<span class="at">get</span>(<span class="dv">0</span>).<span class="at">files</span>[<span class="dv">0</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-398" title="398">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;selected_file:&quot;</span><span class="op">,</span> selected_file)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-399" title="399">      <span class="co">// Keeping a reference on how to reset the file input in the UI once we</span></a>
+<a class="sourceLine" id="cb29-400" title="400">      <span class="co">// have its value, but instead of doing that we rather use a &quot;reset&quot; type</span></a>
+<a class="sourceLine" id="cb29-401" title="401">      <span class="co">// input in the HTML form.</span></a>
+<a class="sourceLine" id="cb29-402" title="402">      <span class="co">//file_input.val(null);</span></a>
+<a class="sourceLine" id="cb29-403" title="403">      <span class="kw">var</span> file_url <span class="op">=</span> <span class="at">$</span>(<span class="st">&#39;#pub-file-url&#39;</span>).<span class="at">val</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-404" title="404">      <span class="cf">if</span> (selected_file) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-405" title="405">        <span class="at">addPublication</span>(biblioid<span class="op">,</span> title<span class="op">,</span> year<span class="op">,</span> selected_file)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-406" title="406">      <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (file_url) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-407" title="407">        <span class="at">addPublicationFromUrl</span>(biblioid<span class="op">,</span> title<span class="op">,</span> year<span class="op">,</span> file_url)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-408" title="408">      <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-409" title="409">        <span class="at">addPublication</span>(biblioid<span class="op">,</span> title<span class="op">,</span> year)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-410" title="410">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-411" title="411"></a>
+<a class="sourceLine" id="cb29-412" title="412">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-413" title="413"></a>
+<a class="sourceLine" id="cb29-414" title="414">    <span class="at">$</span>(<span class="st">&#39;#delete-button&#39;</span>).<span class="at">click</span>(<span class="kw">function</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-415" title="415">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;delete ...&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-416" title="416">      <span class="kw">var</span> biblioid <span class="op">=</span> <span class="at">$</span>(<span class="st">&#39;#pub-biblioid-to-delete&#39;</span>).<span class="at">val</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-417" title="417">      <span class="kw">var</span> key <span class="op">=</span> <span class="at">$</span>(<span class="st">&#39;#key-to-delete&#39;</span>).<span class="at">val</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-418" title="418"></a>
+<a class="sourceLine" id="cb29-419" title="419">      <span class="cf">if</span> (biblioid <span class="op">!=</span> <span class="st">&#39;&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-420" title="420">        <span class="at">deletePublicationFromBib</span>(biblioid)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-421" title="421">      <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (key <span class="op">!=</span> <span class="st">&#39;&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-422" title="422">        <span class="co">// Better use Number.isInteger if the engine has EcmaScript 6</span></a>
+<a class="sourceLine" id="cb29-423" title="423">        <span class="cf">if</span> (key <span class="op">==</span> <span class="st">&#39;&#39;</span> <span class="op">||</span> <span class="at">isNaN</span>(key))  <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-424" title="424">          <span class="at">displayActionFailure</span>(<span class="st">&quot;Invalid key&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-425" title="425">          <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb29-426" title="426">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-427" title="427">        key <span class="op">=</span> <span class="at">Number</span>(key)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-428" title="428">        <span class="at">deletePublication</span>(key)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-429" title="429">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-430" title="430">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-431" title="431"></a>
+<a class="sourceLine" id="cb29-432" title="432">    <span class="at">$</span>(<span class="st">&#39;#clear-store-button&#39;</span>).<span class="at">click</span>(<span class="kw">function</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-433" title="433">      <span class="at">clearObjectStore</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-434" title="434">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-435" title="435"></a>
+<a class="sourceLine" id="cb29-436" title="436">    <span class="kw">var</span> search_button <span class="op">=</span> <span class="at">$</span>(<span class="st">&#39;#search-list-button&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-437" title="437">    <span class="va">search_button</span>.<span class="at">click</span>(<span class="kw">function</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-438" title="438">      <span class="at">displayPubList</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-439" title="439">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-440" title="440"></a>
+<a class="sourceLine" id="cb29-441" title="441">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-442" title="442"></a>
+<a class="sourceLine" id="cb29-443" title="443">  <span class="at">openDb</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-444" title="444">  <span class="at">addEventListeners</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-445" title="445"></a>
+<a class="sourceLine" id="cb29-446" title="446"><span class="op">}</span>)()<span class="op">;</span> <span class="co">// Immediately-Invoked Function Expression (IIFE)</span></a></code></pre></div>
+<p>{{ LiveSampleLink(‘Full_IndexedDB_example’, “Test the online live demo”) }}</p>
+<blockquote>
+<p><strong>Note:</strong> <code>window.indexedDB.open()</code> is asynchronous; the method will finish running long before the <code>success</code> event is fired. This means that a function (e.g. <code>openDb()</code>) that calls <code>open()</code> and <code>onsuccess</code> will return before the <code>onsuccess</code> handler has run. This issue is also true of other request methods such as <code>transaction()</code> and <code>get()</code>.</p>
+</blockquote>
+<h2 id="see-also">See also</h2>
+<p>Further reading for you to find out more information if desired.</p>
+<h3 id="reference">Reference</h3>
+<ul>
+<li><a href="/en-US/docs/Web/API/IndexedDB_API">IndexedDB API Reference</a></li>
+<li><a href="https://www.w3.org/TR/IndexedDB/">Indexed Database API Specification</a></li>
+<li>IndexedDB <a href="https://searchfox.org/mozilla-central/search?q=dom%2FindexedDB%2F.*%5C.idl&amp;path=&amp;case=false&amp;regexp=true">interface files</a> in the Firefox source code</li>
+</ul>
+<h3 id="tutorials-and-guides">Tutorials and guides</h3>
+<ul>
+<li><a href="http://www.html5rocks.com/en/tutorials/indexeddb/uidatabinding/">Databinding UI Elements with IndexedDB</a></li>
+<li><a href="https://msdn.microsoft.com/en-us/scriptjunkie/gg679063.aspx">IndexedDB — The Store in Your Browser</a></li>
+</ul>
+<h3 id="libraries">Libraries</h3>
+<ul>
+<li><a href="https://localforage.github.io/localForage/">localForage</a>: A Polyfill providing a simple name:value syntax for client-side data storage, which uses IndexedDB in the background, but falls back to WebSQL and then localStorage in browsers that don’t support IndexedDB.</li>
+<li><a href="http://www.dexie.org/">dexie.js</a>: A wrapper for IndexedDB that allows much faster code development via nice, simple syntax.</li>
+<li><a href="https://github.com/jakearchibald/idb">IDB</a>: A tiny library that mostly mirrors the IndexedDB API but with small usability improvements.</li>
+<li><a href="https://github.com/erikolson186/zangodb">ZangoDB</a>: A MongoDB-like interface for IndexedDB that supports most of the familiar filtering, projection, sorting, updating and aggregation features of MongoDB.</li>
+<li><a href="http://jsstore.net/">JsStore</a>: A simple and advanced IndexedDB wrapper having SQL like syntax.</li>
+</ul>

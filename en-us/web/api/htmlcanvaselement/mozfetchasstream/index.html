@@ -1,0 +1,59 @@
+<p>{{APIRef(“Canvas API”)}} {{deprecated_header}}</p>
+<p>The <strong><code>HTMLCanvasElement.mozFetchAsStream()</code></strong> internal method used to create a new input stream that, when ready, would provide the contents of the canvas as image data. However, this non-standard and internal method has been removed.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">void</span> <span class="va">canvas</span>.<span class="at">mozFetchAsStream</span>(callback<span class="op">,</span> type)<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>callback</code>
+<ul>
+<li>: An {{interface(“nsIInputStreamCallback”)}}.</li>
+</ul></li>
+<li><code>type</code> {{optional_inline}}
+<ul>
+<li>: A {{domxref(“DOMString”)}} indicating the image format. The default type is <code>image/png</code>.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>None.</p>
+<h2 id="examples">Examples</h2>
+<h3 id="save-to-disk-with-mozfetchasstream-chrome-context-only">Save to disk with <code>mozFetchAsStream</code> (Chrome context only)</h3>
+<p>This technique also converts it to ico, however it will not work in Windows XP as WinXP cannot convert from PNG to ICO. It saves to the desktop it uses FileUtils.jsm. Also uses NetUtil.jsm</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;canvas&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">var</span> d <span class="op">=</span> <span class="va">canvas</span>.<span class="at">width</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">ctx <span class="op">=</span> <span class="va">canvas</span>.<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="va">ctx</span>.<span class="at">moveTo</span>(d / <span class="dv">2</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="va">ctx</span>.<span class="at">lineTo</span>(d<span class="op">,</span> d)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="va">ctx</span>.<span class="at">lineTo</span>(<span class="dv">0</span><span class="op">,</span> d)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="va">ctx</span>.<span class="at">closePath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&#39;yellow&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11"></a>
+<a class="sourceLine" id="cb2-12" title="12"><span class="kw">var</span> netutilCallback <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-13" title="13">    <span class="cf">return</span> <span class="kw">function</span>(result) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-14" title="14">       <span class="cf">if</span> (<span class="op">!</span><span class="va">Components</span>.<span class="at">isSuccessCode</span>(result)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-15" title="15">          <span class="at">alert</span>(<span class="st">&#39;FAILED to create icon&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-16" title="16">       <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-17" title="17">           <span class="at">alert</span>(<span class="st">&#39;successfully made&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">       <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-19" title="19">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb2-20" title="20"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-21" title="21"></a>
+<a class="sourceLine" id="cb2-22" title="22"><span class="kw">var</span> mfasCallback <span class="op">=</span> <span class="kw">function</span>(iconName) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-23" title="23">    <span class="cf">return</span> <span class="kw">function</span>(inStream) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-24" title="24">       <span class="kw">var</span> file <span class="op">=</span> <span class="va">FileUtils</span>.<span class="at">getFile</span>(<span class="st">&#39;Desk&#39;</span><span class="op">,</span> [iconName <span class="op">+</span> <span class="st">&#39;.ico&#39;</span>])<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-25" title="25">       <span class="kw">var</span> outStream <span class="op">=</span> <span class="va">FileUtils</span>.<span class="at">openFileOutputStream</span>(file)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-26" title="26">       <span class="va">Cu</span>.<span class="at">import</span>(<span class="st">&#39;resource://gre/modules/NetUtil.jsm&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-27" title="27">       <span class="va">NetUtil</span>.<span class="at">asyncCopy</span>(inStream<span class="op">,</span> outStream<span class="op">,</span> <span class="at">netutilCallback</span>())<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-28" title="28">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-29" title="29"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-30" title="30"></a>
+<a class="sourceLine" id="cb2-31" title="31"><span class="va">canvas</span>.<span class="at">mozFetchAsStream</span>(<span class="at">mfasCallback</span>(<span class="st">&#39;myIcon&#39;</span>)<span class="op">,</span> <span class="st">&#39;image/vnd.microsoft.icon&#39;</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>Not part of any specification.</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>The interface defining it, {{domxref(“HTMLCanvasElement”)}}.</li>
+</ul>

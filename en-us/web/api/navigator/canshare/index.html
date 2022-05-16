@@ -1,0 +1,84 @@
+<p>{{APIRef(“Web Share API”)}}{{securecontext_header}}</p>
+<p>The <strong><code>Navigator.canShare()</code></strong> method of the <a href="/en-US/docs/Web/API/Web_Share_API">Web Share API</a> returns <code>true</code> if the equivalent call to {{domxref(“navigator.share()”)}} would succeed.</p>
+<p>The method returns <code>false</code> if the data cannot be <em>validated</em>. Reasons the data might be invalid include:</p>
+<ul>
+<li>The <code>data</code> parameter has been omitted or only contains properties with unknown values. Note that any properties that are not recognized by the user agent are ignored.</li>
+<li>A URL is badly formatted.</li>
+<li>Files are specified but the implementation does not support file sharing.</li>
+<li>Sharing the specified data would be considered a “hostile share” by the user-agent.</li>
+</ul>
+<p>The Web Share API is gated by the <a href="/en-US/docs/Web/HTTP/Headers/Feature-Policy/web-share">web-share</a> permission policy. The <strong><code>canShare()</code></strong> method will return <code>false</code> if the permission is supported but has not been granted.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">navigator</span>.<span class="at">canShare</span>()</a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="va">navigator</span>.<span class="at">canShare</span>(data)</a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><p><code>data</code> {{optional_inline}}</p>
+<ul>
+<li><p>: An object defining the share data to test. Typically, an object with the same properties is passed to {{domxref(“navigator.share()”)}} if this call returns <code>true</code>.</p>
+<p>Properties that are unknown to the user agent are ignored; share data is only assessed on properties understood by the user agent. All properties are optional but at least one known data property must be specified or the method will return <code>false</code>.</p>
+<p>Possible values are:</p>
+<ul>
+<li><code>url</code>: A {{domxref(“USVString”)}} representing a URL to be shared.</li>
+<li><code>text</code>: A {{domxref(“USVString”)}} representing text to be shared.</li>
+<li><code>title</code>: A {{domxref(“USVString”)}} representing the title to be shared.</li>
+<li><code>files</code>: An array of {{domxref(“File”)}} objects representing files to be shared.</li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>Returns <code>true</code> if the specified <code>data</code> can be shared with {{domxref(“Navigator.share()”)}}, otherwise <code>false</code>.</p>
+<h2 id="examples">Examples</h2>
+<h3 id="sending-the-mdn-url">Sending the MDN URL</h3>
+<p>The example uses <code>navigator.canShare()</code> to check whether <code>navigator.share()</code> can share the specified data.</p>
+<h4 id="html">HTML</h4>
+<p>The HTML just creates a paragraph in which to display the result of the test.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">&lt;p</span><span class="ot"> class=</span><span class="st">&quot;result&quot;</span><span class="kw">&gt;&lt;/p&gt;</span></a></code></pre></div>
+<h4 id="javascript">JavaScript</h4>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">let</span> shareData <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="dt">title</span><span class="op">:</span> <span class="st">&#39;MDN&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="dt">text</span><span class="op">:</span> <span class="st">&#39;Learn web development on MDN!&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="dt">url</span><span class="op">:</span> <span class="st">&#39;https://developer.mozilla.org&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-6" title="6"></a>
+<a class="sourceLine" id="cb3-7" title="7"><span class="kw">const</span> resultPara <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;.result&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8"></a>
+<a class="sourceLine" id="cb3-9" title="9"><span class="cf">if</span> (<span class="op">!</span><span class="va">navigator</span>.<span class="at">canShare</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-10" title="10">  <span class="va">resultPara</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;navigator.canShare() not supported.&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-12" title="12"><span class="cf">else</span> <span class="cf">if</span> (<span class="va">navigator</span>.<span class="at">canShare</span>(shareData)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-13" title="13">  <span class="va">resultPara</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;navigator.canShare() supported. We can use navigator.share() to send the data.&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-14" title="14"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-15" title="15">  <span class="va">resultPara</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;Specified data cannot be shared.&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-16" title="16"><span class="op">}</span></a></code></pre></div>
+<h4 id="result">Result</h4>
+<p>The box below should state whether <code>navigator.canShare()</code> is supported on this browser, and if so, whether or not we can use <code>navigator.share()</code> to share the specified data:</p>
+<p>{{EmbedLiveSample(‘Sending_the_MDN_URL’)}}</p>
+<h3 id="feature-checking-example">Feature checking example</h3>
+<p>This method feature tests whether a particular data property is valid and shareable. If used with a single <code>data</code> property it will return <code>true</code> only if that property is valid and can be shared on the platform.</p>
+<p>The code below demonstrates verifying that a data property is supported.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="co">// Feature that may not be supported</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="kw">let</span> testShare <span class="op">=</span> <span class="op">{</span> <span class="dt">someNewProperty</span><span class="op">:</span> <span class="st">&#39;Data to share&#39;</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-3" title="3"></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="co">// Complex data that uses new key</span></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="kw">const</span> shareData <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-6" title="6">  <span class="dt">title</span><span class="op">:</span> <span class="st">&#39;MDN&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="dt">text</span><span class="op">:</span> <span class="st">&#39;Learn web development on MDN!&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb4-8" title="8">  <span class="dt">url</span><span class="op">:</span> <span class="st">&#39;https://developer.mozilla.org&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb4-9" title="9">  <span class="dt">someNewProperty</span><span class="op">:</span> <span class="st">&#39;Data to share&#39;</span></a>
+<a class="sourceLine" id="cb4-10" title="10"><span class="op">}</span></a>
+<a class="sourceLine" id="cb4-11" title="11"></a>
+<a class="sourceLine" id="cb4-12" title="12"><span class="co">// Test that the key is valid and supported before sharing</span></a>
+<a class="sourceLine" id="cb4-13" title="13"><span class="cf">if</span> (<span class="va">navigator</span>.<span class="at">canShare</span>(testShare)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-14" title="14">  <span class="co">// Use navigator.share() to share &#39;shareData&#39;</span></a>
+<a class="sourceLine" id="cb4-15" title="15"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-16" title="16">  <span class="co">// Handle case that new data property can&#39;t be shared.</span></a>
+<a class="sourceLine" id="cb4-17" title="17"><span class="op">}</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{domxref(“navigator.share()”)}}</li>
+</ul>

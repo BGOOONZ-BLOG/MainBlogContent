@@ -1,0 +1,204 @@
+<p>{{APIRef(“HTML DOM”)}}</p>
+<p>The global <strong><code>setTimeout()</code></strong> method sets a timer which executes a function or specified piece of code once the timer expires.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> timeoutID <span class="op">=</span> <span class="at">setTimeout</span>(<span class="kw">function</span>[<span class="op">,</span> delay<span class="op">,</span> arg1<span class="op">,</span> arg2<span class="op">,</span> ...])<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">var</span> timeoutID <span class="op">=</span> <span class="at">setTimeout</span>(<span class="kw">function</span>[<span class="op">,</span> delay])<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">var</span> timeoutID <span class="op">=</span> <span class="at">setTimeout</span>(code[<span class="op">,</span> delay])<span class="op">;</span></a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>function</code>
+<ul>
+<li>: A {{jsxref(“function”)}} to be executed after the timer expires.</li>
+</ul></li>
+<li><code>code</code>
+<ul>
+<li>: An alternative syntax that allows you to include a string instead of a function, which is compiled and executed when the timer expires. This syntax is <strong>not recommended</strong> for the same reasons that make using {{jsxref(“Global_Objects/eval”, “eval()”)}} a security risk.</li>
+</ul></li>
+<li><code>delay</code> {{optional_inline}}
+<ul>
+<li>: The time, in milliseconds that the timer should wait before the specified function or code is executed. If this parameter is omitted, a value of 0 is used, meaning execute “immediately”, or more accurately, the next event cycle. Note that in either case, the actual delay may be longer than intended; see {{anch(“reasons_for_delays_longer_than_specified”, “Reasons for delays longer than specified”)}} below.</li>
+</ul></li>
+<li><code>arg1, ..., argN</code> {{optional_inline}}
+<ul>
+<li>: Additional arguments which are passed through to the function specified by <code>function</code>.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>The returned <code>timeoutID</code> is a positive integer value which identifies the timer created by the call to <code>setTimeout()</code>. This value can be passed to {{domxref(“clearTimeout”,“clearTimeout()”)}} to cancel the timeout.</p>
+<p>It is guaranteed that a <code>timeoutID</code> value will never be reused by a subsequent call to <code>setTimeout()</code> or <code>setInterval()</code> on the same object (a window or a worker). However, different objects use separate pools of IDs.</p>
+<h2 id="description">Description</h2>
+<p>Timeouts are cancelled using {{domxref(“clearTimeout()”)}}.</p>
+<p>To call a function repeatedly (e.g., every <em>N</em> milliseconds), consider using {{domxref(“setInterval()”)}}.</p>
+<h3 id="working-with-asynchronous-functions">Working with asynchronous functions</h3>
+<p><code>setTimeout()</code> is an asynchronous function, meaning that the timer function will not pause execution of other functions in the functions stack. In other words, you cannot use <code>setTimeout()</code> to create a “pause” before the next function in the function stack fires.</p>
+<p>See the following example:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1">  <span class="at">setTimeout</span>(() <span class="kw">=&gt;</span> <span class="op">{</span><span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;this is the first message&quot;</span>)<span class="op">},</span> <span class="dv">5000</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="at">setTimeout</span>(() <span class="kw">=&gt;</span> <span class="op">{</span><span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;this is the second message&quot;</span>)<span class="op">},</span> <span class="dv">3000</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="at">setTimeout</span>(() <span class="kw">=&gt;</span> <span class="op">{</span><span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;this is the third message&quot;</span>)<span class="op">},</span> <span class="dv">1000</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="co">// Output:</span></a>
+<a class="sourceLine" id="cb2-6" title="6"></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="co">// this is the third message</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="co">// this is the second message</span></a>
+<a class="sourceLine" id="cb2-9" title="9">  <span class="co">// this is the first message</span></a></code></pre></div>
+<p>Notice that the first function does not create a 5-second “pause” before calling the second function. Instead, the first function is called, but waits 5 seconds to execute. While the first function is waiting to execute, the second function is called, and a 3-second wait is applied to the second function before it executes. Since neither the first nor the second function’s timers have completed, the third function is called and completes its execution first. Then the second follows. Then finally the first function is executed after its timer finally completes.</p>
+<p>To create a progression in which one function only fires after the completion of another function, see the documentation on <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promises</a>.</p>
+<h3 id="the-this-problem">The “this” problem</h3>
+<p>When you pass a method to <code>setTimeout()</code>, it will be invoked with a <code>this</code> value that may differ from your expectation. The general issue is explained in detail in the <a href="/en-US/docs/Web/JavaScript/Reference/Operators/this#as_an_object_method">JavaScript reference</a>.</p>
+<p>Code executed by <code>setTimeout()</code> is called from an execution context separate from the function from which <code>setTimeout</code> was called. The usual rules for setting the <code>this</code> keyword for the called function apply, and if you have not set <code>this</code> in the call or with <code>bind</code>, it will default to the <code>window</code> (or <code>global</code>) object. It will not be the same as the <code>this</code> value for the function that called <code>setTimeout</code>.</p>
+<p>See the following example:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> myArray <span class="op">=</span> [<span class="st">&#39;zero&#39;</span><span class="op">,</span> <span class="st">&#39;one&#39;</span><span class="op">,</span> <span class="st">&#39;two&#39;</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="va">myArray</span>.<span class="at">myMethod</span> <span class="op">=</span> <span class="kw">function</span> (sProperty) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="va">console</span>.<span class="at">log</span>(<span class="kw">arguments</span>.<span class="at">length</span> <span class="op">&gt;</span> <span class="dv">0</span> <span class="op">?</span> <span class="kw">this</span>[sProperty] : <span class="kw">this</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="op">};</span></a>
+<a class="sourceLine" id="cb3-5" title="5"></a>
+<a class="sourceLine" id="cb3-6" title="6"><span class="va">myArray</span>.<span class="at">myMethod</span>()<span class="op">;</span> <span class="co">// prints &quot;zero,one,two&quot;</span></a>
+<a class="sourceLine" id="cb3-7" title="7"><span class="va">myArray</span>.<span class="at">myMethod</span>(<span class="dv">1</span>)<span class="op">;</span> <span class="co">// prints &quot;one&quot;</span></a></code></pre></div>
+<p>The above works because when <code>myMethod</code> is called, its <code>this</code> is set to <code>myArray</code> by the call, so within the function, <code>this[sProperty]</code> is equivalent to <code>myArray[sProperty]</code>. However, in the following:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="at">setTimeout</span>(<span class="va">myArray</span>.<span class="at">myMethod</span><span class="op">,</span> <span class="fl">1.0</span><span class="op">*</span><span class="dv">1000</span>)<span class="op">;</span> <span class="co">// prints &quot;[object Window]&quot; after 1 second</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="at">setTimeout</span>(<span class="va">myArray</span>.<span class="at">myMethod</span><span class="op">,</span> <span class="fl">1.5</span><span class="op">*</span><span class="dv">1000</span><span class="op">,</span> <span class="st">&#39;1&#39;</span>)<span class="op">;</span> <span class="co">// prints &quot;undefined&quot; after 1.5 seconds</span></a></code></pre></div>
+<p>The <code>myArray.myMethod</code> function is passed to <code>setTimeout</code>, then when it’s called, its <code>this</code> is not set, so it defaults to the <code>window</code> object.</p>
+<p>There’s also no option to pass a <code>thisArg</code> to <code>setTimeout</code> as there is in Array methods such as {{jsxref(“Array.forEach()”, “forEach()”)}} and {{jsxref(“Array.reduce()”, “reduce()”)}}. As shown below, using <code>call</code> to set <code>this</code> doesn’t work either.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="va">setTimeout</span>.<span class="at">call</span>(myArray<span class="op">,</span> <span class="va">myArray</span>.<span class="at">myMethod</span><span class="op">,</span> <span class="fl">2.0</span><span class="op">*</span><span class="dv">1000</span>)<span class="op">;</span> <span class="co">// error</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="va">setTimeout</span>.<span class="at">call</span>(myArray<span class="op">,</span> <span class="va">myArray</span>.<span class="at">myMethod</span><span class="op">,</span> <span class="fl">2.5</span><span class="op">*</span><span class="dv">1000</span><span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span> <span class="co">// same error</span></a></code></pre></div>
+<h4 id="solutions">Solutions</h4>
+<h5 id="use-a-wrapper-function">Use a wrapper function</h5>
+<p>A common way to solve the problem is to use a wrapper function that sets <code>this</code> to the required value:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="at">setTimeout</span>(<span class="kw">function</span>()<span class="op">{</span><span class="va">myArray</span>.<span class="at">myMethod</span>()<span class="op">},</span> <span class="fl">2.0</span><span class="op">*</span><span class="dv">1000</span>)<span class="op">;</span> <span class="co">// prints &quot;zero,one,two&quot; after 2 seconds</span></a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="at">setTimeout</span>(<span class="kw">function</span>()<span class="op">{</span><span class="va">myArray</span>.<span class="at">myMethod</span>(<span class="st">&#39;1&#39;</span>)<span class="op">},</span> <span class="fl">2.5</span><span class="op">*</span><span class="dv">1000</span>)<span class="op">;</span> <span class="co">// prints &quot;one&quot; after 2.5 seconds</span></a></code></pre></div>
+<p>The wrapper function can be an arrow function:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="at">setTimeout</span>(() <span class="kw">=&gt;</span> <span class="op">{</span><span class="va">myArray</span>.<span class="at">myMethod</span>()<span class="op">},</span> <span class="fl">2.0</span><span class="op">*</span><span class="dv">1000</span>)<span class="op">;</span> <span class="co">// prints &quot;zero,one,two&quot; after 2 seconds</span></a>
+<a class="sourceLine" id="cb7-2" title="2"><span class="at">setTimeout</span>(() <span class="kw">=&gt;</span> <span class="op">{</span><span class="va">myArray</span>.<span class="at">myMethod</span>(<span class="st">&#39;1&#39;</span>)<span class="op">},</span> <span class="fl">2.5</span><span class="op">*</span><span class="dv">1000</span>)<span class="op">;</span> <span class="co">// prints &quot;one&quot; after 2.5 seconds</span></a></code></pre></div>
+<h5 id="use-bind">Use bind()</h5>
+<p>Alternatively, you can use {{jsxref(“Function.bind()”, “bind()”)}} to set the value of <code>this</code> for all calls to a given function:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">const</span> myArray <span class="op">=</span> [<span class="st">&#39;zero&#39;</span><span class="op">,</span> <span class="st">&#39;one&#39;</span><span class="op">,</span> <span class="st">&#39;two&#39;</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-2" title="2"><span class="kw">const</span> myBoundMethod <span class="op">=</span> (<span class="kw">function</span> (sProperty) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-3" title="3">    <span class="va">console</span>.<span class="at">log</span>(<span class="kw">arguments</span>.<span class="at">length</span> <span class="op">&gt;</span> <span class="dv">0</span> <span class="op">?</span> <span class="kw">this</span>[sProperty] : <span class="kw">this</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-4" title="4"><span class="op">}</span>).<span class="at">bind</span>(myArray)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-5" title="5"></a>
+<a class="sourceLine" id="cb8-6" title="6"><span class="at">myBoundMethod</span>()<span class="op">;</span> <span class="co">// prints &quot;zero,one,two&quot; because &#39;this&#39; is bound to myArray in the function</span></a>
+<a class="sourceLine" id="cb8-7" title="7"><span class="at">myBoundMethod</span>(<span class="dv">1</span>)<span class="op">;</span> <span class="co">// prints &quot;one&quot;</span></a>
+<a class="sourceLine" id="cb8-8" title="8"><span class="at">setTimeout</span>(myBoundMethod<span class="op">,</span> <span class="fl">1.0</span><span class="op">*</span><span class="dv">1000</span>)<span class="op">;</span> <span class="co">// still prints &quot;zero,one,two&quot; after 1 second because of the binding</span></a>
+<a class="sourceLine" id="cb8-9" title="9"><span class="at">setTimeout</span>(myBoundMethod<span class="op">,</span> <span class="fl">1.5</span><span class="op">*</span><span class="dv">1000</span><span class="op">,</span> <span class="st">&quot;1&quot;</span>)<span class="op">;</span> <span class="co">// prints &quot;one&quot; after 1.5 seconds</span></a></code></pre></div>
+<h3 id="passing-string-literals">Passing string literals</h3>
+<p>Passing a string instead of a function to <code>setTimeout()</code> has the same problems as using <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval"><code>eval()</code></a>.</p>
+<p><code>js example-bad // Don't do this setTimeout("console.log('Hello World!');", 500);</code></p>
+<p><code>js example-good // Do this instead setTimeout(function() {   console.log('Hello World!'); }, 500);</code></p>
+<p>A string passed to <code>{{domxref("setTimeout()")}}</code> is evaluated in the global context, so local symbols in the context where <code>{{domxref("setTimeout()")}}</code> was called will not be available when the string is evaluated as code.</p>
+<h3 id="reasons-for-delays-longer-than-specified">Reasons for delays longer than specified</h3>
+<p>There are a number of reasons why a timeout may take longer to fire than anticipated. This section describes the most common reasons.</p>
+<h4 id="nested-timeouts">Nested timeouts</h4>
+<p>As specified in the <a href="https://www.whatwg.org/specs/web-apps/current-work/multipage/timers.html#timers">HTML standard</a>, browsers will enforce a minimum timeout of 4 milliseconds once a nested call to <code>setTimeout</code> has been scheduled 5 times.</p>
+<p>This can be seen in the following example, in which we nest a call to <code>setTimeout</code> with a delay of <code>0</code> milliseconds, and log the delay each time the handler is called. The first four times, the delay is approximately 0 milliseconds, and after that it is approximately 4 milliseconds:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">&lt;button</span><span class="ot"> id=</span><span class="st">&quot;run&quot;</span><span class="kw">&gt;</span>Run<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb9-2" title="2"><span class="kw">&lt;pre&gt;</span>previous    this    actual delay<span class="kw">&lt;/pre&gt;</span></a>
+<a class="sourceLine" id="cb9-3" title="3"><span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;log&quot;</span><span class="kw">&gt;&lt;/div&gt;</span></a></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">let</span> last <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-2" title="2"><span class="kw">let</span> iterations <span class="op">=</span> <span class="dv">10</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-3" title="3"></a>
+<a class="sourceLine" id="cb10-4" title="4"><span class="kw">function</span> <span class="at">timeout</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-5" title="5">  <span class="co">// log the time of this call</span></a>
+<a class="sourceLine" id="cb10-6" title="6">  <span class="at">logline</span>(<span class="kw">new</span> <span class="at">Date</span>().<span class="at">getMilliseconds</span>())<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-7" title="7"></a>
+<a class="sourceLine" id="cb10-8" title="8">  <span class="co">// if we are not finished, schedule the next call</span></a>
+<a class="sourceLine" id="cb10-9" title="9">  <span class="cf">if</span> (iterations<span class="op">--</span> <span class="op">&gt;</span> <span class="dv">0</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-10" title="10">    <span class="at">setTimeout</span>(timeout<span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-11" title="11">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-12" title="12"><span class="op">}</span></a>
+<a class="sourceLine" id="cb10-13" title="13"></a>
+<a class="sourceLine" id="cb10-14" title="14"><span class="kw">function</span> <span class="at">run</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-15" title="15">  <span class="co">// clear the log</span></a>
+<a class="sourceLine" id="cb10-16" title="16">  <span class="kw">const</span> log <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;#log&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-17" title="17">  <span class="cf">while</span> (<span class="va">log</span>.<span class="at">lastElementChild</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-18" title="18">    <span class="va">log</span>.<span class="at">removeChild</span>(<span class="va">log</span>.<span class="at">lastElementChild</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-19" title="19">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-20" title="20"></a>
+<a class="sourceLine" id="cb10-21" title="21">  <span class="co">// initialize iteration count and the starting timestamp</span></a>
+<a class="sourceLine" id="cb10-22" title="22">  iterations <span class="op">=</span> <span class="dv">10</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-23" title="23">  last <span class="op">=</span> <span class="kw">new</span> <span class="at">Date</span>().<span class="at">getMilliseconds</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-24" title="24"></a>
+<a class="sourceLine" id="cb10-25" title="25">  <span class="co">// start timer</span></a>
+<a class="sourceLine" id="cb10-26" title="26">  <span class="at">setTimeout</span>(timeout<span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-27" title="27"><span class="op">}</span></a>
+<a class="sourceLine" id="cb10-28" title="28"></a>
+<a class="sourceLine" id="cb10-29" title="29"><span class="kw">function</span> <span class="at">pad</span>(number) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-30" title="30">  <span class="cf">return</span> <span class="va">number</span>.<span class="at">toString</span>().<span class="at">padStart</span>(<span class="dv">3</span><span class="op">,</span> <span class="st">&quot;0&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-31" title="31"><span class="op">}</span></a>
+<a class="sourceLine" id="cb10-32" title="32"></a>
+<a class="sourceLine" id="cb10-33" title="33"><span class="kw">function</span> <span class="at">logline</span>(now) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-34" title="34">  <span class="co">// log the last timestamp, the new timestamp, and the difference</span></a>
+<a class="sourceLine" id="cb10-35" title="35">  <span class="kw">const</span> newLine <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;pre&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-36" title="36">  <span class="va">newLine</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="vs">`</span><span class="sc">${</span><span class="at">pad</span>(last)<span class="sc">}</span><span class="vs">         </span><span class="sc">${</span><span class="at">pad</span>(now)<span class="sc">}</span><span class="vs">          </span><span class="sc">${</span>now <span class="op">-</span> last<span class="sc">}</span><span class="vs">`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-37" title="37">  <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;log&quot;</span>).<span class="at">appendChild</span>(newLine)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-38" title="38">  last <span class="op">=</span> now<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-39" title="39"><span class="op">}</span></a>
+<a class="sourceLine" id="cb10-40" title="40"></a>
+<a class="sourceLine" id="cb10-41" title="41"><span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;#run&quot;</span>).<span class="at">addEventListener</span>(<span class="st">&quot;click&quot;</span><span class="op">,</span> run)<span class="op">;</span></a></code></pre></div>
+<p>{{EmbedLiveSample(“Nested_timeouts”, 100, 420)}}</p>
+<h4 id="timeouts-in-inactive-tabs">Timeouts in inactive tabs</h4>
+<p>To reduce the load (and associated battery usage) from background tabs, browsers will enforce a minimum timeout delay in inactive tabs. It may also be waived if a page is playing sound using a Web Audio API {{domxref(“AudioContext”)}}.</p>
+<p>The specifics of this are browser-dependent:</p>
+<ul>
+<li>Firefox Desktop and Chrome both have a minimum timeout of 1 second for inactive tabs.</li>
+<li>Firefox for Android has a minimum timeout of 15 minutes for inactive tabs and may unload them entirely.</li>
+<li>Firefox does not throttle inactive tabs if the tab contains an {{domxref(“AudioContext”)}}.</li>
+</ul>
+<h4 id="throttling-of-tracking-scripts">Throttling of tracking scripts</h4>
+<p>Firefox enforces additional throttling for scripts that it recognises as tracking scripts. When running in the foreground, the throttling minimum delay is still 4ms. In background tabs, however, the throttling minimum delay is 10,000 ms, or 10 seconds, which comes into effect 30 seconds after a document has first loaded.</p>
+<p>See <a href="https://wiki.mozilla.org/Security/Tracking_protection">Tracking Protection</a> for more details.</p>
+<h4 id="late-timeouts">Late timeouts</h4>
+<p>The timeout can also fire later than expected if the page (or the OS/browser) is busy with other tasks. One important case to note is that the function or code snippet cannot be executed until the thread that called <code>setTimeout()</code> has terminated. For example:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1"><span class="kw">function</span> <span class="at">foo</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-2" title="2">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;foo has been called&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-3" title="3"><span class="op">}</span></a>
+<a class="sourceLine" id="cb11-4" title="4"><span class="at">setTimeout</span>(foo<span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-5" title="5"><span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;After setTimeout&#39;</span>)<span class="op">;</span></a></code></pre></div>
+<p>Will write to the console:</p>
+<pre><code>After setTimeout
+foo has been called</code></pre>
+<p>This is because even though <code>setTimeout</code> was called with a delay of zero, it’s placed on a queue and scheduled to run at the next opportunity; not immediately. Currently-executing code must complete before functions on the queue are executed, thus the resulting execution order may not be as expected.</p>
+<h4 id="deferral-of-timeouts-during-pageload">Deferral of timeouts during pageload</h4>
+<p>Firefox will defer firing <code>setTimeout()</code> timers while the current tab is loading. Firing is deferred until the main thread is deemed idle (similar to <a href="/en-US/docs/Web/API/Window/requestIdleCallback">window.requestIdleCallback()</a>), or until the load event is fired.</p>
+<h3 id="webextension-background-pages-and-timers">WebExtension background pages and timers</h3>
+<p>In <a href="/en-US/docs/Mozilla/Add-ons/WebExtensions">WebExtensions</a>, <code>setTimeout()</code> does not work reliably. Extension authors should use the <a href="/en-US/docs/Mozilla/Add-ons/WebExtensions/API/alarms"><code>alarms</code></a> API instead.</p>
+<h3 id="maximum-delay-value">Maximum delay value</h3>
+<p>Browsers including Internet Explorer, Chrome, Safari, and Firefox store the delay as a 32-bit signed integer internally. This causes an integer overflow when using delays larger than 2,147,483,647 ms (about 24.8 days), resulting in the timeout being executed immediately.</p>
+<h2 id="examples">Examples</h2>
+<h3 id="setting-and-clearing-timeouts">Setting and clearing timeouts</h3>
+<p>The following example sets up two simple buttons in a web page and hooks them to the <code>setTimeout()</code> and <code>clearTimeout()</code> routines. Pressing the first button will set a timeout which shows a message after two seconds and stores the timeout id for use by <code>clearTimeout()</code>. You may optionally cancel this timeout by pressing on the second button.</p>
+<h4 id="html">HTML</h4>
+<div class="sourceCode" id="cb13"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb13-1" title="1"><span class="kw">&lt;button</span><span class="ot"> onclick=</span><span class="st">&quot;delayedMessage();&quot;</span><span class="kw">&gt;</span>Show an message after two seconds<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb13-2" title="2"><span class="kw">&lt;button</span><span class="ot"> onclick=</span><span class="st">&quot;clearMessage();&quot;</span><span class="kw">&gt;</span>Cancel message before it happens<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb13-3" title="3"></a>
+<a class="sourceLine" id="cb13-4" title="4"><span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;output&quot;</span><span class="kw">&gt;&lt;/div&gt;</span></a></code></pre></div>
+<h4 id="javascript">JavaScript</h4>
+<div class="sourceCode" id="cb14"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb14-1" title="1"><span class="kw">let</span> timeoutID<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-2" title="2"></a>
+<a class="sourceLine" id="cb14-3" title="3"><span class="kw">function</span> <span class="at">setOutput</span>(outputContent) <span class="op">{</span></a>
+<a class="sourceLine" id="cb14-4" title="4">  <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#output&#39;</span>).<span class="at">textContent</span> <span class="op">=</span> outputContent<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-5" title="5"><span class="op">}</span></a>
+<a class="sourceLine" id="cb14-6" title="6"></a>
+<a class="sourceLine" id="cb14-7" title="7"><span class="kw">function</span> <span class="at">delayedMessage</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb14-8" title="8">  <span class="at">setOutput</span>(<span class="st">&#39;&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-9" title="9">  timeoutID <span class="op">=</span> <span class="at">setTimeout</span>(setOutput<span class="op">,</span> <span class="dv">2</span><span class="op">*</span><span class="dv">1000</span><span class="op">,</span> <span class="st">&#39;That was really slow!&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-10" title="10"><span class="op">}</span></a>
+<a class="sourceLine" id="cb14-11" title="11"></a>
+<a class="sourceLine" id="cb14-12" title="12"><span class="kw">function</span> <span class="at">clearMessage</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb14-13" title="13">  <span class="at">clearTimeout</span>(timeoutID)<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-14" title="14"><span class="op">}</span></a></code></pre></div>
+<p><code>css hidden #output {   padding: .5rem 0; }</code></p>
+<h4 id="result">Result</h4>
+<p>{{EmbedLiveSample(‘Setting_and_clearing_timeouts’)}}</p>
+<p>See also the <a href="/en-US/docs/Web/API/clearTimeout#example"><code>clearTimeout()</code> example</a>.</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>A polyfill of <code>setTimeout</code> which allows passing arguments to the callback is available in <a href="https://github.com/zloirock/core-js#settimeout-and-setinterval"><code>core-js</code></a></li>
+<li>{{domxref(“clearTimeout”)}}</li>
+<li>{{domxref(“setInterval()”)}}</li>
+<li>{{domxref(“window.requestAnimationFrame”)}}</li>
+<li>{{domxref(“queueMicrotask()”)}}</li>
+</ul>

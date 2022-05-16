@@ -1,0 +1,92 @@
+<p>{{APIRef(“Media Capture and Streams”)}}</p>
+<p>The <strong><code>MediaDevices.ondevicechange</code></strong> property is an <a href="/en-US/docs/Web/Events/Event_handlers">event handler</a> which specifies a function to be called when the {{event(“devicechange”)}} event occurs on a {{domxref(“MediaDevices”)}} instance. This happens whenever the set of media devices available to the {{Glossary(“user agent”)}} and, by extension, to the web site or app has changed. You can at any time use {{domxref(“MediaDevices.enumerateDevices”, “enumerateDevices()”)}} to get the updated list of available devices.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">MediaDevices</span>.<span class="at">ondevicechange</span> <span class="op">=</span> eventHandler<span class="op">;</span></a></code></pre></div>
+<h3 id="value">Value</h3>
+<p>A function you provide which accepts as input a {{domxref(“Event”)}} object describing the {{event(“devicechange”)}} event that occurred. There is no information about the change included in the event object; to get the updated list of devices, you’ll have to use {{domxref(“MediaDevices.enumerateDevices”, “enumerateDevices()”)}}.</p>
+<h2 id="example">Example</h2>
+<p>In this example, we create a function called <code>updateDeviceList()</code>, which is called once when {{domxref(“MediaDevices.getUserMedia()”)}} successfully obtains a stream, and then is called any time the device list changes. It displays in the browser window two lists: one of audio devices and one of video devices, with both the device’s label (name) and whether it’s an input or an output device. Because the example provides a handler for the {{event(“devicechange”)}} event, the list is refreshed any time a media device is attached to or removed from the device running the sample.</p>
+```html hidden
+<p>
+Click the start button below to begin the demonstration.
+</p>
+<div id="startButton" class="button">
+<p>Start</p>
+</div>
+<video id="video" width="160" height="120" autoplay>
+</video>
+<p><br></p>
+<div class="left">
+<h2>
+Audio devices:
+</h2>
+<ul class="deviceList" id="audioList">
+</ul>
+</div>
+<div class="right">
+<h2>
+Video devices:
+</h2>
+<ul class="deviceList" id="videoList">
+</ul>
+</div>
+<div id="log">
+
+</div>
+<p>```</p>
+<p>```css hidden body { font: 14px “Open Sans”, “Arial”, sans-serif; }</p>
+<p>video { margin-top: 20px; border: 1px solid black; }</p>
+<p>.button { cursor: pointer; width: 160px; border: 1px solid black; font-size: 16px; text-align: center; padding-top: 2px; padding-bottom: 4px; color: white; background-color: darkgreen; }</p>
+<p>h2 { margin-bottom: 4px; }</p>
+<p>.left { float:left; width: 48%; margin-right: 2% }</p>
+<p>.right { float:right; width: 48%; margin-left: 2% }</p>
+<p>.deviceList { border: 1px solid black; list-style-type: none; margin-top: 2px; padding: 6px; } ```</p>
+<p>```js hidden let videoElement = document.getElementById(“video”); let logElement = document.getElementById(“log”);</p>
+<p>function log(msg) { logElement.innerHTML += msg + “<br>”; }</p>
+<p>document.getElementById(“startButton”).addEventListener(“click”, function() { navigator.mediaDevices.getUserMedia({ video: { width: 160, height: 120, frameRate: 30 }, audio: { sampleRate: 44100, sampleSize: 16, volume: 0.25 } }).then(stream =&gt; { videoElement.srcObject = stream; updateDeviceList(); }) .catch(err =&gt; log(err.name + “:” + err.message)); }, false); ```</p>
+<p>We set up global variables that contain references to the {{HTMLElement(“ul”)}} elements that are used to list the audio and video devices:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">let</span> audioList <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;audioList&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">let</span> videoList <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;videoList&quot;</span>)<span class="op">;</span></a></code></pre></div>
+<h4 id="getting-and-drawing-the-device-list">Getting and drawing the device list</h4>
+<p>Now let’s take a look at <code>updateDeviceList()</code> itself. This method is called any time we want to fetch the current list of media devices and then update the displayed lists of audio and video devices using that information.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">function</span> <span class="at">updateDeviceList</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="va">navigator</span>.<span class="va">mediaDevices</span>.<span class="at">enumerateDevices</span>()</a>
+<a class="sourceLine" id="cb3-3" title="3">  .<span class="at">then</span>(<span class="kw">function</span>(devices) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="va">audioList</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="st">&quot;&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">    <span class="va">videoList</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="st">&quot;&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6"></a>
+<a class="sourceLine" id="cb3-7" title="7">    <span class="va">devices</span>.<span class="at">forEach</span>(<span class="kw">function</span>(device) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-8" title="8">      <span class="kw">let</span> elem <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;li&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">      <span class="kw">let</span> [kind<span class="op">,</span> type<span class="op">,</span> direction] <span class="op">=</span> <span class="va">device</span>.<span class="va">kind</span>.<span class="at">match</span>(<span class="ss">/</span><span class="sc">(\w+)(</span><span class="ss">input</span><span class="sc">|</span><span class="ss">output</span><span class="sc">)</span><span class="ss">/i</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10"></a>
+<a class="sourceLine" id="cb3-11" title="11">      <span class="va">elem</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="st">&quot;&lt;strong&gt;&quot;</span> <span class="op">+</span> <span class="va">device</span>.<span class="at">label</span> <span class="op">+</span> <span class="st">&quot;&lt;/strong&gt; (&quot;</span> <span class="op">+</span> direction <span class="op">+</span> <span class="st">&quot;)&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-12" title="12">      <span class="cf">if</span> (type <span class="op">===</span> <span class="st">&quot;audio&quot;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-13" title="13">        <span class="va">audioList</span>.<span class="at">appendChild</span>(elem)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-14" title="14">      <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (type <span class="op">===</span> <span class="st">&quot;video&quot;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-15" title="15">        <span class="va">videoList</span>.<span class="at">appendChild</span>(elem)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-16" title="16">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-17" title="17">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-18" title="18">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-19" title="19"><span class="op">}</span></a></code></pre></div>
+<p><code>updateDeviceList()</code> consists entirely of a call to the function {{domxref(“MediaDevices.enumerateDevices”, “enumerateDevices()”)}} on the {{domxref(“MediaDevices”)}} object referenced in the {{domxref(“navigator.mediaDevices”)}} property, as well as the code that’s run when the {{jsxref(“promise”)}} returned by <code>enumerateDevices()</code> is fulfilled. The fulfillment handler is called when the device list is ready. The list is passed into the fulfillment handler as an array of {{domxref(“MediaDeviceInfo”)}} objects, each describing one media input or output device.</p>
+<p>A {{jsxref(“Array.forEach”, “forEach()”)}} loop is used to scan through all the devices. For each device, we create a new {{HTMLElement(“li”)}} object to be used to display it to the user.</p>
+<p>The line <code>let [kind, type, direction] = device.kind.match(/(\w+)(input|output)/i);</code> deserves special notice. This uses <a href="/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment">destructuring assignment</a> (a new feature of <a href="/en-US/docs/Web/JavaScript/New_in_JavaScript/ECMAScript_6_support_in_Mozilla">ECMAScript 6</a>) to assign the values of the first three items in the array returned by {{jsxref(“String.match()”)}} to the variables <code>kind</code>, <code>type</code>, and <code>direction</code>. We do this because the value of {{domxref(“MediaDeviceInfo.kind”)}} is a single string that includes both the media type and the direction the media flows, such as “audioinput” or “videooutput”. This line, then, pulls out the type (“audio” or “video”) and direction (“input” or “output”) so they can be used to construct the string displayed in the list.</p>
+<p>Once the string is assembled, containing the device’s name in bold and the direction in parentheses, it’s appended to the appropriate list by calling {{domxref(“Node.appendChild”, “appendChild()”)}} on either <code>audioList</code> or <code>videoList</code>, as appropriate based on the device type.</p>
+<h4 id="handling-device-list-changes">Handling device list changes</h4>
+<p>We call <code>updateDeviceList()</code> in two places. The first is in the {{domxref(“MediaDevices.getUserMedia”, “getUserMedia()”)}} promise’s fulfillment handler, to initially fill out the list when the stream is opened. The second is in the event handler for {{event(“devicechange”)}}:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="va">navigator</span>.<span class="va">mediaDevices</span>.<span class="at">ondevicechange</span> <span class="op">=</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="at">updateDeviceList</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="op">}</span></a></code></pre></div>
+<p>With this code in place, each time the user plugs in a camera, microphone, or other media device, or turns one on or off, we call <code>updateDeviceList()</code> to redraw the list of connected devices.</p>
+<h3 id="result">Result</h3>
+<p>{{ EmbedLiveSample(‘Example’, 600, 460, "“,”“,”“,”camera;microphone") }}</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>The {{event(“devicechange”)}} event and its type, {{domxref(“Event”)}}.</li>
+<li>{{domxref(“MediaDevices.enumerateDevices()”)}}</li>
+<li>{{domxref(“MediaDeviceInfo”)}}</li>
+</ul>

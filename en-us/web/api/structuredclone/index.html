@@ -1,0 +1,65 @@
+<p>{{APIRef(“HTML DOM”)}}</p>
+<p>The global <strong><code>structuredClone()</code></strong> method creates a deep clone of a given value using the <a href="/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm">structured clone algorithm</a>.</p>
+<p>The method also allows {{Glossary(“transferable objects”)}} in the original value to be <em>transferred</em> rather than cloned to the new object. Transferred objects are detached from the original object and attached to the new object; they are no longer accessible in the original object.</p>
+<h2 id="syntax">Syntax</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="at">structuredClone</span>(value)</a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="at">structuredClone</span>(value<span class="op">,</span> <span class="op">{</span> transfer <span class="op">}</span>)</a></code></pre></div>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><code>value</code>
+<ul>
+<li>: The object to be cloned. This can be any <a href="/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm">structured-clonable type</a>.</li>
+</ul></li>
+<li><code>transfer</code> {{optional_inline}}
+<ul>
+<li>: An array of {{Glossary(“transferable objects”)}} in <code>value</code> that will be moved rather than cloned to the returned object.</li>
+</ul></li>
+</ul>
+<h3 id="return-value">Return value</h3>
+<p>The returned value is a deep copy of the original <code>value</code>.</p>
+<h3 id="exceptions">Exceptions</h3>
+<ul>
+<li><code>DataCloneError</code> {{domxref(“DOMException”)}}
+<ul>
+<li>: Thrown if any part of the input value is not serializable.</li>
+</ul></li>
+</ul>
+<h2 id="description">Description</h2>
+<p>This function can be used to deep copy JavaScript values. It also supports circular references, as shown below:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">// Create an object with a value and a circular reference to itself.</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">const</span> original <span class="op">=</span> <span class="op">{</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;MDN&quot;</span> <span class="op">};</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="va">original</span>.<span class="at">itself</span> <span class="op">=</span> original<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="co">// Clone it</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="kw">const</span> clone <span class="op">=</span> <span class="at">structuredClone</span>(original)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="va">console</span>.<span class="at">assert</span>(clone <span class="op">!==</span> original)<span class="op">;</span> <span class="co">// the objects are not the same (not same identity)</span></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="va">console</span>.<span class="at">assert</span>(<span class="va">clone</span>.<span class="at">name</span> <span class="op">===</span> <span class="st">&quot;MDN&quot;</span>)<span class="op">;</span> <span class="co">// they do have the same values</span></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="va">console</span>.<span class="at">assert</span>(<span class="va">clone</span>.<span class="at">itself</span> <span class="op">===</span> clone)<span class="op">;</span> <span class="co">// and the circular reference is preserved</span></a></code></pre></div>
+<h3 id="transfering-values">Transfering values</h3>
+<p>{{Glossary(“Transferable objects”)}} (only) can be transferred rather than duplicated in the cloned object, using the optional parameter’s <code>transfer</code> value. Transferring makes the original object unusable.</p>
+<blockquote>
+<p><strong>Note:</strong> A scenario where this might be useful is when asynchronously validating some data in a buffer before saving it. To avoid the buffer being modified before the data is saved, you can clone the buffer and validate that data. If you also <em>transfer</em> the data, any attempts to modify the original buffer will fail, preventing its accidental misuse.</p>
+</blockquote>
+<p>The following code shows how to clone an array and transfer its underlying resources to the new object. On return, the original <code>uInt8Array.buffer</code> will be cleared.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">var</span> uInt8Array <span class="op">=</span> <span class="kw">new</span> <span class="at">Uint8Array</span>(<span class="dv">1024</span> <span class="op">*</span> <span class="dv">1024</span> <span class="op">*</span> <span class="dv">16</span>)<span class="op">;</span> <span class="co">// 16MB</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">uInt8Array</span>.<span class="at">length</span><span class="op">;</span> <span class="op">++</span>i) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  uInt8Array[i] <span class="op">=</span> i<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-5" title="5"></a>
+<a class="sourceLine" id="cb3-6" title="6"><span class="kw">const</span> transferred <span class="op">=</span> <span class="at">structuredClone</span>(uInt8Array<span class="op">,</span> <span class="op">{</span> <span class="dt">transfer</span><span class="op">:</span> [<span class="va">uInt8Array</span>.<span class="at">buffer</span>] <span class="op">}</span>).</a>
+<a class="sourceLine" id="cb3-7" title="7"><span class="va">console</span>.<span class="at">log</span>(<span class="va">uInt8Array</span>.<span class="at">byteLength</span>)<span class="op">;</span>  <span class="co">// 0</span></a></code></pre></div>
+<p>You can clone any number of objects and transfer any subset of those objects. For example, the code below would transfer <code>arrayBuffer1</code> from the passed in value, but not <code>arrayBuffer2</code>.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">const</span> transferred <span class="op">=</span> <span class="at">structuredClone</span>(</a>
+<a class="sourceLine" id="cb4-2" title="2">   <span class="op">{</span> <span class="dt">x</span><span class="op">:</span> <span class="op">{</span> <span class="dt">y</span><span class="op">:</span> <span class="op">{</span> <span class="dt">z</span><span class="op">:</span> arrayBuffer1<span class="op">,</span> <span class="dt">w</span><span class="op">:</span> arrayBuffer2 <span class="op">}</span> <span class="op">}</span> <span class="op">},</span></a>
+<a class="sourceLine" id="cb4-3" title="3">   <span class="op">{</span> <span class="dt">transfer</span><span class="op">:</span> [arrayBuffer1] <span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="https://github.com/zloirock/core-js#structuredclone">A polyfill of <code>structuredClone</code></a> is available in <a href="https://github.com/zloirock/core-js"><code>core-js</code></a></li>
+<li><a href="/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm">Structured clone algorithm</a></li>
+<li><a href="https://github.com/ungap/structured-clone">Structured clone polyfill</a></li>
+</ul>

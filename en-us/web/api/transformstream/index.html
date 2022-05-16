@@ -1,0 +1,120 @@
+<p>{{APIRef(“Streams”)}}</p>
+<p>The <code>TransformStream</code> interface of the <a href="/en-US/docs/Web/API/Streams_API">Streams API</a> represents a set of transformable data.</p>
+<h2 id="constructor">Constructor</h2>
+<ul>
+<li>{{domxref(“TransformStream.TransformStream”, “TransformStream()”)}}
+<ul>
+<li>: Creates and returns a transform stream object from the given handlers.</li>
+</ul></li>
+</ul>
+<h2 id="properties">Properties</h2>
+<ul>
+<li>{{domxref(“TransformStream.readable”)}} {{readonlyInline}}
+<ul>
+<li>: The <code>readable</code> end of a TransformStream.</li>
+</ul></li>
+<li>{{domxref(“TransformStream.writable”)}} {{readonlyInline}}
+<ul>
+<li>: The <code>writable</code> end of a TransformStream.</li>
+</ul></li>
+</ul>
+<h2 id="methods">Methods</h2>
+<p>None</p>
+<h2 id="examples">Examples</h2>
+<h3 id="anything-to-uint8array-stream">Anything-to-uint8array stream</h3>
+<p>In the following example, a transform stream passes through all chunks it receives as {{jsxref(“Uint8Array”)}} values.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> transformContent <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="at">start</span>() <span class="op">{},</span> <span class="co">// required.</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="kw">async</span> <span class="at">transform</span>(chunk<span class="op">,</span> controller) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-4" title="4">    chunk <span class="op">=</span> <span class="cf">await</span> chunk</a>
+<a class="sourceLine" id="cb1-5" title="5">    <span class="cf">switch</span> (<span class="kw">typeof</span> chunk) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-6" title="6">      <span class="cf">case</span> <span class="st">&#39;object&#39;</span><span class="op">:</span></a>
+<a class="sourceLine" id="cb1-7" title="7">        <span class="co">// just say the stream is done I guess</span></a>
+<a class="sourceLine" id="cb1-8" title="8">        <span class="cf">if</span> (chunk <span class="op">===</span> <span class="kw">null</span>) <span class="va">controller</span>.<span class="at">terminate</span>()</a>
+<a class="sourceLine" id="cb1-9" title="9">        <span class="cf">else</span> <span class="cf">if</span> (<span class="va">ArrayBuffer</span>.<span class="at">isView</span>(chunk))</a>
+<a class="sourceLine" id="cb1-10" title="10">          <span class="va">controller</span>.<span class="at">enqueue</span>(<span class="kw">new</span> <span class="at">Uint8Array</span>(<span class="va">chunk</span>.<span class="at">buffer</span><span class="op">,</span> <span class="va">chunk</span>.<span class="at">byteOffset</span><span class="op">,</span> <span class="va">chunk</span>.<span class="at">byteLength</span>))</a>
+<a class="sourceLine" id="cb1-11" title="11">        <span class="cf">else</span> <span class="cf">if</span> (<span class="va">Array</span>.<span class="at">isArray</span>(chunk) <span class="op">&amp;&amp;</span> <span class="va">chunk</span>.<span class="at">every</span>(value <span class="kw">=&gt;</span> <span class="kw">typeof</span> value <span class="op">===</span> <span class="st">&#39;number&#39;</span>))</a>
+<a class="sourceLine" id="cb1-12" title="12">          <span class="va">controller</span>.<span class="at">enqueue</span>(<span class="kw">new</span> <span class="at">Uint8Array</span>(chunk))</a>
+<a class="sourceLine" id="cb1-13" title="13">        <span class="cf">else</span> <span class="cf">if</span> (<span class="st">&#39;function&#39;</span> <span class="op">===</span> <span class="kw">typeof</span> <span class="va">chunk</span>.<span class="at">valueOf</span> <span class="op">&amp;&amp;</span> <span class="va">chunk</span>.<span class="at">valueOf</span>() <span class="op">!==</span> chunk)</a>
+<a class="sourceLine" id="cb1-14" title="14">          <span class="kw">this</span>.<span class="at">transform</span>(<span class="va">chunk</span>.<span class="at">valueOf</span>()<span class="op">,</span> controller) <span class="co">// hack</span></a>
+<a class="sourceLine" id="cb1-15" title="15">        <span class="cf">else</span> <span class="cf">if</span> (<span class="st">&#39;toJSON&#39;</span> <span class="kw">in</span> chunk) <span class="kw">this</span>.<span class="at">transform</span>(<span class="va">JSON</span>.<span class="at">stringify</span>(chunk)<span class="op">,</span> controller)</a>
+<a class="sourceLine" id="cb1-16" title="16">        <span class="cf">break</span></a>
+<a class="sourceLine" id="cb1-17" title="17">      <span class="cf">case</span> <span class="st">&#39;symbol&#39;</span><span class="op">:</span></a>
+<a class="sourceLine" id="cb1-18" title="18">        <span class="va">controller</span>.<span class="at">error</span>(<span class="st">&quot;Cannot send a symbol as a chunk part&quot;</span>)</a>
+<a class="sourceLine" id="cb1-19" title="19">        <span class="cf">break</span></a>
+<a class="sourceLine" id="cb1-20" title="20">      <span class="cf">case</span> <span class="st">&#39;undefined&#39;</span><span class="op">:</span></a>
+<a class="sourceLine" id="cb1-21" title="21">        <span class="va">controller</span>.<span class="at">error</span>(<span class="st">&quot;Cannot send undefined as a chunk part&quot;</span>)</a>
+<a class="sourceLine" id="cb1-22" title="22">        <span class="cf">break</span></a>
+<a class="sourceLine" id="cb1-23" title="23">      <span class="cf">default</span><span class="op">:</span></a>
+<a class="sourceLine" id="cb1-24" title="24">        <span class="va">controller</span>.<span class="at">enqueue</span>(<span class="kw">this</span>.<span class="va">textencoder</span>.<span class="at">encode</span>(<span class="at">String</span>(chunk)))</a>
+<a class="sourceLine" id="cb1-25" title="25">        <span class="cf">break</span></a>
+<a class="sourceLine" id="cb1-26" title="26">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-27" title="27">  <span class="op">},</span></a>
+<a class="sourceLine" id="cb1-28" title="28">  <span class="at">flush</span>() <span class="op">{</span> <span class="co">/* do any destructor work here */</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-29" title="29"><span class="op">}</span></a>
+<a class="sourceLine" id="cb1-30" title="30"></a>
+<a class="sourceLine" id="cb1-31" title="31"><span class="kw">class</span> AnyToU8Stream <span class="kw">extends</span> TransformStream <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-32" title="32">  <span class="at">constructor</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-33" title="33">    <span class="kw">super</span>(<span class="op">{</span>...<span class="at">transformContent</span><span class="op">,</span> <span class="dt">textencoder</span><span class="op">:</span> <span class="kw">new</span> <span class="at">TextEncoder</span>()<span class="op">}</span>)</a>
+<a class="sourceLine" id="cb1-34" title="34">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-35" title="35"><span class="op">}</span></a></code></pre></div>
+<h3 id="polyfilling-textencoderstream-and-textdecoderstream">Polyfilling TextEncoderStream and TextDecoderStream</h3>
+<p>Note that this is deprecated by the native constructors. This is intended as a polyfill for unsupported platforms.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> tes <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="at">start</span>()<span class="op">{</span><span class="kw">this</span>.<span class="at">encoder</span> <span class="op">=</span> <span class="kw">new</span> <span class="at">TextEncoder</span>()<span class="op">},</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="at">transform</span>(chunk<span class="op">,</span> controller) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">    <span class="va">controller</span>.<span class="at">enqueue</span>(<span class="kw">this</span>.<span class="va">encoder</span>.<span class="at">encode</span>(chunk))</a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-7" title="7"></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="kw">let</span> _jstes_wm <span class="op">=</span> <span class="kw">new</span> <span class="at">WeakMap</span>()<span class="op">;</span> <span class="co">/* info holder */</span></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="kw">class</span> JSTextEncoderStream <span class="kw">extends</span> TransformStream <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="at">constructor</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-11" title="11">    <span class="kw">let</span> t <span class="op">=</span> <span class="op">{</span>...<span class="at">tes</span><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-12" title="12"></a>
+<a class="sourceLine" id="cb2-13" title="13">    <span class="kw">super</span>(t)</a>
+<a class="sourceLine" id="cb2-14" title="14">    <span class="va">_jstes_wm</span>.<span class="at">set</span>(<span class="kw">this</span><span class="op">,</span> t)</a>
+<a class="sourceLine" id="cb2-15" title="15">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-16" title="16">  get <span class="at">encoding</span>() <span class="op">{</span><span class="cf">return</span> <span class="va">_jstes_wm</span>.<span class="at">get</span>(<span class="kw">this</span>).<span class="va">encoder</span>.<span class="at">encoding</span><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-17" title="17"><span class="op">}</span></a></code></pre></div>
+<p>Similarly, <code>TextDecoderStream</code> can be written as such:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> tds <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="at">start</span>()<span class="op">{</span></a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="kw">this</span>.<span class="at">decoder</span> <span class="op">=</span> <span class="kw">new</span> <span class="at">TextDecoder</span>(<span class="kw">this</span>.<span class="at">encoding</span><span class="op">,</span> <span class="kw">this</span>.<span class="at">options</span>)</a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="op">},</span></a>
+<a class="sourceLine" id="cb3-5" title="5">  <span class="at">transform</span>(chunk<span class="op">,</span> controller) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-6" title="6">    <span class="va">controller</span>.<span class="at">enqueue</span>(<span class="kw">this</span>.<span class="va">decoder</span>.<span class="at">decode</span>(chunk<span class="op">,</span> <span class="op">{</span> <span class="dt">stream</span><span class="op">:</span> <span class="kw">true</span> <span class="op">}</span>))</a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-9" title="9"></a>
+<a class="sourceLine" id="cb3-10" title="10"><span class="kw">let</span> _jstds_wm <span class="op">=</span> <span class="kw">new</span> <span class="at">WeakMap</span>()<span class="op">;</span> <span class="co">/* info holder */</span></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="kw">class</span> JSTextDecoderStream <span class="kw">extends</span> TransformStream <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-12" title="12">  <span class="at">constructor</span>(encoding <span class="op">=</span> <span class="st">&#39;utf-8&#39;</span><span class="op">,</span> <span class="op">{</span>...<span class="at">options</span><span class="op">}</span> <span class="op">=</span> <span class="op">{}</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-13" title="13">    <span class="kw">let</span> t <span class="op">=</span> <span class="op">{</span>...<span class="at">tds</span><span class="op">,</span> encoding<span class="op">,</span> options<span class="op">}</span></a>
+<a class="sourceLine" id="cb3-14" title="14"></a>
+<a class="sourceLine" id="cb3-15" title="15">    <span class="kw">super</span>(t)</a>
+<a class="sourceLine" id="cb3-16" title="16">    <span class="va">_jstds_wm</span>.<span class="at">set</span>(<span class="kw">this</span><span class="op">,</span> t)</a>
+<a class="sourceLine" id="cb3-17" title="17">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-18" title="18">  get <span class="at">encoding</span>() <span class="op">{</span><span class="cf">return</span> <span class="va">_jstds_wm</span>.<span class="at">get</span>(<span class="kw">this</span>).<span class="va">decoder</span>.<span class="at">encoding</span><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-19" title="19">  get <span class="at">fatal</span>() <span class="op">{</span><span class="cf">return</span> <span class="va">_jstds_wm</span>.<span class="at">get</span>(<span class="kw">this</span>).<span class="va">decoder</span>.<span class="at">fatal</span><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-20" title="20">  get <span class="at">ignoreBOM</span>() <span class="op">{</span><span class="cf">return</span> <span class="va">_jstds_wm</span>.<span class="at">get</span>(<span class="kw">this</span>).<span class="va">decoder</span>.<span class="at">ignoreBOM</span><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-21" title="21"><span class="op">}</span></a></code></pre></div>
+<h3 id="chaining-multiple-readablestreams-together">Chaining multiple ReadableStreams together</h3>
+<p>This is a useful one, where multiple streams can be conjoined. Examples include building a PWA with progressive loading and progressive streaming.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">let</span> responses <span class="op">=</span> [ <span class="co">/* conjoined response tree */</span> ]</a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="kw">let</span> <span class="op">{</span>readable<span class="op">,</span> writable<span class="op">}</span> <span class="op">=</span> <span class="kw">new</span> TransformStream</a>
+<a class="sourceLine" id="cb4-3" title="3"></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="va">responses</span>.<span class="at">reduce</span>(</a>
+<a class="sourceLine" id="cb4-5" title="5">  (a<span class="op">,</span> res<span class="op">,</span> i<span class="op">,</span> arr) <span class="kw">=&gt;</span> <span class="va">a</span>.<span class="at">then</span>(() <span class="kw">=&gt;</span> <span class="va">res</span>.<span class="at">pipeTo</span>(writable<span class="op">,</span> <span class="op">{</span><span class="dt">preventClose</span><span class="op">:</span> (i<span class="op">+</span><span class="dv">1</span>) <span class="op">!==</span> <span class="va">arr</span>.<span class="at">length</span><span class="op">}</span>))<span class="op">,</span></a>
+<a class="sourceLine" id="cb4-6" title="6">  <span class="va">Promise</span>.<span class="at">resolve</span>()</a>
+<a class="sourceLine" id="cb4-7" title="7">)</a></code></pre></div>
+<p>Note that this is not resilient to other influences.</p>
+<h2 id="specifications">Specifications</h2>
+<p>{{Specifications}}</p>
+<h2 id="browser-compatibility">Browser compatibility</h2>
+<p>{{Compat}}</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="https://whatwg-stream-visualizer.glitch.me/">WHATWG Stream Visualiser</a>, for a basic visualisation of readable, writable, and transform streams.</li>
+<li><a href="https://web.dev/streams/">Streams—The Definitive Guide</a></li>
+</ul>

@@ -1,0 +1,111 @@
+<p>This subarticle shows how to define a page for creating <code>Author</code> objects.</p>
+<h2 id="import-validation-and-sanitization-methods">Import validation and sanitization methods</h2>
+<p>As with the genre form, to use <em>express-validator</em> we have to <em>require</em> the functions we want to use.</p>
+<p>Open <strong>/controllers/authorController.js</strong>, and add the following lines at the top of the file:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> <span class="op">{</span> body<span class="op">,</span>validationResult <span class="op">}</span> <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;express-validator&#39;</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="controllerget-route">Controller—get route</h2>
+<p>Find the exported <code>author_create_get()</code> controller method and replace it with the following code. This renders the <strong>author_form.pug</strong> view, passing a <code>title</code> variable.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">// Display Author create form on GET.</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="va">exports</span>.<span class="at">author_create_get</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res<span class="op">,</span> next) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3">    <span class="va">res</span>.<span class="at">render</span>(<span class="st">&#39;author_form&#39;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">title</span><span class="op">:</span> <span class="st">&#39;Create Author&#39;</span><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="op">};</span></a></code></pre></div>
+<h2 id="controllerpost-route">Controller—post route</h2>
+<p>Find the exported <code>author_create_post()</code> controller method, and replace it with the following code.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="co">// Handle Author create on POST.</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="va">exports</span>.<span class="at">author_create_post</span> <span class="op">=</span> [</a>
+<a class="sourceLine" id="cb3-3" title="3"></a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="co">// Validate and sanitize fields.</span></a>
+<a class="sourceLine" id="cb3-5" title="5">    <span class="at">body</span>(<span class="st">&#39;first_name&#39;</span>).<span class="at">trim</span>().<span class="at">isLength</span>(<span class="op">{</span> <span class="dt">min</span><span class="op">:</span> <span class="dv">1</span> <span class="op">}</span>).<span class="at">escape</span>().<span class="at">withMessage</span>(<span class="st">&#39;First name must be specified.&#39;</span>)</a>
+<a class="sourceLine" id="cb3-6" title="6">        .<span class="at">isAlphanumeric</span>().<span class="at">withMessage</span>(<span class="st">&#39;First name has non-alphanumeric characters.&#39;</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb3-7" title="7">    <span class="at">body</span>(<span class="st">&#39;family_name&#39;</span>).<span class="at">trim</span>().<span class="at">isLength</span>(<span class="op">{</span> <span class="dt">min</span><span class="op">:</span> <span class="dv">1</span> <span class="op">}</span>).<span class="at">escape</span>().<span class="at">withMessage</span>(<span class="st">&#39;Family name must be specified.&#39;</span>)</a>
+<a class="sourceLine" id="cb3-8" title="8">        .<span class="at">isAlphanumeric</span>().<span class="at">withMessage</span>(<span class="st">&#39;Family name has non-alphanumeric characters.&#39;</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb3-9" title="9">    <span class="at">body</span>(<span class="st">&#39;date_of_birth&#39;</span><span class="op">,</span> <span class="st">&#39;Invalid date of birth&#39;</span>).<span class="at">optional</span>(<span class="op">{</span> <span class="dt">checkFalsy</span><span class="op">:</span> <span class="kw">true</span> <span class="op">}</span>).<span class="at">isISO8601</span>().<span class="at">toDate</span>()<span class="op">,</span></a>
+<a class="sourceLine" id="cb3-10" title="10">    <span class="at">body</span>(<span class="st">&#39;date_of_death&#39;</span><span class="op">,</span> <span class="st">&#39;Invalid date of death&#39;</span>).<span class="at">optional</span>(<span class="op">{</span> <span class="dt">checkFalsy</span><span class="op">:</span> <span class="kw">true</span> <span class="op">}</span>).<span class="at">isISO8601</span>().<span class="at">toDate</span>()<span class="op">,</span></a>
+<a class="sourceLine" id="cb3-11" title="11"></a>
+<a class="sourceLine" id="cb3-12" title="12">    <span class="co">// Process request after validation and sanitization.</span></a>
+<a class="sourceLine" id="cb3-13" title="13">    (req<span class="op">,</span> res<span class="op">,</span> next) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-14" title="14"></a>
+<a class="sourceLine" id="cb3-15" title="15">        <span class="co">// Extract the validation errors from a request.</span></a>
+<a class="sourceLine" id="cb3-16" title="16">        <span class="kw">const</span> errors <span class="op">=</span> <span class="at">validationResult</span>(req)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-17" title="17"></a>
+<a class="sourceLine" id="cb3-18" title="18">        <span class="cf">if</span> (<span class="op">!</span><span class="va">errors</span>.<span class="at">isEmpty</span>()) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-19" title="19">            <span class="co">// There are errors. Render form again with sanitized values/errors messages.</span></a>
+<a class="sourceLine" id="cb3-20" title="20">            <span class="va">res</span>.<span class="at">render</span>(<span class="st">&#39;author_form&#39;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">title</span><span class="op">:</span> <span class="st">&#39;Create Author&#39;</span><span class="op">,</span> <span class="dt">author</span><span class="op">:</span> <span class="va">req</span>.<span class="at">body</span><span class="op">,</span> <span class="dt">errors</span><span class="op">:</span> <span class="va">errors</span>.<span class="at">array</span>() <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-21" title="21">            <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-22" title="22">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-23" title="23">        <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-24" title="24">            <span class="co">// Data from form is valid.</span></a>
+<a class="sourceLine" id="cb3-25" title="25"></a>
+<a class="sourceLine" id="cb3-26" title="26">            <span class="co">// Create an Author object with escaped and trimmed data.</span></a>
+<a class="sourceLine" id="cb3-27" title="27">            <span class="kw">var</span> author <span class="op">=</span> <span class="kw">new</span> <span class="at">Author</span>(</a>
+<a class="sourceLine" id="cb3-28" title="28">                <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-29" title="29">                    <span class="dt">first_name</span><span class="op">:</span> <span class="va">req</span>.<span class="va">body</span>.<span class="at">first_name</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-30" title="30">                    <span class="dt">family_name</span><span class="op">:</span> <span class="va">req</span>.<span class="va">body</span>.<span class="at">family_name</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-31" title="31">                    <span class="dt">date_of_birth</span><span class="op">:</span> <span class="va">req</span>.<span class="va">body</span>.<span class="at">date_of_birth</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-32" title="32">                    <span class="dt">date_of_death</span><span class="op">:</span> <span class="va">req</span>.<span class="va">body</span>.<span class="at">date_of_death</span></a>
+<a class="sourceLine" id="cb3-33" title="33">                <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-34" title="34">            <span class="va">author</span>.<span class="at">save</span>(<span class="kw">function</span> (err) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-35" title="35">                <span class="cf">if</span> (err) <span class="op">{</span> <span class="cf">return</span> <span class="at">next</span>(err)<span class="op">;</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-36" title="36">                <span class="co">// Successful - redirect to new author record.</span></a>
+<a class="sourceLine" id="cb3-37" title="37">                <span class="va">res</span>.<span class="at">redirect</span>(<span class="va">author</span>.<span class="at">url</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-38" title="38">            <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-39" title="39">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-40" title="40">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-41" title="41">]<span class="op">;</span></a></code></pre></div>
+<p>The structure and behavior of this code is almost exactly the same as for creating a <code>Genre</code> object. First we validate and sanitize the data. If the data is invalid then we re-display the form along with the data that was originally entered by the user and a list of error messages. If the data is valid then we save the new author record and redirect the user to the author detail page.</p>
+<blockquote>
+<p><strong>Note:</strong> Unlike with the <code>Genre</code> post handler, we don’t check whether the <code>Author</code> object already exists before saving it. Arguably we should, though as it is now we can have multiple authors with the same name.</p>
+</blockquote>
+<p>The validation code demonstrates several new features:</p>
+<ul>
+<li><p>We can daisy chain validators, using <code>withMessage()</code> to specify the error message to display if the previous validation method fails. This makes it very easy to provide specific error messages without lots of code duplication.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="co">// Validate fields.</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="at">body</span>(<span class="st">&#39;first_name&#39;</span>).<span class="at">trim</span>().<span class="at">isLength</span>(<span class="op">{</span> <span class="dt">min</span><span class="op">:</span> <span class="dv">1</span> <span class="op">}</span>).<span class="at">escape</span>().<span class="at">withMessage</span>(<span class="st">&#39;First name must be specified.&#39;</span>)</a>
+<a class="sourceLine" id="cb4-3" title="3">  <span class="va"> </span> .<span class="at">isAlphanumeric</span>().<span class="at">withMessage</span>(<span class="st">&#39;First name has non-alphanumeric characters.&#39;</span>)<span class="op">,</span></a></code></pre></div></li>
+<li><p>We can use the <code>optional()</code> function to run a subsequent validation only if a field has been entered (this allows us to validate optional fields). For example, below we check that the optional date of birth is an ISO8601-compliant date (the <code>checkFalsy</code> flag means that we’ll accept either an empty string or <code>null</code> as an empty value).</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="at">body</span>(<span class="st">&#39;date_of_birth&#39;</span><span class="op">,</span> <span class="st">&#39;Invalid date of birth&#39;</span>).<span class="at">optional</span>(<span class="op">{</span> <span class="dt">checkFalsy</span><span class="op">:</span> <span class="kw">true</span> <span class="op">}</span>).<span class="at">isISO8601</span>().<span class="at">toDate</span>()<span class="op">,</span></a></code></pre></div></li>
+</ul>
+<!---->
+<ul>
+<li>Parameters are received from the request as strings. We can use <code>toDate()</code> (or <code>toBoolean()</code>) to cast these to the proper JavaScript types (as shown at the end of the validator chain above).</li>
+</ul>
+<h2 id="view">View</h2>
+<p>Create <strong>/views/author_form.pug</strong> and copy in the text below.</p>
+<pre class="plain"><code>extends layout
+
+block content
+  h1=title
+
+  form(method=&#39;POST&#39; action=&#39;&#39;)
+    div.form-group
+      label(for=&#39;first_name&#39;) First Name:
+      input#first_name.form-control(type=&#39;text&#39; placeholder=&#39;First name (Christian) last&#39; name=&#39;first_name&#39; required=&#39;true&#39; value=(undefined===author ? &#39;&#39; : author.first_name) )
+      label(for=&#39;family_name&#39;) Family Name:
+      input#family_name.form-control(type=&#39;text&#39; placeholder=&#39;Family name (surname)&#39; name=&#39;family_name&#39; required=&#39;true&#39; value=(undefined===author ? &#39;&#39; : author.family_name))
+    div.form-group
+      label(for=&#39;date_of_birth&#39;) Date of birth:
+      input#date_of_birth.form-control(type=&#39;date&#39; name=&#39;date_of_birth&#39; value=(undefined===author ? &#39;&#39; : author.date_of_birth) )
+    button.btn.btn-primary(type=&#39;submit&#39;) Submit
+  if errors
+    ul
+      for error in errors
+        li!= error.msg</code></pre>
+<p>The structure and behavior for this view is exactly the same as for the <strong>genre_form.pug</strong> template, so we won’t describe it again.</p>
+<blockquote>
+<p><strong>Note:</strong> Some browsers don’t support the input <code>type=“date”</code>, so you won’t get the datepicker widget or the default <em><code>dd/mm/yyyy</code></em> placeholder, but will instead get an empty plain text field. One workaround is to explicitly add the attribute <code>placeholder='dd/mm/yyyy'</code> so that on less capable browsers you will still get information about the desired text format.</p>
+</blockquote>
+<h3 id="challenge-adding-the-date-of-death">Challenge: Adding the date of death</h3>
+<p>The template above is missing a field for entering the <code>date_of_death</code>. Create the field following the same pattern as the date of birth form group!</p>
+<h2 id="what-does-it-look-like">What does it look like?</h2>
+<p>Run the application, open your browser to <a href="http://localhost:3000/" class="uri">http://localhost:3000/</a>, then select the <em>Create new author</em> link. If everything is set up correctly, your site should look something like the following screenshot. After you enter a value, it should be saved and you’ll be taken to the author detail page.</p>
+<figure>
+<img src="locallibary_express_author_create_empty.png" alt="Author Create Page - Express Local Library site" /><figcaption>Author Create Page - Express Local Library site</figcaption>
+</figure>
+<blockquote>
+<p><strong>Note:</strong> If you experiment with various input formats for the dates, you may find that the format <code>yyyy-mm-dd</code> misbehaves. This is because JavaScript treats date strings as including the time of 0 hours, but additionally treats date strings in that format (the ISO 8601 standard) as including the time 0 hours UTC, rather than the local time. If your time zone is west of UTC, the date display, being local, will be one day before the date you entered. This is one of several complexities (such as multi-word family names and multi-author books) that we are not addressing here.</p>
+</blockquote>
+<h2 id="next-steps">Next steps</h2>
+<ul>
+<li>Return to <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/forms">Express Tutorial Part 6: Working with forms</a>.</li>
+<li>Proceed to the next subarticle of part 6: <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/forms/Create_book_form">Create Book form</a>.</li>
+</ul>

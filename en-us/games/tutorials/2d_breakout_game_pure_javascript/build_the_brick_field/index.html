@@ -1,0 +1,70 @@
+<p>{{GamesSidebar}}</p>
+<p>{{PreviousNext(“Games/Workflows/2D_Breakout_game_pure_JavaScript/Game_over”, “Games/Workflows/2D_Breakout_game_pure_JavaScript/Collision_detection”)}}</p>
+<p>This is the <strong>6th step</strong> out of 10 of the <a href="/en-US/docs/Games/Tutorials/2D_Breakout_game_pure_JavaScript">Gamedev Canvas tutorial</a>. You can find the source code as it would look after completing this lesson at <a href="https://github.com/end3r/Gamedev-Canvas-workshop/blob/gh-pages/lesson06.html">Gamedev-Canvas-workshop/lesson6.html</a>.</p>
+<p>After modifying the gameplay mechanics, we are now able to lose — this is great as it means the game is finally feeling more like a game. However, it will quickly get boring if all you do is bounce the ball off the walls and the paddle. What a breakout game really needs is some bricks to destroy with the ball, and this is what we’ll create now!</p>
+<h2 id="setting-up-the-brick-variables">Setting up the brick variables</h2>
+<p>The overall aim of this lesson is to render a few lines of code for the  bricks, using a nested loop that works through a two-dimensional array. First however we need to set up some variables to define information about the bricks such as their width and height, rows and columns, etc. Add the following lines to your code below the variables which you have previously declared in your program.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> brickRowCount <span class="op">=</span> <span class="dv">3</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">var</span> brickColumnCount <span class="op">=</span> <span class="dv">5</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">var</span> brickWidth <span class="op">=</span> <span class="dv">75</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="kw">var</span> brickHeight <span class="op">=</span> <span class="dv">20</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="kw">var</span> brickPadding <span class="op">=</span> <span class="dv">10</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="kw">var</span> brickOffsetTop <span class="op">=</span> <span class="dv">30</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="kw">var</span> brickOffsetLeft <span class="op">=</span> <span class="dv">30</span><span class="op">;</span></a></code></pre></div>
+<p>Here we’ve defined the number of rows and columns of bricks , their width and height, the padding between the bricks so they won’t touch each other and a top and left offset so they won’t start being drawn right from the edge of the Canvas.</p>
+<p>We will hold all our bricks in a two-dimensional array. It will contain the brick columns (c), which in turn will contain the brick rows (r), which in turn will each contain an object containing the <code>x</code> and <code>y</code> position to paint each brick on the screen. Add the following just below your variables:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> bricks <span class="op">=</span> []<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="cf">for</span>(<span class="kw">var</span> c<span class="op">=</span><span class="dv">0</span><span class="op">;</span> c<span class="op">&lt;</span>brickColumnCount<span class="op">;</span> c<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3">    bricks[c] <span class="op">=</span> []<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">    <span class="cf">for</span>(<span class="kw">var</span> r<span class="op">=</span><span class="dv">0</span><span class="op">;</span> r<span class="op">&lt;</span>brickRowCount<span class="op">;</span> r<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">        bricks[c][r] <span class="op">=</span> <span class="op">{</span> <span class="dt">x</span><span class="op">:</span> <span class="dv">0</span><span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="dv">0</span> <span class="op">};</span></a>
+<a class="sourceLine" id="cb2-6" title="6">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="op">}</span></a></code></pre></div>
+<p>The code above will loop through the rows and columns and create the new bricks. NOTE that the brick objects will also be used for collision detection purposes later.</p>
+<h2 id="brick-drawing-logic">Brick drawing logic</h2>
+<p>Now let’s create a function to loop through all the bricks in the array and draw them on the screen. Our code might look like this:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">function</span> <span class="at">drawBricks</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">    <span class="cf">for</span>(<span class="kw">var</span> c<span class="op">=</span><span class="dv">0</span><span class="op">;</span> c<span class="op">&lt;</span>brickColumnCount<span class="op">;</span> c<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-3" title="3">        <span class="cf">for</span>(<span class="kw">var</span> r<span class="op">=</span><span class="dv">0</span><span class="op">;</span> r<span class="op">&lt;</span>brickRowCount<span class="op">;</span> r<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">            bricks[c][r].<span class="at">x</span> <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">            bricks[c][r].<span class="at">y</span> <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6">            <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">            <span class="va">ctx</span>.<span class="at">rect</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> brickWidth<span class="op">,</span> brickHeight)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">            <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&quot;#0095DD&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">            <span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10">            <span class="va">ctx</span>.<span class="at">closePath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-11" title="11">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-12" title="12">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-13" title="13"><span class="op">}</span></a></code></pre></div>
+<p>Again, we’re looping through the rows and columns to set the <code>x</code> and <code>y</code> position of each brick, and we’re also painting a brick on the Canvas — size <code>brickWidth</code> x <code>brickHeight</code> — with each loop iteration. The problem is that we’re painting them all in one place, at coordinates <code>(0,0)</code>. What we need to do is include some calculations that will work out the <code>x</code> and <code>y</code> position of each brick for each loop iteration:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">var</span> brickX <span class="op">=</span> (c<span class="op">*</span>(brickWidth<span class="op">+</span>brickPadding))<span class="op">+</span>brickOffsetLeft<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="kw">var</span> brickY <span class="op">=</span> (r<span class="op">*</span>(brickHeight<span class="op">+</span>brickPadding))<span class="op">+</span>brickOffsetTop<span class="op">;</span></a></code></pre></div>
+<p>Each <code>brickX</code> position is worked out as <code>brickWidth</code> + <code>brickPadding</code>, multiplied by the column number, <code>c</code>, plus the <code>brickOffsetLeft</code>; the logic for the brickY is identical except that it uses the values for row number, <code>r</code>, <code>brickHeight</code>, and <code>brickOffsetTop</code>. Now every single brick can be placed in its correct place row and column, with padding between each brick, drawn at an offset from the left and top canvas edges.</p>
+<p>The final version of the <code>drawBricks()</code> function, after assigning the <code>brickX</code> and <code>brickY</code> values as the coordinates instead of <code>(0,0)</code> each time, will look like this — add this into your code below the <code>drawPaddle()</code> function:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">function</span> <span class="at">drawBricks</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2">    <span class="cf">for</span>(<span class="kw">var</span> c<span class="op">=</span><span class="dv">0</span><span class="op">;</span> c<span class="op">&lt;</span>brickColumnCount<span class="op">;</span> c<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-3" title="3">        <span class="cf">for</span>(<span class="kw">var</span> r<span class="op">=</span><span class="dv">0</span><span class="op">;</span> r<span class="op">&lt;</span>brickRowCount<span class="op">;</span> r<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-4" title="4">            <span class="kw">var</span> brickX <span class="op">=</span> (c<span class="op">*</span>(brickWidth<span class="op">+</span>brickPadding))<span class="op">+</span>brickOffsetLeft<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-5" title="5">            <span class="kw">var</span> brickY <span class="op">=</span> (r<span class="op">*</span>(brickHeight<span class="op">+</span>brickPadding))<span class="op">+</span>brickOffsetTop<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-6" title="6">            bricks[c][r].<span class="at">x</span> <span class="op">=</span> brickX<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-7" title="7">            bricks[c][r].<span class="at">y</span> <span class="op">=</span> brickY<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-8" title="8">            <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-9" title="9">            <span class="va">ctx</span>.<span class="at">rect</span>(brickX<span class="op">,</span> brickY<span class="op">,</span> brickWidth<span class="op">,</span> brickHeight)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-10" title="10">            <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&quot;#0095DD&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-11" title="11">            <span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-12" title="12">            <span class="va">ctx</span>.<span class="at">closePath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-13" title="13">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-14" title="14">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-15" title="15"><span class="op">}</span></a></code></pre></div>
+<h2 id="actually-drawing-the-bricks">Actually drawing the bricks</h2>
+<p>The last thing to do in this lesson is to add a call to <code>drawBricks()</code> somewhere in the <code>draw()</code> function, preferably at the beginning, between the clearing of the Canvas and drawing the ball. Add the following just above the <code>drawBall()</code> call:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="at">drawBricks</span>()<span class="op">;</span></a></code></pre></div>
+<h2 id="compare-your-code">Compare your code</h2>
+<p>At this point, the game has got a little more interesting again  :</p>
+<p>{{JSFiddleEmbed(“https://jsfiddle.net/raymondjplante/Lu3vtejz/”,"“,”395")}}</p>
+<blockquote>
+<p><strong>Note:</strong> Try changing the number of bricks in a row or a column, or their positions.</p>
+</blockquote>
+<h2 id="next-steps">Next steps</h2>
+<p>So now we have bricks! But the ball isn’t interacting with them at all — we’ll change that as we continue to the seventh chapter: <a href="/en-US/docs/Games/Tutorials/2D_Breakout_game_pure_JavaScript/Collision_detection">Collision detection</a>.</p>
+<p>{{PreviousNext(“Games/Workflows/2D_Breakout_game_pure_JavaScript/Game_over”, “Games/Workflows/2D_Breakout_game_pure_JavaScript/Collision_detection”)}}</p>

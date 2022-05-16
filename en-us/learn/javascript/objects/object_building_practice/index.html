@@ -1,0 +1,235 @@
+<p>{{LearnSidebar}}{{PreviousMenuNext(“Learn/JavaScript/Objects/JSON”, “Learn/JavaScript/Objects/Adding_bouncing_balls_features”, “Learn/JavaScript/Objects”)}}</p>
+<p>In previous articles we looked at all the essential JavaScript object theory and syntax details, giving you a solid base to start from. In this article we dive into a practical exercise, giving you some more practice in building custom JavaScript objects, with a fun and colorful result.</p>
+<table>
+<tbody>
+<tr>
+<th scope="row">
+Prerequisites:
+</th>
+<td>
+Basic computer literacy, a basic understanding of HTML and CSS, familiarity with JavaScript basics (see <a href="/en-US/docs/Learn/JavaScript/First_steps">First steps</a> and <a href="/en-US/docs/Learn/JavaScript/Building_blocks"
+          >Building blocks</a
+        >) and OOJS basics (see <a href="/en-US/docs/Learn/JavaScript/Objects/Basics"
+          >Introduction to objects</a
+        >).
+</td>
+</tr>
+<tr>
+<th scope="row">
+Objective:
+</th>
+<td>
+To get some practice with using objects and object-oriented techniques in a real world context.
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="lets-bounce-some-balls">Let’s bounce some balls</h2>
+<p>In this article we will write a classic “bouncing balls” demo, to show you how useful objects can be in JavaScript. Our little balls will bounce around on the screen, and change color when they touch each other. The finished example will look a little something like this:</p>
+<p><img src="bouncing-balls.png" /></p>
+<p>This example will make use of the <a href="/en-US/docs/Learn/JavaScript/Client-side_web_APIs/Drawing_graphics">Canvas API</a> for drawing the balls to the screen, and the <a href="/en-US/docs/Web/API/window/requestAnimationFrame">requestAnimationFrame</a> API for animating the whole display — you don’t need to have any previous knowledge of these APIs, and we hope that by the time you’ve finished this article you’ll be interested in exploring them more. Along the way we’ll make use of some nifty objects, and show you a couple of nice techniques like bouncing balls off walls, and checking whether they have hit each other (otherwise known as <strong>collision detection</strong>).</p>
+<h2 id="getting-started">Getting started</h2>
+<p>To begin with, make local copies of our <a href="https://github.com/mdn/learning-area/blob/master/javascript/oojs/bouncing-balls/index.html"><code>index.html</code></a>, <a href="https://github.com/mdn/learning-area/blob/master/javascript/oojs/bouncing-balls/style.css"><code>style.css</code></a>, and <a href="https://github.com/mdn/learning-area/blob/master/javascript/oojs/bouncing-balls/main.js"><code>main.js</code></a> files. These contain the following, respectively:</p>
+<ol type="1">
+<li>A very simple HTML document featuring an {{HTMLElement(“h1”)}} element, a {{HTMLElement(“canvas”)}} element to draw our balls on, and elements to apply our CSS and JavaScript to our HTML.</li>
+<li>Some very simple styles, which mainly serve to style and position the <code>&lt;h1&gt;</code>, and get rid of any scrollbars or margin around the edge of the page (so that it looks nice and neat).</li>
+<li>Some JavaScript that serves to set up the <code>&lt;canvas&gt;</code> element and provide a general function that we’re going to use.</li>
+</ol>
+<p>The first part of the script looks like so:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;canvas&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">const</span> ctx <span class="op">=</span> <span class="va">canvas</span>.<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-4" title="4"></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="kw">const</span> width <span class="op">=</span> <span class="va">canvas</span>.<span class="at">width</span> <span class="op">=</span> <span class="va">window</span>.<span class="at">innerWidth</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="kw">const</span> height <span class="op">=</span> <span class="va">canvas</span>.<span class="at">height</span> <span class="op">=</span> <span class="va">window</span>.<span class="at">innerHeight</span><span class="op">;</span></a></code></pre></div>
+<p>This script gets a reference to the <code>&lt;canvas&gt;</code> element, then calls the <a href="/en-US/docs/Web/API/HTMLCanvasElement/getContext"><code>getContext()</code></a> method on it to give us a context on which we can start to draw. The resulting constant (<code>ctx</code>) is the object that directly represents the drawing area of the canvas and allows us to draw 2D shapes on it.</p>
+<p>Next, we set constants called <code>width</code> and <code>height</code>, and the width and height of the canvas element (represented by the <code>canvas.width</code> and <code>canvas.height</code> properties) to equal the width and height of the browser viewport (the area that the webpage appears on — this can be gotten from the {{domxref(“Window.innerWidth”)}} and {{domxref(“Window.innerHeight”)}} properties).</p>
+<p>Note that we are chaining multiple assignments together, to get the variables all set quicker — this is perfectly OK.</p>
+<p>The last bit of the initial script looks as follows:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">function</span> <span class="at">random</span>(min<span class="op">,</span> max) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">const</span> num <span class="op">=</span> <span class="va">Math</span>.<span class="at">floor</span>(<span class="va">Math</span>.<span class="at">random</span>() <span class="op">*</span> (max <span class="op">-</span> min <span class="op">+</span> <span class="dv">1</span>)) <span class="op">+</span> min<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="cf">return</span> num<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="op">}</span></a></code></pre></div>
+<p>This function takes two numbers as arguments, and returns a random number in the range between the two.</p>
+<h2 id="modeling-a-ball-in-our-program">Modeling a ball in our program</h2>
+<p>Our program will feature lots of balls bouncing around the screen. Since these balls will all behave in the same way, it makes sense to represent them with an object. Let’s start by adding the following constructor to the bottom of our code.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">function</span> <span class="at">Ball</span>(x<span class="op">,</span> y<span class="op">,</span> velX<span class="op">,</span> velY<span class="op">,</span> color<span class="op">,</span> size) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">this</span>.<span class="at">x</span> <span class="op">=</span> x<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="kw">this</span>.<span class="at">y</span> <span class="op">=</span> y<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="kw">this</span>.<span class="at">velX</span> <span class="op">=</span> velX<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">  <span class="kw">this</span>.<span class="at">velY</span> <span class="op">=</span> velY<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="kw">this</span>.<span class="at">color</span> <span class="op">=</span> color<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="kw">this</span>.<span class="at">size</span> <span class="op">=</span> size<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="op">}</span></a></code></pre></div>
+<p>Here we include some parameters that define the properties each ball needs in order to function in our program:</p>
+<ul>
+<li><code>x</code> and <code>y</code> coordinates — the horizontal and vertical coordinates where the ball starts on the screen. This can range between 0 (top left hand corner) to the width and height of the browser viewport (bottom right hand corner).</li>
+<li>horizontal and vertical velocity (<code>velX</code> and <code>velY</code>) — each ball is given a horizontal and vertical velocity; in real terms these values are regularly added to the <code>x</code>/<code>y</code> coordinate values when we animate the balls, to move them by this much on each frame.</li>
+<li><code>color</code> — each ball gets a color.</li>
+<li><code>size</code> — each ball gets a size — this is its radius, in pixels.</li>
+</ul>
+<p>This handles the properties, but what about the methods? We want to get our balls to actually do something in our program.</p>
+<h3 id="drawing-the-ball">Drawing the ball</h3>
+<p>First add the following <code>draw()</code> method to the <code>Ball()</code>’s <code>prototype</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="va">Ball</span>.<span class="va">prototype</span>.<span class="at">draw</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3">  <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="kw">this</span>.<span class="at">color</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-4" title="4">  <span class="va">ctx</span>.<span class="at">arc</span>(<span class="kw">this</span>.<span class="at">x</span><span class="op">,</span> <span class="kw">this</span>.<span class="at">y</span><span class="op">,</span> <span class="kw">this</span>.<span class="at">size</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">2</span> <span class="op">*</span> <span class="va">Math</span>.<span class="at">PI</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-6" title="6"><span class="op">}</span></a></code></pre></div>
+<p>Using this function, we can tell the ball to draw itself onto the screen, by calling a series of members of the 2D canvas context we defined earlier (<code>ctx</code>). The context is like the paper, and now we want to command our pen to draw something on it:</p>
+<ul>
+<li>First, we use <a href="/en-US/docs/Web/API/CanvasRenderingContext2D/beginPath"><code>beginPath()</code></a> to state that we want to draw a shape on the paper.</li>
+<li>Next, we use <a href="/en-US/docs/Web/API/CanvasRenderingContext2D/fillStyle"><code>fillStyle</code></a> to define what color we want the shape to be — we set it to our ball’s <code>color</code> property.</li>
+<li><p>Next, we use the <a href="/en-US/docs/Web/API/CanvasRenderingContext2D/arc"><code>arc()</code></a> method to trace an arc shape on the paper. Its parameters are:</p>
+<ul>
+<li>The <code>x</code> and <code>y</code> position of the arc’s center — we are specifying the ball’s <code>x</code> and <code>y</code> properties.</li>
+<li>The radius of the arc — in this case, the ball’s <code>size</code> property.</li>
+<li>The last two parameters specify the start and end number of degrees around the circle that the arc is drawn between. Here we specify 0 degrees, and <code>2 * PI</code>, which is the equivalent of 360 degrees in radians (annoyingly, you have to specify this in radians). That gives us a complete circle. If you had specified only <code>1 * PI</code>, you’d get a semi-circle (180 degrees).</li>
+</ul></li>
+<li><p>Last of all, we use the <a href="/en-US/docs/Web/API/CanvasRenderingContext2D/fill"><code>fill()</code></a> method, which basically states “finish drawing the path we started with <code>beginPath()</code>, and fill the area it takes up with the color we specified earlier in <code>fillStyle</code>.”</p></li>
+</ul>
+<p>You can start testing your object out already.</p>
+<ol type="1">
+<li>Save the code so far, and load the HTML file in a browser.</li>
+<li>Open the browser’s JavaScript console, and then refresh the page so that the canvas size changes to the smaller visible viewport that remains when the console opens.</li>
+<li><p>Type in the following to create a new ball instance:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">let</span> testBall <span class="op">=</span> <span class="kw">new</span> <span class="at">Ball</span>(<span class="dv">50</span><span class="op">,</span> <span class="dv">100</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="st">&#39;blue&#39;</span><span class="op">,</span> <span class="dv">10</span>)<span class="op">;</span></a></code></pre></div></li>
+<li><p>Try calling its members:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="va">testBall</span>.<span class="at">x</span></a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="va">testBall</span>.<span class="at">size</span></a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="va">testBall</span>.<span class="at">color</span></a>
+<a class="sourceLine" id="cb6-4" title="4"><span class="va">testBall</span>.<span class="at">draw</span>()</a></code></pre></div></li>
+<li><p>When you enter the last line, you should see the ball draw itself somewhere on the canvas.</p></li>
+</ol>
+<h3 id="updating-the-balls-data">Updating the ball’s data</h3>
+<p>We can draw the ball in position, but to actually move the ball, we need an update function of some kind. Add the following code at the bottom of your JavaScript file, to add an <code>update()</code> method to the <code>Ball()</code>’s <code>prototype</code>:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="va">Ball</span>.<span class="va">prototype</span>.<span class="at">update</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="cf">if</span> ((<span class="kw">this</span>.<span class="at">x</span> <span class="op">+</span> <span class="kw">this</span>.<span class="at">size</span>) <span class="op">&gt;=</span> width) <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-3" title="3">    <span class="kw">this</span>.<span class="at">velX</span> <span class="op">=</span> <span class="op">-</span>(<span class="kw">this</span>.<span class="at">velX</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-4" title="4">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb7-5" title="5"></a>
+<a class="sourceLine" id="cb7-6" title="6">  <span class="cf">if</span> ((<span class="kw">this</span>.<span class="at">x</span> <span class="op">-</span> <span class="kw">this</span>.<span class="at">size</span>) <span class="op">&lt;=</span> <span class="dv">0</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-7" title="7">    <span class="kw">this</span>.<span class="at">velX</span> <span class="op">=</span> <span class="op">-</span>(<span class="kw">this</span>.<span class="at">velX</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-8" title="8">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb7-9" title="9"></a>
+<a class="sourceLine" id="cb7-10" title="10">  <span class="cf">if</span> ((<span class="kw">this</span>.<span class="at">y</span> <span class="op">+</span> <span class="kw">this</span>.<span class="at">size</span>) <span class="op">&gt;=</span> height) <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-11" title="11">    <span class="kw">this</span>.<span class="at">velY</span> <span class="op">=</span> <span class="op">-</span>(<span class="kw">this</span>.<span class="at">velY</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-12" title="12">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb7-13" title="13"></a>
+<a class="sourceLine" id="cb7-14" title="14">  <span class="cf">if</span> ((<span class="kw">this</span>.<span class="at">y</span> <span class="op">-</span> <span class="kw">this</span>.<span class="at">size</span>) <span class="op">&lt;=</span> <span class="dv">0</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-15" title="15">    <span class="kw">this</span>.<span class="at">velY</span> <span class="op">=</span> <span class="op">-</span>(<span class="kw">this</span>.<span class="at">velY</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-16" title="16">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb7-17" title="17"></a>
+<a class="sourceLine" id="cb7-18" title="18">  <span class="kw">this</span>.<span class="at">x</span> <span class="op">+=</span> <span class="kw">this</span>.<span class="at">velX</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb7-19" title="19">  <span class="kw">this</span>.<span class="at">y</span> <span class="op">+=</span> <span class="kw">this</span>.<span class="at">velY</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb7-20" title="20"><span class="op">}</span></a></code></pre></div>
+<p>The first four parts of the function check whether the ball has reached the edge of the canvas. If it has, we reverse the polarity of the relevant velocity to make the ball travel in the opposite direction. So for example, if the ball was traveling upwards (positive <code>velY</code>), then the vertical velocity is changed so that it starts to travel downwards instead (negative <code>velY</code>).</p>
+<p>In the four cases, we are checking to see:</p>
+<ul>
+<li>if the <code>x</code> coordinate is greater than the width of the canvas (the ball is going off the right edge).</li>
+<li>if the <code>x</code> coordinate is smaller than 0 (the ball is going off the left edge).</li>
+<li>if the <code>y</code> coordinate is greater than the height of the canvas (the ball is going off the bottom edge).</li>
+<li>if the <code>y</code> coordinate is smaller than 0 (the ball is going off the top edge).</li>
+</ul>
+<p>In each case, we include the <code>size</code> of the ball in the calculation because the <code>x</code>/<code>y</code> coordinates are in the center of the ball, but we want the edge of the ball to bounce off the perimeter — we don’t want the ball to go halfway off the screen before it starts to bounce back.</p>
+<p>The last two lines add the <code>velX</code> value to the <code>x</code> coordinate, and the <code>velY</code> value to the <code>y</code> coordinate — the ball is in effect moved each time this method is called.</p>
+<p>This will do for now; let’s get on with some animation!</p>
+<h2 id="animating-the-ball">Animating the ball</h2>
+<p>Now let’s make this fun. We are now going to start adding balls to the canvas, and animating them.</p>
+<ol type="1">
+<li><p>First, we need to create somewhere to store all our balls and then populate it. The following will do this job — add it to the bottom of your code now:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">let</span> balls <span class="op">=</span> []<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-2" title="2"></a>
+<a class="sourceLine" id="cb8-3" title="3"><span class="cf">while</span> (<span class="va">balls</span>.<span class="at">length</span> <span class="op">&lt;</span> <span class="dv">25</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-4" title="4">  <span class="kw">let</span> size <span class="op">=</span> <span class="at">random</span>(<span class="dv">10</span><span class="op">,</span><span class="dv">20</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-5" title="5">  <span class="kw">let</span> ball <span class="op">=</span> <span class="kw">new</span> <span class="at">Ball</span>(</a>
+<a class="sourceLine" id="cb8-6" title="6">    <span class="co">// ball position always drawn at least one ball width</span></a>
+<a class="sourceLine" id="cb8-7" title="7">    <span class="co">// away from the edge of the canvas, to avoid drawing errors</span></a>
+<a class="sourceLine" id="cb8-8" title="8">    <span class="at">random</span>(<span class="dv">0</span> <span class="op">+</span> size<span class="op">,</span>width <span class="op">-</span> size)<span class="op">,</span></a>
+<a class="sourceLine" id="cb8-9" title="9">    <span class="at">random</span>(<span class="dv">0</span> <span class="op">+</span> size<span class="op">,</span>height <span class="op">-</span> size)<span class="op">,</span></a>
+<a class="sourceLine" id="cb8-10" title="10">    <span class="at">random</span>(<span class="op">-</span><span class="dv">7</span><span class="op">,</span><span class="dv">7</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb8-11" title="11">    <span class="at">random</span>(<span class="op">-</span><span class="dv">7</span><span class="op">,</span><span class="dv">7</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb8-12" title="12">    <span class="st">&#39;rgb(&#39;</span> <span class="op">+</span> <span class="at">random</span>(<span class="dv">0</span><span class="op">,</span><span class="dv">255</span>) <span class="op">+</span> <span class="st">&#39;,&#39;</span> <span class="op">+</span> <span class="at">random</span>(<span class="dv">0</span><span class="op">,</span><span class="dv">255</span>) <span class="op">+</span> <span class="st">&#39;,&#39;</span> <span class="op">+</span> <span class="at">random</span>(<span class="dv">0</span><span class="op">,</span><span class="dv">255</span>) <span class="op">+</span><span class="st">&#39;)&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb8-13" title="13">    size</a>
+<a class="sourceLine" id="cb8-14" title="14">  )<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-15" title="15"></a>
+<a class="sourceLine" id="cb8-16" title="16">  <span class="va">balls</span>.<span class="at">push</span>(ball)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-17" title="17"><span class="op">}</span></a></code></pre></div>
+<p>The <code>while</code> loop creates a new instance of our <code>Ball()</code> using random values generated with our <code>random()</code> function, then <code>push()</code>es it onto the end of our balls array, but only while the number of balls in the array is less than 25. So when we have 25 balls in the array, no more balls will be pushed. You can try varying the number in <code>balls.length &lt; 25</code> to get more or fewer balls in the array. Depending on how much processing power your computer/browser has, specifying several thousand balls might slow down the animation rather a lot!</p></li>
+<li><p>Add the following to the bottom of your code now:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">function</span> <span class="at">loop</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-2" title="2">  <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&#39;rgba(0, 0, 0, 0.25)&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-3" title="3">  <span class="va">ctx</span>.<span class="at">fillRect</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> width<span class="op">,</span> height)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-4" title="4"></a>
+<a class="sourceLine" id="cb9-5" title="5">  <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">balls</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-6" title="6">    balls[i].<span class="at">draw</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-7" title="7">    balls[i].<span class="at">update</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-8" title="8">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb9-9" title="9"></a>
+<a class="sourceLine" id="cb9-10" title="10">  <span class="at">requestAnimationFrame</span>(loop)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-11" title="11"><span class="op">}</span></a></code></pre></div>
+<p>All programs that animate things generally involve an animation loop, which serves to update the information in the program and then render the resulting view on each frame of the animation; this is the basis for most games and other such programs. Our <code>loop()</code> function does the following:</p>
+<ul>
+<li>Sets the canvas fill color to semi-transparent black, then draws a rectangle of the color across the whole width and height of the canvas, using <code>fillRect()</code> (the four parameters provide a start coordinate, and a width and height for the rectangle drawn). This serves to cover up the previous frame’s drawing before the next one is drawn. If you don’t do this, you’ll just see long snakes worming their way around the canvas instead of balls moving! The color of the fill is set to semi-transparent, <code>rgba(0,0,0,0.25)</code>, to allow the previous few frames to shine through slightly, producing the little trails behind the balls as they move. If you changed 0.25 to 1, you won’t see them at all any more. Try varying this number to see the effect it has.</li>
+<li>Loops through all the balls in the <code>balls</code> array, and runs each ball’s <code>draw()</code> and <code>update()</code> function to draw each one on the screen, then do the necessary updates to position and velocity in time for the next frame.</li>
+<li>Runs the function again using the <code>requestAnimationFrame()</code> method — when this method is repeatedly run and passed the same function name, it runs that function a set number of times per second to create a smooth animation. This is generally done recursively — which means that the function is calling itself every time it runs, so it runs over and over again.</li>
+</ul></li>
+<li><p>Last but not least, add the following line to the bottom of your code — we need to call the function once to get the animation started.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1"><span class="at">loop</span>()<span class="op">;</span></a></code></pre></div></li>
+</ol>
+<p>That’s it for the basics — try saving and refreshing to test your bouncing balls out!</p>
+<h2 id="adding-collision-detection">Adding collision detection</h2>
+<p>Now for a bit of fun, let’s add some collision detection to our program, so our balls know when they have hit another ball.</p>
+<ol type="1">
+<li><p>First, add the following method definition below where you defined the <code>update()</code> method (i.e., the <code>Ball.prototype.update</code> block).</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1"><span class="va">Ball</span>.<span class="va">prototype</span>.<span class="at">collisionDetect</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-2" title="2">  <span class="cf">for</span> (<span class="kw">let</span> j <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> j <span class="op">&lt;</span> <span class="va">balls</span>.<span class="at">length</span><span class="op">;</span> j<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-3" title="3">    <span class="cf">if</span> (<span class="op">!</span>(<span class="kw">this</span> <span class="op">===</span> balls[j])) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-4" title="4">      <span class="kw">const</span> dx <span class="op">=</span> <span class="kw">this</span>.<span class="at">x</span> <span class="op">-</span> balls[j].<span class="at">x</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb11-5" title="5">      <span class="kw">const</span> dy <span class="op">=</span> <span class="kw">this</span>.<span class="at">y</span> <span class="op">-</span> balls[j].<span class="at">y</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb11-6" title="6">      <span class="kw">const</span> distance <span class="op">=</span> <span class="va">Math</span>.<span class="at">sqrt</span>(dx <span class="op">*</span> dx <span class="op">+</span> dy <span class="op">*</span> dy)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-7" title="7"></a>
+<a class="sourceLine" id="cb11-8" title="8">      <span class="cf">if</span> (distance <span class="op">&lt;</span> <span class="kw">this</span>.<span class="at">size</span> <span class="op">+</span> balls[j].<span class="at">size</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-9" title="9">        balls[j].<span class="at">color</span> <span class="op">=</span> <span class="kw">this</span>.<span class="at">color</span> <span class="op">=</span> <span class="st">&#39;rgb(&#39;</span> <span class="op">+</span> <span class="at">random</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">255</span>) <span class="op">+</span> <span class="st">&#39;,&#39;</span> <span class="op">+</span> <span class="at">random</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">255</span>) <span class="op">+</span> <span class="st">&#39;,&#39;</span> <span class="op">+</span> <span class="at">random</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">255</span>) <span class="op">+</span><span class="st">&#39;)&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb11-10" title="10">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb11-11" title="11">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb11-12" title="12">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb11-13" title="13"><span class="op">}</span></a></code></pre></div>
+<p>This method is a little complex, so don’t worry if you don’t understand exactly how it works for now. An explanation follows:</p>
+<ul>
+<li>For each ball, we need to check every other ball to see if it has collided with the current ball. To do this, we start another <code>for</code> loop to loop through all the balls in the <code>balls[]</code> array.</li>
+<li>Immediately inside the for loop, we use an <code>if</code> statement to check whether the current ball being looped through is the same ball as the one we are currently checking. We don’t want to check whether a ball has collided with itself! To do this, we check whether the current ball (i.e., the ball whose collisionDetect method is being invoked) is the same as the loop ball (i.e., the ball that is being referred to by the current iteration of the for loop in the collisionDetect method). We then use <code>!</code> to negate the check, so that the code inside the <code>if</code> statement only runs if they are <strong>not</strong> the same.</li>
+<li>We then use a common algorithm to check the collision of two circles. We are basically checking whether any of the two circle’s areas overlap. This is explained further in <a href="/en-US/docs/Games/Techniques/2D_collision_detection">2D collision detection</a>.</li>
+<li>If a collision is detected, the code inside the inner <code>if</code> statement is run. In this case we only set the <code>color</code> property of both the circles to a new random color. We could have done something far more complex, like get the balls to bounce off each other realistically, but that would have been far more complex to implement. For such physics simulations, developers tend to use a games or physics library such as <a href="https://wellcaffeinated.net/PhysicsJS/">PhysicsJS</a>, <a href="https://brm.io/matter-js/">matter.js</a>, <a href="https://phaser.io/">Phaser</a>, etc.</li>
+</ul></li>
+<li><p>You also need to call this method in each frame of the animation. Add the following below the <code>balls[i].update();</code> line:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb12-1" title="1">balls[i].<span class="at">collisionDetect</span>()<span class="op">;</span></a></code></pre></div></li>
+<li><p>Save and refresh the demo again, and you’ll see your balls change color when they collide!</p></li>
+</ol>
+<blockquote>
+<p><strong>Note:</strong> If you have trouble getting this example to work, try comparing your JavaScript code against our <a href="https://github.com/mdn/learning-area/blob/master/javascript/oojs/bouncing-balls/main-finished.js">finished version</a> (also see it <a href="https://mdn.github.io/learning-area/javascript/oojs/bouncing-balls/index-finished.html">running live</a>).</p>
+</blockquote>
+<h2 id="summary">Summary</h2>
+<p>We hope you had fun writing your own real world random bouncing balls example, using various object and object-oriented techniques from throughout the module! This should have given you some useful practice in using objects, and good real world context.</p>
+<p>That’s it for object articles — all that remains now is for you to test your skills in the object assessment.</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/Canvas_API/Tutorial">Canvas tutorial</a> — a beginner’s guide to using 2D canvas.</li>
+<li><a href="/en-US/docs/Web/API/window/requestAnimationFrame">requestAnimationFrame()</a></li>
+<li><a href="/en-US/docs/Games/Techniques/2D_collision_detection">2D collision detection</a></li>
+<li><a href="/en-US/docs/Games/Techniques/3D_collision_detection">3D collision detection</a></li>
+<li><a href="/en-US/docs/Games/Tutorials/2D_Breakout_game_pure_JavaScript">2D breakout game using pure JavaScript</a> — a great beginner’s tutorial showing how to build a 2D game.</li>
+<li><a href="/en-US/docs/Games/Tutorials/2D_breakout_game_Phaser">2D breakout game using Phaser</a> — explains the basics of building a 2D game using a JavaScript game library.</li>
+</ul>
+<p>{{PreviousMenuNext(“Learn/JavaScript/Objects/JSON”, “Learn/JavaScript/Objects/Adding_bouncing_balls_features”, “Learn/JavaScript/Objects”)}}</p>
+<h2 id="in-this-module">In this module</h2>
+<ul>
+<li><a href="/en-US/docs/Learn/JavaScript/Objects/Basics">Object basics</a></li>
+<li><a href="/en-US/docs/Learn/JavaScript/Objects/Object-oriented_JS">Object-oriented JavaScript for beginners</a></li>
+<li><a href="/en-US/docs/Learn/JavaScript/Objects/Object_prototypes">Object prototypes</a></li>
+<li><a href="/en-US/docs/Learn/JavaScript/Objects/Inheritance">Inheritance in JavaScript</a></li>
+<li><a href="/en-US/docs/Learn/JavaScript/Objects/JSON">Working with JSON data</a></li>
+<li><a href="/en-US/docs/Learn/JavaScript/Objects/Object_building_practice">Object building practice</a></li>
+<li><a href="/en-US/docs/Learn/JavaScript/Objects/Adding_bouncing_balls_features">Adding features to our bouncing balls demo</a></li>
+</ul>

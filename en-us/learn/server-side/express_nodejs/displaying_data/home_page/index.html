@@ -1,0 +1,100 @@
+<p>The first page we’ll create will be the website home page, which is accessible from either the site (<code>'/'</code>) or catalog (<code>catalog/</code>) root. This will display some static text describing the site, along with dynamically calculated “counts” of different record types in the database.</p>
+<p>We’ve already created a route for the home page. In order to complete the page we need to update our controller function to fetch “counts” of records from the database, and create a view (template) that we can use to render the page.</p>
+<h2 id="route">Route</h2>
+<p>We created our index page routes in a <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/routes">previous tutorial.</a> As a reminder, all the route functions are defined in <strong>/routes/catalog.js</strong>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="co">// GET catalog home page.</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/&#39;</span><span class="op">,</span> <span class="va">book_controller</span>.<span class="at">index</span>)<span class="op">;</span>  <span class="co">//This actually maps to /catalog/ because we import the route with a /catalog prefix</span></a></code></pre></div>
+<p>Where the callback function parameter (<code>book_controller.index</code>) is defined in <strong>/controllers/bookController.js</strong>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">exports</span>.<span class="at">index</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res<span class="op">,</span> next) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Site Home Page&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="op">}</span></a></code></pre></div>
+<p>It is this controller function that we extend to get information from our models and then render it using a template (view).</p>
+<h2 id="controller">Controller</h2>
+<p>The index controller function needs to fetch information about how many <code>Book</code>, <code>BookInstance</code>, available <code>BookInstance</code>, <code>Author</code>, and <code>Genre</code> records we have in the database, render this data in a template to create an HTML page, and then return it in an HTTP response.</p>
+<blockquote>
+<p><strong>Note:</strong> We use the <a href="https://mongoosejs.com/docs/api.html#model_Model.countDocuments"><code>countDocuments()</code></a> method to get the number of instances of each model. This is called on a model, with an optional set of conditions to match against in the first argument, and a callback in the second argument (as discussed in <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/mongoose">Using a Database (with Mongoose)</a>, and you can also return a <code>Query</code> and then execute it with a callback later). The callback will be invoked when the database returns the count, with an error value as the first parameter (or <code>null</code>) and the count of documents as the second parameter (or <code>null</code> if there was an error) .</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="va">SomeModel</span>.<span class="at">countDocuments</span>(<span class="op">{</span> <span class="dt">a_model_field</span><span class="op">:</span> <span class="st">&#39;match_value&#39;</span> <span class="op">},</span> <span class="kw">function</span> (err<span class="op">,</span> count) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2"> <span class="co">// ... do something if there is an err</span></a>
+<a class="sourceLine" id="cb3-3" title="3"> <span class="co">// ... do something with the count if there was no error</span></a>
+<a class="sourceLine" id="cb3-4" title="4"> <span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+</blockquote>
+<p>Open <strong>/controllers/bookController.js</strong>. Near the top of the file you should see the exported <code>index()</code> function.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb4-1" title="1">var Book <span class="op">=</span> require(<span class="st">&#39;../models/book&#39;</span>)</a>
+<a class="sourceLine" id="cb4-2" title="2"></a>
+<a class="sourceLine" id="cb4-3" title="3">exports.index <span class="op">=</span> function(req, res, <span class="bu">next</span>) {</a>
+<a class="sourceLine" id="cb4-4" title="4"> res.send(<span class="st">&#39;NOT IMPLEMENTED: Site Home Page&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5">}</a></code></pre></div>
+<p>Replace all the code above with the following code fragment. The first thing this does is import (<code>require()</code>) all the models. We need to do this because we’ll be using them to get our counts of documents. It then imports the <em>async</em> module (which we discussed previously in <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/Displaying_data/flow_control_using_async">Asynchronous flow control using async</a>).</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">var</span> Book <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;../models/book&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="kw">var</span> Author <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;../models/author&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="kw">var</span> Genre <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;../models/genre&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="kw">var</span> BookInstance <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;../models/bookinstance&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-5" title="5"></a>
+<a class="sourceLine" id="cb5-6" title="6"><span class="kw">var</span> <span class="kw">async</span> <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;async&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-7" title="7"></a>
+<a class="sourceLine" id="cb5-8" title="8"><span class="va">exports</span>.<span class="at">index</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-9" title="9"></a>
+<a class="sourceLine" id="cb5-10" title="10">    <span class="kw">async</span>.<span class="at">parallel</span>(<span class="op">{</span></a>
+<a class="sourceLine" id="cb5-11" title="11">        <span class="dt">book_count</span><span class="op">:</span> <span class="kw">function</span>(callback) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-12" title="12">            <span class="va">Book</span>.<span class="at">countDocuments</span>(<span class="op">{},</span> callback)<span class="op">;</span> <span class="co">// Pass an empty object as match condition to find all documents of this collection</span></a>
+<a class="sourceLine" id="cb5-13" title="13">        <span class="op">},</span></a>
+<a class="sourceLine" id="cb5-14" title="14">        <span class="dt">book_instance_count</span><span class="op">:</span> <span class="kw">function</span>(callback) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-15" title="15">            <span class="va">BookInstance</span>.<span class="at">countDocuments</span>(<span class="op">{},</span> callback)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-16" title="16">        <span class="op">},</span></a>
+<a class="sourceLine" id="cb5-17" title="17">        <span class="dt">book_instance_available_count</span><span class="op">:</span> <span class="kw">function</span>(callback) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-18" title="18">            <span class="va">BookInstance</span>.<span class="at">countDocuments</span>(<span class="op">{</span><span class="dt">status</span><span class="op">:</span><span class="st">&#39;Available&#39;</span><span class="op">},</span> callback)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-19" title="19">        <span class="op">},</span></a>
+<a class="sourceLine" id="cb5-20" title="20">        <span class="dt">author_count</span><span class="op">:</span> <span class="kw">function</span>(callback) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-21" title="21">            <span class="va">Author</span>.<span class="at">countDocuments</span>(<span class="op">{},</span> callback)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-22" title="22">        <span class="op">},</span></a>
+<a class="sourceLine" id="cb5-23" title="23">        <span class="dt">genre_count</span><span class="op">:</span> <span class="kw">function</span>(callback) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-24" title="24">            <span class="va">Genre</span>.<span class="at">countDocuments</span>(<span class="op">{},</span> callback)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-25" title="25">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-26" title="26">    <span class="op">},</span> <span class="kw">function</span>(err<span class="op">,</span> results) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-27" title="27">        <span class="va">res</span>.<span class="at">render</span>(<span class="st">&#39;index&#39;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">title</span><span class="op">:</span> <span class="st">&#39;Local Library Home&#39;</span><span class="op">,</span> <span class="dt">error</span><span class="op">:</span> err<span class="op">,</span> <span class="dt">data</span><span class="op">:</span> results <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-28" title="28">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-29" title="29"><span class="op">};</span></a></code></pre></div>
+<p>The <code>async.parallel()</code> method is passed an object with functions for getting the counts for each of our models. These functions are all started at the same time. When all of them have completed the final callback is invoked with the counts in the <code>results</code> parameter (or an error).</p>
+<p>On success the callback function calls <a href="https://expressjs.com/en/4x/api.html#res.render"><code>res.render()</code></a>, specifying a view (template) named ‘<strong>index</strong>’ and an object containing the data that is to be inserted into it (this includes the <code>results</code> object that contains our model counts). The data is supplied as key-value pairs, and can be accessed in the template using the key.</p>
+<blockquote>
+<p><strong>Note:</strong> The callback function from <code>async.parallel()</code> above is a little unusual in that we render the page whether or not there was an error (normally you might use a separate execution path for handling the display of errors).</p>
+</blockquote>
+<h2 id="view">View</h2>
+<p>Open <strong>/views/index.pug</strong> and replace its content with the text below.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">extends</span> layout</a>
+<a class="sourceLine" id="cb6-2" title="2"></a>
+<a class="sourceLine" id="cb6-3" title="3">block content</a>
+<a class="sourceLine" id="cb6-4" title="4">  h1<span class="op">=</span> title</a>
+<a class="sourceLine" id="cb6-5" title="5">  p Welcome to #[em LocalLibrary]<span class="op">,</span> a very basic Express website developed <span class="im">as</span> a tutorial example on the Mozilla Developer <span class="va">Network</span>.</a>
+<a class="sourceLine" id="cb6-6" title="6"></a>
+<a class="sourceLine" id="cb6-7" title="7">  h1 Dynamic content</a>
+<a class="sourceLine" id="cb6-8" title="8"></a>
+<a class="sourceLine" id="cb6-9" title="9">  <span class="cf">if</span> error</a>
+<a class="sourceLine" id="cb6-10" title="10">    p Error getting dynamic <span class="va">content</span>.</a>
+<a class="sourceLine" id="cb6-11" title="11">  <span class="cf">else</span></a>
+<a class="sourceLine" id="cb6-12" title="12">    p The library has the following record counts<span class="op">:</span></a>
+<a class="sourceLine" id="cb6-13" title="13"></a>
+<a class="sourceLine" id="cb6-14" title="14">    ul</a>
+<a class="sourceLine" id="cb6-15" title="15">      li #[strong Books<span class="op">:</span>] <span class="op">!{</span><span class="va">data</span>.<span class="at">book_count</span><span class="op">}</span></a>
+<a class="sourceLine" id="cb6-16" title="16">      li #[strong Copies<span class="op">:</span>] <span class="op">!{</span><span class="va">data</span>.<span class="at">book_instance_count</span><span class="op">}</span></a>
+<a class="sourceLine" id="cb6-17" title="17">      li #[strong Copies available<span class="op">:</span>] <span class="op">!{</span><span class="va">data</span>.<span class="at">book_instance_available_count</span><span class="op">}</span></a>
+<a class="sourceLine" id="cb6-18" title="18">      li #[strong Authors<span class="op">:</span>] <span class="op">!{</span><span class="va">data</span>.<span class="at">author_count</span><span class="op">}</span></a>
+<a class="sourceLine" id="cb6-19" title="19">      li #[strong Genres<span class="op">:</span>] <span class="op">!{</span><span class="va">data</span>.<span class="at">genre_count</span><span class="op">}</span></a></code></pre></div>
+<p>The view is straightforward. We extend the <strong>layout.pug</strong> base template, overriding the <code>block</code> named ‘<strong>content</strong>’. The first <code>h1</code> heading will be the escaped text for the <code>title</code> variable that was passed into the <code>render()</code> function—note the use of the ‘<code>h1=</code>’ so that the following text is treated as a JavaScript expression. We then include a paragraph introducing the LocalLibrary.</p>
+<p>Under the <em>Dynamic content</em> heading we check whether the error variable passed in from the <code>render()</code> function has been defined. If so, we note the error. If not, we get and list the number of copies of each model from the <code>data</code> variable.</p>
+<blockquote>
+<p><strong>Note:</strong> We didn’t escape the count values (i.e. we used the <code>!{}</code> syntax) because the count values are calculated. If the information was supplied by end-users then we’d escape the variable for display.</p>
+</blockquote>
+<h2 id="what-does-it-look-like">What does it look like?</h2>
+<p>At this point we should have created everything needed to display the index page. Run the application and open your browser to <a href="http://localhost:3000/" class="uri">http://localhost:3000/</a>. If everything is set up correctly, your site should look something like the following screenshot.</p>
+<figure>
+<img src="locallibary_express_home.png" alt="Home page - Express Local Library site" /><figcaption>Home page - Express Local Library site</figcaption>
+</figure>
+<blockquote>
+<p><strong>Note:</strong> You won’t be able to <em>use</em> the sidebar links yet because the urls, views, and templates for those pages haven’t been defined. If you try you’ll get errors like “NOT IMPLEMENTED: Book list” for example, depending on the link you click on.  These string literals (which will be replaced with proper data) were specified in the different controllers that live inside your “controllers” file.</p>
+</blockquote>
+<h2 id="next-steps">Next steps</h2>
+<ul>
+<li>Return to <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/Displaying_data">Express Tutorial Part 5: Displaying library data</a>.</li>
+<li>Proceed to the next subarticle of part 5: <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/Displaying_data/Book_list_page">Book list page</a>.</li>
+</ul>

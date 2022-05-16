@@ -1,0 +1,516 @@
+<p>{{LearnSidebar}}{{PreviousMenuNext(“Learn/Server-side/Django/Home_page”, “Learn/Server-side/Django/Sessions”, “Learn/Server-side/Django”)}}</p>
+<p>This tutorial extends our <a href="/en-US/docs/Learn/Server-side/Django/Tutorial_local_library_website">LocalLibrary</a> website, adding list and detail pages for books and authors. Here we’ll learn about generic class-based views, and show how they can reduce the amount of code you have to write for common use cases. We’ll also go into URL handling in greater detail, showing how to perform basic pattern matching.</p>
+<table>
+<tbody>
+<tr>
+<th scope="row">
+Prerequisites:
+</th>
+<td>
+Complete all previous tutorial topics, including <a href="/en-US/docs/Learn/Server-side/Django/Home_page"
+          >Django Tutorial Part 5: Creating our home page</a
+        >.
+</td>
+</tr>
+<tr>
+<th scope="row">
+Objective:
+</th>
+<td>
+To understand where and how to use generic class-based views, and how to extract patterns from URLs and pass the information to views.
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="overview">Overview</h2>
+<p>In this tutorial we’re going to complete the first version of the <a href="/en-US/docs/Learn/Server-side/Django/Tutorial_local_library_website">LocalLibrary</a> website by adding list and detail pages for books and authors (or to be more precise, we’ll show you how to implement the book pages, and get you to create the author pages yourself!)</p>
+<p>The process is similar to creating the index page, which we showed in the previous tutorial. We’ll still need to create URL maps, views, and templates. The main difference is that for the detail pages, we’ll have the additional challenge of extracting information from patterns in the URL and passing it to the view. For these pages, we’re going to demonstrate a completely different type of view: generic class-based list and detail views. These can significantly reduce the amount of view code needed, making them easier to write and maintain.</p>
+<p>The final part of the tutorial will demonstrate how to paginate your data when using generic class-based list views.</p>
+<h2 id="book-list-page">Book list page</h2>
+<p>The book list page will display a list of all the available book records in the page, accessed using the URL: <code>catalog/books/</code>. The page will display a title and author for each record, with the title being a hyperlink to the associated book detail page. The page will have the same structure and navigation as all other pages in the site, and we can, therefore, extend the base template (<strong>base_generic.html</strong>) we created in the previous tutorial.</p>
+<h3 id="url-mapping">URL mapping</h3>
+<p>Open <strong>/catalog/urls.py</strong> and copy in the line setting the path for <code>'books/'</code>, as shown below. Just as for the index page, this <code>path()</code> function defines a pattern to match against the URL (<strong>‘books/’</strong>), a view function that will be called if the URL matches (<code>views.BookListView.as_view()</code>), and a name for this particular mapping.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb1-1" title="1">urlpatterns <span class="op">=</span> [</a>
+<a class="sourceLine" id="cb1-2" title="2">    path(<span class="st">&#39;&#39;</span>, views.index, name<span class="op">=</span><span class="st">&#39;index&#39;</span>),</a>
+<a class="sourceLine" id="cb1-3" title="3">    path(<span class="st">&#39;books/&#39;</span>, views.BookListView.as_view(), name<span class="op">=</span><span class="st">&#39;books&#39;</span>),</a>
+<a class="sourceLine" id="cb1-4" title="4">]</a></code></pre></div>
+<p>As discussed in the previous tutorial the URL must already have matched <code>/catalog</code>, so the view will actually be called for the URL: <code>/catalog/books/</code>.</p>
+<p>The view function has a different format than before — that’s because this view will actually be implemented as a class. We will be inheriting from an existing generic view function that already does most of what we want this view function to do, rather than writing our own from scratch.</p>
+<p>For Django class-based views we access an appropriate view function by calling the class method <code>as_view()</code>. This does all the work of creating an instance of the class, and making sure that the right handler methods are called for incoming HTTP requests.</p>
+<h3 id="view-class-based">View (class-based)</h3>
+<p>We could quite easily write the book list view as a regular function (just like our previous index view), which would query the database for all books, and then call <code>render()</code> to pass the list to a specified template. Instead, however, we’re going to use a class-based generic list view (<code>ListView</code>) — a class that inherits from an existing view. Because the generic view already implements most of the functionality we need and follows Django best-practice, we will be able to create a more robust list view with less code, less repetition, and ultimately less maintenance.</p>
+<p>Open <strong>catalog/views.py</strong>, and copy the following code into the bottom of the file:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb2-1" title="1"><span class="im">from</span> django.views <span class="im">import</span> generic</a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">class</span> BookListView(generic.ListView):</a>
+<a class="sourceLine" id="cb2-4" title="4">    model <span class="op">=</span> Book</a></code></pre></div>
+<p>That’s it! The generic view will query the database to get all records for the specified model (<code>Book</code>) then render a template located at <strong>/locallibrary/catalog/templates/catalog/book_list.html</strong> (which we will create below). Within the template you can access the list of books with the template variable named <code>object_list</code> OR <code>book_list</code> (i.e. generically “<code>the_model_name_list</code>”).</p>
+<blockquote>
+<p><strong>Note:</strong> This awkward path for the template location isn’t a misprint — the generic views look for templates in <code>/application_name/the_model_name_list.html</code> (<code>catalog/book_list.html</code> in this case) inside the application’s <code>/application_name/templates/</code> directory (<code>/catalog/templates/)</code>.</p>
+</blockquote>
+<p>You can add attributes to change the default behavior above. For example, you can specify another template file if you need to have multiple views that use this same model, or you might want to use a different template variable name if <code>book_list</code> is not intuitive for your particular template use-case. Possibly the most useful variation is to change/filter the subset of results that are returned — so instead of listing all books you might list top 5 books that were read by other users.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">class</span> BookListView(generic.ListView):</a>
+<a class="sourceLine" id="cb3-2" title="2">    model <span class="op">=</span> Book</a>
+<a class="sourceLine" id="cb3-3" title="3">    context_object_name <span class="op">=</span> <span class="st">&#39;my_book_list&#39;</span>   <span class="co"># your own name for the list as a template variable</span></a>
+<a class="sourceLine" id="cb3-4" title="4">    queryset <span class="op">=</span> Book.objects.<span class="bu">filter</span>(title__icontains<span class="op">=</span><span class="st">&#39;war&#39;</span>)[:<span class="dv">5</span>] <span class="co"># Get 5 books containing the title war</span></a>
+<a class="sourceLine" id="cb3-5" title="5">    template_name <span class="op">=</span> <span class="st">&#39;books/my_arbitrary_template_name_list.html&#39;</span>  <span class="co"># Specify your own template name/location</span></a></code></pre></div>
+<h4 id="overriding-methods-in-class-based-views">Overriding methods in class-based views</h4>
+<p>While we don’t need to do so here, you can also override some of the class methods.</p>
+<p>For example, we can override the <code>get_queryset()</code> method to change the list of records returned. This is more flexible than just setting the <code>queryset</code> attribute as we did in the preceding code fragment (though there is no real benefit in this case):</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">class</span> BookListView(generic.ListView):</a>
+<a class="sourceLine" id="cb4-2" title="2">    model <span class="op">=</span> Book</a>
+<a class="sourceLine" id="cb4-3" title="3"></a>
+<a class="sourceLine" id="cb4-4" title="4">    <span class="kw">def</span> get_queryset(<span class="va">self</span>):</a>
+<a class="sourceLine" id="cb4-5" title="5">        <span class="cf">return</span> Book.objects.<span class="bu">filter</span>(title__icontains<span class="op">=</span><span class="st">&#39;war&#39;</span>)[:<span class="dv">5</span>] <span class="co"># Get 5 books containing the title war</span></a></code></pre></div>
+<p>We might also override <code>get_context_data()</code> in order to pass additional context variables to the template (e.g. the list of books is passed by default). The fragment below shows how to add a variable named “<code>some_data</code>” to the context (it would then be available as a template variable).</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">class</span> BookListView(generic.ListView):</a>
+<a class="sourceLine" id="cb5-2" title="2">    model <span class="op">=</span> Book</a>
+<a class="sourceLine" id="cb5-3" title="3"></a>
+<a class="sourceLine" id="cb5-4" title="4">    <span class="kw">def</span> get_context_data(<span class="va">self</span>, <span class="op">**</span>kwargs):</a>
+<a class="sourceLine" id="cb5-5" title="5">        <span class="co"># Call the base implementation first to get the context</span></a>
+<a class="sourceLine" id="cb5-6" title="6">        context <span class="op">=</span> <span class="bu">super</span>(BookListView, <span class="va">self</span>).get_context_data(<span class="op">**</span>kwargs)</a>
+<a class="sourceLine" id="cb5-7" title="7">        <span class="co"># Create any data and add it to the context</span></a>
+<a class="sourceLine" id="cb5-8" title="8">        context[<span class="st">&#39;some_data&#39;</span>] <span class="op">=</span> <span class="st">&#39;This is just some data&#39;</span></a>
+<a class="sourceLine" id="cb5-9" title="9">        <span class="cf">return</span> context</a></code></pre></div>
+<p>When doing this it is important to follow the pattern used above:</p>
+<ul>
+<li>First get the existing context from our superclass.</li>
+<li>Then add your new context information.</li>
+<li>Then return the new (updated) context.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> Check out <a href="https://docs.djangoproject.com/en/3.1/topics/class-based-views/generic-display/">Built-in class-based generic views</a> (Django docs) for many more examples of what you can do.</p>
+</blockquote>
+<h3 id="creating-the-list-view-template">Creating the List View template</h3>
+<p>Create the HTML file <strong>/locallibrary/catalog/templates/catalog/book_list.html</strong> and copy in the text below. As discussed above, this is the default template file expected by the generic class-based list view (for a model named <code>Book</code> in an application named <code>catalog</code>).</p>
+<p>Templates for generic views are just like any other templates (although of course the context/information passed to the template may differ). As with our <em>index</em> template, we extend our base template in the first line and then replace the block named <code>content</code>.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb6-1" title="1">{% extends &quot;base_generic.html&quot; %}</a>
+<a class="sourceLine" id="cb6-2" title="2"></a>
+<a class="sourceLine" id="cb6-3" title="3">{% block content %}</a>
+<a class="sourceLine" id="cb6-4" title="4">  <span class="kw">&lt;h1&gt;</span>Book List<span class="kw">&lt;/h1&gt;</span></a>
+<a class="sourceLine" id="cb6-5" title="5">  {% if book_list %}</a>
+<a class="sourceLine" id="cb6-6" title="6">  <span class="kw">&lt;ul&gt;</span></a>
+<a class="sourceLine" id="cb6-7" title="7">    {% for book in book_list %}</a>
+<a class="sourceLine" id="cb6-8" title="8">      <span class="kw">&lt;li&gt;</span></a>
+<a class="sourceLine" id="cb6-9" title="9">        <span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;\{{ book.get_absolute_url }}&quot;</span><span class="kw">&gt;</span>\{{ book.title }}<span class="kw">&lt;/a&gt;</span> (\{{book.author}})</a>
+<a class="sourceLine" id="cb6-10" title="10">      <span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb6-11" title="11">    {% endfor %}</a>
+<a class="sourceLine" id="cb6-12" title="12">  <span class="kw">&lt;/ul&gt;</span></a>
+<a class="sourceLine" id="cb6-13" title="13">  {% else %}</a>
+<a class="sourceLine" id="cb6-14" title="14">    <span class="kw">&lt;p&gt;</span>There are no books in the library.<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb6-15" title="15">  {% endif %}</a>
+<a class="sourceLine" id="cb6-16" title="16">{% endblock %}</a></code></pre></div>
+<p>The view passes the context (list of books) by default as <code>object_list</code> and <code>book_list</code> aliases; either will work.</p>
+<h4 id="conditional-execution">Conditional execution</h4>
+<p>We use the <a href="https://docs.djangoproject.com/en/3.1/ref/templates/builtins/#if"><code>if</code></a>, <code>else</code>, and <code>endif</code> template tags to check whether the <code>book_list</code> has been defined and is not empty. If <code>book_list</code> is empty, then the <code>else</code> clause displays text explaining that there are no books to list. If <code>book_list</code> is not empty, then we iterate through the list of books.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb7-1" title="1">{% if book_list %}</a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="co">&lt;!-- code here to list the books --&gt;</span></a>
+<a class="sourceLine" id="cb7-3" title="3">{% else %}</a>
+<a class="sourceLine" id="cb7-4" title="4">  <span class="kw">&lt;p&gt;</span>There are no books in the library.<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb7-5" title="5">{% endif %}</a></code></pre></div>
+<p>The condition above only checks for one case, but you can test on additional conditions using the <code>elif</code> template tag (e.g. <code>{% elif var2 %}</code>). For more information about conditional operators see: <a href="https://docs.djangoproject.com/en/3.1/ref/templates/builtins/#if">if</a>, <a href="https://docs.djangoproject.com/en/3.1/ref/templates/builtins/#ifequal-and-ifnotequal">ifequal/ifnotequal</a>, and <a href="https://docs.djangoproject.com/en/3.1/ref/templates/builtins/#ifchanged">ifchanged</a> in <a href="https://docs.djangoproject.com/en/3.1/ref/templates/builtins">Built-in template tags and filters</a> (Django Docs).</p>
+<h4 id="for-loops">For loops</h4>
+<p>The template uses the <a href="https://docs.djangoproject.com/en/3.1/ref/templates/builtins/#for">for</a> and <code>endfor</code> template tags to loop through the book list, as shown below. Each iteration populates the <code>book</code> template variable with information for the current list item.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb8-1" title="1">{% for book in book_list %}</a>
+<a class="sourceLine" id="cb8-2" title="2">  <span class="kw">&lt;li&gt;</span> <span class="co">&lt;!-- code here get information from each book item --&gt;</span> <span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb8-3" title="3">{% endfor %}</a></code></pre></div>
+<p>You might also use the <code>{% empty %}</code> template tag to define what happens if the book list is empty (although our template chooses to use a conditional instead):</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">&lt;ul&gt;</span></a>
+<a class="sourceLine" id="cb9-2" title="2">  {% for book in book_list %}</a>
+<a class="sourceLine" id="cb9-3" title="3">    <span class="kw">&lt;li&gt;</span> <span class="co">&lt;!-- code here get information from each book item --&gt;</span> <span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb9-4" title="4">  {% empty %}</a>
+<a class="sourceLine" id="cb9-5" title="5">    <span class="kw">&lt;p&gt;</span>There are no books in the library.<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb9-6" title="6">  {% endfor %}</a>
+<a class="sourceLine" id="cb9-7" title="7"><span class="kw">&lt;/ul&gt;</span></a></code></pre></div>
+<p>While not used here, within the loop Django will also create other variables that you can use to track the iteration. For example, you can test the <code>forloop.last</code> variable to perform conditional processing the last time that the loop is run.</p>
+<h4 id="accessing-variables">Accessing variables</h4>
+<p>The code inside the loop creates a list item for each book that shows both the title (as a link to the yet-to-be-created detail view) and the author.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;\{{ book.get_absolute_url }}&quot;</span><span class="kw">&gt;</span>\{{ book.title }}<span class="kw">&lt;/a&gt;</span> (\{{book.author}})</a></code></pre></div>
+<p>We access the <em>fields</em> of the associated book record using the “dot notation” (e.g. <code>book.title</code> and <code>book.author</code>), where the text following the <code>book</code> item is the field name (as defined in the model).</p>
+<p>We can also call <em>functions</em> in the model from within our template — in this case we call <code>Book.get_absolute_url()</code> to get a URL you could use to display the associated detail record. This works provided the function does not have any arguments (there is no way to pass arguments!)</p>
+<blockquote>
+<p><strong>Note:</strong> We have to be a little careful of “side effects” when calling functions in templates. Here we just get a URL to display, but a function can do pretty much anything — we wouldn’t want to delete our database (for example) just by rendering our template!</p>
+</blockquote>
+<h4 id="update-the-base-template">Update the base template</h4>
+<p>Open the base template (<strong>/locallibrary/catalog/templates/<em>base_generic.html</em></strong>) and insert <strong>{% url ‘books’ %}</strong> into the URL link for <strong>All books</strong>, as shown below. This will enable the link in all pages (we can successfully put this in place now that we’ve created the “books” URL mapper).</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb11-1" title="1"><span class="op">&lt;</span>li<span class="op">&gt;&lt;</span>a href<span class="op">=</span><span class="st">&quot;{</span><span class="sc">% u</span><span class="st">rl &#39;index&#39; %}&quot;</span><span class="op">&gt;</span>Home<span class="op">&lt;/</span>a<span class="op">&gt;&lt;/</span>li<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb11-2" title="2"><span class="op">&lt;</span>li<span class="op">&gt;&lt;</span>a href<span class="op">=</span><span class="st">&quot;{</span><span class="sc">% u</span><span class="st">rl &#39;books&#39; %}&quot;</span><span class="op">&gt;</span>All books<span class="op">&lt;/</span>a<span class="op">&gt;&lt;/</span>li<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb11-3" title="3"><span class="op">&lt;</span>li<span class="op">&gt;&lt;</span>a href<span class="op">=</span><span class="st">&quot;&quot;</span><span class="op">&gt;</span>All authors<span class="op">&lt;/</span>a<span class="op">&gt;&lt;/</span>li<span class="op">&gt;</span></a></code></pre></div>
+<h3 id="what-does-it-look-like">What does it look like?</h3>
+<p>You won’t be able to build the book list yet, because we’re still missing a dependency — the URL map for the book detail pages, which is needed to create hyperlinks to individual books. We’ll show both list and detail views after the next section.</p>
+<h2 id="book-detail-page">Book detail page</h2>
+<p>The book detail page will display information about a specific book, accessed using the URL <code>catalog/book/&lt;id&gt;</code> (where <code>&lt;id&gt;</code> is the primary key for the book). In addition to fields in the <code>Book</code> model (author, summary, ISBN, language, and genre), we’ll also list the details of the available copies (<code>BookInstances</code>) including the status, expected return date, imprint, and id. This will allow our readers to not only learn about the book, but also to confirm whether/when it is available.</p>
+<h3 id="url-mapping-1">URL mapping</h3>
+<p>Open <strong>/catalog/urls.py</strong> and add the path named ‘<strong>book-detail</strong>’ shown below. This <code>path()</code> function defines a pattern, associated generic class-based detail view, and a name.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb12-1" title="1">urlpatterns <span class="op">=</span> [</a>
+<a class="sourceLine" id="cb12-2" title="2">    path(<span class="st">&#39;&#39;</span>, views.index, name<span class="op">=</span><span class="st">&#39;index&#39;</span>),</a>
+<a class="sourceLine" id="cb12-3" title="3">    path(<span class="st">&#39;books/&#39;</span>, views.BookListView.as_view(), name<span class="op">=</span><span class="st">&#39;books&#39;</span>),</a>
+<a class="sourceLine" id="cb12-4" title="4">    path(<span class="st">&#39;book/&lt;int:pk&gt;&#39;</span>, views.BookDetailView.as_view(), name<span class="op">=</span><span class="st">&#39;book-detail&#39;</span>),</a>
+<a class="sourceLine" id="cb12-5" title="5">]</a></code></pre></div>
+<p>For the <em>book-detail</em> path the URL pattern uses a special syntax to capture the specific id of the book that we want to see. The syntax is very simple: angle brackets define the part of the URL to be captured, enclosing the name of the variable that the view can use to access the captured data. For example, <strong>&lt;something&gt;</strong> , will capture the marked pattern and pass the value to the view as a variable “something”. You can optionally precede the variable name with a <a href="https://docs.djangoproject.com/en/3.1/topics/http/urls/#path-converters">converter specification</a> that defines the type of data (int, str, slug, uuid, path).</p>
+<p>In this case we use <code>'&lt;int:pk&gt;'</code> to capture the book id, which must be a specially formatted string and pass it to the view as a parameter named <code>pk</code> (short for primary key). This is the id that is being used to store the book uniquely in the database, as defined in the Book Model.</p>
+<blockquote>
+<p><strong>Note:</strong> As discussed previously, our matched URL is actually <code>catalog/book/&lt;digits&gt;</code> (because we are in the <strong>catalog</strong> application, <code>/catalog/</code> is assumed).</p>
+</blockquote>
+<blockquote>
+<p><strong>Warning:</strong> The generic class-based detail view <em>expects</em> to be passed a parameter named <strong>pk</strong>. If you’re writing your own function view you can use whatever parameter name you like, or indeed pass the information in an unnamed argument.</p>
+</blockquote>
+<h4 id="advanced-path-matchingregular-expression-primer">Advanced path matching/regular expression primer</h4>
+<blockquote>
+<p><strong>Note:</strong> You won’t need this section to complete the tutorial! We provide it because knowing this option is likely to be useful in your Django-centric future.</p>
+</blockquote>
+<p>The pattern matching provided by <code>path()</code> is simple and useful for the (very common) cases where you just want to capture <em>any</em> string or integer. If you need more refined filtering (for example, to filter only strings that have a certain number of characters) then you can use the <a href="https://docs.djangoproject.com/en/3.1/ref/urls/#django.urls.re_path">re_path()</a> method.</p>
+<p>This method is used just like <code>path()</code> except that it allows you to specify a pattern using a <a href="https://docs.python.org/3/library/re.html">Regular expression</a>. For example, the previous path could have been written as shown below:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb13-1" title="1">re_path(<span class="vs">r&#39;^book/(?P&lt;pk&gt;\d+)$&#39;</span>, views.BookDetailView.as_view(), name<span class="op">=</span><span class="st">&#39;book-detail&#39;</span>),</a></code></pre></div>
+<p><em>Regular expressions</em> are an incredibly powerful pattern mapping tool. They are, frankly, quite unintuitive and can be intimidating for beginners. Below is a very short primer!</p>
+<p>The first thing to know is that regular expressions should usually be declared using the raw string literal syntax (i.e. they are enclosed as shown: <strong>r’&lt;your regular expression text goes here&gt;’</strong>).</p>
+<p>The main parts of the syntax you will need to know for declaring the pattern matches are:</p>
+<table class="standard-table no-markdown">
+<thead>
+<tr>
+<th scope="col">
+Symbol
+</th>
+<th scope="col">
+Meaning
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+^
+</td>
+<td>
+Match the beginning of the text
+</td>
+</tr>
+<tr>
+<td>
+$
+</td>
+<td>
+Match the end of the text
+</td>
+</tr>
+<tr>
+<td>
+/td&gt;
+<td>
+Match a digit (0, 1, 2, … 9)
+</td>
+<pre><code>&lt;/tr&gt;
+&lt;tr&gt;
+  &lt;td&gt;\w&lt;/td&gt;
+  &lt;td&gt;
+    Match a word character, e.g. any upper- or lower-case character in the
+    alphabet, digit or the underscore character (_)
+  &lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+  &lt;td&gt;+&lt;/td&gt;
+  &lt;td&gt;
+    Match one or more of the preceding character. For example, to match one
+    or more digits you would use &lt;code&gt;\d+&lt;/code&gt;. To match one or more &quot;a&quot;
+    characters, you could use &lt;code&gt;a+&lt;/code&gt;
+  &lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+  &lt;td&gt;*&lt;/td&gt;
+  &lt;td&gt;
+    Match zero or more of the preceding character. For example, to match
+    nothing or a word you could use &lt;code&gt;\w*&lt;/code&gt;
+  &lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+  &lt;td&gt;( )&lt;/td&gt;
+  &lt;td&gt;
+    Capture the part of the pattern inside the brackets. Any captured values
+    will be passed to the view as unnamed parameters (if multiple patterns
+    are captured, the associated parameters will be supplied in the order
+    that the captures were declared).
+  &lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+  &lt;td&gt;(?P&amp;#x3C;&lt;em&gt;name&lt;/em&gt;&gt;...)&lt;/td&gt;
+  &lt;td&gt;
+    Capture the pattern (indicated by ...) as a named variable (in this case
+    &quot;name&quot;). The captured values are passed to the view with the name
+    specified. Your view must therefore declare a parameter with the same
+    name!
+  &lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+  &lt;td&gt;[  ]&lt;/td&gt;
+  &lt;td&gt;
+    Match against one character in the set. For example, [abc] will match on
+    &#39;a&#39; or &#39;b&#39; or &#39;c&#39;. [-\w] will match on the &#39;-&#39; character or any word
+    character.
+  &lt;/td&gt;
+&lt;/tr&gt;</code></pre>
+</tbody>
+</table>
+<p>Most other characters can be taken literally!</p>
+<p>Let’s consider a few real examples of patterns:</p>
+<table class="standard-table">
+<thead>
+<tr>
+<th scope="col">
+Pattern
+</th>
+<th scope="col">
+Description
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<strong>r’^book/(?P&lt;pk&gt;)<span class="math inline">$'&lt;/strong&gt;&lt;/td&gt;  &lt;td&gt;  &lt;p&gt;  This is the RE used in our URL mapper. It matches a string that has  &lt;code&gt;book/&lt;/code&gt; at the start of the line (&lt;strong&gt;^book/&lt;/strong&gt;),  then has one or more digits (&lt;code&gt;\d+&lt;/code&gt;), and then ends (with no  non-digit characters before the end of line marker).  &lt;/p&gt;  &lt;p&gt;  It also captures all the digits &lt;strong&gt;(?P&amp;#x3C;pk&gt;\d+)&lt;/strong&gt; and  passes them to the view in a parameter named 'pk'.  &lt;strong&gt;The captured values are always passed as a string!&lt;/strong&gt;  &lt;/p&gt;  &lt;p&gt;  For example, this would match &lt;code&gt;book/1234&lt;/code&gt; , and send a  variable &lt;code&gt;pk='1234'&lt;/code&gt; to the view.  &lt;/p&gt;  &lt;/td&gt;  &lt;/tr&gt;  &lt;tr&gt;  &lt;td&gt;&lt;strong&gt;r'^book/(\d+)$</span>’</strong>
+</td>
+<td>
+This matches the same URLs as the preceding case. The captured information would be sent as an unnamed argument to the view.
+</td>
+</tr>
+<tr>
+<td>
+<strong>r’^book/(?P&lt;stub&gt;[-]+)$’</strong>
+</td>
+<td>
+<p>
+This matches a string that has <code>book/</code> at the start of the line (<strong>^book/</strong>), then has one or more characters that are <em>either</em> a ‘-’ or a word character (<strong>[-]+</strong>), and then ends. It also captures this set of characters and passes them to the view in a parameter named ‘stub’.
+</p>
+<p>
+This is a fairly typical pattern for a “stub”. Stubs are URL-friendly word-based primary keys for data. You might use a stub if you wanted your book URL to be more informative. For example <code>/catalog/book/the-secret-garden</code> rather than <code>/catalog/book/33</code>.
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>You can capture multiple patterns in the one match, and hence encode lots of different information in a URL.</p>
+<blockquote>
+<p><strong>Note:</strong> As a challenge, consider how you might encode a URL to list all books released in a particular year, month, day, and the RE that could be used to match it.</p>
+</blockquote>
+<h4 id="passing-additional-options-in-your-url-maps">Passing additional options in your URL maps</h4>
+<p>One feature that we haven’t used here, but which you may find valuable, is that you can pass a <a href="https://docs.djangoproject.com/en/3.1/topics/http/urls/#views-extra-options">dictionary containing additional options</a> to the view (using the third un-named argument to the <code>path()</code> function). This approach can be useful if you want to use the same view for multiple resources, and pass data to configure its behavior in each case.</p>
+<p>For example, given the path shown below, for a request to <code>/myurl/halibut/</code> Django will call <code>views.my_view(request, fish=halibut, my_template_name='some_path')</code>.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb15-1" title="1">path(<span class="st">&#39;myurl/&lt;int:fish&gt;&#39;</span>, views.my_view, {<span class="st">&#39;my_template_name&#39;</span>: <span class="st">&#39;some_path&#39;</span>}, name<span class="op">=</span><span class="st">&#39;aurl&#39;</span>),</a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> Both named captured patterns and dictionary options are passed to the view as <em>named</em> arguments. If you use the <strong>same name</strong> for both a capture pattern and a dictionary key, then the dictionary option will be used.</p>
+</blockquote>
+<h3 id="view-class-based-1">View (class-based)</h3>
+<p>Open <strong>catalog/views.py</strong>, and copy the following code into the bottom of the file:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb16-1" title="1"><span class="kw">class</span> BookDetailView(generic.DetailView):</a>
+<a class="sourceLine" id="cb16-2" title="2">    model <span class="op">=</span> Book</a></code></pre></div>
+<p>That’s it! All you need to do now is create a template called <strong>/locallibrary/catalog/templates/catalog/book_detail.html</strong>, and the view will pass it the database information for the specific <code>Book</code> record extracted by the URL mapper. Within the template you can access the book’s details with the template variable named <code>object</code> OR <code>book</code> (i.e. generically “<code>the_model_name</code>”).</p>
+<p>If you need to, you can change the template used and the name of the context object used to reference the book in the template. You can also override methods to, for example, add additional information to the context.</p>
+<h4 id="what-happens-if-the-record-doesnt-exist">What happens if the record doesn’t exist?</h4>
+<p>If a requested record does not exist then the generic class-based detail view will raise an <code>Http404</code> exception for you automatically — in production, this will automatically display an appropriate “resource not found” page, which you can customise if desired.</p>
+<p>Just to give you some idea of how this works, the code fragment below demonstrates how you would implement the class-based view as a function if you were <strong>not</strong> using the generic class-based detail view.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb17-1" title="1"><span class="kw">def</span> book_detail_view(request, primary_key):</a>
+<a class="sourceLine" id="cb17-2" title="2">    <span class="cf">try</span>:</a>
+<a class="sourceLine" id="cb17-3" title="3">        book <span class="op">=</span> Book.objects.get(pk<span class="op">=</span>primary_key)</a>
+<a class="sourceLine" id="cb17-4" title="4">    <span class="cf">except</span> Book.DoesNotExist:</a>
+<a class="sourceLine" id="cb17-5" title="5">        <span class="cf">raise</span> Http404(<span class="st">&#39;Book does not exist&#39;</span>)</a>
+<a class="sourceLine" id="cb17-6" title="6"></a>
+<a class="sourceLine" id="cb17-7" title="7">    <span class="cf">return</span> render(request, <span class="st">&#39;catalog/book_detail.html&#39;</span>, context<span class="op">=</span>{<span class="st">&#39;book&#39;</span>: book})</a></code></pre></div>
+<p>The view first tries to get the specific book record from the model. If this fails the view should raise an <code>Http404</code> exception to indicate that the book is “not found”. The final step is then, as usual, to call <code>render()</code> with the template name and the book data in the <code>context</code> parameter (as a dictionary).</p>
+<p>Alternatively, we can use the <code>get_object_or_404()</code> function as a shortcut to raise an <code>Http404</code> exception if the record is not found.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb18-1" title="1"><span class="im">from</span> django.shortcuts <span class="im">import</span> get_object_or_404</a>
+<a class="sourceLine" id="cb18-2" title="2"></a>
+<a class="sourceLine" id="cb18-3" title="3"><span class="kw">def</span> book_detail_view(request, primary_key):</a>
+<a class="sourceLine" id="cb18-4" title="4">    book <span class="op">=</span> get_object_or_404(Book, pk<span class="op">=</span>primary_key)</a>
+<a class="sourceLine" id="cb18-5" title="5">    <span class="cf">return</span> render(request, <span class="st">&#39;catalog/book_detail.html&#39;</span>, context<span class="op">=</span>{<span class="st">&#39;book&#39;</span>: book})</a></code></pre></div>
+<h3 id="creating-the-detail-view-template">Creating the Detail View template</h3>
+<p>Create the HTML file <strong>/locallibrary/catalog/templates/catalog/book_detail.html</strong> and give it the below content. As discussed above, this is the default template file name expected by the generic class-based <em>detail</em> view (for a model named <code>Book</code> in an application named <code>catalog</code>).</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb19-1" title="1">{% extends &quot;base_generic.html&quot; %}</a>
+<a class="sourceLine" id="cb19-2" title="2"></a>
+<a class="sourceLine" id="cb19-3" title="3">{% block content %}</a>
+<a class="sourceLine" id="cb19-4" title="4">  <span class="kw">&lt;h1&gt;</span>Title: \{{ book.title }}<span class="kw">&lt;/h1&gt;</span></a>
+<a class="sourceLine" id="cb19-5" title="5"></a>
+<a class="sourceLine" id="cb19-6" title="6">  <span class="kw">&lt;p&gt;&lt;strong&gt;</span>Author:<span class="kw">&lt;/strong&gt;</span> <span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;&quot;</span><span class="kw">&gt;</span>\{{ book.author }}<span class="kw">&lt;/a&gt;&lt;/p&gt;</span> <span class="co">&lt;!-- author detail link not yet defined --&gt;</span></a>
+<a class="sourceLine" id="cb19-7" title="7">  <span class="kw">&lt;p&gt;&lt;strong&gt;</span>Summary:<span class="kw">&lt;/strong&gt;</span> \{{ book.summary }}<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb19-8" title="8">  <span class="kw">&lt;p&gt;&lt;strong&gt;</span>ISBN:<span class="kw">&lt;/strong&gt;</span> \{{ book.isbn }}<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb19-9" title="9">  <span class="kw">&lt;p&gt;&lt;strong&gt;</span>Language:<span class="kw">&lt;/strong&gt;</span> \{{ book.language }}<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb19-10" title="10">  <span class="kw">&lt;p&gt;&lt;strong&gt;</span>Genre:<span class="kw">&lt;/strong&gt;</span> \{{ book.genre.all|join:&quot;, &quot; }}<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb19-11" title="11"></a>
+<a class="sourceLine" id="cb19-12" title="12">  <span class="kw">&lt;div</span><span class="ot"> style=</span><span class="st">&quot;margin-left:20px;margin-top:20px&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb19-13" title="13">    <span class="kw">&lt;h4&gt;</span>Copies<span class="kw">&lt;/h4&gt;</span></a>
+<a class="sourceLine" id="cb19-14" title="14"></a>
+<a class="sourceLine" id="cb19-15" title="15">    {% for copy in book.bookinstance_set.all %}</a>
+<a class="sourceLine" id="cb19-16" title="16">      <span class="kw">&lt;hr&gt;</span></a>
+<a class="sourceLine" id="cb19-17" title="17">      <span class="kw">&lt;p</span><span class="ot"> class=</span><span class="st">&quot;{% if copy.status == &#39;a&#39; %}text-success{% elif copy.status == &#39;m&#39; %}text-danger{% else %}text-warning{% endif %}&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb19-18" title="18">        \{{ copy.get_status_display }}</a>
+<a class="sourceLine" id="cb19-19" title="19">      <span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb19-20" title="20">      {% if copy.status != &#39;a&#39; %}</a>
+<a class="sourceLine" id="cb19-21" title="21">        <span class="kw">&lt;p&gt;&lt;strong&gt;</span>Due to be returned:<span class="kw">&lt;/strong&gt;</span> \{{ copy.due_back }}<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb19-22" title="22">      {% endif %}</a>
+<a class="sourceLine" id="cb19-23" title="23">      <span class="kw">&lt;p&gt;&lt;strong&gt;</span>Imprint:<span class="kw">&lt;/strong&gt;</span> \{{ copy.imprint }}<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb19-24" title="24">      <span class="kw">&lt;p</span><span class="ot"> class=</span><span class="st">&quot;text-muted&quot;</span><span class="kw">&gt;&lt;strong&gt;</span>Id:<span class="kw">&lt;/strong&gt;</span> \{{ copy.id }}<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb19-25" title="25">    {% endfor %}</a>
+<a class="sourceLine" id="cb19-26" title="26">  <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb19-27" title="27">{% endblock %}</a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> The author link in the template above has an empty URL because we’ve not yet created an author detail page to link to. Once the detail page exists we can get its URL with either of these two approaches:</p>
+<ul>
+<li><p>Use the <code>url</code> template tag to reverse the ‘author-detail’ URL (defined in the URL mapper), passing it the author instance for the book:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb20-1" title="1"><span class="op">&lt;</span>a href<span class="op">=</span><span class="st">&quot;{</span><span class="sc">% u</span><span class="st">rl &#39;author-detail&#39; book.author.pk %}&quot;</span><span class="op">&gt;\</span>{{ book.author }}<span class="op">&lt;/</span>a<span class="op">&gt;</span></a></code></pre></div></li>
+<li><p>Call the author model’s <code>get_absolute_url()</code> method (this performs the same reversing operation):</p>
+<pre class="plain"><code>&lt;a href=&quot;\{{ book.author.get_absolute_url }}&quot;&gt;\{{ book.author }}&lt;/a&gt;</code></pre></li>
+</ul>
+<p>While both methods effectively do the same thing, <code>get_absolute_url()</code> is preferred because it helps you write more consistent and maintainable code (any changes only need to be done in one place: the author model).</p>
+</blockquote>
+<p>Though a little larger, almost everything in this template has been described previously:</p>
+<ul>
+<li>We extend our base template and override the “content” block.</li>
+<li>We use conditional processing to determine whether or not to display specific content.</li>
+<li>We use <code>for</code> loops to loop through lists of objects.</li>
+<li>We access the context fields using the dot notation (because we’ve used the detail generic view, the context is named <code>book</code>; we could also use “<code>object</code>”)</li>
+</ul>
+<p>The first interesting thing we haven’t seen before is the function <code>book.bookinstance_set.all()</code>. This method is “automagically” constructed by Django in order to return the set of <code>BookInstance</code> records associated with a particular <code>Book</code>.</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb22-1" title="1">{<span class="op">%</span> <span class="cf">for</span> copy <span class="kw">in</span> book.bookinstance_set.<span class="bu">all</span> <span class="op">%</span>}</a>
+<a class="sourceLine" id="cb22-2" title="2">  <span class="op">&lt;!--</span> code to iterate across each copy<span class="op">/</span>instance of a book <span class="op">--&gt;</span></a>
+<a class="sourceLine" id="cb22-3" title="3">{<span class="op">%</span> endfor <span class="op">%</span>}</a></code></pre></div>
+<p>This method is needed because you declare a <code>ForeignKey</code> (one-to many) field only in the “many” side of the relationship (the <code>BookInstance</code>). Since you don’t do anything to declare the relationship in the other (“one”) model, it (the <code>Book</code>) doesn’t have any field to get the set of associated records. To overcome this problem, Django constructs an appropriately named “reverse lookup” function that you can use. The name of the function is constructed by lower-casing the model name where the <code>ForeignKey</code> was declared, followed by <code>_set</code> (i.e. so the function created in <code>Book</code> is <code>bookinstance_set()</code>).</p>
+<blockquote>
+<p><strong>Note:</strong> Here we use <code>all()</code> to get all records (the default). While you can use the <code>filter()</code> method to get a subset of records in code, you can’t do this directly in templates because you can’t specify arguments to functions.</p>
+<p>Beware also that if you don’t define an order (on your class-based view or model), you will also see errors from the development server like this one:</p>
+<pre class="plain"><code>[29/May/2017 18:37:53] &quot;GET /catalog/books/?page=1 HTTP/1.1&quot; 200 1637
+/foo/local_library/venv/lib/python3.5/site-packages/django/views/generic/list.py:99: UnorderedObjectListWarning: Pagination may yield inconsistent results with an unordered object_list: &lt;QuerySet [&lt;Author: Ortiz, David&gt;, &lt;Author: H. McRaven, William&gt;, &lt;Author: Leigh, Melinda&gt;]&gt;
+  allow_empty_first_page=allow_empty_first_page, **kwargs)</code></pre>
+<p>That happens because the <a href="https://docs.djangoproject.com/en/3.1/topics/pagination/#paginator-objects">paginator object</a> expects to see some ORDER BY being executed on your underlying database. Without it, it can’t be sure the records being returned are actually in the right order!</p>
+<p>This tutorial hasn’t covered <strong>Pagination</strong> (yet!), but since you can’t use <code>sort_by()</code> and pass a parameter (the same with <code>filter()</code> described above) you will have to choose between three choices:</p>
+<ol type="1">
+<li>Add a <code>ordering</code> inside a <code>class Meta</code> declaration on your model.</li>
+<li>Add a <code>queryset</code> attribute in your custom class-based view, specifying an <code>order_by()</code>.</li>
+<li>Adding a <code>get_queryset</code> method to your custom class-based view and also specify the <code>order_by()</code>.</li>
+</ol>
+<p>If you decide to go with a <code>class Meta</code> for the <code>Author</code> model (probably not as flexible as customizing the class-based view, but easy enough), you will end up with something like this:</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb24-1" title="1"><span class="kw">class</span> Author(models.Model):</a>
+<a class="sourceLine" id="cb24-2" title="2">    first_name <span class="op">=</span> models.CharField(max_length<span class="op">=</span><span class="dv">100</span>)</a>
+<a class="sourceLine" id="cb24-3" title="3">    last_name <span class="op">=</span> models.CharField(max_length<span class="op">=</span><span class="dv">100</span>)</a>
+<a class="sourceLine" id="cb24-4" title="4">    date_of_birth <span class="op">=</span> models.DateField(null<span class="op">=</span><span class="va">True</span>, blank<span class="op">=</span><span class="va">True</span>)</a>
+<a class="sourceLine" id="cb24-5" title="5">    date_of_death <span class="op">=</span> models.DateField(<span class="st">&#39;Died&#39;</span>, null<span class="op">=</span><span class="va">True</span>, blank<span class="op">=</span><span class="va">True</span>)</a>
+<a class="sourceLine" id="cb24-6" title="6"></a>
+<a class="sourceLine" id="cb24-7" title="7">    <span class="kw">def</span> get_absolute_url(<span class="va">self</span>):</a>
+<a class="sourceLine" id="cb24-8" title="8">        <span class="cf">return</span> reverse(<span class="st">&#39;author-detail&#39;</span>, args<span class="op">=</span>[<span class="bu">str</span>(<span class="va">self</span>.<span class="bu">id</span>)])</a>
+<a class="sourceLine" id="cb24-9" title="9"></a>
+<a class="sourceLine" id="cb24-10" title="10">    <span class="kw">def</span> <span class="fu">__str__</span>(<span class="va">self</span>):</a>
+<a class="sourceLine" id="cb24-11" title="11">        <span class="cf">return</span> <span class="ss">f&#39;</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>last_name<span class="sc">}</span><span class="ss">, </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>first_name<span class="sc">}</span><span class="ss">&#39;</span></a>
+<a class="sourceLine" id="cb24-12" title="12"></a>
+<a class="sourceLine" id="cb24-13" title="13">    <span class="kw">class</span> Meta:</a>
+<a class="sourceLine" id="cb24-14" title="14">        ordering <span class="op">=</span> [<span class="st">&#39;last_name&#39;</span>]</a></code></pre></div>
+<p>Of course, the field doesn’t need to be <code>last_name</code>: it could be any other.</p>
+<p>Last but not least, you should sort by an attribute/column that actually has an index (unique or not) on your database to avoid performance issues. Of course, this will not be necessary here (we are probably getting ahead of ourselves with so few books and users), but it is something worth keeping in mind for future projects.</p>
+</blockquote>
+<p>The second interesting (and non-obvious) thing in the template is where we set a class (<code>text-success</code>, <code>text-danger</code>, <code>text-warning</code>) to color-code the human readable status text for each book instance (“available”, “maintenance”, etc.). Astute readers will note that the method <code>BookInstance.get_status_display()</code> that we use to get the status text does not appear elsewhere in the code.</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb25-1" title="1"> <span class="op">&lt;</span>p <span class="kw">class</span><span class="op">=</span><span class="st">&quot;{</span><span class="sc">% i</span><span class="st">f copy.status == &#39;a&#39; %}text-success{</span><span class="sc">% e</span><span class="st">lif copy.status == &#39;m&#39; %}text-danger{</span><span class="sc">% e</span><span class="st">lse %}text-warning{</span><span class="sc">% e</span><span class="st">ndif %}&quot;</span><span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb25-2" title="2"> <span class="op">\</span>{{ copy.get_status_display }} <span class="op">&lt;/</span>p<span class="op">&gt;</span></a></code></pre></div>
+<p>This function is automatically created because <code>BookInstance.status</code> is a <a href="https://docs.djangoproject.com/en/3.1/ref/models/fields/#choices">choices field</a>. Django automatically creates a method <code>get_FOO_display()</code> for every choices field “<code>Foo</code>” in a model, which can be used to get the current value of the field.</p>
+<h2 id="what-does-it-look-like-1">What does it look like?</h2>
+<p>At this point, we should have created everything needed to display both the book list and book detail pages. Run the server (<code>python3 manage.py runserver</code>) and open your browser to <a href="http://127.0.0.1:8000/" class="uri">http://127.0.0.1:8000/</a>.</p>
+<blockquote>
+<p><strong>Warning:</strong> Don’t click any author or author detail links yet — you’ll create those in the challenge!</p>
+</blockquote>
+<p>Click the <strong>All books</strong> link to display the list of books.</p>
+<figure>
+<img src="book_list_page_no_pagination.png" alt="Book List Page" /><figcaption>Book List Page</figcaption>
+</figure>
+<p>Then click a link to one of your books. If everything is set up correctly, you should see something like the following screenshot.</p>
+<figure>
+<img src="book_detail_page_no_pagination.png" alt="Book Detail Page" /><figcaption>Book Detail Page</figcaption>
+</figure>
+<h2 id="pagination">Pagination</h2>
+<p>If you’ve just got a few records, our book list page will look fine. However, as you get into the tens or hundreds of records the page will take progressively longer to load (and have far too much content to browse sensibly). The solution to this problem is to add pagination to your list views, reducing the number of items displayed on each page.</p>
+<p>Django has excellent inbuilt support for pagination. Even better, this is built into the generic class-based list views so you don’t have to do very much to enable it!</p>
+<h3 id="views">Views</h3>
+<p>Open <strong>catalog/views.py</strong>, and add the <code>paginate_by</code> line shown below.</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb26-1" title="1"><span class="kw">class</span> BookListView(generic.ListView):</a>
+<a class="sourceLine" id="cb26-2" title="2">    model <span class="op">=</span> Book</a>
+<a class="sourceLine" id="cb26-3" title="3">    paginate_by <span class="op">=</span> <span class="dv">10</span></a></code></pre></div>
+<p>With this addition, as soon as you have more than 10 records the view will start paginating the data it sends to the template. The different pages are accessed using GET parameters — to access page 2 you would use the URL <code>/catalog/books/?page=2</code>.</p>
+<h3 id="templates">Templates</h3>
+<p>Now that the data is paginated, we need to add support to the template to scroll through the results set. Because we might want paginate all list views, we’ll add this to the base template.</p>
+<p>Open <strong>/locallibrary/catalog/templates/<em>base_generic.html</em></strong> and find the “content block” (as shown below).</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb27-1" title="1">{<span class="op">%</span> block content <span class="op">%</span>}{<span class="op">%</span> endblock <span class="op">%</span>}</a></code></pre></div>
+<p>Copy in the following pagination block immediately following the <code>{% endblock %}</code>. The code first checks if pagination is enabled on the current page. If so, it adds <em>next</em> and <em>previous</em> links as appropriate (and the current page number).</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb28-1" title="1">{<span class="op">%</span> block pagination <span class="op">%</span>}</a>
+<a class="sourceLine" id="cb28-2" title="2">    {<span class="op">%</span> <span class="cf">if</span> is_paginated <span class="op">%</span>}</a>
+<a class="sourceLine" id="cb28-3" title="3">        <span class="op">&lt;</span>div <span class="kw">class</span><span class="op">=</span><span class="st">&quot;pagination&quot;</span><span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb28-4" title="4">            <span class="op">&lt;</span>span <span class="kw">class</span><span class="op">=</span><span class="st">&quot;page-links&quot;</span><span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb28-5" title="5">                {<span class="op">%</span> <span class="cf">if</span> page_obj.has_previous <span class="op">%</span>}</a>
+<a class="sourceLine" id="cb28-6" title="6">                    <span class="op">&lt;</span>a href<span class="op">=</span><span class="st">&quot;\</span><span class="sc">{{</span><span class="st"> request.path </span><span class="sc">}}</span><span class="st">?page=\</span><span class="sc">{{</span><span class="st"> page_obj.previous_page_number </span><span class="sc">}}</span><span class="st">&quot;</span><span class="op">&gt;</span>previous<span class="op">&lt;/</span>a<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb28-7" title="7">                {<span class="op">%</span> endif <span class="op">%</span>}</a>
+<a class="sourceLine" id="cb28-8" title="8">                <span class="op">&lt;</span>span <span class="kw">class</span><span class="op">=</span><span class="st">&quot;page-current&quot;</span><span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb28-9" title="9">                    Page <span class="op">\</span>{{ page_obj.number }} of <span class="op">\</span>{{ page_obj.paginator.num_pages }}.</a>
+<a class="sourceLine" id="cb28-10" title="10">                <span class="op">&lt;/</span>span<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb28-11" title="11">                {<span class="op">%</span> <span class="cf">if</span> page_obj.has_next <span class="op">%</span>}</a>
+<a class="sourceLine" id="cb28-12" title="12">                    <span class="op">&lt;</span>a href<span class="op">=</span><span class="st">&quot;\</span><span class="sc">{{</span><span class="st"> request.path </span><span class="sc">}}</span><span class="st">?page=\</span><span class="sc">{{</span><span class="st"> page_obj.next_page_number </span><span class="sc">}}</span><span class="st">&quot;</span><span class="op">&gt;</span><span class="bu">next</span><span class="op">&lt;/</span>a<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb28-13" title="13">                {<span class="op">%</span> endif <span class="op">%</span>}</a>
+<a class="sourceLine" id="cb28-14" title="14">            <span class="op">&lt;/</span>span<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb28-15" title="15">        <span class="op">&lt;/</span>div<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb28-16" title="16">    {<span class="op">%</span> endif <span class="op">%</span>}</a>
+<a class="sourceLine" id="cb28-17" title="17">  {<span class="op">%</span> endblock <span class="op">%</span>}</a></code></pre></div>
+<p>The <code>page_obj</code> is a <a href="https://docs.djangoproject.com/en/3.1/topics/pagination/#paginator-objects">Paginator</a> object that will exist if pagination is being used on the current page. It allows you to get all the information about the current page, previous pages, how many pages there are, etc.</p>
+<p>We use <code>\{{ request.path }}</code> to get the current page URL for creating the pagination links. This is useful because it is independent of the object that we’re paginating.</p>
+<p>That’s it!</p>
+<h3 id="what-does-it-look-like-2">What does it look like?</h3>
+<p>The screenshot below shows what the pagination looks like — if you haven’t entered more than 10 titles into your database, then you can test it more easily by lowering the number specified in the <code>paginate_by</code> line in your <strong>catalog/views.py</strong> file. To get the below result we changed it to <code>paginate_by = 2</code>.</p>
+<p>The pagination links are displayed on the bottom, with next/previous links being displayed depending on which page you’re on.</p>
+<figure>
+<img src="book_list_paginated.png" alt="Book List Page - paginated" /><figcaption>Book List Page - paginated</figcaption>
+</figure>
+<h2 id="challenge-yourself">Challenge yourself</h2>
+<p>The challenge in this article is to create the author detail and list views required to complete the project. These should be made available at the following URLs:</p>
+<ul>
+<li><code>catalog/authors/</code> — The list of all authors.</li>
+<li><code>catalog/author/&lt;id&gt;</code> — The detail view for the specific author with a primary key field named <em><code>&lt;id&gt;</code></em></li>
+</ul>
+<p>The code required for the URL mappers and the views should be virtually identical to the <code>Book</code> list and detail views we created above. The templates will be different but will share similar behavior.</p>
+<blockquote>
+<p><strong>Note:</strong></p>
+<ul>
+<li>Once you’ve created the URL mapper for the author list page you will also need to update the <strong>All authors</strong> link in the base template. Follow the <a href="#update_the_base_template">same process</a> as we did when we updated the <strong>All books</strong> link.</li>
+<li><p>Once you’ve created the URL mapper for the author detail page, you should also update the <a href="#creating_the_detail_view_template">book detail view template</a> (<strong>/locallibrary/catalog/templates/catalog/book_detail.html</strong>) so that the author link points to your new author detail page (rather than being an empty URL). The recommended way to do this is to call <code>get_absolute_url()</code> on the author model as shown below.</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb29-1" title="1"><span class="kw">&lt;p&gt;&lt;strong&gt;</span>Author:<span class="kw">&lt;/strong&gt;</span> <span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;\{{ book.author.get_absolute_url }}&quot;</span><span class="kw">&gt;</span>\{{ book.author }}<span class="kw">&lt;/a&gt;&lt;/p&gt;</span></a></code></pre></div></li>
+</ul>
+</blockquote>
+<p>When you are finished, your pages should look something like the screenshots below.</p>
+<figure>
+<img src="author_list_page_no_pagination.png" alt="Author List Page" /><figcaption>Author List Page</figcaption>
+</figure>
+<figure>
+<img src="author_detail_page_no_pagination.png" alt="Author Detail Page" /><figcaption>Author Detail Page</figcaption>
+</figure>
+<h2 id="summary">Summary</h2>
+<p>Congratulations, our basic library functionality is now complete!</p>
+<p>In this article, we’ve learned how to use the generic class-based list and detail views and used them to create pages to view our books and authors. Along the way we’ve learned about pattern matching with regular expressions, and how you can pass data from URLs to your views. We’ve also learned a few more tricks for using templates. Last of all we’ve shown how to paginate list views so that our lists are manageable even when we have many records.</p>
+<p>In our next articles, we’ll extend this library to support user accounts, and thereby demonstrate user authentication, permissions, sessions, and forms.</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="https://docs.djangoproject.com/en/3.1/topics/class-based-views/generic-display/">Built-in class-based generic views</a> (Django docs)</li>
+<li><a href="https://docs.djangoproject.com/en/3.1/ref/class-based-views/generic-display/">Generic display views</a> (Django docs)</li>
+<li><a href="https://docs.djangoproject.com/en/3.1/topics/class-based-views/intro/">Introduction to class-based views</a> (Django docs)</li>
+<li><a href="https://docs.djangoproject.com/en/3.1/ref/templates/builtins">Built-in template tags and filters</a> (Django docs)</li>
+<li><a href="https://docs.djangoproject.com/en/3.1/topics/pagination/">Pagination</a> (Django docs)</li>
+<li><a href="https://docs.djangoproject.com/en/3.1/topics/db/queries/#related-objects">Making queries &gt; Related objects</a> (Django docs)</li>
+</ul>
+<p>{{PreviousMenuNext(“Learn/Server-side/Django/Home_page”, “Learn/Server-side/Django/Sessions”, “Learn/Server-side/Django”)}}</p>
+<h2 id="in-this-module">In this module</h2>
+<ul>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Introduction">Django introduction</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/development_environment">Setting up a Django development environment</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Tutorial_local_library_website">Django Tutorial: The Local Library website</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/skeleton_website">Django Tutorial Part 2: Creating a skeleton website</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Models">Django Tutorial Part 3: Using models</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Admin_site">Django Tutorial Part 4: Django admin site</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Home_page">Django Tutorial Part 5: Creating our home page</a></li>
+<li><strong>Django Tutorial Part 6: Generic list and detail views</strong></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Sessions">Django Tutorial Part 7: Sessions framework</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Authentication">Django Tutorial Part 8: User authentication and permissions</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Forms">Django Tutorial Part 9: Working with forms</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Testing">Django Tutorial Part 10: Testing a Django web application</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Deployment">Django Tutorial Part 11: Deploying Django to production</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/web_application_security">Django web application security</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/django_assessment_blog">DIY Django mini blog</a></li>
+</ul>

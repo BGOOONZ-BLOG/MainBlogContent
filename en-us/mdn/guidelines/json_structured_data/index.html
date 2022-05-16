@@ -1,0 +1,100 @@
+<p>{{MDNSidebar}}</p>
+<p>MDN stores data in well-defined structures when possible. This information is then centralized and can be updated once, while being used in numerous places.</p>
+<p>There are several such files, and this document describes their purpose, structure, and maintenance process.</p>
+<h2 id="groupdata-logical-grouping-of-apis">GroupData: logical grouping of APIs</h2>
+<p><code>GroupData</code> is a JSON file collecting information about Web APIs. The grouping of APIs is somewhat fuzzy: any interface, method or property can be part of several APIs. The set of APIs grouped under a name is a convention used to communicate about a feature, without any technical enforcement.</p>
+<p>Yet, MDN needs this information to create coherent Web-API sidebars (like with the <code>\{{APIRef}}</code> macro) with the proper reference pages, guides, and overview articles.</p>
+<p>GroupData does exactly that: for each API, it lists the interfaces, properties, methods, guides, and overview pages. In the past, it also listed dictionaries and callbacks. But that use, though still supported, is deprecated and will be removed in the future.</p>
+<h3 id="structure-of-groupdata">Structure of GroupData</h3>
+<blockquote>
+<p><strong>Warning:</strong> Non-existent pages listed in this file are ignored (in en-US).</p>
+</blockquote>
+<p>An entry in <code>GroupData.json</code> has the following structure:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode json"><code class="sourceCode json"><a class="sourceLine" id="cb1-1" title="1"><span class="er">&quot;Name_of_the_API&quot;:</span> <span class="fu">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="dt">&quot;overview&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;name_of_the_overview_page&quot;</span><span class="ot">]</span><span class="fu">,</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="dt">&quot;guides&quot;</span><span class="fu">:</span> <span class="ot">[</span></a>
+<a class="sourceLine" id="cb1-4" title="4">    <span class="st">&quot;name_of_guide_1&quot;</span><span class="ot">,</span></a>
+<a class="sourceLine" id="cb1-5" title="5">    <span class="er">(…)</span></a>
+<a class="sourceLine" id="cb1-6" title="6">  <span class="ot">]</span><span class="fu">,</span></a>
+<a class="sourceLine" id="cb1-7" title="7">  <span class="dt">&quot;interfaces&quot;</span><span class="fu">:</span> <span class="ot">[</span></a>
+<a class="sourceLine" id="cb1-8" title="8">    <span class="st">&quot;name_of_interface_1&quot;</span><span class="ot">,</span></a>
+<a class="sourceLine" id="cb1-9" title="9">    <span class="er">(…)</span></a>
+<a class="sourceLine" id="cb1-10" title="10">  <span class="ot">]</span><span class="fu">,</span></a>
+<a class="sourceLine" id="cb1-11" title="11">  <span class="dt">&quot;methods&quot;</span><span class="fu">:</span> <span class="ot">[</span></a>
+<a class="sourceLine" id="cb1-12" title="12">    <span class="st">&quot;name_of_additional_method_1&quot;</span><span class="ot">,</span></a>
+<a class="sourceLine" id="cb1-13" title="13">    <span class="er">(…)</span></a>
+<a class="sourceLine" id="cb1-14" title="14">  <span class="ot">]</span><span class="fu">,</span></a>
+<a class="sourceLine" id="cb1-15" title="15">  <span class="dt">&quot;properties&quot;</span><span class="fu">:</span> <span class="ot">[</span></a>
+<a class="sourceLine" id="cb1-16" title="16">    <span class="st">&quot;name_of_additional_property_1&quot;</span><span class="ot">,</span></a>
+<a class="sourceLine" id="cb1-17" title="17">    <span class="er">(…)</span></a>
+<a class="sourceLine" id="cb1-18" title="18">  <span class="ot">]</span><span class="fu">,</span></a>
+<a class="sourceLine" id="cb1-19" title="19">  <span class="dt">&quot;events&quot;</span><span class="fu">:</span> <span class="ot">[</span></a>
+<a class="sourceLine" id="cb1-20" title="20">    <span class="st">&quot;name_of_additional_property_1&quot;</span><span class="ot">,</span></a>
+<a class="sourceLine" id="cb1-21" title="21">    <span class="er">(…)</span></a>
+<a class="sourceLine" id="cb1-22" title="22">  <span class="ot">]</span></a>
+<a class="sourceLine" id="cb1-23" title="23"><span class="fu">}</span></a></code></pre></div>
+<p>…where:</p>
+<ul>
+<li><code>"Name_of_the_API"</code>
+<ul>
+<li>: This key is both an ID used by sidebar macros like <code>\{{APIRef("Name_of_the_API")}}</code> and the name displayed in the sidebar itself. Choose it wisely. &gt; <strong>Warning:</strong> If you want to change the name displayed in the sidebar, you must edit all the pages displaying it.</li>
+</ul></li>
+<li><code>"overview"</code>
+<ul>
+<li>: This is a list containing one page: the overview page, used as the link for the <code>"Name_of_the_API"</code> text. The value is the <em>title of the page</em>, and the page must be in the <code>web/api/</code>directory.</li>
+</ul></li>
+<li><code>"guides"</code>
+<ul>
+<li>: This is a list of guides to display in the sidebar, in the given order. The values are <em>paths to the page</em>, starting with <code>/docs/</code>.</li>
+</ul></li>
+<li><code>"interfaces"</code>
+<ul>
+<li>: This lists the interfaces that are part of the API.</li>
+</ul></li>
+<li><code>"methods"</code>
+<ul>
+<li>: This lists the methods that are part of the API. &gt; <strong>Note:</strong> The methods of the interfaces listed in <code>"interfaces"</code> <strong>must</strong> not be listed there. They are automatically added to the sidebar if the tag <code>Method</code> is in the YAML header on that page.</li>
+</ul></li>
+<li><code>"properties"</code>
+<ul>
+<li>: This lists the methods on other interfaces that are part of the API, like <code>navigator.xr</code> (a property that the WebXR API adds to the <code>navigator</code> object) &gt; <strong>Note:</strong> The properties of the interfaces listed in <code>"interfaces"</code> <strong>must</strong> not be listed there. They are automatically added to the sidebar if the tag <code>Property</code> is in the YAML header on that page.</li>
+</ul></li>
+<li><code>"events"</code>
+<ul>
+<li>: This lists events of other interfaces that are part of the API. The values are the <em>title of the pages</em> (that must reside under <code>Web/Events</code>) &gt; <strong>Note:</strong> The events targetting the interfaces listed in <code>"interfaces"</code> <strong>must</strong> not be listed there. They are automatically added to the sidebar if the tag <code>Event</code> (singular!) is in the YAML header on that page.</li>
+</ul></li>
+</ul>
+<p>There are two other keys, <code>"dictionaries"</code> and <code>"callbacks"</code>, operating on the same principle. As we no longer document these entities in their own pages, their use is deprecated, and no new entry should be added to them (and we remove them little by little).</p>
+<blockquote>
+<p><strong>Note:</strong> Also, none of the keys are mandatory; it is good practice (and we’ll enforce this) to add the non-deprecated ones with an empty list rather than omitting them. It shows that the absence of value is a conscious choice.</p>
+</blockquote>
+<h3 id="update-process-for-groupdata">Update process for GroupData</h3>
+<p>This file should be updated in the same PR where changes affecting the sidebar happens. That way, the sidebar is always up-to-date. Reviewers shouldn’t merge PRs that don’t adopt it.</p>
+<p>To test your changes, check that the sidebar in the files in your PR displays all entries correctly.</p>
+<p>The <code>GroupData.json</code> file is located <a href="https://github.com/mdn/content/tree/main/files/jsondata/GroupData.json">here</a> on Github.</p>
+<h2 id="interfacedata-recording-interface-inheritance">InterfaceData: recording interface inheritance</h2>
+<blockquote>
+<p><strong>Note:</strong> We hope to generate this file automatically from the data available via w3c/webref in the future.</p>
+</blockquote>
+<p><code>InterfaceData</code> describes the hierarchy of the interfaces. It lists inheritance. In the past, it also listed mixins implemented by each interface; but that usage is deprecated, and we remove mixins from this file at the same rate MDN is updated.</p>
+<p>This inheritance data is used when building API sidebars and by the <code>\{{InheritanceDiagram}}</code> in the interface pages.</p>
+<h3 id="structure-of-interfacedata">Structure of InterfaceData</h3>
+<p>An entry in <code>InterfaceData.json</code> has the following structure:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode json"><code class="sourceCode json"><a class="sourceLine" id="cb2-1" title="1"><span class="er">&quot;Name_of_the_interface&quot;:</span> <span class="fu">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="dt">&quot;inh&quot;</span><span class="fu">:</span> <span class="st">&quot;Name_of_the_parent_interface&quot;</span><span class="fu">,</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="dt">&quot;impl&quot;</span><span class="fu">:</span> <span class="ot">[]</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="fu">}</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> As mixins are deprecated, <code>"impl"</code> must be an empty list for all new interfaces.</p>
+</blockquote>
+<p>The value of <code>"Name_of_the_parent_interface"</code> is not a list but a single entry, mandatory; we must not list any interface that don’t inherit from another one.</p>
+<h3 id="update-process-for-interfacedata">Update process for InterfaceData</h3>
+<p>The same PR adding a new interface that inherits from another one must update this file. Reviewers shouldn’t merge PRs that don’t do so.</p>
+<p>To test your changes, check that the sidebars of each interface you edited in your PR display inheritance correctly.</p>
+<p>The <code>InterfaceData.json</code> file is located <a href="https://github.com/mdn/content/tree/main/files/jsondata/InterfaceData.json">here</a> on Github.</p>
+<h2 id="specdata-specification-information">SpecData: Specification information</h2>
+<blockquote>
+<p><strong>Warning:</strong> The <code>SpecData.json</code> file is no longer maintained. Canonical specification information is stored at w3c/browser-spec and in the <code>spec_url</code> key of features at mdn/browser-compat-data.</p>
+</blockquote>
+<p>The <code>\{{SpecName}}</code> and <code>\{{Spec2}}</code> macros that we are removing use the <code>SpecData.json</code> file. We do not accept any further contributions to the <code>SpecData.json</code> file; instead, either try to insert a specification table, using the <code>\{{Specifications}}</code> macro, or try to hardcode the (good) link to the specification. Note that most of the time, mentioning or linking to a specification outside the <em>Specifications</em> section is a sign of something not appropriately documented on MDN.</p>
+<p>The <code>SpecData.json</code> file is located <a href="https://github.com/mdn/content/tree/main/files/jsondata/SpecData.json">here</a> on Github.</p>

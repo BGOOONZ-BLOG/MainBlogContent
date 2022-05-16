@@ -1,0 +1,519 @@
+<p>{{LearnSidebar}}{{PreviousMenuNext(“Learn/Server-side/Django/Sessions”, “Learn/Server-side/Django/Forms”, “Learn/Server-side/Django”)}}</p>
+<p>In this tutorial, we’ll show you how to allow users to log in to your site with their own accounts, and how to control what they can do and see based on whether or not they are logged in and their <em>permissions</em>. As part of this demonstration, we’ll extend the <a href="/en-US/docs/Learn/Server-side/Django/Tutorial_local_library_website">LocalLibrary</a> website, adding login and logout pages, and user- and staff-specific pages for viewing books that have been borrowed.</p>
+<table>
+<tbody>
+<tr>
+<th scope="row">
+Prerequisites:
+</th>
+<td>
+Complete all previous tutorial topics, up to and including <a href="/en-US/docs/Learn/Server-side/Django/Sessions"
+          >Django Tutorial Part 7: Sessions framework</a
+        >.
+</td>
+</tr>
+<tr>
+<th scope="row">
+Objective:
+</th>
+<td>
+To understand how to set up and use user authentication and permissions.
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="overview">Overview</h2>
+<p>Django provides an authentication and authorization (“permission”) system, built on top of the session framework discussed in the <a href="/en-US/docs/Learn/Server-side/Django/Sessions">previous tutorial</a>, that allows you to verify user credentials and define what actions each user is allowed to perform. The framework includes built-in models for <code>Users</code> and <code>Groups</code> (a generic way of applying permissions to more than one user at a time), permissions/flags that designate whether a user may perform a task, forms and views for logging in users, and view tools for restricting content.</p>
+<blockquote>
+<p><strong>Note:</strong> According to Django the authentication system aims to be very generic, and so does not provide some features provided in other web authentication systems. Solutions for some common problems are available as third-party packages. For example, throttling of login attempts and authentication against third parties (e.g. OAuth).</p>
+</blockquote>
+<p>In this tutorial, we’ll show you how to enable user authentication in the <a href="/en-US/docs/Learn/Server-side/Django/Tutorial_local_library_website">LocalLibrary</a> website, create your own login and logout pages, add permissions to your models, and control access to pages. We’ll use the authentication/permissions to display lists of books that have been borrowed for both users and librarians.</p>
+<p>The authentication system is very flexible, and you can build up your URLs, forms, views, and templates from scratch if you like, just calling the provided API to log in the user. However, in this article, we’re going to use Django’s “stock” authentication views and forms for our login and logout pages. We’ll still need to create some templates, but that’s pretty easy.</p>
+<p>We’ll also show you how to create permissions, and check on login status and permissions in both views and templates.</p>
+<h2 id="enabling-authentication">Enabling authentication</h2>
+<p>The authentication was enabled automatically when we <a href="/en-US/docs/Learn/Server-side/Django/skeleton_website">created the skeleton website</a> (in tutorial 2) so you don’t need to do anything more at this point.</p>
+<blockquote>
+<p><strong>Note:</strong> The necessary configuration was all done for us when we created the app using the <code>django-admin startproject</code> command. The database tables for users and model permissions were created when we first called <code>python manage.py migrate</code>.</p>
+</blockquote>
+<p>The configuration is set up in the <code>INSTALLED_APPS</code> and <code>MIDDLEWARE</code> sections of the project file (<strong>locallibrary/locallibrary/settings.py</strong>), as shown below:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb1-1" title="1">INSTALLED_APPS <span class="op">=</span> [</a>
+<a class="sourceLine" id="cb1-2" title="2">    ...</a>
+<a class="sourceLine" id="cb1-3" title="3">    <span class="st">&#39;django.contrib.auth&#39;</span>,  <span class="co">#Core authentication framework and its default models.</span></a>
+<a class="sourceLine" id="cb1-4" title="4">    <span class="st">&#39;django.contrib.contenttypes&#39;</span>,  <span class="co">#Django content type system (allows permissions to be associated with models).</span></a>
+<a class="sourceLine" id="cb1-5" title="5">    ....</a>
+<a class="sourceLine" id="cb1-6" title="6"></a>
+<a class="sourceLine" id="cb1-7" title="7">MIDDLEWARE <span class="op">=</span> [</a>
+<a class="sourceLine" id="cb1-8" title="8">    ...</a>
+<a class="sourceLine" id="cb1-9" title="9">    <span class="st">&#39;django.contrib.sessions.middleware.SessionMiddleware&#39;</span>,  <span class="co">#Manages sessions across requests</span></a>
+<a class="sourceLine" id="cb1-10" title="10">    ...</a>
+<a class="sourceLine" id="cb1-11" title="11">    <span class="st">&#39;django.contrib.auth.middleware.AuthenticationMiddleware&#39;</span>,  <span class="co">#Associates users with requests using sessions.</span></a>
+<a class="sourceLine" id="cb1-12" title="12">    ....</a></code></pre></div>
+<h2 id="creating-users-and-groups">Creating users and groups</h2>
+<p>You already created your first user when we looked at the <a href="/en-US/docs/Learn/Server-side/Django/Admin_site">Django admin site</a> in tutorial 4 (this was a superuser, created with the command <code>python manage.py createsuperuser)</code>. Our superuser is already authenticated and has all permissions, so we’ll need to create a test user to represent a normal site user. We’ll be using the admin site to create our <em>locallibrary</em> groups and website logins, as it is one of the quickest ways to do so.</p>
+<blockquote>
+<p><strong>Note:</strong> You can also create users programmatically, as shown below. You would have to do this, for example, if developing an interface to allow users to create their own logins (you shouldn’t give users access to the admin site).</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb2-1" title="1"><span class="im">from</span> django.contrib.auth.models <span class="im">import</span> User</a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="co"># Create user and save to the database</span></a>
+<a class="sourceLine" id="cb2-4" title="4">user <span class="op">=</span> User.objects.create_user(<span class="st">&#39;myusername&#39;</span>, <span class="st">&#39;myemail@crazymail.com&#39;</span>, <span class="st">&#39;mypassword&#39;</span>)</a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="co"># Update fields and then save again</span></a>
+<a class="sourceLine" id="cb2-7" title="7">user.first_name <span class="op">=</span> <span class="st">&#39;John&#39;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">user.last_name <span class="op">=</span> <span class="st">&#39;Citizen&#39;</span></a>
+<a class="sourceLine" id="cb2-9" title="9">user.save()</a></code></pre></div>
+<p>It is highly recommended to set up a custom user model when starting an actual project. You’ll be able to easily customize it in the future if the need arises. For more information, see <a href="https://docs.djangoproject.com/en/3.1/topics/auth/customizing/#using-a-custom-user-model-when-starting-a-project">Using a custom user model when starting</a> (Django docs).</p>
+</blockquote>
+<p>Below we’ll first create a group and then a user. Even though we don’t have any permissions to add for our library members yet, if we need to later, it will be much easier to add them once to the group than individually to each member.</p>
+<p>Start the development server and navigate to the admin site in your local web browser (<a href="http://127.0.0.1:8000/admin/" class="uri">http://127.0.0.1:8000/admin/</a>). Login to the site using the credentials for your superuser account. The top level of the Admin site displays all of your models, sorted by “Django application”. From the <strong>Authentication and Authorization</strong> section, you can click the <strong>Users</strong> or <strong>Groups</strong> links to see their existing records.</p>
+<figure>
+<img src="admin_authentication_add.png" alt="Admin site - add groups or users" /><figcaption>Admin site - add groups or users</figcaption>
+</figure>
+<p>First lets create a new group for our library members.</p>
+<ol type="1">
+<li>Click the <strong>Add</strong> button (next to Group) to create a new <em>Group</em>; enter the <strong>Name</strong> “Library Members” for the group. <img src="admin_authentication_add_group.png" alt="Admin site - add group" /></li>
+<li>We don’t need any permissions for the group, so just press <strong>SAVE</strong> (you will be taken to a list of groups).</li>
+</ol>
+<p>Now let’s create a user:</p>
+<ol type="1">
+<li>Navigate back to the home page of the admin site</li>
+<li>Click the <strong>Add</strong> button next to <em>Users</em> to open the <em>Add user</em> dialog box.<img src="admin_authentication_add_user_prt1.png" alt="Admin site - add user pt1" /></li>
+<li>Enter an appropriate <strong>Username</strong> and <strong>Password</strong>/<strong>Password confirmation</strong> for your test user</li>
+<li><p>Press <strong>SAVE</strong> to create the user.</p>
+<p>The admin site will create the new user and immediately take you to a <em>Change user</em> screen where you can change your <strong>username</strong> and add information for the User model’s optional fields. These fields include the first name, last name, email address, and the user’s status and permissions (only the <strong>Active</strong> flag should be set). Further down you can specify the user’s groups and permissions, and see important dates related to the user (e.g. their join date and last login date). <img src="admin_authentication_add_user_prt2.png" alt="Admin site - add user pt2" /></p></li>
+<li>In the <em>Groups</em> section, select <strong>Library Member</strong> group from the list of <em>Available groups</em>, and then press the <strong>right-arrow</strong> between the boxes to move it into the <em>Chosen groups</em> box. <img src="admin_authentication_user_add_group.png" alt="Admin site - add user to group" /></li>
+<li><p>We don’t need to do anything else here, so just select <strong>SAVE</strong> again, to go to the list of users.</p></li>
+</ol>
+<p>That’s it! Now you have a “normal library member” account that you will be able to use for testing (once we’ve implemented the pages to enable them to log in).</p>
+<blockquote>
+<p><strong>Note:</strong> You should try creating another library member user. Also, create a group for Librarians, and add a user to that too!</p>
+</blockquote>
+<h2 id="setting-up-your-authentication-views">Setting up your authentication views</h2>
+<p>Django provides almost everything you need to create authentication pages to handle login, log out, and password management “out of the box”. This includes a URL mapper, views and forms, but it does not include the templates — we have to create our own!</p>
+<p>In this section, we show how to integrate the default system into the <em>LocalLibrary</em> website and create the templates. We’ll put them in the main project URLs.</p>
+<blockquote>
+<p><strong>Note:</strong> You don’t have to use any of this code, but it is likely that you’ll want to because it makes things a lot easier. You’ll almost certainly need to change the form handling code if you change your user model (an advanced topic!) but even so, you would still be able to use the stock view functions.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> In this case, we could reasonably put the authentication pages, including the URLs and templates, inside our catalog application. However, if we had multiple applications it would be better to separate out this shared login behavior and have it available across the whole site, so that is what we’ve shown here!</p>
+</blockquote>
+<h3 id="project-urls">Project URLs</h3>
+<p>Add the following to the bottom of the project urls.py file (<strong>locallibrary/locallibrary/urls.py</strong>) file:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb3-1" title="1"><span class="co">#Add Django site authentication urls (for login, logout, password management)</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3">urlpatterns <span class="op">+=</span> [</a>
+<a class="sourceLine" id="cb3-4" title="4">    path(<span class="st">&#39;accounts/&#39;</span>, include(<span class="st">&#39;django.contrib.auth.urls&#39;</span>)),</a>
+<a class="sourceLine" id="cb3-5" title="5">]</a></code></pre></div>
+<p>Navigate to the <a href="http://127.0.0.1:8000/accounts/" class="uri">http://127.0.0.1:8000/accounts/</a> URL (note the trailing forward slash!) and Django will show an error that it could not find this URL, and listing all the URLs it tried. From this you can see the URLs that will work, for example:</p>
+<blockquote>
+<p><strong>Note:</strong> Using the above method adds the following URLs with names in square brackets, which can be used to reverse the URL mappings. You don’t have to implement anything else — the above URL mapping automatically maps the below mentioned URLs.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb4-1" title="1">accounts<span class="op">/</span> login<span class="op">/</span> [name<span class="op">=</span><span class="st">&#39;login&#39;</span>]</a>
+<a class="sourceLine" id="cb4-2" title="2">accounts<span class="op">/</span> logout<span class="op">/</span> [name<span class="op">=</span><span class="st">&#39;logout&#39;</span>]</a>
+<a class="sourceLine" id="cb4-3" title="3">accounts<span class="op">/</span> password_change<span class="op">/</span> [name<span class="op">=</span><span class="st">&#39;password_change&#39;</span>]</a>
+<a class="sourceLine" id="cb4-4" title="4">accounts<span class="op">/</span> password_change<span class="op">/</span>done<span class="op">/</span> [name<span class="op">=</span><span class="st">&#39;password_change_done&#39;</span>]</a>
+<a class="sourceLine" id="cb4-5" title="5">accounts<span class="op">/</span> password_reset<span class="op">/</span> [name<span class="op">=</span><span class="st">&#39;password_reset&#39;</span>]</a>
+<a class="sourceLine" id="cb4-6" title="6">accounts<span class="op">/</span> password_reset<span class="op">/</span>done<span class="op">/</span> [name<span class="op">=</span><span class="st">&#39;password_reset_done&#39;</span>]</a>
+<a class="sourceLine" id="cb4-7" title="7">accounts<span class="op">/</span> reset<span class="op">/&lt;</span>uidb64<span class="op">&gt;/&lt;</span>token<span class="op">&gt;/</span> [name<span class="op">=</span><span class="st">&#39;password_reset_confirm&#39;</span>]</a>
+<a class="sourceLine" id="cb4-8" title="8">accounts<span class="op">/</span> reset<span class="op">/</span>done<span class="op">/</span> [name<span class="op">=</span><span class="st">&#39;password_reset_complete&#39;</span>]</a></code></pre></div>
+</blockquote>
+<p>Now try to navigate to the login URL (<a href="http://127.0.0.1:8000/accounts/login/" class="uri">http://127.0.0.1:8000/accounts/login/</a>). This will fail again, but with an error that tells you that we’re missing the required template (<strong>registration/login.html</strong>) on the template search path. You’ll see the following lines listed in the yellow section at the top:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb5-1" title="1"><span class="pp">Exception</span> Type:    TemplateDoesNotExist</a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="pp">Exception</span> Value:    registration<span class="op">/</span>login.html</a></code></pre></div>
+<p>The next step is to create a registration directory on the search path and then add the <strong>login.html</strong> file.</p>
+<h3 id="template-directory">Template directory</h3>
+<p>The URLs (and implicitly, views) that we just added expect to find their associated templates in a directory <strong>/registration/</strong> somewhere in the templates search path.</p>
+<p>For this site, we’ll put our HTML pages in the <strong>templates/registration/</strong> directory. This directory should be in your project root directory, i.e the same directory as the <strong>catalog</strong> and <strong>locallibrary</strong> folders. Please create these folders now.</p>
+<blockquote>
+<p><strong>Note:</strong> Your folder structure should now look like the below: locallibrary (Django project folder)    |_catalog    |_locallibrary    |_templates <strong>(new)</strong>                 |_registration</p>
+</blockquote>
+<p>To make the <strong>templates</strong> directory visible to the template loader we need to add it in the template search path. Open the project settings (<strong>/locallibrary/locallibrary/settings.py</strong>).</p>
+<p>Then import the <code>os</code> module (add the following line near the top of the file).</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb6-1" title="1"><span class="im">import</span> os <span class="co"># needed by code below</span></a></code></pre></div>
+<p>Update the <code>TEMPLATES</code> section’s <code>'DIRS'</code> line as shown:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb7-1" title="1">    ...</a>
+<a class="sourceLine" id="cb7-2" title="2">    TEMPLATES <span class="op">=</span> [</a>
+<a class="sourceLine" id="cb7-3" title="3">      {</a>
+<a class="sourceLine" id="cb7-4" title="4">       ...</a>
+<a class="sourceLine" id="cb7-5" title="5">       <span class="st">&#39;DIRS&#39;</span>: [os.path.join(BASE_DIR, <span class="st">&#39;templates&#39;</span>)],</a>
+<a class="sourceLine" id="cb7-6" title="6">       <span class="st">&#39;APP_DIRS&#39;</span>: <span class="va">True</span>,</a>
+<a class="sourceLine" id="cb7-7" title="7">       ...</a></code></pre></div>
+<h3 id="login-template">Login template</h3>
+<blockquote>
+<p><strong>Warning:</strong> The authentication templates provided in this article are a very basic/slightly modified version of the Django demonstration login templates. You may need to customise them for your own use!</p>
+</blockquote>
+<p>Create a new HTML file called /<strong>locallibrary/templates/registration/login.html</strong> and give it the following contents:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb8-1" title="1">{% extends &quot;base_generic.html&quot; %}</a>
+<a class="sourceLine" id="cb8-2" title="2"></a>
+<a class="sourceLine" id="cb8-3" title="3">{% block content %}</a>
+<a class="sourceLine" id="cb8-4" title="4"></a>
+<a class="sourceLine" id="cb8-5" title="5">  {% if form.errors %}</a>
+<a class="sourceLine" id="cb8-6" title="6">    <span class="kw">&lt;p&gt;</span>Your username and password didn&#39;t match. Please try again.<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb8-7" title="7">  {% endif %}</a>
+<a class="sourceLine" id="cb8-8" title="8"></a>
+<a class="sourceLine" id="cb8-9" title="9">  {% if next %}</a>
+<a class="sourceLine" id="cb8-10" title="10">    {% if user.is_authenticated %}</a>
+<a class="sourceLine" id="cb8-11" title="11">      <span class="kw">&lt;p&gt;</span>Your account doesn&#39;t have access to this page. To proceed,</a>
+<a class="sourceLine" id="cb8-12" title="12">      please login with an account that has access.<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb8-13" title="13">    {% else %}</a>
+<a class="sourceLine" id="cb8-14" title="14">      <span class="kw">&lt;p&gt;</span>Please login to see this page.<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb8-15" title="15">    {% endif %}</a>
+<a class="sourceLine" id="cb8-16" title="16">  {% endif %}</a>
+<a class="sourceLine" id="cb8-17" title="17"></a>
+<a class="sourceLine" id="cb8-18" title="18">  <span class="kw">&lt;form</span><span class="ot"> method=</span><span class="st">&quot;post&quot;</span><span class="ot"> action=</span><span class="st">&quot;{% url &#39;login&#39; %}&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb8-19" title="19">    {% csrf_token %}</a>
+<a class="sourceLine" id="cb8-20" title="20">    <span class="kw">&lt;table&gt;</span></a>
+<a class="sourceLine" id="cb8-21" title="21">      <span class="kw">&lt;tr&gt;</span></a>
+<a class="sourceLine" id="cb8-22" title="22">        <span class="kw">&lt;td&gt;</span>\{{ form.username.label_tag }}<span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb8-23" title="23">        <span class="kw">&lt;td&gt;</span>\{{ form.username }}<span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb8-24" title="24">      <span class="kw">&lt;/tr&gt;</span></a>
+<a class="sourceLine" id="cb8-25" title="25">      <span class="kw">&lt;tr&gt;</span></a>
+<a class="sourceLine" id="cb8-26" title="26">        <span class="kw">&lt;td&gt;</span>\{{ form.password.label_tag }}<span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb8-27" title="27">        <span class="kw">&lt;td&gt;</span>\{{ form.password }}<span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb8-28" title="28">      <span class="kw">&lt;/tr&gt;</span></a>
+<a class="sourceLine" id="cb8-29" title="29">    <span class="kw">&lt;/table&gt;</span></a>
+<a class="sourceLine" id="cb8-30" title="30">    <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;submit&quot;</span><span class="ot"> value=</span><span class="st">&quot;login&quot;</span> <span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb8-31" title="31">    <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;hidden&quot;</span><span class="ot"> name=</span><span class="st">&quot;next&quot;</span><span class="ot"> value=</span><span class="st">&quot;\{{ next }}&quot;</span> <span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb8-32" title="32">  <span class="kw">&lt;/form&gt;</span></a>
+<a class="sourceLine" id="cb8-33" title="33"></a>
+<a class="sourceLine" id="cb8-34" title="34">  {# Assumes you setup the password_reset view in your URLconf #}</a>
+<a class="sourceLine" id="cb8-35" title="35">  <span class="kw">&lt;p&gt;&lt;a</span><span class="ot"> href=</span><span class="st">&quot;{% url &#39;password_reset&#39; %}&quot;</span><span class="kw">&gt;</span>Lost password?<span class="kw">&lt;/a&gt;&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb8-36" title="36"></a>
+<a class="sourceLine" id="cb8-37" title="37">{% endblock %}</a></code></pre></div>
+<p>This template shares some similarities with the ones we’ve seen before — it extends our base template and overrides the <code>content</code> block. The rest of the code is fairly standard form handling code, which we will discuss in a later tutorial. All you need to know for now is that this will display a form in which you can enter your username and password, and that if you enter invalid values you will be prompted to enter correct values when the page refreshes.</p>
+<p>Navigate back to the login page (<a href="http://127.0.0.1:8000/accounts/login/" class="uri">http://127.0.0.1:8000/accounts/login/</a>) once you’ve saved your template, and you should see something like this:</p>
+<figure>
+<img src="library_login.png" alt="Library login page v1" /><figcaption>Library login page v1</figcaption>
+</figure>
+<p>If you log in using valid credentials, you’ll be redirected to another page (by default this will be <a href="http://127.0.0.1:8000/accounts/profile/" class="uri">http://127.0.0.1:8000/accounts/profile/</a>). The problem is that, by default, Django expects that upon logging in you will want to be taken to a profile page, which may or may not be the case. As you haven’t defined this page yet, you’ll get another error!</p>
+<p>Open the project settings (<strong>/locallibrary/locallibrary/settings.py</strong>) and add the text below to the bottom. Now when you log in you should be redirected to the site homepage by default.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb9-1" title="1"><span class="co"># Redirect to home URL after login (Default redirects to /accounts/profile/)</span></a>
+<a class="sourceLine" id="cb9-2" title="2">LOGIN_REDIRECT_URL <span class="op">=</span> <span class="st">&#39;/&#39;</span></a></code></pre></div>
+<h3 id="logout-template">Logout template</h3>
+<p>If you navigate to the logout URL (<a href="http://127.0.0.1:8000/accounts/logout/" class="uri">http://127.0.0.1:8000/accounts/logout/</a>) then you’ll see some odd behavior — your user will be logged out sure enough, but you’ll be taken to the <strong>Admin</strong> logout page. That’s not what you want, if only because the login link on that page takes you to the Admin login screen (and that is only available to users who have the <code>is_staff</code> permission).</p>
+<p>Create and open <strong>/locallibrary/templates/registration/logged_out.html</strong>. Copy in the text below:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb10-1" title="1">{% extends &quot;base_generic.html&quot; %}</a>
+<a class="sourceLine" id="cb10-2" title="2"></a>
+<a class="sourceLine" id="cb10-3" title="3">{% block content %}</a>
+<a class="sourceLine" id="cb10-4" title="4">  <span class="kw">&lt;p&gt;</span>Logged out!<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb10-5" title="5">  <span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;{% url &#39;login&#39;%}&quot;</span><span class="kw">&gt;</span>Click here to login again.<span class="kw">&lt;/a&gt;</span></a>
+<a class="sourceLine" id="cb10-6" title="6">{% endblock %}</a></code></pre></div>
+<p>This template is very simple. It just displays a message informing you that you have been logged out, and provides a link that you can press to go back to the login screen. If you go to the logout URL again you should see this page:</p>
+<figure>
+<img src="library_logout.png" alt="Library logout page v1" /><figcaption>Library logout page v1</figcaption>
+</figure>
+<h3 id="password-reset-templates">Password reset templates</h3>
+<p>The default password reset system uses email to send the user a reset link. You need to create forms to get the user’s email address, send the email, allow them to enter a new password, and to note when the whole process is complete.</p>
+<p>The following templates can be used as a starting point.</p>
+<h4 id="password-reset-form">Password reset form</h4>
+<p>This is the form used to get the user’s email address (for sending the password reset email). Create <strong>/locallibrary/templates/registration/password_reset_form.html</strong>, and give it the following contents:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb11-1" title="1">{% extends &quot;base_generic.html&quot; %}</a>
+<a class="sourceLine" id="cb11-2" title="2"></a>
+<a class="sourceLine" id="cb11-3" title="3">{% block content %}</a>
+<a class="sourceLine" id="cb11-4" title="4">  <span class="kw">&lt;form</span><span class="ot"> action=</span><span class="st">&quot;&quot;</span><span class="ot"> method=</span><span class="st">&quot;post&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb11-5" title="5">  {% csrf_token %}</a>
+<a class="sourceLine" id="cb11-6" title="6">  {% if form.email.errors %}</a>
+<a class="sourceLine" id="cb11-7" title="7">    \{{ form.email.errors }}</a>
+<a class="sourceLine" id="cb11-8" title="8">  {% endif %}</a>
+<a class="sourceLine" id="cb11-9" title="9">      <span class="kw">&lt;p&gt;</span>\{{ form.email }}<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb11-10" title="10">    <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;submit&quot;</span><span class="ot"> class=</span><span class="st">&quot;btn btn-default btn-lg&quot;</span><span class="ot"> value=</span><span class="st">&quot;Reset password&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb11-11" title="11">  <span class="kw">&lt;/form&gt;</span></a>
+<a class="sourceLine" id="cb11-12" title="12">{% endblock %}</a></code></pre></div>
+<h4 id="password-reset-done">Password reset done</h4>
+<p>This form is displayed after your email address has been collected. Create <strong>/locallibrary/templates/registration/password_reset_done.html</strong>, and give it the following contents:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb12-1" title="1">{% extends &quot;base_generic.html&quot; %}</a>
+<a class="sourceLine" id="cb12-2" title="2"></a>
+<a class="sourceLine" id="cb12-3" title="3">{% block content %}</a>
+<a class="sourceLine" id="cb12-4" title="4">  <span class="kw">&lt;p&gt;</span>We&#39;ve emailed you instructions for setting your password. If they haven&#39;t arrived in a few minutes, check your spam folder.<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb12-5" title="5">{% endblock %}</a></code></pre></div>
+<h4 id="password-reset-email">Password reset email</h4>
+<p>This template provides the text of the HTML email containing the reset link that we will send to users. Create <strong>/locallibrary/templates/registration/password_reset_email.html</strong>, and give it the following contents:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb13-1" title="1">Someone asked for password reset for email \{{ email }}. Follow the link below:</a>
+<a class="sourceLine" id="cb13-2" title="2">\{{ protocol}}://\{{ domain }}{% url &#39;password_reset_confirm&#39; uidb64=uid token=token %}</a></code></pre></div>
+<h4 id="password-reset-confirm">Password reset confirm</h4>
+<p>This page is where you enter your new password after clicking the link in the password reset email. Create <strong>/locallibrary/templates/registration/password_reset_confirm.html</strong>, and give it the following contents:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb14-1" title="1">{% extends &quot;base_generic.html&quot; %}</a>
+<a class="sourceLine" id="cb14-2" title="2"></a>
+<a class="sourceLine" id="cb14-3" title="3">{% block content %}</a>
+<a class="sourceLine" id="cb14-4" title="4">    {% if validlink %}</a>
+<a class="sourceLine" id="cb14-5" title="5">        <span class="kw">&lt;p&gt;</span>Please enter (and confirm) your new password.<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb14-6" title="6">        <span class="kw">&lt;form</span><span class="ot"> action=</span><span class="st">&quot;&quot;</span><span class="ot"> method=</span><span class="st">&quot;post&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb14-7" title="7">        {% csrf_token %}</a>
+<a class="sourceLine" id="cb14-8" title="8">            <span class="kw">&lt;table&gt;</span></a>
+<a class="sourceLine" id="cb14-9" title="9">                <span class="kw">&lt;tr&gt;</span></a>
+<a class="sourceLine" id="cb14-10" title="10">                    <span class="kw">&lt;td&gt;</span>\{{ form.new_password1.errors }}</a>
+<a class="sourceLine" id="cb14-11" title="11">                        <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;id_new_password1&quot;</span><span class="kw">&gt;</span>New password:<span class="kw">&lt;/label&gt;&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb14-12" title="12">                    <span class="kw">&lt;td&gt;</span>\{{ form.new_password1 }}<span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb14-13" title="13">                <span class="kw">&lt;/tr&gt;</span></a>
+<a class="sourceLine" id="cb14-14" title="14">                <span class="kw">&lt;tr&gt;</span></a>
+<a class="sourceLine" id="cb14-15" title="15">                    <span class="kw">&lt;td&gt;</span>\{{ form.new_password2.errors }}</a>
+<a class="sourceLine" id="cb14-16" title="16">                        <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;id_new_password2&quot;</span><span class="kw">&gt;</span>Confirm password:<span class="kw">&lt;/label&gt;&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb14-17" title="17">                    <span class="kw">&lt;td&gt;</span>\{{ form.new_password2 }}<span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb14-18" title="18">                <span class="kw">&lt;/tr&gt;</span></a>
+<a class="sourceLine" id="cb14-19" title="19">                <span class="kw">&lt;tr&gt;</span></a>
+<a class="sourceLine" id="cb14-20" title="20">                    <span class="kw">&lt;td&gt;&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb14-21" title="21">                    <span class="kw">&lt;td&gt;&lt;input</span><span class="ot"> type=</span><span class="st">&quot;submit&quot;</span><span class="ot"> value=</span><span class="st">&quot;Change my password&quot;</span> <span class="kw">/&gt;&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb14-22" title="22">                <span class="kw">&lt;/tr&gt;</span></a>
+<a class="sourceLine" id="cb14-23" title="23">            <span class="kw">&lt;/table&gt;</span></a>
+<a class="sourceLine" id="cb14-24" title="24">        <span class="kw">&lt;/form&gt;</span></a>
+<a class="sourceLine" id="cb14-25" title="25">    {% else %}</a>
+<a class="sourceLine" id="cb14-26" title="26">        <span class="kw">&lt;h1&gt;</span>Password reset failed<span class="kw">&lt;/h1&gt;</span></a>
+<a class="sourceLine" id="cb14-27" title="27">        <span class="kw">&lt;p&gt;</span>The password reset link was invalid, possibly because it has already been used. Please request a new password reset.<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb14-28" title="28">    {% endif %}</a>
+<a class="sourceLine" id="cb14-29" title="29">{% endblock %}</a></code></pre></div>
+<h4 id="password-reset-complete">Password reset complete</h4>
+<p>This is the last password-reset template, which is displayed to notify you when the password reset has succeeded. Create <strong>/locallibrary/templates/registration/password_reset_complete.html</strong>, and give it the following contents:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb15-1" title="1">{% extends &quot;base_generic.html&quot; %}</a>
+<a class="sourceLine" id="cb15-2" title="2"></a>
+<a class="sourceLine" id="cb15-3" title="3">{% block content %}</a>
+<a class="sourceLine" id="cb15-4" title="4">  <span class="kw">&lt;h1&gt;</span>The password has been changed!<span class="kw">&lt;/h1&gt;</span></a>
+<a class="sourceLine" id="cb15-5" title="5">  <span class="kw">&lt;p&gt;&lt;a</span><span class="ot"> href=</span><span class="st">&quot;{% url &#39;login&#39; %}&quot;</span><span class="kw">&gt;</span>log in again?<span class="kw">&lt;/a&gt;&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb15-6" title="6">{% endblock %}</a></code></pre></div>
+<h3 id="testing-the-new-authentication-pages">Testing the new authentication pages</h3>
+<p>Now that you’ve added the URL configuration and created all these templates, the authentication pages should now just work!</p>
+<p>You can test the new authentication pages by attempting to log in to and then log out of your superuser account using these URLs:</p>
+<ul>
+<li><a href="http://127.0.0.1:8000/accounts/login/" class="uri">http://127.0.0.1:8000/accounts/login/</a></li>
+<li><a href="http://127.0.0.1:8000/accounts/logout/" class="uri">http://127.0.0.1:8000/accounts/logout/</a></li>
+</ul>
+<p>You’ll be able to test the password reset functionality from the link in the login page. <strong>Be aware that Django will only send reset emails to addresses (users) that are already stored in its database!</strong></p>
+<blockquote>
+<p><strong>Note:</strong> The password reset system requires that your website supports email, which is beyond the scope of this article, so this part <strong>won’t work yet</strong>. To allow testing, put the following line at the end of your settings.py file. This logs any emails sent to the console (so you can copy the password reset link from the console).</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb16-1" title="1">EMAIL_BACKEND <span class="op">=</span> <span class="st">&#39;django.core.mail.backends.console.EmailBackend&#39;</span></a></code></pre></div>
+<p>For more information, see <a href="https://docs.djangoproject.com/en/3.1/topics/email/">Sending email</a> (Django docs).</p>
+</blockquote>
+<h2 id="testing-against-authenticated-users">Testing against authenticated users</h2>
+<p>This section looks at what we can do to selectively control content the user sees based on whether they are logged in or not.</p>
+<h3 id="testing-in-templates">Testing in templates</h3>
+<p>You can get information about the currently logged in user in templates with the <code>\{{ user }}</code> template variable (this is added to the template context by default when you set up the project as we did in our skeleton).</p>
+<p>Typically you will first test against the <code>\{{ user.is_authenticated }}</code> template variable to determine whether the user is eligible to see specific content. To demonstrate this, next we’ll update our sidebar to display a “Login” link if the user is logged out, and a “Logout” link if they are logged in.</p>
+<p>Open the base template (<strong>/locallibrary/catalog/templates/base_generic.html</strong>) and copy the following text into the <code>sidebar</code> block, immediately before the <code>endblock</code> template tag.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb17-1" title="1">  <span class="kw">&lt;ul</span><span class="ot"> class=</span><span class="st">&quot;sidebar-nav&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb17-2" title="2"></a>
+<a class="sourceLine" id="cb17-3" title="3">    ...</a>
+<a class="sourceLine" id="cb17-4" title="4"></a>
+<a class="sourceLine" id="cb17-5" title="5">   {% if user.is_authenticated %}</a>
+<a class="sourceLine" id="cb17-6" title="6">     <span class="kw">&lt;li&gt;</span>User: \{{ user.get_username }}<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb17-7" title="7">     <span class="kw">&lt;li&gt;&lt;a</span><span class="ot"> href=</span><span class="st">&quot;{% url &#39;logout&#39;%}?next=\{{request.path}}&quot;</span><span class="kw">&gt;</span>Logout<span class="kw">&lt;/a&gt;&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb17-8" title="8">   {% else %}</a>
+<a class="sourceLine" id="cb17-9" title="9">     <span class="kw">&lt;li&gt;&lt;a</span><span class="ot"> href=</span><span class="st">&quot;{% url &#39;login&#39;%}?next=\{{request.path}}&quot;</span><span class="kw">&gt;</span>Login<span class="kw">&lt;/a&gt;&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb17-10" title="10">   {% endif %}</a>
+<a class="sourceLine" id="cb17-11" title="11">  <span class="kw">&lt;/ul&gt;</span></a></code></pre></div>
+<p>As you can see, we use <code>if</code>-<code>else</code>-<code>endif</code> template tags to conditionally display text based on whether <code>\{{ user.is_authenticated }}</code> is true. If the user is authenticated then we know that we have a valid user, so we call <code>\{{ user.get_username }}</code> to display their name.</p>
+<p>We create the login and logout link URLs using the <code>url</code> template tag and the names of the respective URL configurations. Note also how we have appended <code>?next=\{{request.path}}</code> to the end of the URLs. What this does is add a URL parameter <code>next</code> containing the address (URL) of the <em>current</em> page, to the end of the linked URL. After the user has successfully logged in/out, the views will use this “<code>next</code>” value to redirect the user back to the page where they first clicked the login/logout link.</p>
+<blockquote>
+<p><strong>Note:</strong> Try it out! If you’re on the home page and you click Login/Logout in the sidebar, then after the operation completes you should end up back on the same page.</p>
+</blockquote>
+<h3 id="testing-in-views">Testing in views</h3>
+<p>If you’re using function-based views, the easiest way to restrict access to your functions is to apply the <code>login_required</code> decorator to your view function, as shown below. If the user is logged in then your view code will execute as normal. If the user is not logged in, this will redirect to the login URL defined in the project settings (<code>settings.LOGIN_URL</code>), passing the current absolute path as the <code>next</code> URL parameter. If the user succeeds in logging in then they will be returned back to this page, but this time authenticated.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb18-1" title="1"><span class="im">from</span> django.contrib.auth.decorators <span class="im">import</span> login_required</a>
+<a class="sourceLine" id="cb18-2" title="2"></a>
+<a class="sourceLine" id="cb18-3" title="3"><span class="at">@login_required</span></a>
+<a class="sourceLine" id="cb18-4" title="4"><span class="kw">def</span> my_view(request):</a>
+<a class="sourceLine" id="cb18-5" title="5">    ...</a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> You can do the same sort of thing manually by testing on <code>request.user.is_authenticated</code>, but the decorator is much more convenient!</p>
+</blockquote>
+<p>Similarly, the easiest way to restrict access to logged-in users in your class-based views is to derive from <code>LoginRequiredMixin</code>. You need to declare this mixin first in the superclass list, before the main view class.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb19-1" title="1"><span class="im">from</span> django.contrib.auth.mixins <span class="im">import</span> LoginRequiredMixin</a>
+<a class="sourceLine" id="cb19-2" title="2"></a>
+<a class="sourceLine" id="cb19-3" title="3"><span class="kw">class</span> MyView(LoginRequiredMixin, View):</a>
+<a class="sourceLine" id="cb19-4" title="4">    ...</a></code></pre></div>
+<p>This has exactly the same redirect behavior as the <code>login_required</code> decorator. You can also specify an alternative location to redirect the user to if they are not authenticated (<code>login_url</code>), and a URL parameter name instead of “<code>next</code>” to insert the current absolute path (<code>redirect_field_name</code>).</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb20-1" title="1"><span class="kw">class</span> MyView(LoginRequiredMixin, View):</a>
+<a class="sourceLine" id="cb20-2" title="2">    login_url <span class="op">=</span> <span class="st">&#39;/login/&#39;</span></a>
+<a class="sourceLine" id="cb20-3" title="3">    redirect_field_name <span class="op">=</span> <span class="st">&#39;redirect_to&#39;</span></a></code></pre></div>
+<p>For additional detail, check out the <a href="https://docs.djangoproject.com/en/3.1/topics/auth/default/#limiting-access-to-logged-in-users">Django docs here</a>.</p>
+<h2 id="example-listing-the-current-users-books">Example — listing the current user’s books</h2>
+<p>Now that we know how to restrict a page to a particular user, let’s create a view of the books that the current user has borrowed.</p>
+<p>Unfortunately, we don’t yet have any way for users to borrow books! So before we can create the book list we’ll first extend the <code>BookInstance</code> model to support the concept of borrowing and use the Django Admin application to loan a number of books to our test user.</p>
+<h3 id="models">Models</h3>
+<p>First, we’re going to have to make it possible for users to have a <code>BookInstance</code> on loan (we already have a <code>status</code> and a <code>due_back</code> date, but we don’t yet have any association between this model and a User. We’ll create one using a <code>ForeignKey</code> (one-to-many) field. We also need an easy mechanism to test whether a loaned book is overdue.</p>
+<p>Open <strong>catalog/models.py</strong>, and import the <code>User</code> model from <code>django.contrib.auth.models</code> (add this just below the previous import line at the top of the file, so <code>User</code> is available to subsequent code that makes use of it):</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb21-1" title="1"><span class="im">from</span> django.contrib.auth.models <span class="im">import</span> User</a></code></pre></div>
+<p>Next, add the <code>borrower</code> field to the <code>BookInstance</code> model:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb22-1" title="1">borrower <span class="op">=</span> models.ForeignKey(User, on_delete<span class="op">=</span>models.SET_NULL, null<span class="op">=</span><span class="va">True</span>, blank<span class="op">=</span><span class="va">True</span>)</a></code></pre></div>
+<p>While we’re here, let’s add a property that we can call from our templates to tell if a particular book instance is overdue. While we could calculate this in the template itself, using a <a href="https://docs.python.org/3/library/functions.html#property">property</a> as shown below will be much more efficient.</p>
+<p>Add this somewhere near the top of the file:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb23-1" title="1"><span class="im">from</span> datetime <span class="im">import</span> date</a></code></pre></div>
+<p>Now add the following property definition to the <code>BookInstance</code> class:</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb24-1" title="1"><span class="at">@property</span></a>
+<a class="sourceLine" id="cb24-2" title="2"><span class="kw">def</span> is_overdue(<span class="va">self</span>):</a>
+<a class="sourceLine" id="cb24-3" title="3">    <span class="cf">if</span> <span class="va">self</span>.due_back <span class="kw">and</span> date.today() <span class="op">&gt;</span> <span class="va">self</span>.due_back:</a>
+<a class="sourceLine" id="cb24-4" title="4">        <span class="cf">return</span> <span class="va">True</span></a>
+<a class="sourceLine" id="cb24-5" title="5">    <span class="cf">return</span> <span class="va">False</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> We first verify whether <code>due_back</code> is empty before making a comparison. An empty <code>due_back</code> field would cause Django to throw an error instead of showing the page: empty values are not comparable. This is not something we would want our users to experience!</p>
+</blockquote>
+<p>Now that we’ve updated our models, we’ll need to make fresh migrations on the project and then apply those migrations:</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb25-1" title="1"><span class="ex">python3</span> manage.py makemigrations</a>
+<a class="sourceLine" id="cb25-2" title="2"><span class="ex">python3</span> manage.py migrate</a></code></pre></div>
+<h3 id="admin">Admin</h3>
+<p>Now open <strong>catalog/admin.py</strong>, and add the <code>borrower</code> field to the <code>BookInstanceAdmin</code> class in both the <code>list_display</code> and the <code>fieldsets</code> as shown below. This will make the field visible in the Admin section, allowing us to assign a <code>User</code> to a <code>BookInstance</code> when needed.</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb26-1" title="1"><span class="at">@admin.register</span>(BookInstance)</a>
+<a class="sourceLine" id="cb26-2" title="2"><span class="kw">class</span> BookInstanceAdmin(admin.ModelAdmin):</a>
+<a class="sourceLine" id="cb26-3" title="3">    list_display <span class="op">=</span> (<span class="st">&#39;book&#39;</span>, <span class="st">&#39;status&#39;</span>, <span class="st">&#39;borrower&#39;</span>, <span class="st">&#39;due_back&#39;</span>, <span class="st">&#39;id&#39;</span>)</a>
+<a class="sourceLine" id="cb26-4" title="4">    list_filter <span class="op">=</span> (<span class="st">&#39;status&#39;</span>, <span class="st">&#39;due_back&#39;</span>)</a>
+<a class="sourceLine" id="cb26-5" title="5"></a>
+<a class="sourceLine" id="cb26-6" title="6">    fieldsets <span class="op">=</span> (</a>
+<a class="sourceLine" id="cb26-7" title="7">        (<span class="va">None</span>, {</a>
+<a class="sourceLine" id="cb26-8" title="8">            <span class="st">&#39;fields&#39;</span>: (<span class="st">&#39;book&#39;</span>,<span class="st">&#39;imprint&#39;</span>, <span class="st">&#39;id&#39;</span>)</a>
+<a class="sourceLine" id="cb26-9" title="9">        }),</a>
+<a class="sourceLine" id="cb26-10" title="10">        (<span class="st">&#39;Availability&#39;</span>, {</a>
+<a class="sourceLine" id="cb26-11" title="11">            <span class="st">&#39;fields&#39;</span>: (<span class="st">&#39;status&#39;</span>, <span class="st">&#39;due_back&#39;</span>,<span class="st">&#39;borrower&#39;</span>)</a>
+<a class="sourceLine" id="cb26-12" title="12">        }),</a>
+<a class="sourceLine" id="cb26-13" title="13">    )</a></code></pre></div>
+<h3 id="loan-a-few-books">Loan a few books</h3>
+<p>Now that it’s possible to loan books to a specific user, go and loan out a number of <code>BookInstance</code> records. Set their <code>borrowed</code> field to your test user, make the <code>status</code> “On loan”, and set due dates both in the future and the past.</p>
+<blockquote>
+<p><strong>Note:</strong> We won’t spell the process out, as you already know how to use the Admin site!</p>
+</blockquote>
+<h3 id="on-loan-view">On loan view</h3>
+<p>Now we’ll add a view for getting the list of all books that have been loaned to the current user. We’ll use the same generic class-based list view we’re familiar with, but this time we’ll also import and derive from <code>LoginRequiredMixin</code>, so that only a logged in user can call this view. We will also choose to declare a <code>template_name</code>, rather than using the default, because we may end up having a few different lists of BookInstance records, with different views and templates.</p>
+<p>Add the following to catalog/views.py:</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb27-1" title="1"><span class="im">from</span> django.contrib.auth.mixins <span class="im">import</span> LoginRequiredMixin</a>
+<a class="sourceLine" id="cb27-2" title="2"></a>
+<a class="sourceLine" id="cb27-3" title="3"><span class="kw">class</span> LoanedBooksByUserListView(LoginRequiredMixin,generic.ListView):</a>
+<a class="sourceLine" id="cb27-4" title="4">    <span class="co">&quot;&quot;&quot;Generic class-based view listing books on loan to current user.&quot;&quot;&quot;</span></a>
+<a class="sourceLine" id="cb27-5" title="5">    model <span class="op">=</span> BookInstance</a>
+<a class="sourceLine" id="cb27-6" title="6">    template_name <span class="op">=</span><span class="st">&#39;catalog/bookinstance_list_borrowed_user.html&#39;</span></a>
+<a class="sourceLine" id="cb27-7" title="7">    paginate_by <span class="op">=</span> <span class="dv">10</span></a>
+<a class="sourceLine" id="cb27-8" title="8"></a>
+<a class="sourceLine" id="cb27-9" title="9">    <span class="kw">def</span> get_queryset(<span class="va">self</span>):</a>
+<a class="sourceLine" id="cb27-10" title="10">        <span class="cf">return</span> BookInstance.objects.<span class="bu">filter</span>(borrower<span class="op">=</span><span class="va">self</span>.request.user).<span class="bu">filter</span>(status__exact<span class="op">=</span><span class="st">&#39;o&#39;</span>).order_by(<span class="st">&#39;due_back&#39;</span>)</a></code></pre></div>
+<p>In order to restrict our query to just the <code>BookInstance</code> objects for the current user, we re-implement <code>get_queryset()</code> as shown above. Note that “o” is the stored code for “on loan” and we order by the <code>due_back</code> date so that the oldest items are displayed first.</p>
+<h3 id="url-conf-for-on-loan-books">URL conf for on loan books</h3>
+<p>Now open <strong>/catalog/urls.py</strong> and add a <code>path()</code> pointing to the above view (you can just copy the text below to the end of the file).</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb28-1" title="1">urlpatterns <span class="op">+=</span> [</a>
+<a class="sourceLine" id="cb28-2" title="2">    path(<span class="st">&#39;mybooks/&#39;</span>, views.LoanedBooksByUserListView.as_view(), name<span class="op">=</span><span class="st">&#39;my-borrowed&#39;</span>),</a>
+<a class="sourceLine" id="cb28-3" title="3">]</a></code></pre></div>
+<h3 id="template-for-on-loan-books">Template for on-loan books</h3>
+<p>Now, all we need to do for this page is add a template. First, create the template file <strong>/catalog/templates/catalog/bookinstance_list_borrowed_user.html</strong> and give it the following contents:</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb29-1" title="1">{<span class="op">%</span> extends <span class="st">&quot;base_generic.html&quot;</span> <span class="op">%</span>}</a>
+<a class="sourceLine" id="cb29-2" title="2"></a>
+<a class="sourceLine" id="cb29-3" title="3">{<span class="op">%</span> block content <span class="op">%</span>}</a>
+<a class="sourceLine" id="cb29-4" title="4">    <span class="op">&lt;</span>h1<span class="op">&gt;</span>Borrowed books<span class="op">&lt;/</span>h1<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb29-5" title="5"></a>
+<a class="sourceLine" id="cb29-6" title="6">    {<span class="op">%</span> <span class="cf">if</span> bookinstance_list <span class="op">%</span>}</a>
+<a class="sourceLine" id="cb29-7" title="7">    <span class="op">&lt;</span>ul<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb29-8" title="8"></a>
+<a class="sourceLine" id="cb29-9" title="9">      {<span class="op">%</span> <span class="cf">for</span> bookinst <span class="kw">in</span> bookinstance_list <span class="op">%</span>}</a>
+<a class="sourceLine" id="cb29-10" title="10">      <span class="op">&lt;</span>li <span class="kw">class</span><span class="op">=</span><span class="st">&quot;{</span><span class="sc">% i</span><span class="st">f bookinst.is_overdue %}text-danger{</span><span class="sc">% e</span><span class="st">ndif %}&quot;</span><span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb29-11" title="11">        <span class="op">&lt;</span>a href<span class="op">=</span><span class="st">&quot;{</span><span class="sc">% u</span><span class="st">rl &#39;book-detail&#39; bookinst.book.pk %}&quot;</span><span class="op">&gt;\</span>{{bookinst.book.title}}<span class="op">&lt;/</span>a<span class="op">&gt;</span> (<span class="op">\</span>{{ bookinst.due_back }})</a>
+<a class="sourceLine" id="cb29-12" title="12">      <span class="op">&lt;/</span>li<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb29-13" title="13">      {<span class="op">%</span> endfor <span class="op">%</span>}</a>
+<a class="sourceLine" id="cb29-14" title="14">    <span class="op">&lt;/</span>ul<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb29-15" title="15"></a>
+<a class="sourceLine" id="cb29-16" title="16">    {<span class="op">%</span> <span class="cf">else</span> <span class="op">%</span>}</a>
+<a class="sourceLine" id="cb29-17" title="17">      <span class="op">&lt;</span>p<span class="op">&gt;</span>There are no books borrowed.<span class="op">&lt;/</span>p<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb29-18" title="18">    {<span class="op">%</span> endif <span class="op">%</span>}</a>
+<a class="sourceLine" id="cb29-19" title="19">{<span class="op">%</span> endblock <span class="op">%</span>}</a></code></pre></div>
+<p>This template is very similar to those we’ve created previously for the <code>Book</code> and <code>Author</code> objects. The only thing “new” here is that we check the method we added in the model <code>(bookinst.is_overdue</code>) and use it to change the color of overdue items.</p>
+<p>When the development server is running, you should now be able to view the list for a logged in user in your browser at <a href="http://127.0.0.1:8000/catalog/mybooks/" class="uri">http://127.0.0.1:8000/catalog/mybooks/</a>. Try this out with your user logged in and logged out (in the second case, you should be redirected to the login page).</p>
+<h3 id="add-the-list-to-the-sidebar">Add the list to the sidebar</h3>
+<p>The very last step is to add a link for this new page into the sidebar. We’ll put this in the same section where we display other information for the logged in user.</p>
+<p>Open the base template (<strong>/locallibrary/catalog/templates/base_generic.html</strong>) and add the “My Borrowed” line to the sidebar in the position shown below.</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb30-1" title="1"> <span class="op">&lt;</span>ul <span class="kw">class</span><span class="op">=</span><span class="st">&quot;sidebar-nav&quot;</span><span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb30-2" title="2">   {<span class="op">%</span> <span class="cf">if</span> user.is_authenticated <span class="op">%</span>}</a>
+<a class="sourceLine" id="cb30-3" title="3">   <span class="op">&lt;</span>li<span class="op">&gt;</span>User: <span class="op">\</span>{{ user.get_username }}<span class="op">&lt;/</span>li<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb30-4" title="4"></a>
+<a class="sourceLine" id="cb30-5" title="5">   <span class="op">&lt;</span>li<span class="op">&gt;&lt;</span>a href<span class="op">=</span><span class="st">&quot;{</span><span class="sc">% u</span><span class="st">rl &#39;my-borrowed&#39; %}&quot;</span><span class="op">&gt;</span>My Borrowed<span class="op">&lt;/</span>a<span class="op">&gt;&lt;/</span>li<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb30-6" title="6"></a>
+<a class="sourceLine" id="cb30-7" title="7">   <span class="op">&lt;</span>li<span class="op">&gt;&lt;</span>a href<span class="op">=</span><span class="st">&quot;{</span><span class="sc">% u</span><span class="st">rl &#39;logout&#39;%}?next=\</span><span class="sc">{{</span><span class="st">request.path</span><span class="sc">}}</span><span class="st">&quot;</span><span class="op">&gt;</span>Logout<span class="op">&lt;/</span>a<span class="op">&gt;&lt;/</span>li<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb30-8" title="8">   {<span class="op">%</span> <span class="cf">else</span> <span class="op">%</span>}</a>
+<a class="sourceLine" id="cb30-9" title="9">   <span class="op">&lt;</span>li<span class="op">&gt;&lt;</span>a href<span class="op">=</span><span class="st">&quot;{</span><span class="sc">% u</span><span class="st">rl &#39;login&#39;%}?next=\</span><span class="sc">{{</span><span class="st">request.path</span><span class="sc">}}</span><span class="st">&quot;</span><span class="op">&gt;</span>Login<span class="op">&lt;/</span>a<span class="op">&gt;&lt;/</span>li<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb30-10" title="10">   {<span class="op">%</span> endif <span class="op">%</span>}</a>
+<a class="sourceLine" id="cb30-11" title="11"> <span class="op">&lt;/</span>ul<span class="op">&gt;</span></a></code></pre></div>
+<h3 id="what-does-it-look-like">What does it look like?</h3>
+<p>When any user is logged in, they’ll see the <em>My Borrowed</em> link in the sidebar, and the list of books displayed as below (the first book has no due date, which is a bug we hope to fix in a later tutorial!).</p>
+<figure>
+<img src="library_borrowed_by_user.png" alt="Library - borrowed books by user" /><figcaption>Library - borrowed books by user</figcaption>
+</figure>
+<h2 id="permissions">Permissions</h2>
+<p>Permissions are associated with models and define the operations that can be performed on a model instance by a user who has the permission. By default, Django automatically gives <em>add</em>, <em>change</em>, and <em>delete</em> permissions to all models, which allow users with the permissions to perform the associated actions via the admin site. You can define your own permissions to models and grant them to specific users. You can also change the permissions associated with different instances of the same model.</p>
+<p>Testing on permissions in views and templates is then very similar for testing on the authentication status (and in fact, testing for a permission also tests for authentication).</p>
+<h3 id="models-1">Models</h3>
+<p>Defining permissions is done on the model “<code>class Meta</code>” section, using the <code>permissions</code> field. You can specify as many permissions as you need in a tuple, each permission itself being defined in a nested tuple containing the permission name and permission display value. For example, we might define a permission to allow a user to mark that a book has been returned as shown:</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb31-1" title="1"><span class="kw">class</span> BookInstance(models.Model):</a>
+<a class="sourceLine" id="cb31-2" title="2">    ...</a>
+<a class="sourceLine" id="cb31-3" title="3">    <span class="kw">class</span> Meta:</a>
+<a class="sourceLine" id="cb31-4" title="4">        ...</a>
+<a class="sourceLine" id="cb31-5" title="5">        permissions <span class="op">=</span> ((<span class="st">&quot;can_mark_returned&quot;</span>, <span class="st">&quot;Set book as returned&quot;</span>),)</a></code></pre></div>
+<p>We could then assign the permission to a “Librarian” group in the Admin site.</p>
+<p>Open the <strong>catalog/models.py</strong>, and add the permission as shown above. You will need to re-run your migrations (call <code>python3 manage.py makemigrations</code> and <code>python3 manage.py migrate</code>) to update the database appropriately.</p>
+<h3 id="templates">Templates</h3>
+<p>The current user’s permissions are stored in a template variable called <code>\{{ perms }}</code>. You can check whether the current user has a particular permission using the specific variable name within the associated Django “app” — e.g. <code>\{{ perms.catalog.can_mark_returned }}</code> will be <code>True</code> if the user has this permission, and <code>False</code> otherwise. We typically test for the permission using the template <code>{% if %}</code> tag as shown:</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb32-1" title="1">{<span class="op">%</span> <span class="cf">if</span> perms.catalog.can_mark_returned <span class="op">%</span>}</a>
+<a class="sourceLine" id="cb32-2" title="2">    <span class="op">&lt;!--</span> We can mark a BookInstance <span class="im">as</span> returned. <span class="op">--&gt;</span></a>
+<a class="sourceLine" id="cb32-3" title="3">    <span class="op">&lt;!--</span> Perhaps add code to link to a <span class="st">&quot;book return&quot;</span> view here. <span class="op">--&gt;</span></a>
+<a class="sourceLine" id="cb32-4" title="4">{<span class="op">%</span> endif <span class="op">%</span>}</a></code></pre></div>
+<h3 id="views">Views</h3>
+<p>Permissions can be tested in function view using the <code>permission_required</code> decorator or in a class-based view using the <code>PermissionRequiredMixin</code>. The pattern are the same as for login authentication, though of course, you might reasonably have to add multiple permissions.</p>
+<p>Function view decorator:</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb33-1" title="1"><span class="im">from</span> django.contrib.auth.decorators <span class="im">import</span> permission_required</a>
+<a class="sourceLine" id="cb33-2" title="2"></a>
+<a class="sourceLine" id="cb33-3" title="3"><span class="at">@permission_required</span>(<span class="st">&#39;catalog.can_mark_returned&#39;</span>)</a>
+<a class="sourceLine" id="cb33-4" title="4"><span class="at">@permission_required</span>(<span class="st">&#39;catalog.can_edit&#39;</span>)</a>
+<a class="sourceLine" id="cb33-5" title="5"><span class="kw">def</span> my_view(request):</a>
+<a class="sourceLine" id="cb33-6" title="6">    ...</a></code></pre></div>
+<p>A permission-required mixin for class-based views.</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb34-1" title="1"><span class="im">from</span> django.contrib.auth.mixins <span class="im">import</span> PermissionRequiredMixin</a>
+<a class="sourceLine" id="cb34-2" title="2"></a>
+<a class="sourceLine" id="cb34-3" title="3"><span class="kw">class</span> MyView(PermissionRequiredMixin, View):</a>
+<a class="sourceLine" id="cb34-4" title="4">    permission_required <span class="op">=</span> <span class="st">&#39;catalog.can_mark_returned&#39;</span></a>
+<a class="sourceLine" id="cb34-5" title="5">    <span class="co"># Or multiple permissions</span></a>
+<a class="sourceLine" id="cb34-6" title="6">    permission_required <span class="op">=</span> (<span class="st">&#39;catalog.can_mark_returned&#39;</span>, <span class="st">&#39;catalog.can_edit&#39;</span>)</a>
+<a class="sourceLine" id="cb34-7" title="7">    <span class="co"># Note that &#39;catalog.can_edit&#39; is just an example</span></a>
+<a class="sourceLine" id="cb34-8" title="8">    <span class="co"># the catalog application doesn&#39;t have such permission!</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> There is a small default difference in the behavior above. By <strong>default</strong> for a logged-in user with a permission violation:</p>
+<ul>
+<li><code>@permission_required</code> redirects to login screen (HTTP Status 302).</li>
+<li><code>PermissionRequiredMixin</code> returns 403 (HTTP Status Forbidden).</li>
+</ul>
+<p>Normally you will want the <code>PermissionRequiredMixin</code> behavior: return 403 if a user is logged in but does not have the correct permission. To do this for a function view use <code>@login_required</code> and <code>@permission_required</code> with <code>raise_exception=True</code> as shown:</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb35-1" title="1"><span class="im">from</span> django.contrib.auth.decorators <span class="im">import</span> login_required, permission_required</a>
+<a class="sourceLine" id="cb35-2" title="2"></a>
+<a class="sourceLine" id="cb35-3" title="3"><span class="at">@login_required</span></a>
+<a class="sourceLine" id="cb35-4" title="4"><span class="at">@permission_required</span>(<span class="st">&#39;catalog.can_mark_returned&#39;</span>, raise_exception<span class="op">=</span><span class="va">True</span>)</a>
+<a class="sourceLine" id="cb35-5" title="5"><span class="kw">def</span> my_view(request):</a>
+<a class="sourceLine" id="cb35-6" title="6">    ...</a></code></pre></div>
+</blockquote>
+<h3 id="example">Example</h3>
+<p>We won’t update the <em>LocalLibrary</em> here; perhaps in the next tutorial!</p>
+<h2 id="challenge-yourself">Challenge yourself</h2>
+<p>Earlier in this article, we showed you how to create a page for the current user listing the books that they have borrowed. The challenge now is to create a similar page that is only visible for librarians, that displays <em>all</em> books that have been borrowed, and which includes the name of each borrower.</p>
+<p>You should be able to follow the same pattern as for the other view. The main difference is that you’ll need to restrict the view to only librarians. You could do this based on whether the user is a staff member (function decorator: <code>staff_member_required</code>, template variable: <code>user.is_staff</code>) but we recommend that you instead use the <code>can_mark_returned</code> permission and <code>PermissionRequiredMixin</code>, as described in the previous section.</p>
+<blockquote>
+<p><strong>Warning:</strong> Remember not to use your superuser for permissions based testing (permission checks always return true for superusers, even if a permission has not yet been defined!). Instead, create a librarian user, and add the required capability.</p>
+</blockquote>
+<p>When you are finished, your page should look something like the screenshot below.</p>
+<figure>
+<img src="library_borrowed_all.png" alt="All borrowed books, restricted to librarian" /><figcaption>All borrowed books, restricted to librarian</figcaption>
+</figure>
+<h2 id="summary">Summary</h2>
+<p>Excellent work — you’ve now created a website that library members can log in into and view their own content and that librarians (with the correct permission) can use to view all loaned books and their borrowers. At the moment we’re still just viewing content, but the same principles and techniques are used when you want to start modifying and adding data.</p>
+<p>In our next article, we’ll look at how you can use Django forms to collect user input, and then start modifying some of our stored data.</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="https://docs.djangoproject.com/en/3.1/topics/auth/">User authentication in Django</a> (Django docs)</li>
+<li><a href="https://docs.djangoproject.com/en/3.1/topics/auth/default/">Using the (default) Django authentication system</a> (Django docs)</li>
+<li><a href="https://docs.djangoproject.com/en/3.1/topics/class-based-views/intro/#decorating-class-based-views">Introduction to class-based views &gt; Decorating class-based views</a> (Django docs)</li>
+</ul>
+<p>{{PreviousMenuNext(“Learn/Server-side/Django/Sessions”, “Learn/Server-side/Django/Forms”, “Learn/Server-side/Django”)}}</p>
+<h2 id="in-this-module">In this module</h2>
+<ul>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Introduction">Django introduction</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/development_environment">Setting up a Django development environment</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Tutorial_local_library_website">Django Tutorial: The Local Library website</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/skeleton_website">Django Tutorial Part 2: Creating a skeleton website</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Models">Django Tutorial Part 3: Using models</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Admin_site">Django Tutorial Part 4: Django admin site</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Home_page">Django Tutorial Part 5: Creating our home page</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Generic_views">Django Tutorial Part 6: Generic list and detail views</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Sessions">Django Tutorial Part 7: Sessions framework</a></li>
+<li><strong>Django Tutorial Part 8: User authentication and permissions</strong></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Forms">Django Tutorial Part 9: Working with forms</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Testing">Django Tutorial Part 10: Testing a Django web application</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Deployment">Django Tutorial Part 11: Deploying Django to production</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/web_application_security">Django web application security</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/django_assessment_blog">DIY Django mini blog</a></li>
+</ul>

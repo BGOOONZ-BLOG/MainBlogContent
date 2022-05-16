@@ -1,0 +1,310 @@
+<p>{{LearnSidebar}}{{PreviousMenuNext(“Learn/Server-side/Django/Admin_site”, “Learn/Server-side/Django/Generic_views”, “Learn/Server-side/Django”)}}</p>
+<p>We’re now ready to add the code that displays our first complete page — a home page for the <a href="/en-US/docs/Learn/Server-side/Django/Tutorial_local_library_website">LocalLibrary</a> website. The home page will show the number of records we have for each model type and provide sidebar navigation links to our other pages. Along the way we’ll gain practical experience in writing basic URL maps and views, getting records from the database, and using templates.</p>
+<table>
+<tbody>
+<tr>
+<th scope="row">
+Prerequisites:
+</th>
+<td>
+Read the <a href="/en-US/docs/Learn/Server-side/Django/Introduction"
+          >Django Introduction</a
+        >. Complete previous tutorial topics (including <a
+          href="/en-US/docs/Learn/Server-side/Django/Admin_site"
+          >Django Tutorial Part 4: Django admin site</a
+        >).
+</td>
+</tr>
+<tr>
+<th scope="row">
+Objective:
+</th>
+<td>
+Learn to create simple url maps and views (where no data is encoded in the URL), get data from models, and create templates.
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="overview">Overview</h2>
+<p>After we defined our models and created some initial library records to work with, it’s time to write the code that presents that information to users. The first thing we need to do is determine what information we want to display in our pages, and define the URLs to use for returning those resources. Then we’ll create a URL mapper, views, and templates to display the pages.</p>
+<p>The following diagram describes the main data flow, and the components required when handling HTTP requests and responses. As we already implemented the model, the main components we’ll create are:</p>
+<ul>
+<li>URL mappers to forward the supported URLs (and any information encoded in the URLs) to the appropriate view functions.</li>
+<li>View functions to get the requested data from the models, create HTML pages that display the data, and return the pages to the user to view in the browser.</li>
+<li>Templates to use when rendering data in the views.</li>
+</ul>
+<p><img src="basic-django.png" /></p>
+<p>As you’ll see in the next section, we have 5 pages to display, which is too much information to document in a single article. Therefore, this article will focus on how to implement the home page, and we’ll cover the other pages in a subsequent article. This should give you a good end-to-end understanding of how URL mappers, views, and models work in practice.</p>
+<h2 id="defining-the-resource-urls">Defining the resource URLs</h2>
+<p>As this version of <a href="/en-US/docs/Learn/Server-side/Django/Tutorial_local_library_website">LocalLibrary </a>is essentially read-only for end users, we just need to provide a landing page for the site (a home page), and pages that <em>display</em> list and detail views for books and authors.</p>
+<p>The URLs that we’ll need for our pages are:</p>
+<ul>
+<li><code>catalog/</code> — The home (index) page.</li>
+<li><code>catalog/books/</code> — A list of all books.</li>
+<li><code>catalog/authors/</code> — A list of all authors.</li>
+<li><code>catalog/book/&lt;id&gt;</code> — The detail view for a particular book, with a field primary key of <code>&lt;id&gt;</code> (the default). For example, the URL for the third book added to the list will be <code>/catalog/book/3</code>.</li>
+<li><code>catalog/author/&lt;id&gt;</code> — The detail view for the specific author with a primary key field of <em><code>&lt;id&gt;</code></em>. For example, the URL for the 11th author added to the list will be  <code>/catalog/author/11</code>.</li>
+</ul>
+<p>The first three URLs will return the index page, books list, and authors list. These URLs do not encode any additional information, and the queries that fetch data from the database will always be the same. However, the results that the queries return will depend on the contents of the database.</p>
+<p>By contrast the final two URLs will display detailed information about a specific book or author.  These URLs encode the identity of the item to display (represented by <code>&lt;id&gt;</code> above). The URL mapper will extract the encoded information and pass it to the view, and the view will dynamically determine what information to get from the database. By encoding the information in the URL we will use a single set of a url mapping, a view, and a template to handle all books (or authors).</p>
+<blockquote>
+<p><strong>Note:</strong> With Django, you can construct your URLs however you require — you can encode information in the body of the URL as shown above, or include <code>GET</code> parameters in the URL, for example <code>/book/?id=6</code>. Whichever approach you use, the URLs should be kept clean, logical, and readable, as <a href="https://www.w3.org/Provider/Style/URI">recommended by the W3C</a>. The Django documentation recommends encoding information in the body of the URL to achieve better URL design.</p>
+</blockquote>
+<p>As mentioned in the overview, the rest of this article describes how to construct the index page.</p>
+<h2 id="creating-the-index-page">Creating the index page</h2>
+<p>The first page we’ll create is the index page (<code>catalog/</code>). The index page will include some static HTML, along with generated “counts” of different records in the database. To make this work we’ll create a URL mapping, a view, and a template.</p>
+<blockquote>
+<p><strong>Note:</strong> It’s worth paying a little extra attention in this section. Most of the information also applies to the other pages we’ll create.</p>
+</blockquote>
+<h3 id="url-mapping">URL mapping</h3>
+<p>When we created the <a href="/en-US/docs/Learn/Server-side/Django/skeleton_website">skeleton website</a>, we updated the <strong>locallibrary/urls.py</strong> file to ensure that whenever a URL that starts with <code>catalog/</code>  is received, the <em>URLConf</em> module <code>catalog.urls</code> will process the remaining substring.</p>
+<p>The following code snippet from <strong>locallibrary/urls.py</strong> includes the <code>catalog.urls</code> module:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb1-1" title="1">urlpatterns <span class="op">+=</span> [</a>
+<a class="sourceLine" id="cb1-2" title="2">    path(<span class="st">&#39;catalog/&#39;</span>, include(<span class="st">&#39;catalog.urls&#39;</span>)),</a>
+<a class="sourceLine" id="cb1-3" title="3">]</a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> Whenever Django encounters the import function <a href="https://docs.djangoproject.com/en/3.1/ref/urls/#django.urls.include" title="django.conf.urls.include"><code>django.urls.include()</code></a>, it splits the URL string at the designated end character and sends the remaining substring to the included <em>URLconf</em> module for further processing.</p>
+</blockquote>
+<p>We also created a placeholder file for the <em>URLConf</em> module, named <strong>/catalog/urls.py</strong>. Add the following lines to that file:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb2-1" title="1">urlpatterns <span class="op">=</span> [</a>
+<a class="sourceLine" id="cb2-2" title="2">    path(<span class="st">&#39;&#39;</span>, views.index, name<span class="op">=</span><span class="st">&#39;index&#39;</span>),</a>
+<a class="sourceLine" id="cb2-3" title="3">]</a></code></pre></div>
+<p>The <code>path()</code> function defines the following:</p>
+<ul>
+<li>A URL pattern, which is an empty string: <code>''</code>. We’ll discuss URL patterns in detail when working on the other views.</li>
+<li>A view function that will be called if the URL pattern is detected: <code>views.index</code>,  which is the function named <code>index()</code> in the <strong>views.py</strong> file.</li>
+</ul>
+<p>The <code>path()</code> function also specifies a <code>name</code> parameter, which is a unique identifier for <em>this</em> particular URL mapping. You can use the name to “reverse” the mapper, i.e.  to dynamically create a URL that  points to the resource that the mapper is designed to handle. For example, we can use the name parameter to link to our home page from any other page by adding the following link in a template:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;{% url &#39;index&#39; %}&quot;</span><span class="kw">&gt;</span>Home<span class="kw">&lt;/a&gt;</span>.</a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> We can hard code the link as in <code>&lt;a href="/catalog/"&gt;Home&lt;/a&gt;</code>), but if we change the pattern for our home page, for example, to <code>/catalog/index</code>) the templates will no longer link correctly. Using a reversed url mapping is more robust.</p>
+</blockquote>
+<h3 id="view-function-based">View (function-based)</h3>
+<p>A view is a function that processes an HTTP request, fetches the required data from the database, renders the data in an HTML page using an HTML template, and then returns the generated HTML in an HTTP response to display the page to the user. The index view follows this model — it fetches information about the number of <code>Book</code>, <code>BookInstance</code>, available <code>BookInstance</code> and <code>Author</code> records that we have in the database, and passes that information to a template for display.</p>
+<p>Open <strong>catalog/views.py</strong> and note that the file already imports the <a href="https://docs.djangoproject.com/en/3.1/topics/http/shortcuts/#django.shortcuts.render">render()</a> shortcut function to generate an HTML file using a template and data:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb4-1" title="1"><span class="im">from</span> django.shortcuts <span class="im">import</span> render</a>
+<a class="sourceLine" id="cb4-2" title="2"></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="co"># Create your views here.</span></a></code></pre></div>
+<p>Paste the following lines at the bottom of the file:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb5-1" title="1"><span class="im">from</span> .models <span class="im">import</span> Book, Author, BookInstance, Genre</a>
+<a class="sourceLine" id="cb5-2" title="2"></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="kw">def</span> index(request):</a>
+<a class="sourceLine" id="cb5-4" title="4">    <span class="co">&quot;&quot;&quot;View function for home page of site.&quot;&quot;&quot;</span></a>
+<a class="sourceLine" id="cb5-5" title="5"></a>
+<a class="sourceLine" id="cb5-6" title="6">    <span class="co"># Generate counts of some of the main objects</span></a>
+<a class="sourceLine" id="cb5-7" title="7">    num_books <span class="op">=</span> Book.objects.<span class="bu">all</span>().count()</a>
+<a class="sourceLine" id="cb5-8" title="8">    num_instances <span class="op">=</span> BookInstance.objects.<span class="bu">all</span>().count()</a>
+<a class="sourceLine" id="cb5-9" title="9"></a>
+<a class="sourceLine" id="cb5-10" title="10">    <span class="co"># Available books (status = &#39;a&#39;)</span></a>
+<a class="sourceLine" id="cb5-11" title="11">    num_instances_available <span class="op">=</span> BookInstance.objects.<span class="bu">filter</span>(status__exact<span class="op">=</span><span class="st">&#39;a&#39;</span>).count()</a>
+<a class="sourceLine" id="cb5-12" title="12"></a>
+<a class="sourceLine" id="cb5-13" title="13">    <span class="co"># The &#39;all()&#39; is implied by default.</span></a>
+<a class="sourceLine" id="cb5-14" title="14">    num_authors <span class="op">=</span> Author.objects.count()</a>
+<a class="sourceLine" id="cb5-15" title="15"></a>
+<a class="sourceLine" id="cb5-16" title="16">    context <span class="op">=</span> {</a>
+<a class="sourceLine" id="cb5-17" title="17">        <span class="st">&#39;num_books&#39;</span>: num_books,</a>
+<a class="sourceLine" id="cb5-18" title="18">        <span class="st">&#39;num_instances&#39;</span>: num_instances,</a>
+<a class="sourceLine" id="cb5-19" title="19">        <span class="st">&#39;num_instances_available&#39;</span>: num_instances_available,</a>
+<a class="sourceLine" id="cb5-20" title="20">        <span class="st">&#39;num_authors&#39;</span>: num_authors,</a>
+<a class="sourceLine" id="cb5-21" title="21">    }</a>
+<a class="sourceLine" id="cb5-22" title="22"></a>
+<a class="sourceLine" id="cb5-23" title="23">    <span class="co"># Render the HTML template index.html with the data in the context variable</span></a>
+<a class="sourceLine" id="cb5-24" title="24">    <span class="cf">return</span> render(request, <span class="st">&#39;index.html&#39;</span>, context<span class="op">=</span>context)</a></code></pre></div>
+<p>The first line imports the model classes that we’ll use to access data in all our views.</p>
+<p>The first part of the view function fetches the number of records using the <code>objects.all()</code> attribute on the model classes. It also gets a list of <code>BookInstance</code> objects that have a value of ‘a’ (Available) in the status field. You can find more information about how to access model data in our previous tutorial <a href="/en-US/docs/Learn/Server-side/Django/Models#searching_for_records">Django Tutorial Part 3: Using models &gt; Searching for records</a>.</p>
+<p>At the end of the view function we call the <code>render()</code> function to create an HTML page and return the page as a response. This shortcut function wraps a number of other functions to simplify a very common use case. The <code>render()</code> function accepts the following parameters:</p>
+<ul>
+<li>the original <code>request</code> object, which is an <code>HttpRequest</code>.</li>
+<li>an HTML template with placeholders for the data.</li>
+<li>a <code>context</code> variable, which is a Python dictionary, containing the data to insert into the placeholders.</li>
+</ul>
+<p>We’ll talk more about templates and the <code>context</code> variable in the next section.  Let’s get to creating our template so we can actually display something to the user!</p>
+<h3 id="template">Template</h3>
+<p>A template is a text file that defines the structure or layout of a file (such as an HTML page), it uses placeholders to represent actual content.</p>
+<p>A Django application created using <strong>startapp</strong> (like the skeleton of this example) will look for templates in a subdirectory named ‘<strong>templates</strong>’ of your applications. For example, in the index view that we just added, the <code>render()</code> function will expect to find the file <strong><em>index.html</em></strong> in <strong>/locallibrary/catalog/templates/</strong> and will raise an error if the file is not present.</p>
+<p>You can check this by saving the previous changes and accessing <code>127.0.0.1:8000</code> in your browser - it will display a fairly intuitive error message: “<code>TemplateDoesNotExist at /catalog/</code>”, and other details.</p>
+<blockquote>
+<p><strong>Note:</strong> Based on your project’s settings file, Django will look for templates in a number of places, searching in your installed applications by default. You can find out more about how Django finds templates and what template formats it supports in <a href="https://docs.djangoproject.com/en/3.1/topics/templates/">the Templates section of the Django documentation</a>.</p>
+</blockquote>
+<h4 id="extending-templates">Extending templates</h4>
+<p>The index template will need standard HTML markup for the head and body, along with navigation sections to link to the other pages of the site (which we haven’t created yet), and to sections that display introductory text and book data.</p>
+<p>Much of the HTML and navigation structure will be the same in every page of our site. Instead of duplicating boilerplate code on every page, you can use the Django templating language to declare a base template, and then extend it to replace just the bits that are different for each specific page.</p>
+<p>The following code snippet is a sample base template from a <strong>base_generic.html</strong> file. We’ll be creating the template for LocalLibrary shortly. The sample below includes common HTML with sections for a title, a sidebar, and main contents marked with the named <code>block</code> and <code>endblock</code> template tags. You can leave the blocks empty, or include default content to use when rendering pages derived from the template.</p>
+<blockquote>
+<p><strong>Note:</strong> Template <em>tags</em> are functions that you can use in a template to loop through lists, perform conditional operations based on the value of a variable, and so on. In addition to template tags, the template syntax allows you to reference variables that are passed into the template from the view, and use <em>template filters to</em> format variables (for example, to convert a string to lower case).</p>
+</blockquote>
+<div class="sourceCode" id="cb6"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb6-1" title="1"><span class="dt">&lt;!DOCTYPE </span>html<span class="dt">&gt;</span></a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="kw">&lt;html</span><span class="ot"> lang=</span><span class="st">&quot;en&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="kw">&lt;head&gt;</span></a>
+<a class="sourceLine" id="cb6-4" title="4">  {% block title %}<span class="kw">&lt;title&gt;</span>Local Library<span class="kw">&lt;/title&gt;</span>{% endblock %}</a>
+<a class="sourceLine" id="cb6-5" title="5"><span class="kw">&lt;/head&gt;</span></a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="kw">&lt;body&gt;</span></a>
+<a class="sourceLine" id="cb6-7" title="7">  {% block sidebar %}<span class="co">&lt;!-- insert default navigation text for every page --&gt;</span>{% endblock %}</a>
+<a class="sourceLine" id="cb6-8" title="8">  {% block content %}<span class="co">&lt;!-- default content text (typically empty) --&gt;</span>{% endblock %}</a>
+<a class="sourceLine" id="cb6-9" title="9"><span class="kw">&lt;/body&gt;</span></a>
+<a class="sourceLine" id="cb6-10" title="10"><span class="kw">&lt;/html&gt;</span></a></code></pre></div>
+<p>When defining a template for a particular view, we first specify the base template using the <code>extends</code> template tag — see the code sample below. Then we declare what sections from the template we want to replace (if any), using <code>block</code>/<code>endblock</code> sections as in the base template.</p>
+<p>For example, the code snippet below shows how to use the <code>extends</code> template tag and override the <code>content</code> block. The generated HTML will include the code and structure defined in the base template, including the default content you defined in the <code>title</code> block, but the new <code>content</code> block in place of the default one.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb7-1" title="1">{% extends &quot;base_generic.html&quot; %}</a>
+<a class="sourceLine" id="cb7-2" title="2"></a>
+<a class="sourceLine" id="cb7-3" title="3">{% block content %}</a>
+<a class="sourceLine" id="cb7-4" title="4">  <span class="kw">&lt;h1&gt;</span>Local Library Home<span class="kw">&lt;/h1&gt;</span></a>
+<a class="sourceLine" id="cb7-5" title="5">  <span class="kw">&lt;p&gt;</span>Welcome to LocalLibrary, a website developed by <span class="kw">&lt;em&gt;</span>Mozilla Developer Network<span class="kw">&lt;/em&gt;</span>!<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb7-6" title="6">{% endblock %}</a></code></pre></div>
+<h4 id="the-locallibrary-base-template">The LocalLibrary base template</h4>
+<p>We will use the following code snippet as the base template for the <em>LocalLibrary</em> website. As you can see, it contains some HTML code and defines blocks for <code>title</code>, <code>sidebar</code>, and <code>content</code>. We have a default title and a default sidebar with links to lists of all books and authors, both enclosed in blocks to be easily changed in the future.</p>
+<blockquote>
+<p><strong>Note:</strong> We also introduce two additional template tags: <code>url</code> and <code>load static</code>. These tags will be explained in following sections.</p>
+</blockquote>
+<p>Create a new file <strong><em>base_generic.html</em> </strong>in <strong>/locallibrary/catalog/templates/</strong> and paste the following code to the file:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb8-1" title="1"><span class="dt">&lt;!DOCTYPE </span>html<span class="dt">&gt;</span></a>
+<a class="sourceLine" id="cb8-2" title="2"><span class="kw">&lt;html</span><span class="ot"> lang=</span><span class="st">&quot;en&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb8-3" title="3"><span class="kw">&lt;head&gt;</span></a>
+<a class="sourceLine" id="cb8-4" title="4">  {% block title %}<span class="kw">&lt;title&gt;</span>Local Library<span class="kw">&lt;/title&gt;</span>{% endblock %}</a>
+<a class="sourceLine" id="cb8-5" title="5">  <span class="kw">&lt;meta</span><span class="ot"> charset=</span><span class="st">&quot;utf-8&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb8-6" title="6">  <span class="kw">&lt;meta</span><span class="ot"> name=</span><span class="st">&quot;viewport&quot;</span><span class="ot"> content=</span><span class="st">&quot;width=device-width, initial-scale=1&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb8-7" title="7">  <span class="kw">&lt;link</span><span class="ot"> rel=</span><span class="st">&quot;stylesheet&quot;</span><span class="ot"> href=</span><span class="st">&quot;https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css&quot;</span><span class="ot"> integrity=</span><span class="st">&quot;sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2&quot;</span><span class="ot"> crossorigin=</span><span class="st">&quot;anonymous&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb8-8" title="8">  <span class="co">&lt;!-- Add additional CSS in static file --&gt;</span></a>
+<a class="sourceLine" id="cb8-9" title="9">  {% load static %}</a>
+<a class="sourceLine" id="cb8-10" title="10">  <span class="kw">&lt;link</span><span class="ot"> rel=</span><span class="st">&quot;stylesheet&quot;</span><span class="ot"> href=</span><span class="st">&quot;{% static &#39;css/styles.css&#39; %}&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb8-11" title="11"><span class="kw">&lt;/head&gt;</span></a>
+<a class="sourceLine" id="cb8-12" title="12"><span class="kw">&lt;body&gt;</span></a>
+<a class="sourceLine" id="cb8-13" title="13">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;container-fluid&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb8-14" title="14">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;row&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb8-15" title="15">      <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col-sm-2&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb8-16" title="16">      {% block sidebar %}</a>
+<a class="sourceLine" id="cb8-17" title="17">        <span class="kw">&lt;ul</span><span class="ot"> class=</span><span class="st">&quot;sidebar-nav&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb8-18" title="18">          <span class="kw">&lt;li&gt;&lt;a</span><span class="ot"> href=</span><span class="st">&quot;{% url &#39;index&#39; %}&quot;</span><span class="kw">&gt;</span>Home<span class="kw">&lt;/a&gt;&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb8-19" title="19">          <span class="kw">&lt;li&gt;&lt;a</span><span class="ot"> href=</span><span class="st">&quot;&quot;</span><span class="kw">&gt;</span>All books<span class="kw">&lt;/a&gt;&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb8-20" title="20">          <span class="kw">&lt;li&gt;&lt;a</span><span class="ot"> href=</span><span class="st">&quot;&quot;</span><span class="kw">&gt;</span>All authors<span class="kw">&lt;/a&gt;&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb8-21" title="21">        <span class="kw">&lt;/ul&gt;</span></a>
+<a class="sourceLine" id="cb8-22" title="22">     {% endblock %}</a>
+<a class="sourceLine" id="cb8-23" title="23">      <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb8-24" title="24">      <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col-sm-10 &quot;</span><span class="kw">&gt;</span>{% block content %}{% endblock %}<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb8-25" title="25">    <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb8-26" title="26">  <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb8-27" title="27"><span class="kw">&lt;/body&gt;</span></a>
+<a class="sourceLine" id="cb8-28" title="28"><span class="kw">&lt;/html&gt;</span></a></code></pre></div>
+<p>The template includes CSS from <a href="https://getbootstrap.com/">Bootstrap</a> to improve the layout and presentation of the HTML page. Using Bootstrap (or another client-side web framework) is a quick way to create an attractive page that displays well on different screen sizes.</p>
+<p>The base template also references a local css file (<strong>styles.css</strong>) that provides additional styling. Create a <strong>styles.css</strong> file in <strong>/locallibrary/catalog/static/css/</strong> and paste the following code in the file:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb9-1" title="1"><span class="fu">.sidebar-nav</span> {</a>
+<a class="sourceLine" id="cb9-2" title="2">    <span class="kw">margin-top</span>: <span class="dv">20</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-3" title="3">    <span class="kw">padding</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-4" title="4">    <span class="kw">list-style</span>: <span class="dv">none</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-5" title="5">}</a></code></pre></div>
+<h4 id="the-index-template">The index template</h4>
+<p>Create a new HTML file <strong><em>index.html</em> </strong>in <strong>/locallibrary/catalog/templates/</strong> and paste the following code in the file. This code extends our base template on the first line, and then replaces the default <code>content</code> block for the template.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb10-1" title="1">{% extends &quot;base_generic.html&quot; %}</a>
+<a class="sourceLine" id="cb10-2" title="2"></a>
+<a class="sourceLine" id="cb10-3" title="3">{% block content %}</a>
+<a class="sourceLine" id="cb10-4" title="4">  <span class="kw">&lt;h1&gt;</span>Local Library Home<span class="kw">&lt;/h1&gt;</span></a>
+<a class="sourceLine" id="cb10-5" title="5">  <span class="kw">&lt;p&gt;</span>Welcome to LocalLibrary, a website developed by <span class="kw">&lt;em&gt;</span>Mozilla Developer Network<span class="kw">&lt;/em&gt;</span>!<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb10-6" title="6">  <span class="kw">&lt;h2&gt;</span>Dynamic content<span class="kw">&lt;/h2&gt;</span></a>
+<a class="sourceLine" id="cb10-7" title="7">  <span class="kw">&lt;p&gt;</span>The library has the following record counts:<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb10-8" title="8">  <span class="kw">&lt;ul&gt;</span></a>
+<a class="sourceLine" id="cb10-9" title="9">    <span class="kw">&lt;li&gt;&lt;strong&gt;</span>Books:<span class="kw">&lt;/strong&gt;</span> \{{ num_books }}<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb10-10" title="10">    <span class="kw">&lt;li&gt;&lt;strong&gt;</span>Copies:<span class="kw">&lt;/strong&gt;</span> \{{ num_instances }}<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb10-11" title="11">    <span class="kw">&lt;li&gt;&lt;strong&gt;</span>Copies available:<span class="kw">&lt;/strong&gt;</span> \{{ num_instances_available }}<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb10-12" title="12">    <span class="kw">&lt;li&gt;&lt;strong&gt;</span>Authors:<span class="kw">&lt;/strong&gt;</span> \{{ num_authors }}<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb10-13" title="13">  <span class="kw">&lt;/ul&gt;</span></a>
+<a class="sourceLine" id="cb10-14" title="14">{% endblock %}</a></code></pre></div>
+<p>In the <em>Dynamic content</em> section we declare placeholders (<em>template variables</em>) for the information from the view that we want to include. The variables are enclosed with double brace (handlebars).</p>
+<blockquote>
+<p><strong>Note:</strong> You can easily recognize template variables and template tags (functions) - variables are enclosed in double braces (<code>\{{ num_books }}</code>), and tags are enclosed in single braces with percentage signs (<code>{% extends "base_generic.html" %}</code>).</p>
+</blockquote>
+<p>The important thing to note here is that variables are named with the <em>keys</em> that we pass into the <code>context</code> dictionary in the <code>render()</code> function of our view (see sample below). Variables will be replaced with their associated <em>values</em> when the template is rendered.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb11-1" title="1">context <span class="op">=</span> {</a>
+<a class="sourceLine" id="cb11-2" title="2">    <span class="st">&#39;num_books&#39;</span>: num_books,</a>
+<a class="sourceLine" id="cb11-3" title="3">    <span class="st">&#39;num_instances&#39;</span>: num_instances,</a>
+<a class="sourceLine" id="cb11-4" title="4">    <span class="st">&#39;num_instances_available&#39;</span>: num_instances_available,</a>
+<a class="sourceLine" id="cb11-5" title="5">    <span class="st">&#39;num_authors&#39;</span>: num_authors,</a>
+<a class="sourceLine" id="cb11-6" title="6">}</a>
+<a class="sourceLine" id="cb11-7" title="7"></a>
+<a class="sourceLine" id="cb11-8" title="8"><span class="cf">return</span> render(request, <span class="st">&#39;index.html&#39;</span>, context<span class="op">=</span>context)</a></code></pre></div>
+<h4 id="referencing-static-files-in-templates">Referencing static files in templates</h4>
+<p>Your project is likely to use static resources, including JavaScript, CSS, and images. Because the location of these files might not be known (or might change), Django allows you to specify the location in your templates relative to the <code>STATIC_URL</code> global setting. The default skeleton website sets the value of <code>STATIC_URL</code> to ‘<code>/static/</code>’, but you might choose to host these on a content delivery network or elsewhere.</p>
+<p>Within the template you first call the <code>load</code> template tag specifying “static” to add the template library, as shown in the code sample below. You can then use the <code>static</code> template tag and specify the relative URL to the required file.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb12-1" title="1"><span class="co">&lt;!-- Add additional CSS in static file --&gt;</span></a>
+<a class="sourceLine" id="cb12-2" title="2">{% load static %}</a>
+<a class="sourceLine" id="cb12-3" title="3"><span class="kw">&lt;link</span><span class="ot"> rel=</span><span class="st">&quot;stylesheet&quot;</span><span class="ot"> href=</span><span class="st">&quot;{% static &#39;css/styles.css&#39; %}&quot;</span><span class="kw">&gt;</span></a></code></pre></div>
+<p>You can add an image into the page in a similar way, for example:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb13-1" title="1">{% load static %}</a>
+<a class="sourceLine" id="cb13-2" title="2"><span class="kw">&lt;img</span><span class="ot"> src=</span><span class="st">&quot;{% static &#39;catalog/images/local_library_model_uml.png&#39; %}&quot;</span><span class="ot"> alt=</span><span class="st">&quot;UML diagram&quot;</span><span class="ot"> style=</span><span class="st">&quot;width:555px;height:540px;&quot;</span><span class="kw">&gt;</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> The samples above specify where the files are located, but Django does not serve them by default. We configured the development web server to serve files by modifying the global URL mapper (<strong>/locallibrary/locallibrary/urls.py</strong>) when we <a href="/en-US/docs/Learn/Server-side/Django/skeleton_website">created the website skeleton</a>, but still need to enable file serving in production. We’ll look at this later.</p>
+</blockquote>
+<p>For more information on working with static files see <a href="https://docs.djangoproject.com/en/3.1/howto/static-files/">Managing static files</a> in the Django documentation.</p>
+<h4 id="linking-to-urls">Linking to URLs</h4>
+<p>The base template above introduced the <code>url</code> template tag.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb14-1" title="1"><span class="op">&lt;</span>li<span class="op">&gt;&lt;</span>a href<span class="op">=</span><span class="st">&quot;{</span><span class="sc">% u</span><span class="st">rl &#39;index&#39; %}&quot;</span><span class="op">&gt;</span>Home<span class="op">&lt;/</span>a<span class="op">&gt;&lt;/</span>li<span class="op">&gt;</span></a></code></pre></div>
+<p>This tag accepts the name of a <code>path()</code> function called in your <strong>urls.py</strong> and the values for any arguments that the associated view will receive from that function, and returns a URL that you can use to link to the resource.</p>
+<h4 id="configuring-where-to-find-the-templates">Configuring where to find the templates</h4>
+<p>The location where Django searches for templates is specified in the <code>TEMPLATES</code> object in the <strong>settings.py</strong> file. The default <strong>settings.py</strong> (as created for this tutorial) looks something like this:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb15-1" title="1">TEMPLATES <span class="op">=</span> [</a>
+<a class="sourceLine" id="cb15-2" title="2">    {</a>
+<a class="sourceLine" id="cb15-3" title="3">        <span class="st">&#39;BACKEND&#39;</span>: <span class="st">&#39;django.template.backends.django.DjangoTemplates&#39;</span>,</a>
+<a class="sourceLine" id="cb15-4" title="4">        <span class="st">&#39;DIRS&#39;</span>: [],</a>
+<a class="sourceLine" id="cb15-5" title="5">        <span class="st">&#39;APP_DIRS&#39;</span>: <span class="va">True</span>,</a>
+<a class="sourceLine" id="cb15-6" title="6">        <span class="st">&#39;OPTIONS&#39;</span>: {</a>
+<a class="sourceLine" id="cb15-7" title="7">            <span class="st">&#39;context_processors&#39;</span>: [</a>
+<a class="sourceLine" id="cb15-8" title="8">                <span class="st">&#39;django.template.context_processors.debug&#39;</span>,</a>
+<a class="sourceLine" id="cb15-9" title="9">                <span class="st">&#39;django.template.context_processors.request&#39;</span>,</a>
+<a class="sourceLine" id="cb15-10" title="10">                <span class="st">&#39;django.contrib.auth.context_processors.auth&#39;</span>,</a>
+<a class="sourceLine" id="cb15-11" title="11">                <span class="st">&#39;django.contrib.messages.context_processors.messages&#39;</span>,</a>
+<a class="sourceLine" id="cb15-12" title="12">            ],</a>
+<a class="sourceLine" id="cb15-13" title="13">        },</a>
+<a class="sourceLine" id="cb15-14" title="14">    },</a>
+<a class="sourceLine" id="cb15-15" title="15">]</a></code></pre></div>
+<p>The setting of <code>'APP_DIRS': True</code>, is the most important, as it tells Django to search for templates in a subdirectory of each application in the project, named “templates” (this makes it easier to group templates with their associated application for easy re-use).</p>
+<p>We can also specify specific locations for Django to search for directories using <code>'DIRS': []</code> (but that isn’t needed yet).</p>
+<blockquote>
+<p><strong>Note:</strong> You can find out more about how Django finds templates and what template formats it supports in <a href="https://docs.djangoproject.com/en/3.1/topics/templates/">the Templates section of the Django documentation</a>.</p>
+</blockquote>
+<h2 id="what-does-it-look-like">What does it look like?</h2>
+<p>At this point we have created all required resources to display the index page. Run the server (<code>python3 manage.py runserver</code>) and open <a href="http://127.0.0.1:8000/" class="uri">http://127.0.0.1:8000/</a> in your browser. If everything is configured correctly, your site should look like the following screenshot.</p>
+<figure>
+<img src="index_page_ok.png" alt="Index page for LocalLibrary website" /><figcaption>Index page for LocalLibrary website</figcaption>
+</figure>
+<blockquote>
+<p><strong>Note:</strong> The <strong>All books</strong> and <strong>All authors</strong> links will not work yet because the paths, views, and templates for those pages are not defined. We just inserted placeholders for those links in the <code>base_generic.html</code> template.</p>
+</blockquote>
+<h2 id="challenge-yourself">Challenge yourself</h2>
+<p>Here are a couple of tasks to test your familiarity with model queries, views, and templates.</p>
+<ol type="1">
+<li><p>The LocalLibrary <a href="#the_locallibrary_base_template">base template</a> includes a <code>title</code> block. Override this block in the <a href="#the_index_template">index template</a> and create a new title for the page.</p>
+<blockquote>
+<p><strong>Note:</strong> The section <a href="#extending_templates">Extending templates</a> explains how to create blocks and extend a block in another template.</p>
+</blockquote></li>
+<li><p>Modify the <a href="#view_(function-based)">view</a> to generate counts for <em>genres</em> and <em>books</em> that contain a particular word (case insensitive), and pass the results to the <code>context.</code> You accomplish this in a similar way to creating and using <code>num_books</code> and <code>num_instances_available</code>. Then update the <a href="#the_index_template">index template</a> to include these variables.</p></li>
+</ol>
+<h2 id="summary">Summary</h2>
+<p>We just created the home page for our site — an HTML page that displays a number of records from the database and links to other yet-to-be-created pages. Along the way we learned fundamental information about url mappers, views, querying the database with models, passing information to a template from a view, and creating and extending templates.</p>
+<p>In the next article we’ll build upon this knowledge to create the remaining four pages of our website.</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="https://docs.djangoproject.com/en/3.1/intro/tutorial03/">Writing your first Django app, part 3: Views and Templates</a>  (Django docs)</li>
+<li><a href="https://docs.djangoproject.com/en/3.1/topics/http/urls/">URL dispatcher</a> (Django docs)</li>
+<li><a href="https://docs.djangoproject.com/en/3.1/topics/http/views/">View functions</a> (DJango docs)</li>
+<li><a href="https://docs.djangoproject.com/en/3.1/topics/templates/">Templates</a> (Django docs)</li>
+<li><a href="https://docs.djangoproject.com/en/3.1/howto/static-files/">Managing static files</a> (Django docs)</li>
+<li><a href="https://docs.djangoproject.com/en/3.1/topics/http/shortcuts/#django.shortcuts.render">Django shortcut functions</a> (Django docs)</li>
+</ul>
+<p>{{PreviousMenuNext(“Learn/Server-side/Django/Admin_site”, “Learn/Server-side/Django/Generic_views”, “Learn/Server-side/Django”)}}</p>
+<h2 id="in-this-module">In this module</h2>
+<ul>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Introduction">Django introduction</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/development_environment">Setting up a Django development environment</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Tutorial_local_library_website">Django Tutorial: The Local Library website</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/skeleton_website">Django Tutorial Part 2: Creating a skeleton website</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Models">Django Tutorial Part 3: Using models</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Admin_site">Django Tutorial Part 4: Django admin site</a></li>
+<li><strong>Django Tutorial Part 5: Creating our home page</strong></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Generic_views">Django Tutorial Part 6: Generic list and detail views</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Sessions">Django Tutorial Part 7: Sessions framework</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Authentication">Django Tutorial Part 8: User authentication and permissions</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Forms">Django Tutorial Part 9: Working with forms</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Testing">Django Tutorial Part 10: Testing a Django web application</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/Deployment">Django Tutorial Part 11: Deploying Django to production</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/web_application_security">Django web application security</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Django/django_assessment_blog">DIY Django mini blog</a></li>
+</ul>

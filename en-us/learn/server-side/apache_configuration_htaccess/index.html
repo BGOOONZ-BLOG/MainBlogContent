@@ -1,0 +1,507 @@
+<p>Apache .htaccess files allow users to configure directories of the web server they control without modifying the main configuration file.</p>
+<p>While this is useful it’s important to note that using <code>.htaccess</code> files slows down Apache, so, if you have access to the main server configuration file (which is usually called `httpd.conf`), you should add this logic there under a <code>Directory</code> block.</p>
+<p>See <a href="https://httpd.apache.org/docs/current/howto/htaccess.html">.htaccess</a> in the Apache HTTPD documentation site for more details about what .htaccess files can do.</p>
+<p>The remainder of this document will discuss different configuration options you can add to <code>.htaccess</code> and what they do.</p>
+<p>Most of the following blocks use the <a href="https://httpd.apache.org/docs/2.4/mod/core.html#ifmodule">IfModule</a> directive to only execute the instructions inside the block if the corresponding module was properly configured and the server loaded it. This way we save our server from crashing if the module wasn’t loaded.</p>
+<h2 id="redirects">Redirects</h2>
+<p>There are times when we need to tell users that a resource has moved, either temporarily or permanently. This is what we use <code>Redirect</code> and <code>RedirectMatch</code> for.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb1-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_alias.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="co"># Redirect to a URL on a different host</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="ex">Redirect</span> <span class="st">&quot;/service&quot;</span> <span class="st">&quot;http://foo2.example.com/service&quot;</span></a>
+<a class="sourceLine" id="cb1-4" title="4"></a>
+<a class="sourceLine" id="cb1-5" title="5">  <span class="co"># Redirect to a URL on the same host</span></a>
+<a class="sourceLine" id="cb1-6" title="6">  <span class="ex">Redirect</span> <span class="st">&quot;/one&quot;</span> <span class="st">&quot;/two&quot;</span></a>
+<a class="sourceLine" id="cb1-7" title="7"></a>
+<a class="sourceLine" id="cb1-8" title="8">  <span class="co"># Equivalent redirect to URL on the same host</span></a>
+<a class="sourceLine" id="cb1-9" title="9">  <span class="ex">Redirect</span> temp <span class="st">&quot;/one&quot;</span> <span class="st">&quot;/two&quot;</span></a>
+<a class="sourceLine" id="cb1-10" title="10"></a>
+<a class="sourceLine" id="cb1-11" title="11">  <span class="co"># Permanent redirect to a URL on the same host</span></a>
+<a class="sourceLine" id="cb1-12" title="12">  <span class="ex">Redirect</span> permanent <span class="st">&quot;/three&quot;</span> <span class="st">&quot;/four&quot;</span></a>
+<a class="sourceLine" id="cb1-13" title="13"></a>
+<a class="sourceLine" id="cb1-14" title="14">  <span class="co"># Redirect to an external URL</span></a>
+<a class="sourceLine" id="cb1-15" title="15">  <span class="co"># Using regular expressions and RedirectMatch</span></a>
+<a class="sourceLine" id="cb1-16" title="16">  <span class="ex">RedirectMatch</span> <span class="st">&quot;^/oldfile\.html/?$&quot;</span> <span class="st">&quot;http://example.com/newfile.php&quot;</span></a>
+<a class="sourceLine" id="cb1-17" title="17"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<p>The possible values for the first parameter are listed below. If the first parameter is not included is defaults to <code>temp</code>.</p>
+<ul>
+<li>permanent
+<ul>
+<li>: Returns a permanent redirect status (301) indicating that the resource has moved permanently.</li>
+</ul></li>
+<li>temp
+<ul>
+<li>: Returns a temporary redirect status (302). <strong>This is the default</strong>.</li>
+</ul></li>
+<li>seeother
+<ul>
+<li>: Returns a “See Other” status (303) indicating that the resource has been replaced.</li>
+</ul></li>
+<li>gone
+<ul>
+<li>: Returns a “Gone” status (410) indicating that the resource has been permanently removed. When this status is used the <em>URL</em> argument should be omitted.</li>
+</ul></li>
+</ul>
+<h2 id="cross-origin-resources">Cross-origin resources</h2>
+<p>The first set of directives control <a href="https://www.w3.org/TR/cors/">CORS</a> (Cross-Origin Resource Sharing) access to resources from the server. CORS is an HTTP-header based mechanism that allows a server to indicate the external origins (domain, protocol, or port) which a browser should permit loading of resources.</p>
+<p>For security reasons, browsers restrict cross-origin HTTP requests initiated from scripts. For example, XMLHttpRequest and the Fetch API follow the same-origin policy. A web application using those APIs can only request resources from the same origin the application was loaded from unless the response from other origins includes the appropriate CORS headers.</p>
+<h3 id="general-cors-access">General CORS access</h3>
+<p>This directive will add the CORS header for all resources in the directory from any website.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_headers.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="ex">Header</span> set Access-Control-Allow-Origin <span class="st">&quot;*&quot;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<p>Unless you override the directive later in the configuration or in the configuration of a directory below where you set this one, every request from external servers will be honored, which is unlikely to be what you want.</p>
+<p>One alternative is to explicitly state what domains have access to the content of your site. In the example below, we restrict access to a subdomain of our main site (example.com). This is more secure and, likely, what you intended to do.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb3-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_headers.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="ex">Header</span> set Access-Control-Allow-Origin <span class="st">&quot;subdomain.example.com&quot;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<h3 id="cross-origin-images">Cross-origin images</h3>
+<p>As reported in the <a href="https://blog.chromium.org/2011/07/using-cross-domain-images-in-webgl-and.html">Chromium Blog</a> and documented in <a href="/en-US/docs/Web/HTML/CORS_enabled_image">Allowing cross-origin use of images and canvas</a> can lead to fingerprinting attacks.</p>
+<p>To mitigate the possibility of these attacks, you should use the <code>crossorigin</code> attribute in the images you request and the code snippet below in your <code>.htaccess</code> to set the CORS header from the server.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb4-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_setenvif.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="op">&lt;</span><span class="ex">IfModule</span> mod_headers.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb4-3" title="3">    <span class="op">&lt;</span><span class="ex">FilesMatch</span> <span class="st">&quot;\.(bmp|cur|gif|ico|jpe?g|a?png|svgz?|webp|heic|heif|avif)$&quot;</span><span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb4-4" title="4">      <span class="ex">SetEnvIf</span> Origin <span class="st">&quot;:&quot;</span> IS_CORS</a>
+<a class="sourceLine" id="cb4-5" title="5">      <span class="ex">Header</span> set Access-Control-Allow-Origin <span class="st">&quot;*&quot;</span> env=*IS_CORS*</a>
+<a class="sourceLine" id="cb4-6" title="6">    <span class="op">&lt;</span>/<span class="ex">FilesMatch</span><span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb4-8" title="8"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<p>Google Chrome’s <a href="https://developers.google.com/fonts/docs/troubleshooting">Google Fonts troubleshooting guide</a> tells us that, while Google Fonts may send the CORS header with every response, some proxy servers may strip it before the browser can use it to render the font.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb5-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_headers.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="op">&lt;</span><span class="ex">FilesMatch</span> <span class="st">&quot;\.(eot|otf|tt[cf]|woff2?)$&quot;</span><span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb5-3" title="3">    <span class="ex">Header</span> set Access-Control-Allow-Origin <span class="st">&quot;*&quot;</span></a>
+<a class="sourceLine" id="cb5-4" title="4">  <span class="op">&lt;</span>/<span class="ex">FilesMatch</span><span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<h3 id="cross-origin-resource-timing">Cross-origin resource timing</h3>
+<p>The <a href="https://www.w3.org/TR/resource-timing/">Resource Timing Level 1</a> specification defines an interface for web applications to access the complete timing information for resources in a document.</p>
+<p>The <a href="/en-US/docs/Web/HTTP/Headers/Timing-Allow-Origin">Timing-Allow-Origin</a> response header specifies origins that are allowed to see values of attributes retrieved via features of the Resource Timing API, which would otherwise be reported as zero due to cross-origin restrictions.</p>
+<p>If a resource isn’t served with a <code>Timing-Allow-Origin</code> or if the header does not include the origin making the request some of the attributes of the <code>PerformanceResourceTiming</code> object will be set to zero.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb6-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_headers.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="ex">Header</span> set Timing-Allow-Origin: <span class="st">&quot;*&quot;</span></a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<h2 id="custom-error-pagesmessages">Custom Error Pages/Messages</h2>
+<p>Apache allows you to provide custom error pages for users depending on the type of error they receive.</p>
+<p>The error pages are presented as URLs. These URLs can begin with a slash (/) for local web-paths (relative to the DocumentRoot), or be a full URL which the client can resolve.</p>
+<p>See the <a href="https://httpd.apache.org/docs/current/mod/core.html#errordocument">ErrorDocument Directive</a> documentation on the HTTPD documentation site for more information.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb7-1" title="1"><span class="ex">ErrorDocument</span> 500 /errors/500.html</a>
+<a class="sourceLine" id="cb7-2" title="2"><span class="ex">ErrorDocument</span> 404 /errors/400.html</a>
+<a class="sourceLine" id="cb7-3" title="3"><span class="ex">ErrorDocument</span> 401 https://example.com/subscription_info.html</a>
+<a class="sourceLine" id="cb7-4" title="4"><span class="ex">ErrorDocument</span> 403 <span class="st">&quot;Sorry, can&#39;t allow you access today&quot;</span></a></code></pre></div>
+<h2 id="error-prevention">Error prevention</h2>
+<p>This setting affects how MultiViews work for the directory the configuration applies to.</p>
+<p>The effect of <code>MultiViews</code> is as follows: if the server receives a request for /some/dir/foo, if /some/dir has <code>MultiViews</code> enabled, and /some/dir/foo does not exist, then the server reads the directory looking for files named foo.*, and effectively fakes up a type map which names all those files, assigning them the same media types and content-encodings it would have if the client had asked for one of them by name. It then chooses the best match to the client’s requirements.</p>
+<p>The setting disables <code>MultiViews</code> for the directory this configuration applies to and prevents Apache from returning a 404 error as the result of a rewrite when the directory with the same name does not exist</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb8-1" title="1"><span class="ex">Options</span> -MultiViews</a></code></pre></div>
+<h2 id="media-types-and-character-encodings">Media Types and Character Encodings</h2>
+<p>Apache uses <a href="https://httpd.apache.org/docs/current/mod/mod_mime.html#addtype">mod_mime</a> to assign content metadata to the content selected for an HTTP response by mapping patterns in the URI or filenames to the metadata values.</p>
+<p>For example, the filename extensions of content files often define the content’s Internet media type, language, character set, and content-encoding. This information is sent in HTTP messages containing that content and used in content negotiation when selecting alternatives, such that the user’s preferences are respected when choosing one of several possible contents to serve.</p>
+<p><strong>Changing the metadata for a file does not change the value of the Last-Modified header. Thus, previously cached copies may still be used by a client or proxy, with the previous headers. If you change the metadata (language, content type, character set, or encoding) you may need to ‘touch’ affected files (updating their last modified date) to ensure that all visitors receive the corrected content headers.</strong></p>
+<h3 id="serve-resources-with-the-proper-media-types-a.k.a-mime-types">Serve resources with the proper media types (a.k.a MIME types)</h3>
+<p>Associates media types with one or more extensions to make sure the resources will be served appropriately.</p>
+<p>Servers should use text/javascript for JavaScript resources as indicated in the <a href="https://html.spec.whatwg.org/multipage/scripting.html#scriptingLanguages">HTML specification</a></p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb9-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_expires.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb9-2" title="2">  <span class="co"># Data interchange</span></a>
+<a class="sourceLine" id="cb9-3" title="3">    <span class="ex">AddType</span> application/atom+xml      atom</a>
+<a class="sourceLine" id="cb9-4" title="4">    <span class="ex">AddType</span> application/json          json map topojson</a>
+<a class="sourceLine" id="cb9-5" title="5">    <span class="ex">AddType</span> application/ld+json       jsonld</a>
+<a class="sourceLine" id="cb9-6" title="6">    <span class="ex">AddType</span> application/rss+xml       rss</a>
+<a class="sourceLine" id="cb9-7" title="7">    <span class="ex">AddType</span> application/geo+json      geojson</a>
+<a class="sourceLine" id="cb9-8" title="8">    <span class="ex">AddType</span> application/rdf+xml       rdf</a>
+<a class="sourceLine" id="cb9-9" title="9">    <span class="ex">AddType</span> application/xml           xml</a>
+<a class="sourceLine" id="cb9-10" title="10">  <span class="co"># JavaScript</span></a>
+<a class="sourceLine" id="cb9-11" title="11">    <span class="ex">AddType</span> text/javascript           js mjs</a>
+<a class="sourceLine" id="cb9-12" title="12">  <span class="co"># Manifest files</span></a>
+<a class="sourceLine" id="cb9-13" title="13">    <span class="ex">AddType</span> application/manifest+json     webmanifest</a>
+<a class="sourceLine" id="cb9-14" title="14">    <span class="ex">AddType</span> application/x-web-app-manifest+json         webapp</a>
+<a class="sourceLine" id="cb9-15" title="15">    <span class="ex">AddType</span> text/cache-manifest           appcache</a>
+<a class="sourceLine" id="cb9-16" title="16">  <span class="co"># Media files</span></a>
+<a class="sourceLine" id="cb9-17" title="17">    <span class="ex">AddType</span> audio/mp4                     f4a f4b m4a</a>
+<a class="sourceLine" id="cb9-18" title="18">    <span class="ex">AddType</span> audio/ogg                     oga ogg opus</a>
+<a class="sourceLine" id="cb9-19" title="19">    <span class="ex">AddType</span> image/bmp                     bmp</a>
+<a class="sourceLine" id="cb9-20" title="20">    <span class="ex">AddType</span> image/svg+xml                 svg svgz</a>
+<a class="sourceLine" id="cb9-21" title="21">    <span class="ex">AddType</span> image/webp                    webp</a>
+<a class="sourceLine" id="cb9-22" title="22">    <span class="ex">AddType</span> video/mp4                     f4v f4p m4v mp4</a>
+<a class="sourceLine" id="cb9-23" title="23">    <span class="ex">AddType</span> video/ogg                     ogv</a>
+<a class="sourceLine" id="cb9-24" title="24">    <span class="ex">AddType</span> video/webm                    webm</a>
+<a class="sourceLine" id="cb9-25" title="25">    <span class="ex">AddType</span> image/x-icon    cur ico</a>
+<a class="sourceLine" id="cb9-26" title="26">  <span class="co"># HEIF Images</span></a>
+<a class="sourceLine" id="cb9-27" title="27">    <span class="ex">AddType</span> image/heic                    heic</a>
+<a class="sourceLine" id="cb9-28" title="28">    <span class="ex">AddType</span> image/heif                    heif</a>
+<a class="sourceLine" id="cb9-29" title="29">  <span class="co"># HEIF Image Sequence</span></a>
+<a class="sourceLine" id="cb9-30" title="30">    <span class="ex">AddType</span> image/heics                   heics</a>
+<a class="sourceLine" id="cb9-31" title="31">    <span class="ex">AddType</span> image/heifs                   heifs</a>
+<a class="sourceLine" id="cb9-32" title="32">  <span class="co"># AVIF Images</span></a>
+<a class="sourceLine" id="cb9-33" title="33">    <span class="ex">AddType</span> image/avif                    avif</a>
+<a class="sourceLine" id="cb9-34" title="34">  <span class="co"># AVIF Image Sequence</span></a>
+<a class="sourceLine" id="cb9-35" title="35">    <span class="ex">AddType</span> image/avis                    avis</a>
+<a class="sourceLine" id="cb9-36" title="36">  <span class="co"># WebAssembly</span></a>
+<a class="sourceLine" id="cb9-37" title="37">    <span class="ex">AddType</span> application/wasm              wasm</a>
+<a class="sourceLine" id="cb9-38" title="38">  <span class="co"># Web fonts</span></a>
+<a class="sourceLine" id="cb9-39" title="39">    <span class="ex">AddType</span> font/woff                         woff</a>
+<a class="sourceLine" id="cb9-40" title="40">    <span class="ex">AddType</span> font/woff2                        woff2</a>
+<a class="sourceLine" id="cb9-41" title="41">    <span class="ex">AddType</span> application/vnd.ms-fontobject                eot</a>
+<a class="sourceLine" id="cb9-42" title="42">    <span class="ex">AddType</span> font/ttf                          ttf</a>
+<a class="sourceLine" id="cb9-43" title="43">    <span class="ex">AddType</span> font/collection                   ttc</a>
+<a class="sourceLine" id="cb9-44" title="44">    <span class="ex">AddType</span> font/otf                          otf</a>
+<a class="sourceLine" id="cb9-45" title="45">  <span class="co"># Other</span></a>
+<a class="sourceLine" id="cb9-46" title="46">    <span class="ex">AddType</span> application/octet-stream          safariextz</a>
+<a class="sourceLine" id="cb9-47" title="47">    <span class="ex">AddType</span> application/x-bb-appworld         bbaw</a>
+<a class="sourceLine" id="cb9-48" title="48">    <span class="ex">AddType</span> application/x-chrome-extension    crx</a>
+<a class="sourceLine" id="cb9-49" title="49">    <span class="ex">AddType</span> application/x-opera-extension     oex</a>
+<a class="sourceLine" id="cb9-50" title="50">    <span class="ex">AddType</span> application/x-xpinstall           xpi</a>
+<a class="sourceLine" id="cb9-51" title="51">    <span class="ex">AddType</span> text/calendar                     ics</a>
+<a class="sourceLine" id="cb9-52" title="52">    <span class="ex">AddType</span> text/markdown                     markdown md</a>
+<a class="sourceLine" id="cb9-53" title="53">    <span class="ex">AddType</span> text/vcard                        vcard vcf</a>
+<a class="sourceLine" id="cb9-54" title="54">    <span class="ex">AddType</span> text/vnd.rim.location.xloc        xloc</a>
+<a class="sourceLine" id="cb9-55" title="55">    <span class="ex">AddType</span> text/vtt                          vtt</a>
+<a class="sourceLine" id="cb9-56" title="56">    <span class="ex">AddType</span> text/x-component                  htc</a>
+<a class="sourceLine" id="cb9-57" title="57"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<h2 id="set-the-default-charset-attribute">Set the default Charset attribute</h2>
+<p>Every piece of content on the web has a character set. Most, if not all, the content is UTF-8 Unicode.</p>
+<p>Use <a href="https://httpd.apache.org/docs/current/mod/core.html#adddefaultcharset">AddDefaultCharset</a> to serve all resources labeled as <code>text/html</code> or <code>text/plain</code> with the <code>UTF-8</code> charset.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb10-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_mime.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb10-2" title="2">  <span class="ex">AddDefaultCharset</span> utf-8</a>
+<a class="sourceLine" id="cb10-3" title="3"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<h2 id="set-the-charset-for-specific-media-types">Set the charset for specific media types</h2>
+<p>Serve the following file types with the <code>charset</code> parameter set to `UTF-8` using the <a href="https://httpd.apache.org/docs/current/mod/mod_mime.html#addcharset">AddCharset</a> directive available in <code>mod_mime</code>.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb11-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_mime.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb11-2" title="2">  <span class="ex">AddCharset</span> utf-8 .appcache \</a>
+<a class="sourceLine" id="cb11-3" title="3">    .bbaw \</a>
+<a class="sourceLine" id="cb11-4" title="4">    .css \</a>
+<a class="sourceLine" id="cb11-5" title="5">    .htc \</a>
+<a class="sourceLine" id="cb11-6" title="6">    .ics \</a>
+<a class="sourceLine" id="cb11-7" title="7">    .js \</a>
+<a class="sourceLine" id="cb11-8" title="8">    .json \</a>
+<a class="sourceLine" id="cb11-9" title="9">    .manifest \</a>
+<a class="sourceLine" id="cb11-10" title="10">    .map \</a>
+<a class="sourceLine" id="cb11-11" title="11">    .markdown \</a>
+<a class="sourceLine" id="cb11-12" title="12">    .md \</a>
+<a class="sourceLine" id="cb11-13" title="13">    .mjs \</a>
+<a class="sourceLine" id="cb11-14" title="14">    .topojson \</a>
+<a class="sourceLine" id="cb11-15" title="15">    .vtt \</a>
+<a class="sourceLine" id="cb11-16" title="16">    .vcard \</a>
+<a class="sourceLine" id="cb11-17" title="17">    .vcf \</a>
+<a class="sourceLine" id="cb11-18" title="18">    .webmanifest \</a>
+<a class="sourceLine" id="cb11-19" title="19">    .xloc</a>
+<a class="sourceLine" id="cb11-20" title="20"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<h2 id="mod_rewrite-and-the-rewriteengine-directives">Mod_rewrite and the RewriteEngine directives</h2>
+<p><a href="https://httpd.apache.org/docs/current/mod/mod_rewrite.html">mod_rewrite</a> provides a way to modify incoming URL requests, dynamically, based on regular expression rules. This allows you to map arbitrary URLs onto your internal URL structure in any way you like.</p>
+<p>It supports an unlimited number of rules and an unlimited number of attached rule conditions for each rule to provide a really flexible and powerful URL manipulation mechanism. The URL manipulations can depend on various tests: server variables, environment variables, HTTP headers, time stamps, external database lookups, and various other external programs or handlers, can be used to achieve granular URL matching.</p>
+<h3 id="enable-mod_rewrite">Enable mod_rewrite</h3>
+<p>The basic pattern to enable <code>mod_rewrite</code> is a pre-requisite for all other tasks that use.</p>
+<p>The required steps are:</p>
+<ol type="1">
+<li>Turn on the rewrite engine (this is necessary in order for the <code>RewriteRule</code> directives to work) as documented in the <a href="https://httpd.apache.org/docs/current/mod/mod_rewrite.html#RewriteEngine">RewriteEngine</a> documentation</li>
+<li>Enable the <code>FollowSymLinks</code> option if it isn’t already. See <a href="https://httpd.apache.org/docs/current/mod/core.html#options">Core Options</a> documentation</li>
+<li><p>If your web host doesn’t allow the <code>FollowSymlinks</code> option, you need to comment it out or remove it, and then uncomment the <code>Options +SymLinksIfOwnerMatch</code> line, but be aware of the <a href="https://httpd.apache.org/docs/current/misc/perf-tuning.html#symlinks">performance impact</a></p>
+<ul>
+<li>Some cloud hosting services will require you set <code>RewriteBase</code></li>
+<li>See <a href="https://www.rackspace.com/knowledge_center/frequently-asked-question/why-is-modrewrite-not-working-on-my-site">Rackspace FAQ</a> and the <a href="https://httpd.apache.org/docs/current/mod/mod_rewrite.html#rewritebase">HTTPD documentation</a></li>
+<li>Depending on how your server is set up, you may also need to use the <a href="https://httpd.apache.org/docs/current/mod/mod_rewrite.html#rewriteoptions"><code>RewriteOptions</code></a> directive to enable some options for the rewrite engine</li>
+</ul></li>
+</ol>
+<div class="sourceCode" id="cb12"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb12-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_rewrite.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb12-2" title="2">  <span class="ex">RewriteEngine</span> On</a>
+<a class="sourceLine" id="cb12-3" title="3">  <span class="ex">Options</span> +FollowSymlinks</a>
+<a class="sourceLine" id="cb12-4" title="4">  <span class="co"># Options +SymLinksIfOwnerMatch</span></a>
+<a class="sourceLine" id="cb12-5" title="5">  <span class="co"># RewriteBase /</span></a>
+<a class="sourceLine" id="cb12-6" title="6">  <span class="co"># RewriteOptions &lt;options&gt;</span></a>
+<a class="sourceLine" id="cb12-7" title="7"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<h3 id="forcing-https">Forcing https</h3>
+<p>These Rewrite rules will redirect from the <code>http://</code> insecure version to the <code>https://</code> secure version of the URL as described in the <a href="https://wiki.apache.org/httpd/RewriteHTTPToHTTPS">Apache HTTPD wiki</a>.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb13-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_rewrite.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb13-2" title="2">  <span class="ex">RewriteEngine</span> On</a>
+<a class="sourceLine" id="cb13-3" title="3">  <span class="ex">RewriteCond</span> %<span class="dt">{HTTPS}</span> !=on</a>
+<a class="sourceLine" id="cb13-4" title="4">  <span class="ex">RewriteRule</span> ^/?(.*) <span class="ex">https</span>://%<span class="dt">{SERVER_NAME}</span>/<span class="va">$1</span> [R,L]</a>
+<a class="sourceLine" id="cb13-5" title="5"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<p>If you’re using cPanel AutoSSL or the Let’s Encrypt webroot method to create your SSL certificates, it will fail to validate the certificate if validation requests are redirected to HTTPS. Turn on the condition(s) you need.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb14-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_rewrite.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb14-2" title="2">  <span class="ex">RewriteEngine</span> On</a>
+<a class="sourceLine" id="cb14-3" title="3">  <span class="ex">RewriteCond</span> %<span class="dt">{HTTPS}</span> !=on</a>
+<a class="sourceLine" id="cb14-4" title="4">  <span class="ex">RewriteCond</span> %<span class="dt">{REQUEST_URI}</span> !^/\.well-known/acme-challenge/</a>
+<a class="sourceLine" id="cb14-5" title="5">  <span class="ex">RewriteCond</span> %<span class="dt">{REQUEST_URI}</span> !^/\.well-known/cpanel-dcv/[\w-]+$</a>
+<a class="sourceLine" id="cb14-6" title="6">  <span class="ex">RewriteCond</span> %<span class="dt">{REQUEST_URI}</span> !^/\.well-known/pki-validation/[A-F0-9]<span class="dt">{32}</span>\.txt(?:<span class="dt">\ </span>Comodo<span class="dt">\ </span>DCV)<span class="ex">?</span>$</a>
+<a class="sourceLine" id="cb14-7" title="7">  <span class="ex">RewriteRule</span> ^ https://%<span class="dt">{HTTP_HOST}</span>%<span class="dt">{REQUEST_URI}</span> [R=301,L]</a>
+<a class="sourceLine" id="cb14-8" title="8"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<h3 id="redirecting-from-www.-urls">Redirecting from www. URLs</h3>
+<p>These directives will rewrite <code>www.example.com</code> to <code>example.com</code>.</p>
+<p>You should not duplicate content in multiple origins (with and without www);This can cause SEO problems (duplicate content), and therefore, you should choose one of the alternatives and redirect the other one. You should also use <a href="https://www.semrush.com/blog/canonical-url-guide/">Canonical URLs</a> to indicate which URL should search engines crawl (if they support the feature).</p>
+<p>Set <code>%{ENV:PROTO}</code> variable, to allow rewrites to redirect with the appropriate schema automatically (http or https).</p>
+<p>The rule assumes by default that both HTTP and HTTPS environments are available for redirection.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb15-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_rewrite.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb15-2" title="2">  <span class="ex">RewriteEngine</span> On</a>
+<a class="sourceLine" id="cb15-3" title="3">  <span class="ex">RewriteCond</span> %<span class="dt">{HTTPS}</span> =on</a>
+<a class="sourceLine" id="cb15-4" title="4">  <span class="ex">RewriteRule</span> ^ - [E=PROTO:https]</a>
+<a class="sourceLine" id="cb15-5" title="5">  <span class="ex">RewriteCond</span> %<span class="dt">{HTTPS}</span> !=on</a>
+<a class="sourceLine" id="cb15-6" title="6">  <span class="ex">RewriteRule</span> ^ - [E=PROTO:http]</a>
+<a class="sourceLine" id="cb15-7" title="7"></a>
+<a class="sourceLine" id="cb15-8" title="8">  <span class="ex">RewriteCond</span> %<span class="dt">{HTTP_HOST}</span> ^www\.(.+)$ [<span class="ex">NC</span>]</a>
+<a class="sourceLine" id="cb15-9" title="9">  <span class="ex">RewriteRule</span> ^ %<span class="dt">{ENV:PROTO}</span>://%1%<span class="dt">{REQUEST_URI}</span> [R=301,L]</a>
+<a class="sourceLine" id="cb15-10" title="10"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<h3 id="inserting-the-www.-at-the-beginning-of-urls">Inserting the www. at the beginning of URLs</h3>
+<p>These rules will insert <code>www.</code> at the beginning of a URL. It’s important to note that you should never make the same content available under two different URLs.</p>
+<p>This can cause SEO problems (duplicate content), and therefore, you should choose one of the alternatives and redirect the other one. For search engines that support them you should use <a href="https://www.semrush.com/blog/canonical-url-guide/">Canonical URLs</a> to indicate which URL should search engines crawl.</p>
+<p>Set <code>%{ENV:PROTO}</code> variable, to allow rewrites to redirect with the appropriate schema automatically (http or https).</p>
+<p>The rule assumes by default that both HTTP and HTTPS environments are available for redirection. If your SSL certificate could not handle one of the domains used during redirection, you should turn the condition on.</p>
+<p>The following might not be a good idea if you use “real” subdomains for certain parts of your website.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb16-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_rewrite.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb16-2" title="2">  <span class="ex">RewriteEngine</span> On</a>
+<a class="sourceLine" id="cb16-3" title="3">  <span class="ex">RewriteCond</span> %<span class="dt">{HTTPS}</span> =on</a>
+<a class="sourceLine" id="cb16-4" title="4">  <span class="ex">RewriteRule</span> ^ - [E=PROTO:https]</a>
+<a class="sourceLine" id="cb16-5" title="5">  <span class="ex">RewriteCond</span> %<span class="dt">{HTTPS}</span> !=on</a>
+<a class="sourceLine" id="cb16-6" title="6">  <span class="ex">RewriteRule</span> ^ - [E=PROTO:http]</a>
+<a class="sourceLine" id="cb16-7" title="7"></a>
+<a class="sourceLine" id="cb16-8" title="8">  <span class="ex">RewriteCond</span> %<span class="dt">{HTTPS}</span> !=on</a>
+<a class="sourceLine" id="cb16-9" title="9"></a>
+<a class="sourceLine" id="cb16-10" title="10">  <span class="ex">RewriteCond</span> %<span class="dt">{HTTP_HOST}</span> !^www\. [NC]</a>
+<a class="sourceLine" id="cb16-11" title="11">  <span class="ex">RewriteCond</span> %<span class="dt">{SERVER_ADDR}</span> !=127.0.0.1</a>
+<a class="sourceLine" id="cb16-12" title="12">  <span class="ex">RewriteCond</span> %<span class="dt">{SERVER_ADDR}</span> !=::1</a>
+<a class="sourceLine" id="cb16-13" title="13">  <span class="ex">RewriteRule</span> ^ %<span class="dt">{ENV:PROTO}</span>://www.%<span class="dt">{HTTP_HOST}</span>%<span class="dt">{REQUEST_URI}</span> [R=301,L]</a>
+<a class="sourceLine" id="cb16-14" title="14"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<h2 id="frame-options">Frame Options</h2>
+<p>The example below sends the <code>X-Frame-Options</code> response header with DENY as the value, informing browsers not to display the content of the web page in any frame to protect the website against <a href="/en-US/docs/Glossary/Clickjacking">clickjacking</a>.</p>
+<p>This might not be the best setting for everyone. You should read about <a href="https://datatracker.ietf.org/doc/html/rfc7034#section-2.1">the other two possible values for the <code>X-Frame-Options</code> header</a>: <code>SAMEORIGIN</code> and <code>ALLOW-FROM</code>.</p>
+<p>While you could send the <code>X-Frame-Options</code> header for all of your website’s pages, this has the potential downside that it forbids even any framing of your content (e.g.: when users visit your website using a Google Image Search results page).</p>
+<p>Nonetheless, you should ensure that you send the <code>X-Frame-Options</code> header for all pages that allow a user to make a state-changing operation (e.g: pages that contain one-click purchase links, checkout, or bank-transfer confirmation pages, pages that make permanent configuration changes, etc.).</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb17-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_headers.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb17-2" title="2">  <span class="ex">Header</span> always set X-Frame-Options <span class="st">&quot;DENY&quot;</span> <span class="st">&quot;expr=%{CONTENT_TYPE} =~ m#text/html#i&quot;</span></a>
+<a class="sourceLine" id="cb17-3" title="3"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<h2 id="content-security-policy-csp">Content Security Policy (CSP)</h2>
+<p><a href="https://content-security-policy.com/">CSP (Content Security Policy)</a> mitigates the risk of cross-site scripting and other content-injection attacks by setting a `Content Security Policy` which allows trusted sources of content for your website.</p>
+<p>There is no policy that fits all websites, the example below is meant as guidelines for you to modify for your site.</p>
+<p>The example policy below:</p>
+<p>To make your CSP implementation easier, you can use an online <a href="https://report-uri.com/home/generate/">CSP header generator</a>. You should also use a <a href="https://csp-evaluator.withgoogle.com">validator</a> to make sure your header does what you want it to do.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb18-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_headers.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb18-2" title="2">  <span class="ex">Content-Security-Policy</span> <span class="st">&quot;default-src &#39;self&#39;; base-uri &#39;none&#39;; form-action &#39;self&#39;; frame-ancestors &#39;none&#39;; upgrade-insecure-requests&quot;</span> <span class="st">&quot;expr=%{CONTENT_TYPE} =~ m#text\/(html|javascript)|application\/pdf|xml#i&quot;</span></a>
+<a class="sourceLine" id="cb18-3" title="3"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<h2 id="directory-access">Directory access</h2>
+<p>This directive will prevent access to directories that don’t have an index file present in whatever format the server is configured to use, like <code>index.html</code>, or <code>index.php</code>.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb19-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_autoindex.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb19-2" title="2">    <span class="ex">Options</span> -Indexes</a>
+<a class="sourceLine" id="cb19-3" title="3"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<h2 id="block-access-to-hidden-files-and-directories">Block access to hidden files and directories</h2>
+<p>In Macintosh and Linux systems, files that begin with a period are hidden from view but not from access if you know their name and location. These types of files usually contain user preferences or the preserved state of a utility, and can include rather private places like, for example, the <code>.git</code> or <code>.svn</code> directories.</p>
+<p>The <code>.well-known/</code> directory represents <a href="https://datatracker.ietf.org/doc/html/rfc5785">the standard (RFC 5785)</a> path prefix for “well-known locations” (e.g.: <code>/.well-known/manifest.json</code>, <code>/.well-known/keybase.txt</code>), and therefore, access to its visible content should not be blocked.</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb20-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_rewrite.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb20-2" title="2">    <span class="ex">RewriteEngine</span> On</a>
+<a class="sourceLine" id="cb20-3" title="3">    <span class="ex">RewriteCond</span> %<span class="dt">{REQUEST_URI}</span> <span class="st">&quot;!(^|/)\.well-known/([^./]+./?)+$&quot;</span> [NC]</a>
+<a class="sourceLine" id="cb20-4" title="4">    <span class="ex">RewriteCond</span> %<span class="dt">{SCRIPT_FILENAME}</span> -d [OR]</a>
+<a class="sourceLine" id="cb20-5" title="5">    <span class="ex">RewriteCond</span> %<span class="dt">{SCRIPT_FILENAME}</span> -f</a>
+<a class="sourceLine" id="cb20-6" title="6">    <span class="ex">RewriteRule</span> <span class="st">&quot;(^|/)\.&quot;</span> - [F]</a>
+<a class="sourceLine" id="cb20-7" title="7"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<h2 id="block-access-to-files-with-sensitive-information">Block access to files with sensitive information</h2>
+<p>Block access to backup and source files that may be left by some text editors and can pose a security risk when anyone has access to them.</p>
+<p>Update the <code>&lt;FilesMatch&gt;</code> regular expression in the following example to include any files that might end up on your production server and can expose sensitive information about your website. These files may include: configuration files or files that contain metadata about the project among others.</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb21-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_authz_core.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb21-2" title="2">  <span class="op">&lt;</span><span class="ex">FilesMatch</span> <span class="st">&quot;(^#.*#|\.(bak|conf|dist|fla|in[ci]|log|orig|psd|sh|sql|sw[op])|~)$&quot;</span><span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb21-3" title="3">    <span class="ex">Require</span> all denied</a>
+<a class="sourceLine" id="cb21-4" title="4">  <span class="op">&lt;</span>/<span class="ex">FilesMatch</span><span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb21-5" title="5"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<h2 id="http-strict-transport-security-hsts">HTTP Strict Transport Security (HSTS)</h2>
+<p>If a user types <code>example.com</code> in their browser, even if the server redirects them to the secure version of the website, that still leaves a window of opportunity (the initial HTTP connection) for an attacker to downgrade or redirect the request.</p>
+<p>The following header ensures that a browser only connects to your server via HTTPS, regardless of what the users type in the browser’s address bar.</p>
+<p>Be aware that Strict Transport Security is not revokable and you must ensure being able to serve the site over HTTPS for as long as you’ve specified in the <code>max-age</code> directive. If you don’t have a valid TLS connection anymore (e.g. due to an expired TLS certificate) your visitors will see an error message even when attempting to connect over HTTP.</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb22-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_headers.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb22-2" title="2">  <span class="co"># Header always set</span></a>
+<a class="sourceLine" id="cb22-3" title="3">  <span class="ex">Strict-Transport-Security</span> <span class="st">&quot;max-age=16070400; includeSubDomains&quot;</span> <span class="st">&quot;expr=%{HTTPS} == &#39;on&#39;&quot;</span></a>
+<a class="sourceLine" id="cb22-4" title="4">  <span class="co"># (1) Enable your site for HSTS preload inclusion.</span></a>
+<a class="sourceLine" id="cb22-5" title="5">  <span class="co"># Header always set</span></a>
+<a class="sourceLine" id="cb22-6" title="6">  <span class="ex">Strict-Transport-Security</span> <span class="st">&quot;max-age=31536000; includeSubDomains; preload&quot;</span> <span class="st">&quot;expr=%{HTTPS} == &#39;on&#39;&quot;</span></a>
+<a class="sourceLine" id="cb22-7" title="7"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<h2 id="prevent-some-browsers-from-mime-sniffing-the-response">Prevent some browsers from MIME-sniffing the response</h2>
+<ol type="1">
+<li><p>Restricts all fetches by default to the origin of the current website by setting the <code>default-src</code> directive to <code>'self'</code> - which acts as a fallback to all <a href="/en-US/docs/Glossary/Fetch_directive">Fetch directives</a>.</p>
+<ul>
+<li>This is convenient as you do not have to specify all Fetch directives that apply to your site, for example: <code>connect-src 'self'; font-src 'self'; script-src 'self'; style-src 'self'</code>, etc</li>
+<li>This restriction also means that you must explicitly define from which site(s) your website is allowed to load resources from, otherwise it will be restricted to the same origin as the page making the request</li>
+</ul></li>
+<li><p>Disallows the <code>&lt;base&gt;</code> element on the website. This is to prevent attackers from changing the locations of resources loaded from relative URLs</p>
+<ul>
+<li>If you want to use the <code>&lt;base&gt;</code> element, then use <code>base-uri 'self'</code> instead</li>
+</ul></li>
+<li>Only allows form submissions are from the current origin with: <code>form-action 'self'</code></li>
+<li><p>Prevents all websites (including your own) from embedding your webpages within e.g. the <code>&lt;iframe&gt;</code> or <code>&lt;object&gt;</code> element by setting: <code>frame-ancestors 'none'</code>.</p>
+<ul>
+<li>The <code>frame-ancestors</code>directive helps avoid <a href="/en-US/docs/Glossary/Clickjacking">clickjacking</a> attacks and is similar to the <code>X-Frame-Options</code> header</li>
+<li>Browsers that support the CSP header will ignore <code>X-Frame-Options</code> if <code>frame-ancestors</code> is also specified</li>
+</ul></li>
+<li><p>Forces the browser to treat all the resources that are served over HTTP as if they were loaded securely over HTTPS by setting the <code>upgrade-insecure-requests</code> directive</p>
+<ul>
+<li><strong><code>upgrade-insecure-requests</code> does not ensure HTTPS for the top-level navigation. If you want to force the website itself to be loaded over HTTPS you must include the <code>Strict-Transport-Security</code> header</strong></li>
+</ul></li>
+<li><p>Includes the <code>Content-Security-Policy</code> header in all responses that are able to execute scripting. This includes the commonly used file types: HTML, XML and PDF documents. Although Javascript files can not execute scripts in a “browsing context”, they are included to target <a href="/en-US/docs/Web/HTTP/Headers/Content-Security-Policy#csp_in_workers">web workers</a></p></li>
+</ol>
+<p>Some older browsers would try and guess the content type of a resource, even when it isn’t properly set up on the server configuration. This reduces exposure to drive-by download attacks and cross-origin data leaks.</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb23-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_headers.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb23-2" title="2">    <span class="ex">Header</span> always set X-Content-Type-Options <span class="st">&quot;nosniff&quot;</span></a>
+<a class="sourceLine" id="cb23-3" title="3"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<h2 id="referrer-policy">Referrer Policy</h2>
+<p>We include the <code>Referrer-Policy</code> header in responses for resources that are able to request (or navigate to) other resources.</p>
+<p>This includes commonly used resource types: HTML, CSS, XML/SVG, PDF documents, scripts, and workers.</p>
+<p>To prevent referrer leakage entirely, specify the <code>no-referrer</code> value instead. Note that the effect could negatively impact analytics tools.</p>
+<p>Use services like the ones below to check your Referrer Policy:</p>
+<ul>
+<li><a href="https://securityheaders.com/">securityheaders.com</a></li>
+<li><a href="https://observatory.mozilla.org/">Mozilla Observatory</a></li>
+</ul>
+<div class="sourceCode" id="cb24"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb24-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_headers.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb24-2" title="2">  <span class="ex">Header</span> always set Referrer-Policy <span class="st">&quot;strict-origin-when-cross-origin&quot;</span> <span class="st">&quot;expr=%{CONTENT_TYPE} =~ m#text\/(css|html|javascript)|application\/pdf|xml#i&quot;</span></a>
+<a class="sourceLine" id="cb24-3" title="3"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<h2 id="disable-trace-http-method">Disable TRACE HTTP Method</h2>
+<p>The <a href="/en-US/docs/Web/HTTP/Methods/TRACE">TRACE</a> method, while seemingly harmless, can be successfully leveraged in some scenarios to steal legitimate users’ credentials. See <a href="https://www.owasp.org/index.php/Cross_Site_Tracing">A Cross-Site Tracing (XST) attack</a> and <a href="https://www.owasp.org/index.php/Test_HTTP_Methods_(OTG-CONFIG-006)">OWASP Web Security Testing Guide</a></p>
+<p>Modern browsers now prevent TRACE requests made via JavaScript, however, other ways of sending TRACE requests with browsers have been discovered, such as using Java.</p>
+<p>If you have access to the main server configuration file, use the <a href="https://httpd.apache.org/docs/current/mod/core.html#traceenable"><code>TraceEnable</code></a> directive instead.</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb25-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_rewrite.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb25-2" title="2">  <span class="ex">RewriteEngine</span> On</a>
+<a class="sourceLine" id="cb25-3" title="3">  <span class="ex">RewriteCond</span> %<span class="dt">{REQUEST_METHOD}</span> ^TRACE [NC]</a>
+<a class="sourceLine" id="cb25-4" title="4">  <span class="ex">RewriteRule</span> .* - [R=405,L]</a>
+<a class="sourceLine" id="cb25-5" title="5"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<h2 id="remove-the-x-powered-by-response-header">Remove the X-Powered-By response header</h2>
+<p>Some frameworks like PHP and ASP.NET set an <code>X-Powered-By</code> header that contains information about them (e.g.: their name, version number)</p>
+<p>This header doesn’t provide any value, and in some cases, the information it provides can expose vulnerabilities</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb26-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_headers.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb26-2" title="2">  <span class="ex">Header</span> unset X-Powered-By</a>
+<a class="sourceLine" id="cb26-3" title="3">  <span class="ex">Header</span> always unset X-Powered-By</a>
+<a class="sourceLine" id="cb26-4" title="4"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<p>If you can, you should disable the <code>X-Powered-By</code> header from the language/framework level (e.g.: for PHP, you can do that by setting the following in <code>php.ini</code>.</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode php"><code class="sourceCode php"><a class="sourceLine" id="cb27-1" title="1">expose_php = off<span class="ot">;</span></a></code></pre></div>
+<h2 id="remove-apache-generated-server-information-footer">Remove Apache-generated Server Information Footer</h2>
+<p>Prevent Apache from adding a trailing footer line containing information about the server to the server-generated documents (e.g.: error messages, directory listings, etc.). See <a href="https://httpd.apache.org/docs/current/mod/core.html#serversignature">ServerSignature Directive</a> for more information on what the server signature provides and the <a href="https://httpd.apache.org/docs/current/mod/core.html#servertokens">ServerTokens Directive</a> for information about configuring the information provided in the signature.</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb28-1" title="1"><span class="ex">ServerSignature</span> Off</a></code></pre></div>
+<h2 id="fix-broken-acceptencoding-headers">Fix broken AcceptEncoding Headers</h2>
+<p>Some proxies and security software mangle or strip the <code>Accept-Encoding</code> HTTP header. See <a href="https://calendar.perfplanet.com/2010/pushing-beyond-gzipping/">Pushing Beyond Gzipping</a> for a more detailed explanation.</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb29-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_deflate.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb29-2" title="2">  <span class="op">&lt;</span><span class="ex">IfModule</span> mod_setenvif.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb29-3" title="3">    <span class="op">&lt;</span><span class="ex">IfModule</span> mod_headers.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb29-4" title="4">      <span class="ex">SetEnvIfNoCase</span> ^(Accept-EncodXng<span class="kw">|</span><span class="ex">X-cept-Encoding</span><span class="kw">|</span><span class="ex">X</span><span class="dt">{15}</span><span class="kw">|</span><span class="ex">~</span><span class="dt">{15}</span><span class="kw">|</span><span class="ex">-</span><span class="dt">{15}</span>)$ ^<span class="kw">((</span>gzip|deflate)\s*,?\s*)+|[X~-]<span class="dt">{4,13}</span>$ HAVE_Accept-Encoding</a>
+<a class="sourceLine" id="cb29-5" title="5">      RequestHeader append Accept-Encoding <span class="st">&quot;gzip,deflate&quot;</span> env=HAVE_Accept-Encoding</a>
+<a class="sourceLine" id="cb29-6" title="6">    &lt;/IfModule&gt;</a>
+<a class="sourceLine" id="cb29-7" title="7">  &lt;/IfModule&gt;</a>
+<a class="sourceLine" id="cb29-8" title="8">&lt;/IfModule&gt;</a></code></pre></div>
+<h2 id="compress-media-types">Compress media types</h2>
+<p>Compress all output labeled with one of the following media types using the <a href="https://httpd.apache.org/docs/current/mod/mod_filter.html#addoutputfilterbytype">AddOutputFilterByType Directive</a>.</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb30-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_deflate.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb30-2" title="2">  <span class="op">&lt;</span><span class="ex">IfModule</span> mod_filter.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb30-3" title="3">    <span class="ex">AddOutputFilterByType</span> DEFLATE <span class="st">&quot;application/atom+xml&quot;</span> \</a>
+<a class="sourceLine" id="cb30-4" title="4">      <span class="st">&quot;application/javascript&quot;</span> \</a>
+<a class="sourceLine" id="cb30-5" title="5">      <span class="st">&quot;application/json&quot;</span> \</a>
+<a class="sourceLine" id="cb30-6" title="6">      <span class="st">&quot;application/ld+json&quot;</span> \</a>
+<a class="sourceLine" id="cb30-7" title="7">      <span class="st">&quot;application/manifest+json&quot;</span> \</a>
+<a class="sourceLine" id="cb30-8" title="8">      <span class="st">&quot;application/rdf+xml&quot;</span> \</a>
+<a class="sourceLine" id="cb30-9" title="9">      <span class="st">&quot;application/rss+xml&quot;</span> \</a>
+<a class="sourceLine" id="cb30-10" title="10">      <span class="st">&quot;application/schema+json&quot;</span> \</a>
+<a class="sourceLine" id="cb30-11" title="11">      <span class="st">&quot;application/geo+json&quot;</span> \</a>
+<a class="sourceLine" id="cb30-12" title="12">      <span class="st">&quot;application/vnd.ms-fontobject&quot;</span> \</a>
+<a class="sourceLine" id="cb30-13" title="13">      <span class="st">&quot;application/wasm&quot;</span> \</a>
+<a class="sourceLine" id="cb30-14" title="14">      <span class="st">&quot;application/x-font-ttf&quot;</span> \</a>
+<a class="sourceLine" id="cb30-15" title="15">      <span class="st">&quot;application/x-javascript&quot;</span> \</a>
+<a class="sourceLine" id="cb30-16" title="16">      <span class="st">&quot;application/x-web-app-manifest+json&quot;</span> \</a>
+<a class="sourceLine" id="cb30-17" title="17">      <span class="st">&quot;application/xhtml+xml&quot;</span> \</a>
+<a class="sourceLine" id="cb30-18" title="18">      <span class="st">&quot;application/xml&quot;</span> \</a>
+<a class="sourceLine" id="cb30-19" title="19">      <span class="st">&quot;font/eot&quot;</span> \</a>
+<a class="sourceLine" id="cb30-20" title="20">      <span class="st">&quot;font/opentype&quot;</span> \</a>
+<a class="sourceLine" id="cb30-21" title="21">      <span class="st">&quot;font/otf&quot;</span> \</a>
+<a class="sourceLine" id="cb30-22" title="22">      <span class="st">&quot;font/ttf&quot;</span> \</a>
+<a class="sourceLine" id="cb30-23" title="23">      <span class="st">&quot;image/bmp&quot;</span> \</a>
+<a class="sourceLine" id="cb30-24" title="24">      <span class="st">&quot;image/svg+xml&quot;</span> \</a>
+<a class="sourceLine" id="cb30-25" title="25">      <span class="st">&quot;image/vnd.microsoft.icon&quot;</span> \</a>
+<a class="sourceLine" id="cb30-26" title="26">      <span class="st">&quot;text/cache-manifest&quot;</span> \</a>
+<a class="sourceLine" id="cb30-27" title="27">      <span class="st">&quot;text/calendar&quot;</span> \</a>
+<a class="sourceLine" id="cb30-28" title="28">      <span class="st">&quot;text/css&quot;</span> \</a>
+<a class="sourceLine" id="cb30-29" title="29">      <span class="st">&quot;text/html&quot;</span> \</a>
+<a class="sourceLine" id="cb30-30" title="30">      <span class="st">&quot;text/javascript&quot;</span> \</a>
+<a class="sourceLine" id="cb30-31" title="31">      <span class="st">&quot;text/plain&quot;</span> \</a>
+<a class="sourceLine" id="cb30-32" title="32">      <span class="st">&quot;text/markdown&quot;</span> \</a>
+<a class="sourceLine" id="cb30-33" title="33">      <span class="st">&quot;text/vcard&quot;</span> \</a>
+<a class="sourceLine" id="cb30-34" title="34">      <span class="st">&quot;text/vnd.rim.location.xloc&quot;</span> \</a>
+<a class="sourceLine" id="cb30-35" title="35">      <span class="st">&quot;text/vtt&quot;</span> \</a>
+<a class="sourceLine" id="cb30-36" title="36">      <span class="st">&quot;text/x-component&quot;</span> \</a>
+<a class="sourceLine" id="cb30-37" title="37">      <span class="st">&quot;text/x-cross-domain-policy&quot;</span> \</a>
+<a class="sourceLine" id="cb30-38" title="38">      <span class="st">&quot;text/xml&quot;</span></a>
+<a class="sourceLine" id="cb30-39" title="39">  <span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb30-40" title="40"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<h2 id="map-extensions-to-media-types">Map extensions to media types</h2>
+<p>Map the following filename extensions to the specified encoding type using <a href="https://httpd.apache.org/docs/current/mod/mod_mime.html#addencoding">AddEncoding</a> so Apache can serve the file types with the appropriate <code>Content-Encoding</code> response header (this will NOT make Apache compress them!). If these files types would be served without an appropriate <code>Content-Encoding</code> response header, client applications (e.g.: browsers) wouldn’t know that they first need to uncompress the response, and thus, wouldn’t be able to understand the content.</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb31-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_deflate.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb31-2" title="2">  <span class="op">&lt;</span><span class="ex">IfModule</span> mod_mime.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb31-3" title="3">    <span class="ex">AddEncoding</span> gzip svgz</a>
+<a class="sourceLine" id="cb31-4" title="4">  <span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb31-5" title="5"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>
+<h2 id="cache-expiration">Cache expiration</h2>
+<p>Serve resources with a far-future expiration date using the <a href="https://httpd.apache.org/docs/current/mod/mod_expires.html">mod_expires</a> module, and <a href="/en-US/docs/Web/HTTP/Headers/Cache-Control">Cache-Control</a> and <a href="/en-US/docs/Web/HTTP/Headers/Expires">Expires</a> headers.</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb32-1" title="1"><span class="op">&lt;</span><span class="ex">IfModule</span> mod_expires.c<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb32-2" title="2">    <span class="ex">ExpiresActive</span> on</a>
+<a class="sourceLine" id="cb32-3" title="3">    <span class="ex">ExpiresDefault</span>                                      <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-4" title="4"></a>
+<a class="sourceLine" id="cb32-5" title="5">  <span class="co"># CSS</span></a>
+<a class="sourceLine" id="cb32-6" title="6">    <span class="ex">ExpiresByType</span> text/css                              <span class="st">&quot;access plus 1 year&quot;</span></a>
+<a class="sourceLine" id="cb32-7" title="7">  <span class="co"># Data interchange</span></a>
+<a class="sourceLine" id="cb32-8" title="8">    <span class="ex">ExpiresByType</span> application/atom+xml                  <span class="st">&quot;access plus 1 hour&quot;</span></a>
+<a class="sourceLine" id="cb32-9" title="9">    <span class="ex">ExpiresByType</span> application/rdf+xml                   <span class="st">&quot;access plus 1 hour&quot;</span></a>
+<a class="sourceLine" id="cb32-10" title="10">    <span class="ex">ExpiresByType</span> application/rss+xml                   <span class="st">&quot;access plus 1 hour&quot;</span></a>
+<a class="sourceLine" id="cb32-11" title="11">    <span class="ex">ExpiresByType</span> application/json                      <span class="st">&quot;access plus 0 seconds&quot;</span></a>
+<a class="sourceLine" id="cb32-12" title="12">    <span class="ex">ExpiresByType</span> application/ld+json                   <span class="st">&quot;access plus 0 seconds&quot;</span></a>
+<a class="sourceLine" id="cb32-13" title="13">    <span class="ex">ExpiresByType</span> application/schema+json               <span class="st">&quot;access plus 0 seconds&quot;</span></a>
+<a class="sourceLine" id="cb32-14" title="14">    <span class="ex">ExpiresByType</span> application/geo+json                  <span class="st">&quot;access plus 0 seconds&quot;</span></a>
+<a class="sourceLine" id="cb32-15" title="15">    <span class="ex">ExpiresByType</span> application/xml                       <span class="st">&quot;access plus 0 seconds&quot;</span></a>
+<a class="sourceLine" id="cb32-16" title="16">    <span class="ex">ExpiresByType</span> text/calendar                         <span class="st">&quot;access plus 0 seconds&quot;</span></a>
+<a class="sourceLine" id="cb32-17" title="17">    <span class="ex">ExpiresByType</span> text/xml                              <span class="st">&quot;access plus 0 seconds&quot;</span></a>
+<a class="sourceLine" id="cb32-18" title="18">  <span class="co"># Favicon (cannot be renamed!) and cursor images</span></a>
+<a class="sourceLine" id="cb32-19" title="19">    <span class="ex">ExpiresByType</span> image/vnd.microsoft.icon              <span class="st">&quot;access plus 1 week&quot;</span></a>
+<a class="sourceLine" id="cb32-20" title="20">    <span class="ex">ExpiresByType</span> image/x-icon                          <span class="st">&quot;access plus 1 week&quot;</span></a>
+<a class="sourceLine" id="cb32-21" title="21">  <span class="co"># HTML</span></a>
+<a class="sourceLine" id="cb32-22" title="22">    <span class="ex">ExpiresByType</span> text/html                             <span class="st">&quot;access plus 0 seconds&quot;</span></a>
+<a class="sourceLine" id="cb32-23" title="23">  <span class="co"># JavaScript</span></a>
+<a class="sourceLine" id="cb32-24" title="24">    <span class="ex">ExpiresByType</span> text/javascript                       <span class="st">&quot;access plus 1 year&quot;</span></a>
+<a class="sourceLine" id="cb32-25" title="25">  <span class="co"># Manifest files</span></a>
+<a class="sourceLine" id="cb32-26" title="26">    <span class="ex">ExpiresByType</span> application/manifest+json             <span class="st">&quot;access plus 1 week&quot;</span></a>
+<a class="sourceLine" id="cb32-27" title="27">    <span class="ex">ExpiresByType</span> application/x-web-app-manifest+json   <span class="st">&quot;access plus 0 seconds&quot;</span></a>
+<a class="sourceLine" id="cb32-28" title="28">    <span class="ex">ExpiresByType</span> text/cache-manifest                   <span class="st">&quot;access plus 0 seconds&quot;</span></a>
+<a class="sourceLine" id="cb32-29" title="29">  <span class="co"># Markdown</span></a>
+<a class="sourceLine" id="cb32-30" title="30">    <span class="ex">ExpiresByType</span> text/markdown                         <span class="st">&quot;access plus 0 seconds&quot;</span></a>
+<a class="sourceLine" id="cb32-31" title="31">  <span class="co"># Media files</span></a>
+<a class="sourceLine" id="cb32-32" title="32">    <span class="ex">ExpiresByType</span> audio/ogg                             <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-33" title="33">    <span class="ex">ExpiresByType</span> image/bmp                             <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-34" title="34">    <span class="ex">ExpiresByType</span> image/gif                             <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-35" title="35">    <span class="ex">ExpiresByType</span> image/jpeg                            <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-36" title="36">    <span class="ex">ExpiresByType</span> image/svg+xml                         <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-37" title="37">    <span class="ex">ExpiresByType</span> image/webp                            <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-38" title="38">    <span class="co"># PNG and animated PNG</span></a>
+<a class="sourceLine" id="cb32-39" title="39">    <span class="ex">ExpiresByType</span> image/apng                            <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-40" title="40">    <span class="ex">ExpiresByType</span> image/png                             <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-41" title="41">    <span class="co"># HEIF Images</span></a>
+<a class="sourceLine" id="cb32-42" title="42">    <span class="ex">ExpiresByType</span> image/heic                            <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-43" title="43">    <span class="ex">ExpiresByType</span> image/heif                            <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-44" title="44">    <span class="co"># HEIF Image Sequence</span></a>
+<a class="sourceLine" id="cb32-45" title="45">    <span class="ex">ExpiresByType</span> image/heics                           <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-46" title="46">    <span class="ex">ExpiresByType</span> image/heifs                           <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-47" title="47">    <span class="co"># AVIF Images</span></a>
+<a class="sourceLine" id="cb32-48" title="48">    <span class="ex">ExpiresByType</span> image/avif                            <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-49" title="49">    <span class="co"># AVIF Image Sequence</span></a>
+<a class="sourceLine" id="cb32-50" title="50">    <span class="ex">ExpiresByType</span> image/avis                            <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-51" title="51">    <span class="ex">ExpiresByType</span> video/mp4                             <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-52" title="52">    <span class="ex">ExpiresByType</span> video/ogg                             <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-53" title="53">    <span class="ex">ExpiresByType</span> video/webm                            <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-54" title="54">  <span class="co"># WebAssembly</span></a>
+<a class="sourceLine" id="cb32-55" title="55">    <span class="ex">ExpiresByType</span> application/wasm                      <span class="st">&quot;access plus 1 year&quot;</span></a>
+<a class="sourceLine" id="cb32-56" title="56">  <span class="co"># Web fonts</span></a>
+<a class="sourceLine" id="cb32-57" title="57">    <span class="co"># Collection</span></a>
+<a class="sourceLine" id="cb32-58" title="58">    <span class="ex">ExpiresByType</span> font/collection                       <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-59" title="59">    <span class="co"># Embedded OpenType (EOT)</span></a>
+<a class="sourceLine" id="cb32-60" title="60">    <span class="ex">ExpiresByType</span> application/vnd.ms-fontobject         <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-61" title="61">    <span class="ex">ExpiresByType</span> font/eot                              <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-62" title="62">    <span class="co"># OpenType</span></a>
+<a class="sourceLine" id="cb32-63" title="63">    <span class="ex">ExpiresByType</span> font/opentype                         <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-64" title="64">    <span class="ex">ExpiresByType</span> font/otf                              <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-65" title="65">    <span class="co"># TrueType</span></a>
+<a class="sourceLine" id="cb32-66" title="66">    <span class="ex">ExpiresByType</span> application/x-font-ttf                <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-67" title="67">    <span class="ex">ExpiresByType</span> font/ttf                              <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-68" title="68">    <span class="co"># Web Open Font Format (WOFF) 1.0</span></a>
+<a class="sourceLine" id="cb32-69" title="69">    <span class="ex">ExpiresByType</span> application/font-woff                 <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-70" title="70">    <span class="ex">ExpiresByType</span> application/x-font-woff               <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-71" title="71">    <span class="ex">ExpiresByType</span> font/woff                             <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-72" title="72">    <span class="co"># Web Open Font Format (WOFF) 2.0</span></a>
+<a class="sourceLine" id="cb32-73" title="73">    <span class="ex">ExpiresByType</span> application/font-woff2                <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-74" title="74">    <span class="ex">ExpiresByType</span> font/woff2                            <span class="st">&quot;access plus 1 month&quot;</span></a>
+<a class="sourceLine" id="cb32-75" title="75">  <span class="co"># Other</span></a>
+<a class="sourceLine" id="cb32-76" title="76">    <span class="ex">ExpiresByType</span> text/x-cross-domain-policy            <span class="st">&quot;access plus 1 week&quot;</span></a>
+<a class="sourceLine" id="cb32-77" title="77"><span class="op">&lt;</span>/<span class="ex">IfModule</span><span class="op">&gt;</span></a></code></pre></div>

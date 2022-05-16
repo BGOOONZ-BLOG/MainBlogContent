@@ -1,0 +1,65 @@
+<h2 id="bookinstance-detail-page">BookInstance detail page</h2>
+<p>The <code>BookInstance</code> detail page needs to display the information for each <code>BookInstance</code>, identified using its (automatically generated) <code>_id</code> field value. This will include the <code>Book</code> name (as a link to the <em>Book detail page</em>) along with other information in the record.</p>
+<h3 id="controller">Controller</h3>
+<p>Open <strong>/controllers/bookinstanceController.js</strong>. Find the exported <code>bookinstance_detail()</code> controller method and replace it with the following code.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="co">// Display detail page for a specific BookInstance.</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="va">exports</span>.<span class="at">bookinstance_detail</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res<span class="op">,</span> next) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-3" title="3"></a>
+<a class="sourceLine" id="cb1-4" title="4">    <span class="va">BookInstance</span>.<span class="at">findById</span>(<span class="va">req</span>.<span class="va">params</span>.<span class="at">id</span>)</a>
+<a class="sourceLine" id="cb1-5" title="5">  <span class="va"> </span> .<span class="at">populate</span>(<span class="st">&#39;book&#39;</span>)</a>
+<a class="sourceLine" id="cb1-6" title="6">  <span class="va"> </span> .<span class="at">exec</span>(<span class="kw">function</span> (err<span class="op">,</span> bookinstance) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-7" title="7">      <span class="cf">if</span> (err) <span class="op">{</span> <span class="cf">return</span> <span class="at">next</span>(err)<span class="op">;</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-8" title="8">      <span class="cf">if</span> (bookinstance<span class="op">==</span><span class="kw">null</span>) <span class="op">{</span> <span class="co">// No results.</span></a>
+<a class="sourceLine" id="cb1-9" title="9">          <span class="kw">var</span> err <span class="op">=</span> <span class="kw">new</span> <span class="at">Error</span>(<span class="st">&#39;Book copy not found&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-10" title="10">          <span class="va">err</span>.<span class="at">status</span> <span class="op">=</span> <span class="dv">404</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-11" title="11">          <span class="cf">return</span> <span class="at">next</span>(err)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-12" title="12">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-13" title="13">      <span class="co">// Successful, so render.</span></a>
+<a class="sourceLine" id="cb1-14" title="14">      <span class="va">res</span>.<span class="at">render</span>(<span class="st">&#39;bookinstance_detail&#39;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">title</span><span class="op">:</span> <span class="st">&#39;Copy: &#39;</span><span class="op">+</span><span class="va">bookinstance</span>.<span class="va">book</span>.<span class="at">title</span><span class="op">,</span> <span class="dt">bookinstance</span><span class="op">:</span>  bookinstance<span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-15" title="15">    <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb1-16" title="16"></a>
+<a class="sourceLine" id="cb1-17" title="17"><span class="op">};</span></a></code></pre></div>
+<p>The method calls <code>BookInstance.findById()</code> with the ID of a specific book instance extracted from the URL (using the route), and accessed within the controller via the request parameters: <code>req.params.id</code>). It then calls <code>populate()</code> to get the details of the associated <code>Book</code>.</p>
+<h3 id="view">View</h3>
+<p>Create <strong>/views/bookinstance_detail.pug</strong> and copy in the content below.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">extends</span> layout</a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3">block content</a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5">  h1 ID<span class="op">:</span> #<span class="op">{</span><span class="va">bookinstance</span>.<span class="at">_id</span><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-6" title="6"></a>
+<a class="sourceLine" id="cb2-7" title="7">  p #[strong Title<span class="op">:</span>]</a>
+<a class="sourceLine" id="cb2-8" title="8">    <span class="at">a</span>(href<span class="op">=</span><span class="va">bookinstance</span>.<span class="va">book</span>.<span class="at">url</span>) #<span class="op">{</span><span class="va">bookinstance</span>.<span class="va">book</span>.<span class="at">title</span><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-9" title="9">  p #[strong Imprint<span class="op">:</span>] #<span class="op">{</span><span class="va">bookinstance</span>.<span class="at">imprint</span><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-10" title="10"></a>
+<a class="sourceLine" id="cb2-11" title="11">  p #[strong Status<span class="op">:</span>]</a>
+<a class="sourceLine" id="cb2-12" title="12">    <span class="cf">if</span> <span class="va">bookinstance</span>.<span class="at">status</span><span class="op">==</span><span class="st">&#39;Available&#39;</span></a>
+<a class="sourceLine" id="cb2-13" title="13">      <span class="va">span</span>.<span class="at">text</span><span class="op">-</span>success #<span class="op">{</span><span class="va">bookinstance</span>.<span class="at">status</span><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-14" title="14">    <span class="cf">else</span> <span class="cf">if</span> <span class="va">bookinstance</span>.<span class="at">status</span><span class="op">==</span><span class="st">&#39;Maintenance&#39;</span></a>
+<a class="sourceLine" id="cb2-15" title="15">      <span class="va">span</span>.<span class="at">text</span><span class="op">-</span>danger #<span class="op">{</span><span class="va">bookinstance</span>.<span class="at">status</span><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-16" title="16">    <span class="cf">else</span></a>
+<a class="sourceLine" id="cb2-17" title="17">      <span class="va">span</span>.<span class="at">text</span><span class="op">-</span>warning #<span class="op">{</span><span class="va">bookinstance</span>.<span class="at">status</span><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-18" title="18"></a>
+<a class="sourceLine" id="cb2-19" title="19">  <span class="cf">if</span> <span class="va">bookinstance</span>.<span class="at">status</span><span class="op">!=</span><span class="st">&#39;Available&#39;</span></a>
+<a class="sourceLine" id="cb2-20" title="20">    p #[strong Due back<span class="op">:</span>] #<span class="op">{</span><span class="va">bookinstance</span>.<span class="at">due_back</span><span class="op">}</span></a></code></pre></div>
+<p>Everything in this template has been demonstrated in previous sections.</p>
+<h3 id="what-does-it-look-like">What does it look like?</h3>
+<p>Run the application and open your browser to <a href="http://localhost:3000/" class="uri">http://localhost:3000/</a>. Select the <em>All book-instances</em> link, then select one of the items. If everything is set up correctly, your site should look something like the following screenshot.</p>
+<figure>
+<img src="locallibary_express_bookinstance_detail.png" alt="BookInstance Detail Page - Express Local Library site" /><figcaption>BookInstance Detail Page - Express Local Library site</figcaption>
+</figure>
+<h2 id="challenge">Challenge</h2>
+<p>Currently most <em>dates</em> displayed on the site use the default JavaScript format (e.g. <em>Tue Oct 06 2020 15:49:58 GMT+1100 (AUS Eastern Daylight Time))</em>. The challenge for this article is to improve the appearance of the date display for <code>Author</code> lifespan information (date of death/birth) and for <em>BookInstance detail</em> pages to use the format: Oct 6th, 2016.</p>
+<blockquote>
+<p><strong>Note:</strong> You can use the <a href="#">same approach</a> as we used for the <em>Book Instance List</em> (adding the virtual property for the lifespan to the <code>Author</code> model and use <a href="https://www.npmjs.com/package/luxon">luxon</a> to format the date strings).</p>
+</blockquote>
+<p>To complete this challenge, you must:</p>
+<ol type="1">
+<li>Replace the variable <code>due_back</code> with <code>due_back_formatted</code> in the <em>BookInstance detail</em> page.</li>
+<li>Update the <code>Author</code> model to add a lifespan virtual property. The lifespan should look like: <em>date_of_birth - date_of_death</em>, where both values have the same date format as <code>BookInstance.due_back_formatted</code>.</li>
+<li>Use <code>Author.lifespan</code> in all views where you currently explicitly use <code>date_of_birth</code> and <code>date_of_death</code>.</li>
+</ol>
+<h2 id="next-steps">Next steps</h2>
+<ul>
+<li>Return to <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/Displaying_data#displaying_library_data_tutorial_subarticles">Express Tutorial Part 5: Displaying library data</a>.</li>
+</ul>

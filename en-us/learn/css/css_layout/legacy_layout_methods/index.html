@@ -1,0 +1,395 @@
+<p>{{LearnSidebar}}</p>
+<p>{{PreviousMenuNext(“Learn/CSS/CSS_layout/Media_queries”, “Learn/CSS/CSS_layout/Supporting_Older_Browsers”, “Learn/CSS/CSS_layout”)}}</p>
+<p>Grid systems are a very common feature used in CSS layouts, and before CSS Grid Layout they tended to be implemented using floats or other layout features. You imagine your layout as a set number of columns (e.g. 4, 6, or 12), and then fit your content columns inside these imaginary columns. In this article we’ll explore how these older methods work, in order that you understand how they were used if you work on an older project.</p>
+<table>
+<tbody>
+<tr>
+<th scope="row">
+Prerequisites:
+</th>
+<td>
+HTML basics (study <a href="/en-US/docs/Learn/HTML/Introduction_to_HTML"
+          >Introduction to HTML</a
+        >), and an idea of how CSS works (study <a href="/en-US/docs/Learn/CSS/First_steps">Introduction to CSS</a> and <a href="/en-US/docs/Learn/CSS/Building_blocks">Styling boxes</a>.)
+</td>
+</tr>
+<tr>
+<th scope="row">
+Objective:
+</th>
+<td>
+To understand the fundamental concepts behind the grid layout systems used prior to CSS Grid Layout being available in browsers.
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="layout-and-grid-systems-before-css-grid-layout">Layout and grid systems before CSS Grid Layout</h2>
+<p>It may seem surprising to anyone coming from a design background that CSS didn’t have an inbuilt grid system until very recently, and instead we seemed to be using a variety of sub-optimal methods to create grid-like designs. We now refer to these as “legacy” methods.</p>
+<p>For new projects, in most cases CSS Grid Layout will be used in combination with one or more other modern layout methods to form the basis for any layout. You will however encounter “grid systems” using these legacy methods from time to time. It is worth understanding how they work, and why they are different to CSS Grid Layout.</p>
+<p>This lesson will explain how grid systems and grid frameworks based on floats and flexbox work. Having studied Grid Layout you will probably be surprised how complicated this all seems! This knowledge will be helpful to you if you need to create fallback code for browsers that do not support newer methods, in addition to allowing you to work on existing projects which use these types of systems.</p>
+<p>It is worth bearing in mind, as we explore these systems, that none of them actually create a grid in the way that CSS Grid Layout creates a grid. They work by giving items a size, and pushing them around to line them up in a way that <em>looks</em> like a grid.</p>
+<h2 id="a-two-column-layout">A two column layout</h2>
+<p>Let’s start with the simplest possible example — a two column layout. You can follow along by creating a new <code>index.html</code> file on your computer, filling it with a <a href="https://github.com/mdn/learning-area/blob/master/html/introduction-to-html/getting-started/index.html">simple HTML template</a>, and inserting the below code into it at the appropriate places. At the bottom of the section you can see a live example of what the final code should look like.</p>
+<p>First of all, we need some content to put into our columns. Replace whatever is inside the body currently with the following:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">&lt;h1&gt;</span>2 column layout example<span class="kw">&lt;/h1&gt;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">&lt;div&gt;</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="kw">&lt;h2&gt;</span>First column<span class="kw">&lt;/h2&gt;</span></a>
+<a class="sourceLine" id="cb1-4" title="4">  <span class="kw">&lt;p&gt;</span> Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla luctus aliquam dolor, eu lacinia lorem placerat vulputate. Duis felis orci, pulvinar id metus ut, rutrum luctus orci. Cras porttitor imperdiet nunc, at ultricies tellus laoreet sit amet. Sed auctor cursus massa at porta. Integer ligula ipsum, tristique sit amet orci vel, viverra egestas ligula. Curabitur vehicula tellus neque, ac ornare ex malesuada et. In vitae convallis lacus. Aliquam erat volutpat. Suspendisse ac imperdiet turpis. Aenean finibus sollicitudin eros pharetra congue. Duis ornare egestas augue ut luctus. Proin blandit quam nec lacus varius commodo et a urna. Ut id ornare felis, eget fermentum sapien.<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb1-6" title="6"></a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="kw">&lt;div&gt;</span></a>
+<a class="sourceLine" id="cb1-8" title="8">  <span class="kw">&lt;h2&gt;</span>Second column<span class="kw">&lt;/h2&gt;</span></a>
+<a class="sourceLine" id="cb1-9" title="9">  <span class="kw">&lt;p&gt;</span>Nam vulputate diam nec tempor bibendum. Donec luctus augue eget malesuada ultrices. Phasellus turpis est, posuere sit amet dapibus ut, facilisis sed est. Nam id risus quis ante semper consectetur eget aliquam lorem. Vivamus tristique elit dolor, sed pretium metus suscipit vel. Mauris ultricies lectus sed lobortis finibus. Vivamus eu urna eget velit cursus viverra quis vestibulum sem. Aliquam tincidunt eget purus in interdum. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb1-10" title="10"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<p>Each one of the columns needs an outer element to contain its content and let us manipulate all of it at once. In this example case we’ve chosen {{htmlelement(“div”)}}s, but you could choose something more semantically appropriate like {{htmlelement(“article”)}}s, {{htmlelement(“section”)}}s, and {{htmlelement(“aside”)}}, or whatever.</p>
+<p>Now for the CSS. First, of all, apply the following to your HTML to provide some basic setup:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb2-1" title="1">body {</a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">width</span>: <span class="dv">90</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="kw">max-width</span>: <span class="dv">900</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="kw">margin</span>: <span class="dv">0</span> <span class="bu">auto</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5">}</a></code></pre></div>
+<p>The body will be 90% of the viewport wide until it gets to 900px wide, in which case it will stay fixed at this width and center itself in the viewport. By default, its children (the {{htmlelement(“h1”)}} and the two {{htmlelement(“div”)}}s) will span 100% of the width of the body. If we want the two {{htmlelement(“div”)}}s to be floated alongside one another, we need to set their widths to total 100% of the width of their parent element or smaller so they can fit alongside one another. Add the following to the bottom of your CSS:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb3-1" title="1">div<span class="in">:nth-of-type(1)</span> {</a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">width</span>: <span class="dv">48</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">}</a>
+<a class="sourceLine" id="cb3-4" title="4"></a>
+<a class="sourceLine" id="cb3-5" title="5">div<span class="in">:nth-of-type(2)</span> {</a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="kw">width</span>: <span class="dv">48</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">}</a></code></pre></div>
+<p>Here we’ve set both to be 48% of their parent’s width — this totals 96%, leaving us 4% free to act as a gutter between the two columns, giving the content some space to breathe. Now we just need to float the columns, like so:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb4-1" title="1">div<span class="in">:nth-of-type(1)</span> {</a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="kw">width</span>: <span class="dv">48</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3">  <span class="kw">float</span>: <span class="dv">left</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-4" title="4">}</a>
+<a class="sourceLine" id="cb4-5" title="5"></a>
+<a class="sourceLine" id="cb4-6" title="6">div<span class="in">:nth-of-type(2)</span> {</a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="kw">width</span>: <span class="dv">48</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-8" title="8">  <span class="kw">float</span>: <span class="dv">right</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-9" title="9">}</a></code></pre></div>
+<p>Putting this all together should give us a result like so:</p>
+<p>{{ EmbedLiveSample(‘A_two_column_layout’, ‘100%’, 520) }}</p>
+<p>You’ll notice here that we are using percentages for all the widths — this is quite a good strategy, as it creates a <strong>liquid layout</strong>, one that adjusts to different screen sizes and keeps the same proportions for the column widths at smaller screen sizes. Try adjusting the width of your browser window to see for yourself. This is a valuable tool for responsive web design.</p>
+<blockquote>
+<p><strong>Note:</strong> You can see this example running at <a href="https://mdn.github.io/learning-area/css/css-layout/floats/0_two-column-layout.html">0_two-column-layout.html</a> (see also <a href="https://github.com/mdn/learning-area/blob/master/css/css-layout/floats/0_two-column-layout.html">the source code</a>).</p>
+</blockquote>
+<h2 id="creating-simple-legacy-grid-frameworks">Creating simple legacy grid frameworks</h2>
+<p>The majority of legacy frameworks use the behavior of the {{cssxref(“float”)}} property to float one column up next to another in order to create something that looks like a grid. Working through the process of creating a grid with floats shows you how this works and also introduces some more advanced concepts to build on the things you learned in the lesson on <a href="/en-US/docs/Learn/CSS/CSS_layout/Floats">floats and clearing</a>.</p>
+<p>The easiest type of grid framework to create is a fixed width one — we just need to work out how much total width we want our design to be, how many columns we want, and how wide the gutters and columns should be. If we instead decided to lay out our design on a grid with columns that grow and shrink according to browser width, we would need to calculate percentage widths for the columns and  gutters between them.</p>
+<p>In the next sections we will look at how to create both. We will create a 12 column grid — a very common choice that is seen to be very adaptable to different situations given that 12 is nicely divisible by 6, 4, 3, and 2.</p>
+<h3 id="a-simple-fixed-width-grid">A simple fixed width grid</h3>
+<p>Lets first create a grid system that uses fixed width columns.</p>
+<p>Start out by making a local copy of our sample <a href="https://github.com/mdn/learning-area/blob/master/css/css-layout/grids/simple-grid.html">simple-grid.html</a> file, which contains the following markup in its body.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;wrapper&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;row&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb5-3" title="3">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>1<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb5-4" title="4">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>2<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb5-5" title="5">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>3<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb5-6" title="6">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>4<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb5-7" title="7">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>5<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb5-8" title="8">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>6<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb5-9" title="9">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>7<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb5-10" title="10">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>8<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb5-11" title="11">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>9<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb5-12" title="12">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>10<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb5-13" title="13">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>11<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb5-14" title="14">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>12<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb5-15" title="15">  <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb5-16" title="16">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;row&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb5-17" title="17">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col span1&quot;</span><span class="kw">&gt;</span>13<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb5-18" title="18">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col span6&quot;</span><span class="kw">&gt;</span>14<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb5-19" title="19">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col span3&quot;</span><span class="kw">&gt;</span>15<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb5-20" title="20">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col span2&quot;</span><span class="kw">&gt;</span>16<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb5-21" title="21">  <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb5-22" title="22"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<p>The aim is to turn this into a demonstration grid of two rows on a twelve column grid — the top row demonstrating the size of the individual columns, the second row some different sized areas on the grid.</p>
+<p><img src="simple-grid-finished.png" /></p>
+<p>In the {{htmlelement(“style”)}} element, add the following code, which gives the wrapper container a width of 980 pixels, with padding on the right hand side of 20 pixels. This leaves us with 960 pixels for our total column/gutter widths — in this case, the padding is subtracted from the total content width because we have set {{cssxref(“box-sizing”)}} to <code>border-box</code> on all elements on the site (see <a href="/en-US/docs/Learn/CSS/Building_blocks/The_box_model#changing_the_box_model_completely">Changing the box model completely</a> for more explanation).</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb6-1" title="1"><span class="op">*</span> {</a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="kw">box-sizing</span>: <span class="dv">border-box</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-3" title="3">}</a>
+<a class="sourceLine" id="cb6-4" title="4"></a>
+<a class="sourceLine" id="cb6-5" title="5">body {</a>
+<a class="sourceLine" id="cb6-6" title="6">  <span class="kw">width</span>: <span class="dv">980</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-7" title="7">  <span class="kw">margin</span>: <span class="dv">0</span> <span class="bu">auto</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-8" title="8">}</a>
+<a class="sourceLine" id="cb6-9" title="9"></a>
+<a class="sourceLine" id="cb6-10" title="10"><span class="fu">.wrapper</span> {</a>
+<a class="sourceLine" id="cb6-11" title="11">  <span class="kw">padding-right</span>: <span class="dv">20</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-12" title="12">}</a></code></pre></div>
+<p>Now use the row container that is wrapped around each row of the grid to clear one row from another. Add the following rule below your previous one:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb7-1" title="1"><span class="fu">.row</span> {</a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="kw">clear</span>: <span class="dv">both</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb7-3" title="3">}</a></code></pre></div>
+<p>Applying this clearing means that we don’t need to completely fill each row with elements making the full twelve columns. The rows will remain separated, and not interfere with each other.</p>
+<p>The gutters between the columns are 20 pixels wide. We create these gutters as a margin on the left side of each column — including the first column, to balance out the 20 pixels of padding on the right hand side of the container. So we have 12 gutters in total — 12 x 20 = 240.</p>
+<p>We need to subtract that from our total width of 960 pixels, giving us 720 pixels for our columns. If we now divide that by 12, we know that each column should be 60 pixels wide.</p>
+<p>Our next step is to create a rule for the class <code>.col</code>,  floating it left, giving it a {{cssxref(“margin-left”)}} of 20 pixels to form the gutter, and a {{cssxref(“width”)}} of 60 pixels. Add the following rule to the bottom of your CSS:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb8-1" title="1"><span class="fu">.col</span> {</a>
+<a class="sourceLine" id="cb8-2" title="2">  <span class="kw">float</span>: <span class="dv">left</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-3" title="3">  <span class="kw">margin-left</span>: <span class="dv">20</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-4" title="4">  <span class="kw">width</span>: <span class="dv">60</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-5" title="5">  <span class="kw">background</span>: <span class="fu">rgb(</span><span class="dv">255</span><span class="op">,</span> <span class="dv">150</span><span class="op">,</span> <span class="dv">150</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-6" title="6">}</a></code></pre></div>
+<p>The top row of single columns will now lay out neatly as a grid.</p>
+<blockquote>
+<p><strong>Note:</strong> We’ve also given each column a light red color so you can see exactly how much space each one takes up.</p>
+</blockquote>
+<p>Layout containers that we want to span more than one column need to be given special classes to adjust their {{cssxref(“width”)}} values to the required number of columns (plus gutters in between). We need to create an additional class to allow containers to span 2 to 12 columns. Each width is the result of adding up the column width of that number of columns plus the gutter widths, which will always number one less than the number of columns.</p>
+<p>Add the following at the bottom of your CSS:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb9-1" title="1"><span class="co">/* Two column widths (120px) plus one gutter width (20px) */</span></a>
+<a class="sourceLine" id="cb9-2" title="2"><span class="fu">.col.span2</span> { <span class="kw">width</span>: <span class="dv">140</span><span class="dt">px</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb9-3" title="3"><span class="co">/* Three column widths (180px) plus two gutter widths (40px) */</span></a>
+<a class="sourceLine" id="cb9-4" title="4"><span class="fu">.col.span3</span> { <span class="kw">width</span>: <span class="dv">220</span><span class="dt">px</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb9-5" title="5"><span class="co">/* And so on... */</span></a>
+<a class="sourceLine" id="cb9-6" title="6"><span class="fu">.col.span4</span> { <span class="kw">width</span>: <span class="dv">300</span><span class="dt">px</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb9-7" title="7"><span class="fu">.col.span5</span> { <span class="kw">width</span>: <span class="dv">380</span><span class="dt">px</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb9-8" title="8"><span class="fu">.col.span6</span> { <span class="kw">width</span>: <span class="dv">460</span><span class="dt">px</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb9-9" title="9"><span class="fu">.col.span7</span> { <span class="kw">width</span>: <span class="dv">540</span><span class="dt">px</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb9-10" title="10"><span class="fu">.col.span8</span> { <span class="kw">width</span>: <span class="dv">620</span><span class="dt">px</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb9-11" title="11"><span class="fu">.col.span9</span> { <span class="kw">width</span>: <span class="dv">700</span><span class="dt">px</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb9-12" title="12"><span class="fu">.col.span10</span> { <span class="kw">width</span>: <span class="dv">780</span><span class="dt">px</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb9-13" title="13"><span class="fu">.col.span11</span> { <span class="kw">width</span>: <span class="dv">860</span><span class="dt">px</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb9-14" title="14"><span class="fu">.col.span12</span> { <span class="kw">width</span>: <span class="dv">940</span><span class="dt">px</span><span class="op">;</span> }</a></code></pre></div>
+<p>With these classes created we can now lay out different width columns on the grid. Try saving and loading the page in your browser to see the effects.</p>
+<blockquote>
+<p><strong>Note:</strong> If you are having trouble getting the above example to work, try comparing it against our <a href="https://github.com/mdn/learning-area/blob/master/css/css-layout/grids/simple-grid-finished.html">finished version</a> on GitHub (<a href="https://mdn.github.io/learning-area/css/css-layout/grids/simple-grid-finished.html">see it running live</a> also).</p>
+</blockquote>
+<p>Try modifying the classes on your elements or even adding and removing some containers, to see how you can vary the layout. For example, you could make the second row look like this:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb10-1" title="1">&lt;div class=&quot;row&quot;<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb10-2" title="2">  &lt;div class=&quot;col span8&quot;<span class="op">&gt;</span>13&lt;/div<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb10-3" title="3">  &lt;div class=&quot;col span4&quot;<span class="op">&gt;</span>14&lt;/div<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb10-4" title="4">&lt;/div<span class="op">&gt;</span></a></code></pre></div>
+<p>Now you’ve got a grid system working, you can define the rows and the number of columns in each row, then fill each container with your required content. Great!</p>
+<h3 id="creating-a-fluid-grid">Creating a fluid grid</h3>
+<p>Our grid works nicely, but it has a fixed width. We really want a flexible (fluid) grid that will grow and shrink with the available space in the browser {{Glossary(“viewport”)}}. To achieve this we can turn the reference pixel widths into percentages.</p>
+<p>The equation that turns a fixed width into a flexible percentage-based one is as follows.</p>
+<p>target / context = result</p>
+<p>For our column width, our <strong>target width</strong> is 60 pixels and our <strong>context</strong> is the 960 pixel wrapper. We can use the following to calculate a percentage.</p>
+<p>60 / 960 = 0.0625</p>
+<p>We then move the decimal point 2 places giving us a percentage of 6.25%. So, in our CSS we can replace the 60 pixel column width with 6.25%.</p>
+<p>We need to do the same with our gutter width:</p>
+<p>20 / 960 = 0.02083333333</p>
+<p>So we need to replace the 20 pixel {{cssxref(“margin-left”)}} on our <code>.col</code> rule and the 20 pixel {{cssxref(“padding-right”)}} on <code>.wrapper</code> with 2.08333333%.</p>
+<h4 id="updating-our-grid">Updating our grid</h4>
+<p>To get started in this section, make a new copy of your previous example page, or make a local copy of our <a href="https://github.com/mdn/learning-area/blob/master/css/css-layout/grids/simple-grid-finished.html">simple-grid-finished.html</a> code to use as a starting point.</p>
+<p>Update the second CSS rule (with the <code>.wrapper</code> selector) as follows:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb11-1" title="1">body {</a>
+<a class="sourceLine" id="cb11-2" title="2">  <span class="kw">width</span>: <span class="dv">90</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb11-3" title="3">  <span class="kw">max-width</span>: <span class="dv">980</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb11-4" title="4">  <span class="kw">margin</span>: <span class="dv">0</span> <span class="bu">auto</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb11-5" title="5">}</a>
+<a class="sourceLine" id="cb11-6" title="6"></a>
+<a class="sourceLine" id="cb11-7" title="7"><span class="fu">.wrapper</span> {</a>
+<a class="sourceLine" id="cb11-8" title="8">  <span class="kw">padding-right</span>: <span class="dv">2.08333333</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb11-9" title="9">}</a></code></pre></div>
+<p>Not only have we given it a percentage {{cssxref(“width”)}}, we have also added a {{cssxref(“max-width”)}} property in order to stop the layout becoming too wide.</p>
+<p>Next, update the fourth CSS rule (with the <code>.col</code> selector) like so:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb12-1" title="1"><span class="fu">.col</span> {</a>
+<a class="sourceLine" id="cb12-2" title="2">  <span class="kw">float</span>: <span class="dv">left</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-3" title="3">  <span class="kw">margin-left</span>: <span class="dv">2.08333333</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-4" title="4">  <span class="kw">width</span>: <span class="dv">6.25</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-5" title="5">  <span class="kw">background</span>: <span class="fu">rgb(</span><span class="dv">255</span><span class="op">,</span> <span class="dv">150</span><span class="op">,</span> <span class="dv">150</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-6" title="6">}</a></code></pre></div>
+<p>Now comes the slightly more laborious part — we need to update all our <code>.col.span</code> rules to use percentages rather than pixel widths. This takes a bit of time with a calculator; to save you some effort, we’ve done it for you below.</p>
+<p>Update the bottom block of CSS rules with the following:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb13-1" title="1"><span class="co">/* Two column widths (12.5%) plus one gutter width (2.08333333%) */</span></a>
+<a class="sourceLine" id="cb13-2" title="2"><span class="fu">.col.span2</span> { <span class="kw">width</span>: <span class="dv">14.58333333</span><span class="dt">%</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb13-3" title="3"><span class="co">/* Three column widths (18.75%) plus two gutter widths (4.1666666) */</span></a>
+<a class="sourceLine" id="cb13-4" title="4"><span class="fu">.col.span3</span> { <span class="kw">width</span>: <span class="dv">22.91666666</span><span class="dt">%</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb13-5" title="5"><span class="co">/* And so on... */</span></a>
+<a class="sourceLine" id="cb13-6" title="6"><span class="fu">.col.span4</span> { <span class="kw">width</span>: <span class="dv">31.24999999</span><span class="dt">%</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb13-7" title="7"><span class="fu">.col.span5</span> { <span class="kw">width</span>: <span class="dv">39.58333332</span><span class="dt">%</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb13-8" title="8"><span class="fu">.col.span6</span> { <span class="kw">width</span>: <span class="dv">47.91666665</span><span class="dt">%</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb13-9" title="9"><span class="fu">.col.span7</span> { <span class="kw">width</span>: <span class="dv">56.24999998</span><span class="dt">%</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb13-10" title="10"><span class="fu">.col.span8</span> { <span class="kw">width</span>: <span class="dv">64.58333331</span><span class="dt">%</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb13-11" title="11"><span class="fu">.col.span9</span> { <span class="kw">width</span>: <span class="dv">72.91666664</span><span class="dt">%</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb13-12" title="12"><span class="fu">.col.span10</span> { <span class="kw">width</span>: <span class="dv">81.24999997</span><span class="dt">%</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb13-13" title="13"><span class="fu">.col.span11</span> { <span class="kw">width</span>: <span class="dv">89.5833333</span><span class="dt">%</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb13-14" title="14"><span class="fu">.col.span12</span> { <span class="kw">width</span>: <span class="dv">97.91666663</span><span class="dt">%</span><span class="op">;</span> }</a></code></pre></div>
+<p>Now save your code, load it in a browser, and try changing the viewport width — you should see the column widths adjust nicely to suit.</p>
+<blockquote>
+<p><strong>Note:</strong> If you are having trouble getting the above example to work, try comparing it against our <a href="https://github.com/mdn/learning-area/blob/master/css/css-layout/grids/fluid-grid.html">finished version on GitHub</a> (<a href="https://mdn.github.io/learning-area/css/css-layout/grids/fluid-grid.html">see it running live</a> also).</p>
+</blockquote>
+<h3 id="easier-calculations-using-the-calc-function">Easier calculations using the calc() function</h3>
+<p>You could use the {{cssxref(“calc()”)}} function to do the math right inside your CSS — this allows you to insert simple mathematical equations into your CSS values, to calculate what a value should be. It is especially useful when there is complex math to be done, and you can even compute a calculation that uses different units, for example “I want this element’s height to always be 100% of its parent’s height, minus 50px”. See <a href="/en-US/docs/Web/API/MediaStream_Recording_API/Using_the_MediaStream_Recording_API#keeping_the_interface_constrained_to_the_viewport_regardless_of_device_height_with_calc()">this example from a MediaRecorder API tutorial</a>.</p>
+<p>Anyway, back to our grids! Any column that spans more than one column of our grid has a total width of 6.25% multiplied by the number of columns spanned plus 2.08333333% multiplied by the number of gutters (which will always be the number of columns minus 1). The <code>calc()</code> function allows us to do this calculation right inside the width value, so for any item spanning 4 columns we can do this, for example:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb14-1" title="1"><span class="fu">.col.span4</span> {</a>
+<a class="sourceLine" id="cb14-2" title="2">  <span class="kw">width</span>: <span class="fu">calc(</span>(<span class="dv">6.25</span><span class="dt">%</span><span class="op">*</span><span class="dv">4</span>) <span class="op">+</span> (<span class="dv">2.08333333</span><span class="dt">%</span><span class="op">*</span><span class="dv">3</span>)<span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb14-3" title="3">}</a></code></pre></div>
+<p>Try replacing your bottom block of rules with the following, then reload it in the browser to see if you get the same result:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb15-1" title="1"><span class="fu">.col.span2</span> { <span class="kw">width</span>: <span class="fu">calc(</span>(<span class="dv">6.25</span><span class="dt">%</span><span class="op">*</span><span class="dv">2</span>) <span class="op">+</span> <span class="dv">2.08333333</span><span class="dt">%</span><span class="fu">)</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb15-2" title="2"><span class="fu">.col.span3</span> { <span class="kw">width</span>: <span class="fu">calc(</span>(<span class="dv">6.25</span><span class="dt">%</span><span class="op">*</span><span class="dv">3</span>) <span class="op">+</span> (<span class="dv">2.08333333</span><span class="dt">%</span><span class="op">*</span><span class="dv">2</span>)<span class="fu">)</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb15-3" title="3"><span class="fu">.col.span4</span> { <span class="kw">width</span>: <span class="fu">calc(</span>(<span class="dv">6.25</span><span class="dt">%</span><span class="op">*</span><span class="dv">4</span>) <span class="op">+</span> (<span class="dv">2.08333333</span><span class="dt">%</span><span class="op">*</span><span class="dv">3</span>)<span class="fu">)</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb15-4" title="4"><span class="fu">.col.span5</span> { <span class="kw">width</span>: <span class="fu">calc(</span>(<span class="dv">6.25</span><span class="dt">%</span><span class="op">*</span><span class="dv">5</span>) <span class="op">+</span> (<span class="dv">2.08333333</span><span class="dt">%</span><span class="op">*</span><span class="dv">4</span>)<span class="fu">)</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb15-5" title="5"><span class="fu">.col.span6</span> { <span class="kw">width</span>: <span class="fu">calc(</span>(<span class="dv">6.25</span><span class="dt">%</span><span class="op">*</span><span class="dv">6</span>) <span class="op">+</span> (<span class="dv">2.08333333</span><span class="dt">%</span><span class="op">*</span><span class="dv">5</span>)<span class="fu">)</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb15-6" title="6"><span class="fu">.col.span7</span> { <span class="kw">width</span>: <span class="fu">calc(</span>(<span class="dv">6.25</span><span class="dt">%</span><span class="op">*</span><span class="dv">7</span>) <span class="op">+</span> (<span class="dv">2.08333333</span><span class="dt">%</span><span class="op">*</span><span class="dv">6</span>)<span class="fu">)</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb15-7" title="7"><span class="fu">.col.span8</span> { <span class="kw">width</span>: <span class="fu">calc(</span>(<span class="dv">6.25</span><span class="dt">%</span><span class="op">*</span><span class="dv">8</span>) <span class="op">+</span> (<span class="dv">2.08333333</span><span class="dt">%</span><span class="op">*</span><span class="dv">7</span>)<span class="fu">)</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb15-8" title="8"><span class="fu">.col.span9</span> { <span class="kw">width</span>: <span class="fu">calc(</span>(<span class="dv">6.25</span><span class="dt">%</span><span class="op">*</span><span class="dv">9</span>) <span class="op">+</span> (<span class="dv">2.08333333</span><span class="dt">%</span><span class="op">*</span><span class="dv">8</span>)<span class="fu">)</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb15-9" title="9"><span class="fu">.col.span10</span> { <span class="kw">width</span>: <span class="fu">calc(</span>(<span class="dv">6.25</span><span class="dt">%</span><span class="op">*</span><span class="dv">10</span>) <span class="op">+</span> (<span class="dv">2.08333333</span><span class="dt">%</span><span class="op">*</span><span class="dv">9</span>)<span class="fu">)</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb15-10" title="10"><span class="fu">.col.span11</span> { <span class="kw">width</span>: <span class="fu">calc(</span>(<span class="dv">6.25</span><span class="dt">%</span><span class="op">*</span><span class="dv">11</span>) <span class="op">+</span> (<span class="dv">2.08333333</span><span class="dt">%</span><span class="op">*</span><span class="dv">10</span>)<span class="fu">)</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb15-11" title="11"><span class="fu">.col.span12</span> { <span class="kw">width</span>: <span class="fu">calc(</span>(<span class="dv">6.25</span><span class="dt">%</span><span class="op">*</span><span class="dv">12</span>) <span class="op">+</span> (<span class="dv">2.08333333</span><span class="dt">%</span><span class="op">*</span><span class="dv">11</span>)<span class="fu">)</span><span class="op">;</span> }</a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> You can see our finished version in <a href="https://github.com/mdn/learning-area/blob/master/css/css-layout/grids/fluid-grid-calc.html">fluid-grid-calc.html</a> (also <a href="https://mdn.github.io/learning-area/css/css-layout/grids/fluid-grid-calc.html">see it live</a>).</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> If you can’t get this to work, it might be because your browser does not support the <code>calc()</code> function, although it is fairly well supported across browsers — as far back as IE9.</p>
+</blockquote>
+<h3 id="semantic-versus-unsemantic-grid-systems">Semantic versus “unsemantic” grid systems</h3>
+<p>Adding classes to your markup to define layout means that your content and markup becomes tied to your visual presentation. You will sometimes hear this use of CSS classes described as being “unsemantic” — describing how the content looks — rather than a semantic use of classes that describes the content. This is the case with our <code>span2</code>, <code>span3</code>, etc., classes.</p>
+<p>These are not the only approach. You could instead decide on your grid and then add the sizing information to the rules for existing semantic classes. For example, if you had a {{htmlelement(“div”)}} with a class of <code>content</code> on it that you wanted to span 8 columns, you could copy across the width from the <code>span8</code> class, giving you a rule like so:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb16-1" title="1"><span class="fu">.content</span> {</a>
+<a class="sourceLine" id="cb16-2" title="2">  <span class="kw">width</span>: <span class="fu">calc(</span>(<span class="dv">6.25</span><span class="dt">%</span><span class="op">*</span><span class="dv">8</span>) <span class="op">+</span> (<span class="dv">2.08333333</span><span class="dt">%</span><span class="op">*</span><span class="dv">7</span>)<span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-3" title="3">}</a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> If you were to use a preprocessor such as <a href="https://sass-lang.com/">Sass</a>, you could create a simple mixin to insert that value for you.</p>
+</blockquote>
+<h3 id="enabling-offset-containers-in-our-grid">Enabling offset containers in our grid</h3>
+<p>The grid we have created works well as long as we want to start all of the containers flush with the left hand side of the grid. If we wanted to leave an empty column space  before the first container — or between containers — we would need to create an offset class to add a left margin to our site to push it across the grid visually. More math!</p>
+<p>Let’s try this out.</p>
+<p>Start with your previous code, or use our <a href="https://github.com/mdn/learning-area/blob/master/css/css-layout/grids/fluid-grid.html">fluid-grid.html</a> file as a starting point.</p>
+<p>Let’s create a class in our CSS that will offset a container element by one column width. Add the following to the bottom of your CSS:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb17-1" title="1"><span class="fu">.offset-by-one</span> {</a>
+<a class="sourceLine" id="cb17-2" title="2">  <span class="kw">margin-left</span>: <span class="fu">calc(</span><span class="dv">6.25</span><span class="dt">%</span> <span class="op">+</span> (<span class="dv">2.08333333</span><span class="dt">%</span><span class="op">*</span><span class="dv">2</span>)<span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb17-3" title="3">}</a></code></pre></div>
+<p>Or if you prefer to calculate the percentages yourself, use this one:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb18-1" title="1"><span class="fu">.offset-by-one</span> {</a>
+<a class="sourceLine" id="cb18-2" title="2">  <span class="kw">margin-left</span>: <span class="dv">10.41666666</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb18-3" title="3">}</a></code></pre></div>
+<p>You can now add this class to any container you want to leave a one column wide empty space on the left hand side of it. For example, if you have this in your HTML:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb19-1" title="1"><span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col span6&quot;</span><span class="kw">&gt;</span>14<span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<p>Try replacing it with</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb20-1" title="1"><span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col span5 offset-by-one&quot;</span><span class="kw">&gt;</span>14<span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> Notice that you need to reduce the number of columns spanned, to make room for the offset!</p>
+</blockquote>
+<p>Try loading and refreshing to see the difference, or check out our <a href="https://github.com/mdn/learning-area/blob/master/css/css-layout/grids/fluid-grid-offset.html">fluid-grid-offset.html</a> example (see it <a href="https://mdn.github.io/learning-area/css/css-layout/grids/fluid-grid-offset.html">running live</a> also). The finished example should look like this:</p>
+<p><img src="offset-grid-finished.png" /></p>
+<blockquote>
+<p><strong>Note:</strong> As an extra exercise, can you implement an <code>offset-by-two</code> class?</p>
+</blockquote>
+<h3 id="floated-grid-limitations">Floated grid limitations</h3>
+<p>When using a system like this you do need to take care that your total widths add up correctly, and that you don’t include elements in a row that span more columns than the row can contain. Due to the way floats work, if the number of grid columns becomes too wide for the grid, the elements on the end will drop down to the next line, breaking the grid.</p>
+<p>Also bear in mind that if the content of the elements gets wider than the rows they occupy, it will overflow and look a mess.</p>
+<p>The biggest limitation of this system is that it is essentially one dimensional. We are dealing with columns, and spanning elements across columns, but not rows. It is very difficult with these older layout methods to control the height of elements without explicitly setting a height, and this is a very inflexible approach too — it only works if you can guarantee that your content will be a certain height.</p>
+<h2 id="flexbox-grids">Flexbox grids?</h2>
+<p>If you read our previous article about <a href="/en-US/docs/Learn/CSS/CSS_layout/Flexbox">flexbox</a>, you might think that flexbox is the ideal solution for creating a grid system. There are many flexbox-based grid systems available and flexbox can solve many of the issues that we’ve already discovered when creating our grid above.</p>
+<p>However, flexbox was never designed as a grid system and poses a new set of challenges when used as one. As a simple example of this, we can take the same example markup we used above and use the following CSS to style the <code>wrapper</code>, <code>row</code>, and <code>col</code> classes:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb21-1" title="1">body {</a>
+<a class="sourceLine" id="cb21-2" title="2">  <span class="kw">width</span>: <span class="dv">90</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb21-3" title="3">  <span class="kw">max-width</span>: <span class="dv">980</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb21-4" title="4">  <span class="kw">margin</span>: <span class="dv">0</span> <span class="bu">auto</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb21-5" title="5">}</a>
+<a class="sourceLine" id="cb21-6" title="6"></a>
+<a class="sourceLine" id="cb21-7" title="7"><span class="fu">.wrapper</span> {</a>
+<a class="sourceLine" id="cb21-8" title="8">  <span class="kw">padding-right</span>: <span class="dv">2.08333333</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb21-9" title="9">}</a>
+<a class="sourceLine" id="cb21-10" title="10"></a>
+<a class="sourceLine" id="cb21-11" title="11"><span class="fu">.row</span> {</a>
+<a class="sourceLine" id="cb21-12" title="12">  <span class="kw">display</span>: flex<span class="op">;</span></a>
+<a class="sourceLine" id="cb21-13" title="13">}</a>
+<a class="sourceLine" id="cb21-14" title="14"></a>
+<a class="sourceLine" id="cb21-15" title="15"><span class="fu">.col</span> {</a>
+<a class="sourceLine" id="cb21-16" title="16">  <span class="kw">margin-left</span>: <span class="dv">2.08333333</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb21-17" title="17">  <span class="kw">margin-bottom</span>: <span class="dv">1</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb21-18" title="18">  <span class="kw">width</span>: <span class="dv">6.25</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb21-19" title="19">  <span class="kw">flex</span>: <span class="dv">1</span> <span class="dv">1</span> <span class="bu">auto</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb21-20" title="20">  <span class="kw">background</span>: <span class="fu">rgb(</span><span class="dv">255</span><span class="op">,</span><span class="dv">150</span><span class="op">,</span><span class="dv">150</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb21-21" title="21">}</a></code></pre></div>
+<p>You can try making these replacements in your own example, or look at our <a href="https://github.com/mdn/learning-area/blob/master/css/css-layout/grids/flexbox-grid.html">flexbox-grid.html</a> example code (see it <a href="https://mdn.github.io/learning-area/css/css-layout/grids/flexbox-grid.html">running live</a> also).</p>
+<p>Here we are turning each row into a flex container. With a flexbox-based grid we still need rows in order to allow us to have elements that add up to less than 100%. We set that container to <code>display: flex</code>.</p>
+<p>On <code>.col</code> we set the {{cssxref(“flex”)}} property’s first value ({{cssxref(“flex-grow”)}}) to 1 so our items can grow, the second value ({{cssxref(“flex-shrink”)}}) to 1 so the items can shrink, and the third value ({{cssxref(“flex-basis”)}}) to <code>auto</code>. As our element has a {{cssxref(“width”)}} set, <code>auto</code> will use that width as the <code>flex-basis</code> value.</p>
+<p>On the top line we get twelve neat boxes on the grid and they grow and shrink equally as we change the viewport width. On the next line, however, we only have four items and these also grow and shrink from that 60px basis. With only four of them they can grow a lot more than the items in the row above, the result being that they all occupy the same width on the second row.</p>
+<p><img src="flexbox-grid-incomplete.png" /></p>
+<p>To fix this we still need to include our <code>span</code> classes to provide a width that will replace the value used by <code>flex-basis</code> for that element.</p>
+<p>They also don’t respect the grid used by the items above because they don’t know anything about it.</p>
+<p>Flexbox is <strong>one-dimensional</strong> by design. It deals with a single dimension, that of a row or a column. We can’t create a strict grid for columns and rows, meaning that if we are to use flexbox for our grid, we still need to calculate percentages as for the floated layout.</p>
+<p>In your project you might still choose to use a flexbox ‘grid’ due to the additional alignment and space distribution capabilities flexbox provides over floats. You should, however, be aware that you are still using a tool for something other than what it was designed for. So you may feel like it is making you jump through additional hoops to get the end result you want.</p>
+<h2 id="third-party-grid-systems">Third party grid systems</h2>
+<p>Now that we understand the math behind our grid calculations, we are in a good place to look at some of the third party grid systems in common use. If you search for “CSS Grid framework” on the Web, you will find a huge list of options to choose from. Popular frameworks such as <a href="https://getbootstrap.com/">Bootstrap</a> and <a href="https://foundation.zurb.com/">Foundation</a> include a grid system. There are also standalone grid systems, either developed using CSS or using preprocessors.</p>
+<p>Let’s take a look at one of these standalone systems as it demonstrates common techniques for working with a grid framework. The grid we will be using is part of Skeleton, a simple CSS framework.</p>
+<p>To get started visit the <a href="http://getskeleton.com/">Skeleton website</a>, and choose “Download” to download the ZIP file. Unzip this and copy the skeleton.css and normalize.css files into a new directory.</p>
+<p>Make a copy of our <a href="https://github.com/mdn/learning-area/blob/master/css/css-layout/grids/html-skeleton.html">html-skeleton.html</a> file and save it in the same directory as the skeleton and normalize CSS.</p>
+<p>Include the skeleton and normalize CSS in the HTML page, by adding the following to its head:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb22-1" title="1"><span class="kw">&lt;link</span><span class="ot"> href=</span><span class="st">&quot;normalize.css&quot;</span><span class="ot"> rel=</span><span class="st">&quot;stylesheet&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb22-2" title="2"><span class="kw">&lt;link</span><span class="ot"> href=</span><span class="st">&quot;skeleton.css&quot;</span><span class="ot"> rel=</span><span class="st">&quot;stylesheet&quot;</span><span class="kw">&gt;</span></a></code></pre></div>
+<p>Skeleton includes more than a grid system — it also contains CSS for typography and other page elements that you can use as a starting point. We’ll leave these at the defaults for now, however — it’s the grid we are really interested in here.</p>
+<blockquote>
+<p><strong>Note:</strong> <a href="https://necolas.github.io/normalize.css/">Normalize</a> is a really useful little CSS library written by Nicolas Gallagher, which automatically does some useful basic layout fixes and makes default element styling more consistent across browsers.</p>
+</blockquote>
+<p>We will use similar HTML to our earlier example. Add the following into your HTML body:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb23-1" title="1"><span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;container&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb23-2" title="2">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;row&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb23-3" title="3">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>1<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb23-4" title="4">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>2<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb23-5" title="5">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>3<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb23-6" title="6">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>4<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb23-7" title="7">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>5<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb23-8" title="8">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>6<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb23-9" title="9">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>7<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb23-10" title="10">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>8<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb23-11" title="11">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>9<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb23-12" title="12">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>10<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb23-13" title="13">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>11<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb23-14" title="14">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>12<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb23-15" title="15">  <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb23-16" title="16">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;row&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb23-17" title="17">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>13<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb23-18" title="18">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>14<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb23-19" title="19">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>15<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb23-20" title="20">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;col&quot;</span><span class="kw">&gt;</span>16<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb23-21" title="21">  <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb23-22" title="22"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<p>To start using Skeleton we need to give the wrapper {{htmlelement(“div”)}} a class of <code>container</code> — this is already included in our HTML. This centers the content with a maximum width of 960 pixels. You can see how the boxes now never become wider than 960 pixels.</p>
+<p>You can take a look in the skeleton.css file to see the CSS that is used when we apply this class. The <code>&lt;div&gt;</code> is centered using <code>auto</code> left and right margins, and a padding of 20 pixels is applied left and right. Skeleton also sets the {{cssxref(“box-sizing”)}} property to <code>border-box</code> like we did earlier, so the padding and borders of this element will be included in the total width.</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb24-1" title="1"><span class="fu">.container</span> {</a>
+<a class="sourceLine" id="cb24-2" title="2">  <span class="kw">position</span>: <span class="dv">relative</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb24-3" title="3">  <span class="kw">width</span>: <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb24-4" title="4">  <span class="kw">max-width</span>: <span class="dv">960</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb24-5" title="5">  <span class="kw">margin</span>: <span class="dv">0</span> <span class="bu">auto</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb24-6" title="6">  <span class="kw">padding</span>: <span class="dv">0</span> <span class="dv">20</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb24-7" title="7">  <span class="kw">box-sizing</span>: <span class="dv">border-box</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb24-8" title="8">}</a></code></pre></div>
+<p>Elements can only be part of the grid if they are inside a row, so as with our earlier example we need an additional <code>&lt;div&gt;</code> or other element with a class of <code>row</code> nested between the <code>content</code> <code>&lt;div&gt;</code> and our actual content container <code>&lt;div&gt;</code>s. We’ve done this already as well.</p>
+<p>Now let’s lay out the container boxes. Skeleton is based on a 12 column grid. The top line boxes all need classes of <code>one column</code> to make them span one column.</p>
+<p>Add these now, as shown in the following snippet:</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb25-1" title="1"><span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;container&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb25-2" title="2">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;row&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb25-3" title="3">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;one column&quot;</span><span class="kw">&gt;</span>1<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb25-4" title="4">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;one column&quot;</span><span class="kw">&gt;</span>2<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb25-5" title="5">    <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;one column&quot;</span><span class="kw">&gt;</span>3<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb25-6" title="6">    /* and so on */</a>
+<a class="sourceLine" id="cb25-7" title="7">  <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb25-8" title="8"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<p>Next, give the containers on the second row classes explaining the number of columns they should span, like so:</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb26-1" title="1"><span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;row&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb26-2" title="2">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;one column&quot;</span><span class="kw">&gt;</span>13<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb26-3" title="3">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;six columns&quot;</span><span class="kw">&gt;</span>14<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb26-4" title="4">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;three columns&quot;</span><span class="kw">&gt;</span>15<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb26-5" title="5">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;two columns&quot;</span><span class="kw">&gt;</span>16<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb26-6" title="6"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<p>Try saving your HTML file and loading it in your browser to see the effect.</p>
+<blockquote>
+<p><strong>Note:</strong> If you are having trouble getting this example to work, try comparing it to our <a href="https://github.com/mdn/learning-area/blob/master/css/css-layout/grids/html-skeleton-finished.html">html-skeleton-finished.html</a> file (see it <a href="https://mdn.github.io/learning-area/css/css-layout/grids/html-skeleton-finished.html">running live</a> also).</p>
+</blockquote>
+<p>If you look in the skeleton.css file you can see how this works. For example, Skeleton has the following defined to style elements with “three columns” classes added to them.</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb27-1" title="1"><span class="fu">.three.columns</span> { <span class="kw">width</span>: <span class="dv">22</span><span class="dt">%</span><span class="op">;</span> }</a></code></pre></div>
+<p>All Skeleton (or any other grid framework) is doing is setting up predefined classes that you can use by adding them to your markup. It’s exactly the same as if you did the work of calculating these percentages yourself.</p>
+<p>As you can see, we need to write very little CSS when using Skeleton. It deals with all of the floating for us when we add classes to our markup. It is this ability to hand responsibility for layout over to something else that made using a framework for a grid system a compelling choice! However these days, with CSS Grid Layout, many developers are moving away from these frameworks to use the inbuilt native grid that CSS provides.</p>
+<h2 id="summary">Summary</h2>
+<p>You now understand how various grid systems are created, which will be useful in working with older sites and in understanding the difference between the native grid of CSS Grid Layout and these older systems.</p>
+<p>{{PreviousMenuNext(“Learn/CSS/CSS_layout/Media_queries”, “Learn/CSS/CSS_layout/Supporting_Older_Browsers”, “Learn/CSS/CSS_layout”)}}</p>
+<h2 id="in-this-module">In this module</h2>
+<ul>
+<li><a href="/en-US/docs/Learn/CSS/CSS_layout/Introduction">Introduction to CSS layout</a></li>
+<li><a href="/en-US/docs/Learn/CSS/CSS_layout/Normal_Flow">Normal flow</a></li>
+<li><a href="/en-US/docs/Learn/CSS/CSS_layout/Flexbox">Flexbox</a></li>
+<li><a href="/en-US/docs/Learn/CSS/CSS_layout/Grids">Grid</a></li>
+<li><a href="/en-US/docs/Learn/CSS/CSS_layout/Floats">Floats</a></li>
+<li><a href="/en-US/docs/Learn/CSS/CSS_layout/Positioning">Positioning</a></li>
+<li><a href="/en-US/docs/Learn/CSS/CSS_layout/Multiple-column_Layout">Multiple-column layout</a></li>
+<li><a href="/en-US/docs/Learn/CSS/CSS_layout/Responsive_Design">Responsive design</a></li>
+<li><a href="/en-US/docs/Learn/CSS/CSS_layout/Media_queries">Beginner’s guide to media queries</a></li>
+<li>Legacy layout methods</li>
+<li><a href="/en-US/docs/Learn/CSS/CSS_layout/Supporting_Older_Browsers">Supporting older browsers</a></li>
+<li><a href="/en-US/docs/Learn/CSS/CSS_layout/Fundamental_Layout_Comprehension">Fundamental layout comprehension assessment</a></li>
+</ul>

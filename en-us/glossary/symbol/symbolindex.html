@@ -1,0 +1,58 @@
+<p>In {{Glossary(“JavaScript”)}}, Symbol is a {{Glossary(“Primitive”, “primitive value”)}}.</p>
+<p>A value having the data type <strong>Symbol</strong> can be referred to as a “Symbol value”. In a JavaScript runtime environment, a symbol value is created by invoking the function {{jsxref(“Symbol”)}}, which dynamically produces an anonymous, unique value. A symbol may be used as an object property.</p>
+<p>Symbol can have an optional description, but for debugging purposes only.</p>
+<p>A <strong>Symbol</strong> value represents a unique identifier. For example:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="co">// Here are two symbols with the same description:</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">let</span> Sym1 <span class="op">=</span> <span class="at">Symbol</span>(<span class="st">&quot;Sym&quot;</span>)</a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">let</span> Sym2 <span class="op">=</span> <span class="at">Symbol</span>(<span class="st">&quot;Sym&quot;</span>)</a>
+<a class="sourceLine" id="cb1-4" title="4"></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="va">console</span>.<span class="at">log</span>(Sym1 <span class="op">===</span> Sym2) <span class="co">// returns &quot;false&quot;</span></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="co">// Symbols are guaranteed to be unique.</span></a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="co">// Even if we create many symbols with the same description,</span></a>
+<a class="sourceLine" id="cb1-8" title="8"><span class="co">// they are different values.</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> If you are familiar with Ruby (or another language) that also has a feature called <em>“symbols”</em>, please don’t be misled. JavaScript symbols are different.</p>
+</blockquote>
+<p><em>Symbol</em> type is a new feature in ECMAScript 2015. There is no ECMAScript 5 equivalent for Symbol.</p>
+<p>In some programming languages, the symbol data type is referred to as an “atom.”</p>
+<h3 id="symbols-dont-auto-convert-to-strings">Symbols don’t “Auto-Convert” to strings</h3>
+<p>Most values in JavaScript support implicit conversion to a string. For instance, we can <code>alert</code> almost any value, and it will work. Symbols are special. They don’t auto-convert.</p>
+<p>For example:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">let</span> Sym <span class="op">=</span> <span class="at">Symbol</span>(<span class="st">&quot;Sym&quot;</span>)</a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="at">alert</span>(Sym)  <span class="co">// TypeError: Cannot convert a Symbol value to a string</span></a></code></pre></div>
+<p>That’s a “language guard” against messing up, because strings and symbols are fundamentally different, and should not occasionally convert one into another.</p>
+<p>If you really want to show a symbol, we need to call <code>.toString()</code> on it.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">let</span> Sym <span class="op">=</span> <span class="at">Symbol</span>(<span class="st">&quot;Sym&quot;</span>)</a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="at">alert</span>(<span class="va">Sym</span>.<span class="at">toString</span>())  <span class="co">// Symbol(Sym), now it works</span></a></code></pre></div>
+<p>Or you can use the <code>symbol.description</code> property to get its description:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">let</span> _Sym <span class="op">=</span> <span class="at">Symbol</span>(<span class="st">&quot;Sym&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="at">alert</span>(<span class="va">_Sym</span>.<span class="at">description</span>)<span class="op">;</span> <span class="co">// Sym</span></a></code></pre></div>
+<h3 id="well-known-symbols">Well-known symbols</h3>
+<p>The {{jsxref(“Symbol”)}} class has constants for so-called <em>well-known symbols</em>. These symbols let you configure how JS treats an object, by using them as property keys.</p>
+<p>Examples of well-known symbols are: {{jsxref(“Symbol.iterator”)}} for array-like objects, or {{jsxref(“Symbol.search”)}} for string objects.</p>
+<p>They are listed in the specification in the <a href="https://tc39.github.io/ecma262/#sec-well-known-symbols">Well-known symbols</a> table:</p>
+<ul>
+<li><code>Symbol.hasInstance</code></li>
+<li><code>Symbol.isConcatSpreadable</code></li>
+<li><code>Symbol.iterator</code></li>
+<li><code>Symbol.toPrimitive</code></li>
+<li>…and so on.</li>
+</ul>
+<h3 id="global-symbol-registry">Global symbol registry</h3>
+<p>There is a global symbol registry holding all available symbols. The methods that access the registry are {{jsxref(“Symbol.for()”)}} and {{jsxref(“Symbol.keyFor()”)}}; these mediate between the global symbol table (or “registry”) and the run-time environment. The global symbol registry is mostly built by JavaScript’s compiler infrastructure, and the global symbol registry’s content is not available to JavaScript’s run-time infrastructure, except through these reflective methods.</p>
+<p>The method <code>Symbol.for(tokenString)</code> returns a symbol value from the registry, and <code>Symbol.keyFor(symbolValue)</code> returns a token string from the registry; each is the other’s inverse, so the following is <code>true</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="va">Symbol</span>.<span class="at">keyFor</span>(<span class="va">Symbol</span>.<span class="at">for</span>(<span class="st">&quot;tokenString&quot;</span>)) <span class="op">===</span> <span class="st">&quot;tokenString&quot;</span> <span class="co">// true</span></a></code></pre></div>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>{{Interwiki(“wikipedia”, “Symbol (programming)”)}} on Wikipedia</li>
+<li><a href="/en-US/docs/Web/JavaScript/Data_structures">JavaScript data types and data structures</a></li>
+<li><a href="https://2ality.com/2014/12/es6-symbols.html">Symbols in ECMAScript 6</a></li>
+<li>{{jsxref(“Symbol”)}} in the MDN JS reference</li>
+<li>{{jsxref(“Object.getOwnPropertySymbols()”)}}</li>
+<li><p><a href="/en-US/docs/Glossary">MDN Web Docs Glossary</a></p>
+<ul>
+<li>{{Glossary(“JavaScript”)}}</li>
+<li>{{Glossary(“Primitive”)}}</li>
+</ul></li>
+</ul>

@@ -1,0 +1,206 @@
+<p>{{LearnSidebar}}{{PreviousMenuNext(“Learn/JavaScript/Objects/Object-oriented_JS”, “Learn/JavaScript/Objects/Inheritance”, “Learn/JavaScript/Objects”)}}</p>
+<p>Prototypes are the mechanism by which JavaScript objects inherit features from one another. In this article, we explain how prototype chains work and look at how the <code>prototype</code> property can be used to add methods to existing constructors.</p>
+<blockquote>
+<p><strong>Note:</strong> This article covers traditional JavaScript constructors and classes. In the next article, we talk about the modern way of doing things, which provides easier syntax to achieve the same things — see <a href="/en-US/docs/Learn/JavaScript/Objects/Inheritance#ecmascript_2015_classes">ECMAScript 2015 classes</a>.</p>
+</blockquote>
+<table>
+<tbody>
+<tr>
+<th scope="row">
+Prerequisites:
+</th>
+<td>
+Understanding JavaScript functions, familiarity with JavaScript basics (see <a href="/en-US/docs/Learn/JavaScript/First_steps">First steps</a> and <a href="/en-US/docs/Learn/JavaScript/Building_blocks"
+          >Building blocks</a
+        >), and OOJS basics (see <a href="/en-US/docs/Learn/JavaScript/Objects/Basics"
+          >Introduction to objects</a
+        >).
+</td>
+</tr>
+<tr>
+<th scope="row">
+Objective:
+</th>
+<td>
+To understand JavaScript object prototypes, how prototype chains work, and how to add new methods onto the prototype property.
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="a-prototype-based-language">A prototype-based language?</h2>
+<p>JavaScript is often described as a <strong>prototype-based language</strong> — to provide inheritance, objects can have a <strong><code>prototype</code> object</strong>, which acts as a template object that it inherits methods and properties from.</p>
+<p>An object’s prototype object may also have a prototype object, which it inherits methods and properties from, and so on. This is often referred to as a <strong>prototype chain</strong>, and explains why different objects have properties and methods defined on other objects available to them.</p>
+<p>In JavaScript, a link is made between the object instance and its prototype (its <code>__proto__</code> property, which is derived from the <code>prototype</code> property on the constructor), and the properties and methods are found by walking up the chain of prototypes.</p>
+<blockquote>
+<p><strong>Note:</strong> It’s important to understand that there is a distinction between <strong>an object’s <code>prototype</code></strong> (available via <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/getPrototypeOf"><code>Object.getPrototypeOf(obj)</code></a>, or via the deprecated <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/proto"><code>__proto__</code></a> property) and <strong>the <code>prototype</code> property on constructor functions</strong>.</p>
+<p>The constructor function <code>Foobar()</code> has its own <code>prototype</code>, which can be found by calling <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/getPrototypeOf"><code>Object.getPrototypeOf(Foobar)</code></a>. However this differs from its <code>prototype</code> property, <code>Foobar.prototype</code>, which is the blueprint for instances of this constructor function.</p>
+<p>If we were to create a new instance — <code>let fooInstance = new Foobar()</code> — <code>fooInstance</code> would take its prototype from its constructor function’s <code>prototype</code> property. Thus <code>Object.getPrototypeOf(fooInstance) === Foobar.prototype</code>.</p>
+</blockquote>
+<p>Let’s look at an example to make this a bit clearer.</p>
+<h2 id="understanding-prototype-objects">Understanding prototype objects</h2>
+<p>Here we’ll go back to the example in which we finished writing our <code>Person()</code> constructor — load the example in your browser. You can use our <a href="https://mdn.github.io/learning-area/javascript/oojs/introduction/oojs-class-further-exercises.html">oojs-class-further-exercises.html</a> example (see also the <a href="https://github.com/mdn/learning-area/blob/master/javascript/oojs/introduction/oojs-class-further-exercises.html">source code</a>), if you don’t already have it from working through the last article.</p>
+<p>In this example, we have defined a constructor function, like so:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">function</span> <span class="at">Person</span>(first<span class="op">,</span> last<span class="op">,</span> age<span class="op">,</span> gender<span class="op">,</span> interests) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2"></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="co">// property and method definitions</span></a>
+<a class="sourceLine" id="cb1-4" title="4">  <span class="kw">this</span>.<span class="at">name</span> <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-5" title="5">    <span class="st">&#39;first&#39;</span><span class="op">:</span> first<span class="op">,</span></a>
+<a class="sourceLine" id="cb1-6" title="6">    <span class="st">&#39;last&#39;</span> <span class="op">:</span> last</a>
+<a class="sourceLine" id="cb1-7" title="7">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb1-8" title="8">  <span class="kw">this</span>.<span class="at">age</span> <span class="op">=</span> age<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-9" title="9">  <span class="kw">this</span>.<span class="at">gender</span> <span class="op">=</span> gender<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-10" title="10">  <span class="co">//...see link in summary above for full definition</span></a>
+<a class="sourceLine" id="cb1-11" title="11"><span class="op">}</span></a></code></pre></div>
+<p>We have then created an object instance like this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">let</span> person1 <span class="op">=</span> <span class="kw">new</span> <span class="at">Person</span>(<span class="st">&#39;Bob&#39;</span><span class="op">,</span> <span class="st">&#39;Smith&#39;</span><span class="op">,</span> <span class="dv">32</span><span class="op">,</span> <span class="st">&#39;male&#39;</span><span class="op">,</span> [<span class="st">&#39;music&#39;</span><span class="op">,</span> <span class="st">&#39;skiing&#39;</span>])<span class="op">;</span></a></code></pre></div>
+<p>If you type “<code>person1.</code>” into your JavaScript console, you should see the browser try to auto-complete this with the member names available on this object:</p>
+<p><img src="object-available-members.png" /></p>
+<p>In this list, you will see the members defined on <code>person1</code>’s constructor — <code>Person()</code> — <code>name</code>, <code>age</code>, <code>gender</code>, <code>interests</code>, <code>bio</code>, and <code>greeting</code>. You will however also see some other members — <code>toString</code>, <code>valueOf</code>, etc — these are defined on <code>person1</code>’s prototype object’s prototype object, which is <code>Object.prototype</code>.</p>
+<p><img src="mdn-graphics-person-person-object-2.png" /></p>
+<p>What happens if you call a method on <code>person1</code>, which is actually defined on <code>Object.prototype</code>? For example:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="va">person1</span>.<span class="at">valueOf</span>()</a></code></pre></div>
+<p><code>valueOf()</code> returns the value of the object it is called on. In this case, what happens is:</p>
+<ul>
+<li>The browser initially checks to see if the <code>person1</code> object has a <code>valueOf()</code> method available on it, as defined on its constructor, <code>Person()</code>, and it doesn’t.</li>
+<li>So the browser checks to see if the <code>person1</code>’s prototype object has a <code>valueOf()</code> method available on it. It doesn’t, then the browser checks <code>person1</code>’s prototype object’s prototype object, and it has. So the method is called, and all is good!</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> We want to reiterate that the methods and properties are <strong>not</strong> copied from one object to another in the prototype chain. They are <em>accessed</em> by <em>walking up the chain</em> as described above.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> The prototype chain is traversed only while retrieving properties. If properties are set or <a href="/en-US/docs/Web/JavaScript/Reference/Operators/delete"><code>delete</code></a>d directly on the object, the prototype chain is not traversed.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> Before ECMAScript 2015, there wasn’t officially a way to access an object’s <code>prototype</code> directly — the “links” between the items in the chain are defined in an internal property, referred to as <code>[[prototype]]</code> in the specification for the JavaScript language (see {{glossary(“ECMAScript”)}}).</p>
+<p>Most modern browsers, however, do offer property available called <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/proto"><code>__proto__</code></a> (that’s 2 underscores either side), which contains the object’s constructor’s <code>prototype</code> object. For example, try <code>person1.__proto__</code> and <code>person1.__proto__.__proto__</code> to see what the chain looks like in code!</p>
+<p>Since ECMAScript 2015, you can access an object’s prototype object indirectly via <code>Object.getPrototypeOf(obj)</code>.</p>
+</blockquote>
+<h2 id="the-prototype-property-where-inherited-members-are-defined">The prototype property: Where inherited members are defined</h2>
+<p>So, where are the inherited properties and methods defined? If you look at the <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object"><code>Object</code></a> reference page, you’ll see listed in the left hand side a large number of properties and methods — many more than the number of inherited members we saw available on the <code>person1</code> object. Some are inherited, and some aren’t — why is this?</p>
+<p>As mentioned above, the inherited ones are the ones defined on the <code>prototype</code> property (you could call it a sub-namespace) — that is, the ones that begin with <code>Object.prototype.</code>, and not the ones that begin with just <code>Object.</code> The <code>prototype</code> property’s value is an object, which is basically a bucket for storing properties and methods that we want to be inherited by objects further down the prototype chain.</p>
+<p>So <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/toString"><code>Object.prototype.toString()</code></a>, <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/valueOf"><code>Object.prototype.valueOf()</code></a>, etc., are available to any object types that inherit from <code>Object.prototype</code>, including new object instances created from the <code>Person()</code> constructor.</p>
+<p><a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is"><code>Object.is()</code></a>, <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/keys"><code>Object.keys()</code></a>, and other members not defined inside the <code>prototype</code> bucket, are not inherited by object instances or object types that inherit from <code>Object.prototype</code>. They are methods/properties available just on the <code>Object()</code> constructor itself.</p>
+<blockquote>
+<p><strong>Note:</strong> This seems strange — how can you have a method defined on a constructor, which is itself a function?</p>
+<p>Well, a function is also a type of object. See the <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function"><code>Function()</code></a> constructor reference if you don’t believe us.</p>
+</blockquote>
+<ol type="1">
+<li><p>You can check out existing prototype properties for yourself — go back to our previous example and try entering the following into the JavaScript console:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="va">Person</span>.<span class="at">prototype</span></a></code></pre></div></li>
+<li><p>The output won’t show you very much because we haven’t defined anything on our custom constructor’s prototype! By default, a constructor’s <code>prototype</code> always starts empty. Now try the following:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="va">Object</span>.<span class="at">prototype</span></a></code></pre></div></li>
+</ol>
+<p>You’ll see a large number of methods defined on <code>Object</code>’s <code>prototype</code> property, which are then available on objects that inherit from <code>Object</code>, as shown earlier.</p>
+<p>You’ll see other examples of prototype chain inheritance all over JavaScript — try looking for the methods and properties defined on the prototype of the <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/String"><code>String</code></a>, <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date"><code>Date</code></a>, <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number"><code>Number</code></a>, and <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array"><code>Array</code></a> global objects, for example. These all have a number of members defined on their prototype, which is why for example when you create a string, like this:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">let</span> myString <span class="op">=</span> <span class="st">&#39;This is my string.&#39;</span><span class="op">;</span></a></code></pre></div>
+<p><code>myString</code> immediately has a number of useful methods available on it, like <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/split"><code>split()</code></a>, <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/indexOf"><code>indexOf()</code></a>, <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace"><code>replace()</code></a>, etc.</p>
+<blockquote>
+<p><strong>Note:</strong> It is worth reading our more in-depth guide to “<a href="/en-US/docs/Web/JavaScript/Inheritance_and_the_prototype_chain#using_prototypes_in_javascript">Using prototypes in JavaScript</a>”, once you’ve made sense of this section and wish to know more. This section is intentionally simplified to make these concepts a little easier to understand when you first meet them.</p>
+</blockquote>
+<blockquote>
+<p><strong>Warning:</strong> The <code>prototype</code> property is one of the most confusingly-named parts of JavaScript — you might think that it points to the prototype object of the current object, but it doesn’t (that’s an internal object that can be accessed by <code>__proto__</code>, remember?). <code>prototype</code> instead is a property containing an object on which you define members that you want to be inherited.</p>
+</blockquote>
+<h2 id="revisiting-create">Revisiting create()</h2>
+<p>Earlier on we showed how the <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/create"><code>Object.create()</code></a> method can be used to create a new object instance.</p>
+<ol type="1">
+<li><p>For example, try this in your previous example’s JavaScript console:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">let</span> person2 <span class="op">=</span> <span class="va">Object</span>.<span class="at">create</span>(person1)<span class="op">;</span></a></code></pre></div></li>
+<li><p>What <code>create()</code> actually does is to create a new object from a specified prototype object. Here, <code>person2</code> is being created using <code>person1</code> as a prototype object. You can check this by entering the following in the console:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="va">person2</span>.<span class="at">__proto__</span></a></code></pre></div></li>
+</ol>
+<p>This will return the <code>person1</code> object.</p>
+<h2 id="the-constructor-property">The constructor property</h2>
+<p>Every constructor function has a <code>prototype</code> property whose value is an object containing a <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/constructor"><code>constructor</code></a> property. This <code>constructor</code> property points to the original constructor function.</p>
+<p>As you will see in the next section, properties defined on the <code>Person.prototype</code> property (or in general on a constructor function’s <code>prototype</code> property, which is an object, as mentioned in the above section) become available to all the instance objects created using the <code>Person()</code> constructor. Hence, the constructor property is also available to both <code>person1</code> and <code>person2</code> objects.</p>
+<ol type="1">
+<li><p>For example, try these commands in the console:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="va">person1</span>.<span class="at">constructor</span></a>
+<a class="sourceLine" id="cb9-2" title="2"><span class="va">person2</span>.<span class="at">constructor</span></a></code></pre></div>
+<p>These should both return the <code>Person()</code> constructor, as it contains the original definition of these instances.</p>
+<p>A clever trick is that you can put parentheses onto the end of the <code>constructor</code> property (containing any required parameters) to create another object instance from that constructor. The constructor is a function after all, so can be invoked using parentheses; you just need to include the <code>new</code> keyword to specify that you want to use the function as a constructor.</p></li>
+<li><p>Try this in the console:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">let</span> person3 <span class="op">=</span> <span class="kw">new</span> <span class="va">person1</span>.<span class="at">constructor</span>(<span class="st">&#39;Karen&#39;</span><span class="op">,</span> <span class="st">&#39;Stephenson&#39;</span><span class="op">,</span> <span class="dv">26</span><span class="op">,</span> <span class="st">&#39;female&#39;</span><span class="op">,</span> [<span class="st">&#39;playing drums&#39;</span><span class="op">,</span> <span class="st">&#39;mountain climbing&#39;</span>])<span class="op">;</span></a></code></pre></div></li>
+<li><p>Now try accessing your new object’s features, for example:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1"><span class="va">person3</span>.<span class="va">name</span>.<span class="at">first</span></a>
+<a class="sourceLine" id="cb11-2" title="2"><span class="va">person3</span>.<span class="at">age</span></a>
+<a class="sourceLine" id="cb11-3" title="3"><span class="va">person3</span>.<span class="at">bio</span>()</a></code></pre></div></li>
+</ol>
+<p>This works well. You won’t need to use it often, but it can be really useful when you want to create a new instance and don’t have a reference to the original constructor easily available for some reason.</p>
+<p>The <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/constructor"><code>constructor</code></a> property has other uses. For example, if you have an object instance and you want to return the name of the constructor it is an instance of, you can use the following:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb12-1" title="1"><span class="va">instanceName</span>.<span class="va">constructor</span>.<span class="at">name</span></a></code></pre></div>
+<p>Try this, for example:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb13-1" title="1"><span class="va">person1</span>.<span class="va">constructor</span>.<span class="at">name</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> The value of <code>constructor.name</code> can change (due to prototypical inheritance, binding, preprocessors, transpilers, etc.). Therefore, for more complex examples, you’ll want to use the <a href="/en-US/docs/Web/JavaScript/Reference/Operators/instanceof"><code>instanceof</code></a> operator instead.</p>
+</blockquote>
+<h2 id="modifying-prototypes">Modifying prototypes</h2>
+<p>Let’s have a look at an example of modifying the <code>prototype</code> property of a constructor function — methods added to the prototype are then available on all object instances created from the constructor. At this point we’ll finally add something to our <code>Person()</code> constructor’s prototype.</p>
+<ol type="1">
+<li><p>Go back to our <a href="https://mdn.github.io/learning-area/javascript/oojs/introduction/oojs-class-further-exercises.html">oojs-class-further-exercises.html</a> example and make a local copy of the <a href="https://github.com/mdn/learning-area/blob/master/javascript/oojs/introduction/oojs-class-further-exercises.html">source code</a>. Below the existing JavaScript, add the following code, which adds a new method to the constructor’s <code>prototype</code> property:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb14-1" title="1"><span class="va">Person</span>.<span class="va">prototype</span>.<span class="at">farewell</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb14-2" title="2">  <span class="at">alert</span>(<span class="kw">this</span>.<span class="va">name</span>.<span class="at">first</span> <span class="op">+</span> <span class="st">&#39; has left the building. Bye for now!&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-3" title="3"><span class="op">};</span></a></code></pre></div></li>
+<li><p>Save the code and load the page in the browser, and try entering the following into the text input:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb15-1" title="1"><span class="va">person1</span>.<span class="at">farewell</span>()<span class="op">;</span></a></code></pre></div></li>
+</ol>
+<p>You should get an alert message displayed, featuring the person’s name as defined inside the constructor. This is really useful, but what is even more useful is that the whole inheritance chain has updated dynamically, automatically making this new method available on all object instances derived from the constructor.</p>
+<p>Think about this for a moment. In our code we define the constructor, then we create an instance object from the constructor, <em>then</em> we add a new method to the constructor’s prototype:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb16-1" title="1"><span class="kw">function</span> <span class="at">Person</span>(first<span class="op">,</span> last<span class="op">,</span> age<span class="op">,</span> gender<span class="op">,</span> interests) <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-2" title="2"></a>
+<a class="sourceLine" id="cb16-3" title="3">  <span class="co">// property and method definitions</span></a>
+<a class="sourceLine" id="cb16-4" title="4"></a>
+<a class="sourceLine" id="cb16-5" title="5"><span class="op">}</span></a>
+<a class="sourceLine" id="cb16-6" title="6"></a>
+<a class="sourceLine" id="cb16-7" title="7"><span class="kw">let</span> person1 <span class="op">=</span> <span class="kw">new</span> <span class="at">Person</span>(<span class="st">&#39;Tammi&#39;</span><span class="op">,</span> <span class="st">&#39;Smith&#39;</span><span class="op">,</span> <span class="dv">32</span><span class="op">,</span> <span class="st">&#39;neutral&#39;</span><span class="op">,</span> [<span class="st">&#39;music&#39;</span><span class="op">,</span> <span class="st">&#39;skiing&#39;</span><span class="op">,</span> <span class="st">&#39;kickboxing&#39;</span>])<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-8" title="8"></a>
+<a class="sourceLine" id="cb16-9" title="9"><span class="va">Person</span>.<span class="va">prototype</span>.<span class="at">farewell</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-10" title="10">  <span class="at">alert</span>(<span class="kw">this</span>.<span class="va">name</span>.<span class="at">first</span> <span class="op">+</span> <span class="st">&#39; has left the building. Bye for now!&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-11" title="11"><span class="op">};</span></a></code></pre></div>
+<p>But the <code>farewell()</code> method is <em>still</em> available on the <code>person1</code> object instance — its members have been automatically updated to include the newly defined <code>farewell()</code> method.</p>
+<blockquote>
+<p><strong>Note:</strong> Conversely, deleting properties defined on the constructor’s prototype using the <a href="/en-US/docs/Web/JavaScript/Reference/Operators/delete"><code>delete</code></a> operator removes the respective properties from all other class instances too.</p>
+<p>In the above example, performing <code>delete person1.__proto__.farewell</code> or <code>delete Person.prototype.farewell</code> would remove the <code>farewell()</code> method from all <code>Person</code> instances.</p>
+<p>In order to mitigate this issue, you could use <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty"><code>Object.defineProperty()</code></a> instead.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> If you are having trouble getting this example to work, have a look at our <a href="https://github.com/mdn/learning-area/blob/master/javascript/oojs/advanced/oojs-class-prototype.html">oojs-class-prototype.html</a> example (see it <a href="https://mdn.github.io/learning-area/javascript/oojs/advanced/oojs-class-prototype.html">running live</a> also).</p>
+</blockquote>
+<p>You will rarely see properties defined on the <code>prototype</code> property, because they are not very flexible when defined like this. For example you could add a property like so:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb17-1" title="1"><span class="va">Person</span>.<span class="va">prototype</span>.<span class="at">fullName</span> <span class="op">=</span> <span class="st">&#39;Bob Smith&#39;</span><span class="op">;</span></a></code></pre></div>
+<p>This isn’t very flexible, as the person might not be called that. It’d be much better to build the <code>fullName</code> out of <code>name.first</code> and <code>name.last</code>:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb18-1" title="1"><span class="va">Person</span>.<span class="va">prototype</span>.<span class="at">fullName</span> <span class="op">=</span> <span class="kw">this</span>.<span class="va">name</span>.<span class="at">first</span> <span class="op">+</span> <span class="st">&#39; &#39;</span> <span class="op">+</span> <span class="kw">this</span>.<span class="va">name</span>.<span class="at">last</span><span class="op">;</span></a></code></pre></div>
+<p>However, this doesn’t work. That’s because <code>this</code> will be referencing the global scope in this case, not the function scope. Calling this property would return <code>undefined</code>. This worked fine on the method we defined earlier in the prototype because it is sitting inside a function scope, which will be transferred successfully to the object instance scope. So you might define constant properties on the prototype (i.e. ones that never need to change), but generally it works better to define properties inside the constructor.</p>
+<p>In fact, a fairly common pattern for more object definitions is to define the properties inside the constructor, and the methods on the prototype. This makes the code easier to read, as the constructor only contains the property definitions, and the methods are split off into separate blocks. For example:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb19-1" title="1"><span class="co">// Constructor with property definitions</span></a>
+<a class="sourceLine" id="cb19-2" title="2"></a>
+<a class="sourceLine" id="cb19-3" title="3"><span class="kw">function</span> <span class="at">Test</span>(a<span class="op">,</span> b<span class="op">,</span> c<span class="op">,</span> d) <span class="op">{</span></a>
+<a class="sourceLine" id="cb19-4" title="4">  <span class="co">// property definitions</span></a>
+<a class="sourceLine" id="cb19-5" title="5"><span class="op">}</span></a>
+<a class="sourceLine" id="cb19-6" title="6"></a>
+<a class="sourceLine" id="cb19-7" title="7"><span class="co">// First method definition</span></a>
+<a class="sourceLine" id="cb19-8" title="8"></a>
+<a class="sourceLine" id="cb19-9" title="9"><span class="va">Test</span>.<span class="va">prototype</span>.<span class="at">x</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span> ... <span class="op">};</span></a>
+<a class="sourceLine" id="cb19-10" title="10"></a>
+<a class="sourceLine" id="cb19-11" title="11"><span class="co">// Second method definition</span></a>
+<a class="sourceLine" id="cb19-12" title="12"></a>
+<a class="sourceLine" id="cb19-13" title="13"><span class="va">Test</span>.<span class="va">prototype</span>.<span class="at">y</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span> ... <span class="op">};</span></a>
+<a class="sourceLine" id="cb19-14" title="14"></a>
+<a class="sourceLine" id="cb19-15" title="15"><span class="co">// etc.</span></a></code></pre></div>
+<p>This pattern can be seen in action in Piotr Zalewa’s <a href="https://github.com/zalun/school-plan-app/blob/master/stage9/js/index.js">school plan app</a> example.</p>
+<h2 id="test-your-skills">Test your skills!</h2>
+<p>You’ve reached the end of this article, but can you remember the most important information? You can find some further tests to verify that you’ve retained this information before you move on — see <a href="/en-US/docs/Learn/JavaScript/Objects/Test_your_skills:_Object-oriented_JavaScript">Test your skills: Object-oriented JavaScript</a>.</p>
+<p>Note that this set of tests relies on some of the knowledge taught in the next article, so you might want to read that first before you try them.</p>
+<h2 id="summary">Summary</h2>
+<p>This article has covered JavaScript object prototypes, including how prototype object chains allow objects to inherit features from one another, the prototype property and how it can be used to add methods to constructors, and other related topics.</p>
+<p>In the next article we’ll look at how you can implement inheritance of functionality between two of your own custom objects.</p>
+<p>{{PreviousMenuNext(“Learn/JavaScript/Objects/Object-oriented_JS”, “Learn/JavaScript/Objects/Inheritance”, “Learn/JavaScript/Objects”)}}</p>
+<h2 id="in-this-module">In this module</h2>
+<ul>
+<li><a href="/en-US/docs/Learn/JavaScript/Objects/Basics">Object basics</a></li>
+<li><a href="/en-US/docs/Learn/JavaScript/Objects/Object-oriented_JS">Object-oriented JavaScript for beginners</a></li>
+<li><a href="/en-US/docs/Learn/JavaScript/Objects/Object_prototypes">Object prototypes</a></li>
+<li><a href="/en-US/docs/Learn/JavaScript/Objects/Inheritance">Inheritance in JavaScript</a></li>
+<li><a href="/en-US/docs/Learn/JavaScript/Objects/JSON">Working with JSON data</a></li>
+<li><a href="/en-US/docs/Learn/JavaScript/Objects/Object_building_practice">Object building practice</a></li>
+<li><a href="/en-US/docs/Learn/JavaScript/Objects/Adding_bouncing_balls_features">Adding features to our bouncing balls demo</a></li>
+</ul>

@@ -1,0 +1,148 @@
+<p>{{GamesSidebar}}</p>
+<p>A typical 3D scene in a game — even the simplest one — contains standard items like shapes located in a coordinate system, a camera to actually see them, lights and materials to make it look better, animations to make it look alive, etc. <strong>Three.js</strong>, as with any other 3D library, provides built-in helper functions to help you implement common 3D functionality more quickly. In this article we’ll take you through the real basics of using Three, including setting up a development environment, structuring the necessary HTML, the fundamental objects of Three, and how to build up a basic demo.</p>
+<blockquote>
+<p><strong>Note:</strong> We chose Three because it is one of the most popular <a href="/en-US/docs/Web/API/WebGL_API">WebGL</a> libraries, and it is easy to get started with. We are not trying to say it is better than any other WebGL library available, and you should feel free to try another library, such as <a href="https://www.ambiera.com/copperlicht/index.html">CopperLicht</a>, <a href="http://www.glge.org/">GLGE</a>, or <a href="https://playcanvas.com/">PlayCanvas</a>.</p>
+</blockquote>
+<h2 id="environment-setup">Environment setup</h2>
+<p>To start developing with Three.js, you don’t need much. You should:</p>
+<ul>
+<li>Make sure you are using a modern browser with good <a href="/en-US/docs/Web/API/WebGL_API">WebGL</a> support, such as the latest Firefox or Chrome.</li>
+<li>Create a directory to store your experiments in.</li>
+<li>Save a copy of the <a href="https://threejs.org/build/three.min.js">latest minimized Three.js library</a> inside your directory.</li>
+<li>Open the <a href="https://threejs.org/docs/">Three.js documentation</a> in a separate tab — it is useful to refer to.</li>
+</ul>
+<h2 id="html-structure">HTML structure</h2>
+<p>Here’s the HTML structure we will use:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" title="1"><span class="dt">&lt;!DOCTYPE </span>html<span class="dt">&gt;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">&lt;html&gt;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">&lt;head&gt;</span></a>
+<a class="sourceLine" id="cb1-4" title="4">    <span class="kw">&lt;meta</span><span class="ot"> charset=</span><span class="st">&quot;utf-8&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb1-5" title="5">    <span class="kw">&lt;title&gt;</span>MDN Games: Three.js demo<span class="kw">&lt;/title&gt;</span></a>
+<a class="sourceLine" id="cb1-6" title="6">    <span class="kw">&lt;style&gt;</span></a>
+<a class="sourceLine" id="cb1-7" title="7">        body { <span class="kw">margin</span>: <span class="dv">0</span><span class="op">;</span> <span class="kw">padding</span>: <span class="dv">0</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb1-8" title="8">        canvas { <span class="kw">width</span>: <span class="dv">100</span><span class="dt">%</span><span class="op">;</span> <span class="kw">height</span>: <span class="dv">100</span><span class="dt">%</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb1-9" title="9">    <span class="kw">&lt;/style&gt;</span></a>
+<a class="sourceLine" id="cb1-10" title="10"><span class="kw">&lt;/head&gt;</span></a>
+<a class="sourceLine" id="cb1-11" title="11"><span class="kw">&lt;body&gt;</span></a>
+<a class="sourceLine" id="cb1-12" title="12"><span class="kw">&lt;script</span><span class="ot"> src=</span><span class="st">&quot;three.min.js&quot;</span><span class="kw">&gt;&lt;/script&gt;</span></a>
+<a class="sourceLine" id="cb1-13" title="13"><span class="kw">&lt;script&gt;</span></a>
+<a class="sourceLine" id="cb1-14" title="14">    <span class="kw">const</span> WIDTH <span class="op">=</span> <span class="va">window</span>.<span class="at">innerWidth</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-15" title="15">    <span class="kw">const</span> HEIGHT <span class="op">=</span> <span class="va">window</span>.<span class="at">innerHeight</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-16" title="16">    <span class="co">/* all our JavaScript code goes here */</span></a>
+<a class="sourceLine" id="cb1-17" title="17"><span class="kw">&lt;/script&gt;</span></a>
+<a class="sourceLine" id="cb1-18" title="18"><span class="kw">&lt;/body&gt;</span></a>
+<a class="sourceLine" id="cb1-19" title="19"><span class="kw">&lt;/html&gt;</span></a></code></pre></div>
+<p>It contains some basic information like the document {{htmlelement(“title”)}}, and some CSS to set the <code>width</code> and <code>height</code> of the {{htmlelement(“canvas”)}} element, that Three.js will insert on the page to 100% to fill the entire available viewport space. The first {{htmlelement(“script”)}} element includes the Three.js library in the page, and we will write our example code inside the second. There are two helper variables already included, which store the window’s <code>width</code> and <code>height</code>.</p>
+<p>Before reading further, copy this code to a new text file, and save it in your working directory as <code>index.html</code>.</p>
+<h2 id="renderer">Renderer</h2>
+<p>A renderer is a tool which displays scenes right in your browser. There are a few different renderers: WebGL is the default, and others you can use are Canvas, SVG, CSS, and DOM. They differ in how everything is rendered, so the WebGL implementation will implement differently than the CSS one. Despite the variety of ways they achieve the goal, the experience will look the same for the user. Thanks to this approach, a fallback can be used, if a desired technology is not supported by the browser.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> renderer <span class="op">=</span> <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">WebGLRenderer</span>(<span class="op">{</span><span class="dt">antialias</span><span class="op">:</span><span class="kw">true</span><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="va">renderer</span>.<span class="at">setSize</span>(WIDTH<span class="op">,</span> HEIGHT)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="va">renderer</span>.<span class="at">setClearColor</span>(<span class="bn">0xDDDDDD</span><span class="op">,</span> <span class="dv">1</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="va">document</span>.<span class="va">body</span>.<span class="at">appendChild</span>(<span class="va">renderer</span>.<span class="at">domElement</span>)<span class="op">;</span></a></code></pre></div>
+<p>We are creating a new WebGL renderer, setting its size to fit the whole available space on the screen, and appending the DOM structure to the page. You might have noticed the <code>antialias</code> parameter in the first line — this renders the edges of shapes more smoothly. The <code>setClearColor()</code> method sets our background to a light gray color, instead of the default black one.</p>
+<p>Add this code into our second {{htmlelement(“script”)}} element, just below the JavaScript comment.</p>
+<h2 id="scene">Scene</h2>
+<p>A scene is the place where everything happens. When creating new objects in the demo, we add them all inside the scene to become visible on the screen. In three.js, the scene is represented by a <code>Scene</code> object. Let’s create it, by adding the following line below our previous lines:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> scene <span class="op">=</span> <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">Scene</span>()<span class="op">;</span></a></code></pre></div>
+<p>Later, we will be using the <code>.add()</code> method, to add objects to this scene.</p>
+<h2 id="camera">Camera</h2>
+<p>We have the rendered scene, but we still need to add a camera to view our handiwork — imagine a movie set without any cameras. The following lines put the camera in place in the 3D coordinate system, and point it in the direction of our scene, so we can finally see something:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">const</span> camera <span class="op">=</span> <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">PerspectiveCamera</span>(<span class="dv">70</span><span class="op">,</span> WIDTH/HEIGHT)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="va">camera</span>.<span class="va">position</span>.<span class="at">z</span> <span class="op">=</span> <span class="dv">50</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="va">scene</span>.<span class="at">add</span>(camera)<span class="op">;</span></a></code></pre></div>
+<p>Add the above lines to your code, below those previously added.</p>
+<p>There are other types of camera available (Cube, Orthographic), but the simplest is Perspective. To initialize it, we have to set its field of view and aspect ratio: the former is used to set how much is seen, and the latter is important for the objects on the screen to have the right proportions when rendered, and not look stretched. Let’s explain values we are setting for the code above:</p>
+<ul>
+<li>The value we set for the field of view, 70, is something we can experiment with: the higher the value, the greater the amount of scene the camera will show. Imagine a normal camera view, versus a fish eye effect, which allows a lot more to be seen. The default value is 50.</li>
+<li>The aspect ratio is set to the current width and height of the window so it will be dynamically adjusted. We could set a fixed ratio — for example 16 ⁄ 9, which is the aspect ratio of a widescreen TV. The default value is 1.</li>
+<li>The <code>z</code> position, with the value of 50 units, is the distance between the camera and the center of the scene on the <code>z</code> axis. Here we’re moving the camera back, so the objects in the scene can be viewed. 50 feels about right. It’s not too near, or too far, and the sizes of the objects allow them to stay on the scene, within the given field of view. The <code>x</code> and <code>y</code> values, if not specified, will default to 0.</li>
+</ul>
+<p>You should experiment with these values and see how they change what you see in the scene.</p>
+<blockquote>
+<p><strong>Note:</strong> The distance values (e.g. for the camera z position) are unitless, and can be anything you deem suitable for your scene: millimeters, meters, feet, or miles. It’s up to you.</p>
+</blockquote>
+<h2 id="rendering-the-scene">Rendering the scene</h2>
+<p>Everything is ready, but we still can’t see anything. Although we’ve set-up the renderer, we still need to render everything. Our <code>render()</code> function will do this job, with a little help from <a href="/en-US/docs/Web/API/window/requestAnimationFrame"><code>requestAnimationFrame()</code></a>, which causes the scene to be re-rendered constantly on every frame:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">function</span> <span class="at">render</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2">    <span class="at">requestAnimationFrame</span>(render)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3">    <span class="va">renderer</span>.<span class="at">render</span>(scene<span class="op">,</span> camera)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="op">}</span></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="at">render</span>()<span class="op">;</span></a></code></pre></div>
+<p>On every new frame the <code>render</code> function is invoked, and the <code>renderer</code> renders the <code>scene</code> and the <code>camera</code>. Right after the function declaration, we’re invoking it for the first time to start the loop, after which it will be used indefinitely.</p>
+<p>Again, add this new code below your previous additions. Try saving the file and opening it in your browser. You should now see a gray window. Congratulations!</p>
+<h2 id="geometry">Geometry</h2>
+<p>Now our scene is properly rendering, we can start adding 3D shapes. To speed up development, Three.js provides a bunch of predefined primitives, which you can use to create shapes instantly in a single line of code. There’s cubes, spheres, cylinders, and more complicated shapes available. Detail like drawing required vertices and faces, for a given shape, is handled by the Three framework, so we can focus on higher level coding. Let’s start, by defining the geometry for a cube shape, adding the following just above the <code>render()</code> function:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">const</span> boxGeometry <span class="op">=</span> <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">BoxGeometry</span>(<span class="dv">10</span><span class="op">,</span> <span class="dv">10</span><span class="op">,</span> <span class="dv">10</span>)<span class="op">;</span></a></code></pre></div>
+<p>In this case, we define a simple cube that is 10 x 10 x 10 units. The geometry itself is not enough though, we also need a material that will be used for our shape.</p>
+<h2 id="material">Material</h2>
+<p>A material is what covers an object, the colors, or textures on its surface. In our case, we will choose a simple blue color to paint our box. There are a number of predefined materials which can be used: Basic, Phong, Lambert. Let’s play with the last two later, but for now, the Basic one should be enough:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">var</span> basicMaterial <span class="op">=</span> <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">MeshBasicMaterial</span>(<span class="op">{</span><span class="dt">color</span><span class="op">:</span> <span class="bn">0x0095DD</span><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>Add this line below the previously added.</p>
+<p>Our material is now ready, what next?</p>
+<h2 id="mesh">Mesh</h2>
+<p>To apply the material to a geometry, a mesh is used. This takes on a shape, and adds the specified material to every face:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">var</span> cube <span class="op">=</span> <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">Mesh</span>(boxGeometry<span class="op">,</span> basicMaterial)<span class="op">;</span></a></code></pre></div>
+<p>Again, add this line below the one you previously added.</p>
+<h2 id="adding-the-cube-to-the-scene">Adding the cube to the scene</h2>
+<p>We’ve now created a cube, using the geometry and material defined earlier. The last thing to do is to place the cube to our scene. Add this line below the previous one:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="va">scene</span>.<span class="at">add</span>(cube)<span class="op">;</span></a></code></pre></div>
+<p>If you save, and refresh your Web browser, our object will now look like a square, because it’s facing the camera. The good thing about objects, is that we can move them on the scene, however we want. For example, rotating and scaling as we like. Let’s apply a little rotation to the cube, so we can see more than one face.  Again, adding our code below the previous:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1"><span class="va">cube</span>.<span class="va">rotation</span>.<span class="at">set</span>(<span class="fl">0.4</span><span class="op">,</span> <span class="fl">0.2</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a></code></pre></div>
+<p>Congratulations, you’ve created an object in a 3D environment! This might have proven easier than you first thought? Here’s how it should look:</p>
+<figure>
+<img src="cube.png" alt="Blue cube on a gray background rendered with Three.js." /><figcaption>Blue cube on a gray background rendered with Three.js.</figcaption>
+</figure>
+<p>And here’s the code we have created so far:</p>
+<p>{{JSFiddleEmbed(“https://jsfiddle.net/end3r/bwup75fa/”,"“,”350")}}</p>
+<p>You can also <a href="https://github.com/end3r/MDN-Games-3D/blob/gh-pages/Three.js/cube.html">check it out on GitHub</a>.</p>
+<h2 id="more-shapes-and-materials">More shapes and materials</h2>
+<p>Now we will add more shapes to the scene, and explore other shapes, materials, lighting, and more. Let’s move the cube to the left, to make space for some friends. Adding the following line just below the previous one:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1"><span class="va">cube</span>.<span class="va">position</span>.<span class="at">x</span> <span class="op">=</span> <span class="dv">-25</span><span class="op">;</span></a></code></pre></div>
+<p>Now onto more shapes and materials. What might happen when you add a torus, wrapped in the Phong material? Try adding the following lines, just below the lines defining the cube.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb12-1" title="1"><span class="kw">var</span> torusGeometry <span class="op">=</span> <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">TorusGeometry</span>(<span class="dv">7</span><span class="op">,</span> <span class="dv">1</span><span class="op">,</span> <span class="dv">6</span><span class="op">,</span> <span class="dv">12</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-2" title="2"><span class="kw">var</span> phongMaterial <span class="op">=</span> <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">MeshPhongMaterial</span>(<span class="op">{</span><span class="dt">color</span><span class="op">:</span> <span class="bn">0xFF9500</span><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-3" title="3"><span class="kw">var</span> torus <span class="op">=</span> <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">Mesh</span>(torusGeometry<span class="op">,</span> phongMaterial)<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-4" title="4"><span class="va">scene</span>.<span class="at">add</span>(torus)<span class="op">;</span></a></code></pre></div>
+<p>These lines will add a torus geometry; the <code>TorusGeometry()</code> method’s parameters define, and the parameters are <code>radius</code>, <code>tube diameter</code>, <code>radial segment count</code>, and <code>tubular segment count</code>. The Phong material should look more glossy than the box’s simple Basic material, though right now our torus will just look black.</p>
+<p>We can choose more fun predefined shapes. Let’s play some more. Add the following lines, below those defining the torus:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb13-1" title="1"><span class="kw">var</span> dodecahedronGeometry <span class="op">=</span> <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">DodecahedronGeometry</span>(<span class="dv">7</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-2" title="2"><span class="kw">var</span> lambertMaterial <span class="op">=</span> <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">MeshLambertMaterial</span>(<span class="op">{</span><span class="dt">color</span><span class="op">:</span> <span class="bn">0xEAEFF2</span><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-3" title="3"><span class="kw">var</span> dodecahedron <span class="op">=</span> <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">Mesh</span>(dodecahedronGeometry<span class="op">,</span> lambertMaterial)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-4" title="4"><span class="va">dodecahedron</span>.<span class="va">position</span>.<span class="at">x</span> <span class="op">=</span> <span class="dv">25</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb13-5" title="5"><span class="va">scene</span>.<span class="at">add</span>(dodecahedron)<span class="op">;</span></a></code></pre></div>
+<p>This time, we are creating a dodecahedron, a shape containing twelve flat faces. The parameter, <code>DodecahedronGeometry(),</code> defines the size of the object. We’re using a Lambert material, similar to Phong, but should be less glossy. Again it’s black, for now. We’re moving the object to the right, so it’s not in the same position as the box, or torus.</p>
+<p>As mentioned above, the new objects currently just look black. To have both, the Phong and Lambert materials properly visible, we need to introduce a source of light.</p>
+<h2 id="lights">Lights</h2>
+<p>There are various types of light sources available in Three.js. The most basic is <code>PointLight</code>, which works like a flashlight, shining a spotlight in a defined direction. Add the following lines, below your shape definitions:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb14-1" title="1"><span class="kw">var</span> light <span class="op">=</span> <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">PointLight</span>(<span class="bn">0xFFFFFF</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-2" title="2"><span class="va">light</span>.<span class="va">position</span>.<span class="at">set</span>(<span class="op">-</span><span class="dv">10</span><span class="op">,</span> <span class="dv">15</span><span class="op">,</span> <span class="dv">50</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-3" title="3"><span class="va">scene</span>.<span class="at">add</span>(light)<span class="op">;</span></a></code></pre></div>
+<p>We define a white point of light, set its position a little away from the center of the scene, so it can light up some parts of the shapes, finally adding it to the scene. Now everything works as it should, all three shapes are visible. You should check the documentation for other types of lights, like Ambient, Directional, Hemisphere, or Spot. Experiment placing them on our scene, to see how they affect it.</p>
+<figure>
+<img src="shapes.png" alt="Shapes: blue cube, dark yellow torus and dark gray dodecahedron on a gray background rendered with Three.js." /><figcaption>Shapes: blue cube, dark yellow torus and dark gray dodecahedron on a gray background rendered with Three.js.</figcaption>
+</figure>
+<p>This looks a little boring though. In a game, something is usually happening. We might see animations and such. So let’s try breathing a little life into these shapes, by animating them!</p>
+<h2 id="animation">Animation</h2>
+<p>We already used rotation, to adjust the position of the cube. We can also scale the shapes, or change their positions. To show animation, we need to make changes to these values inside the render loop, so they update on each frame.</p>
+<h3 id="rotation">Rotation</h3>
+<p>Rotating is straightforward. You add a value to a given direction of rotation on each frame. Add this line of code, right after the <code>requestAnimationFrame()</code> invocation inside the <code>render</code> function:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb15-1" title="1"><span class="va">cube</span>.<span class="va">rotation</span>.<span class="at">y</span> <span class="op">+=</span> <span class="fl">0.01</span><span class="op">;</span></a></code></pre></div>
+<p>This rotates the cube on every frame, by a tiny bit, so the animation looks smooth.</p>
+<h3 id="scaling">Scaling</h3>
+<p>We can also scale an object. Applying a constant value, we would make it grow, or shrink just once. Let’s make things more interesting. First, we implement a helper variable, called <code>t,</code> for counting elapsed time. Add it right before the <code>render()</code> function:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb16-1" title="1"><span class="kw">var</span> t <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></a></code></pre></div>
+<p>Now let’s increase the value by a given constant value, on each frame of the animation. Add the following lines, just below the <code>requestAnimationFrame()</code> invocation:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb17-1" title="1">t <span class="op">+=</span> <span class="fl">0.01</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb17-2" title="2"><span class="va">torus</span>.<span class="va">scale</span>.<span class="at">y</span> <span class="op">=</span> <span class="va">Math</span>.<span class="at">abs</span>(<span class="va">Math</span>.<span class="at">sin</span>(t))<span class="op">;</span></a></code></pre></div>
+<p>We use <code>Math.sin</code>, ending up with quite an interesting result. This scales the torus, repeating the process, as <code>sin</code> is a periodic function. We’re wrapping the scale value in <code>Math.abs</code>, to pass the absolute values, greater or equal to 0. As sin is between -1 and 1,  negative values might render out torus in unexpected way. In this case it looks black half the time.</p>
+<p>Now, onto movement.</p>
+<h3 id="moving">Moving</h3>
+<p>Aside from rotation, and scaling, we can additionally move objects around the scene. Add the following, again just below our <code>requestAnimationFrame()</code> invocation:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb18-1" title="1"><span class="va">dodecahedron</span>.<span class="va">position</span>.<span class="at">y</span> <span class="op">=</span> <span class="dv">-7</span><span class="op">*</span><span class="va">Math</span>.<span class="at">sin</span>(t<span class="op">*</span><span class="dv">2</span>)<span class="op">;</span></a></code></pre></div>
+<p>This will move the dodecahedron up and down, by applying the <code>sin()</code> value to the y axis on each frame, and a little adjustment to make it look cooler. Try changing these values, to see how it affects the animations.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>Here’s the final code:</p>
+<p>{{JSFiddleEmbed(“https://jsfiddle.net/rybr720u/”,"“,”350")}}</p>
+<p>You can also <a href="https://github.com/end3r/MDN-Games-3D/blob/gh-pages/Three.js/shapes.html">see it on GitHub</a> and <a href="https://github.com/end3r/MDN-Games-3D/">fork the repository</a>, if you want to play with it locally. Now you understand the basics of Three.js, you can jump back to the parent page, <a href="/en-US/docs/Games/Techniques/3D_on_the_web">3D on the Web</a>.</p>
+<p>You could also try learning raw WebGL, to gain a better understanding of what’s going on underneath. See our <a href="/en-US/docs/Web/API/WebGL_API">WebGL documentation</a>.</p>

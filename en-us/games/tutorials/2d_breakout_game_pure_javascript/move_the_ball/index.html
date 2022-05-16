@@ -1,0 +1,86 @@
+<p>{{GamesSidebar}}</p>
+<p>{{PreviousNext(“Games/Workflows/2D_Breakout_game_pure_JavaScript/Create_the_Canvas_and_draw_on_it”, “Games/Workflows/2D_Breakout_game_pure_JavaScript/Bounce_off_the_walls”)}}</p>
+<p>This is the <strong>2nd step</strong> out of 10 of the <a href="/en-US/docs/Games/Tutorials/2D_Breakout_game_pure_JavaScript">Gamedev Canvas tutorial</a>. You can find the source code as it should look after completing this lesson at <a href="https://github.com/end3r/Gamedev-Canvas-workshop/blob/gh-pages/lesson02.html">Gamedev-Canvas-workshop/lesson2.html</a>.</p>
+<p>You already know how to draw a ball from working through the previous article, so now let’s make it move. Technically, we will be painting the ball on the screen, clearing it and then painting it again in a slightly different position every frame to make the impression of movement — just like how movement works with the movies.</p>
+<h2 id="defining-a-drawing-loop">Defining a drawing loop</h2>
+<p>To keep constantly updating the canvas drawing on each frame, we need to define a drawing function that will run over and over again, with a different set of variable values each time to change sprite positions, etc. You can run a function over and over again using a JavaScript timing function such as {{domxref(“setInterval()”)}} or {{domxref(“window.requestAnimationFrame()”, “requestAnimationFrame()”)}}.</p>
+<p>Delete all the JavaScript you currently have inside your HTML file except for the first two lines, and add the following below them. The <code>draw()</code> function will be executed within <code>setInterval</code> every 10 milliseconds:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">    <span class="co">// drawing code</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="op">}</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="at">setInterval</span>(draw<span class="op">,</span> <span class="dv">10</span>)<span class="op">;</span></a></code></pre></div>
+<p>Thanks to the infinite nature of <code>setInterval</code> the <code>draw()</code> function will be called every 10 milliseconds forever, or until we stop it. Now, let’s draw the ball — add the following inside your <code>draw()</code> function:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="va">ctx</span>.<span class="at">arc</span>(<span class="dv">50</span><span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="dv">10</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">Math</span>.<span class="at">PI</span><span class="op">*</span><span class="dv">2</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&quot;#0095DD&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="va">ctx</span>.<span class="at">closePath</span>()<span class="op">;</span></a></code></pre></div>
+<p>Try your updated code now — the ball should be repainted on every frame.</p>
+<h2 id="making-it-move">Making it move</h2>
+<p>You won’t notice the ball being repainted constantly at the moment, as it’s not moving. Let’s change that. First, instead of a hardcoded position at (50,50) we will define a starting point at the bottom center part of the Canvas in variables called <code>x</code> and <code>y</code>, then use those to define the position the circle is drawn at.</p>
+<p>First, add the following two lines above your <code>draw()</code> function, to define <code>x</code> and <code>y</code>:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">var</span> x <span class="op">=</span> <span class="va">canvas</span>.<span class="at">width</span>/<span class="dv">2</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">var</span> y <span class="op">=</span> <span class="va">canvas</span>.<span class="at">height</span><span class="dv">-30</span><span class="op">;</span></a></code></pre></div>
+<p>Next update the <code>draw()</code> function to use the x and y variables in the {{domxref(“CanvasRenderingContext2D.arc()”,“arc()”)}} method, as shown in the following highlighted line:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">    <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3">    <span class="va">ctx</span>.<span class="at">arc</span>(x<span class="op">,</span> y<span class="op">,</span> <span class="dv">10</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">Math</span>.<span class="at">PI</span><span class="op">*</span><span class="dv">2</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-4" title="4">    <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&quot;#0095DD&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5">    <span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-6" title="6">    <span class="va">ctx</span>.<span class="at">closePath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-7" title="7"><span class="op">}</span></a></code></pre></div>
+<p>Now comes the important part: we want to add a small value to <code>x</code> and <code>y</code> after every frame has been drawn to make it appear that the ball is moving. Let’s define these small values as <code>dx</code> and <code>dy</code> and set their values to 2 and -2 respectively. Add the following below your x and y variable definitions:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">var</span> dx <span class="op">=</span> <span class="dv">2</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="kw">var</span> dy <span class="op">=</span> <span class="dv">-2</span><span class="op">;</span></a></code></pre></div>
+<p>The last thing to do is to update <code>x</code> and <code>y</code> with our <code>dx</code> and <code>dy</code> variable on every frame, so the ball will be painted in the new position on every update. Add the following two new lines indicated below to your <code>draw()</code> function:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-2" title="2">    <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-3" title="3">    <span class="va">ctx</span>.<span class="at">arc</span>(x<span class="op">,</span> y<span class="op">,</span> <span class="dv">10</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">Math</span>.<span class="at">PI</span><span class="op">*</span><span class="dv">2</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-4" title="4">    <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&quot;#0095DD&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-5" title="5">    <span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-6" title="6">    <span class="va">ctx</span>.<span class="at">closePath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-7" title="7">    x <span class="op">+=</span> dx<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-8" title="8">    y <span class="op">+=</span> dy<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-9" title="9"><span class="op">}</span></a></code></pre></div>
+<p>Save your code again and try it in your browser. This works OK, although it appears that the ball is leaving a trail behind it:</p>
+<p><img src="ball-trail.png" /></p>
+<h2 id="clearing-the-canvas-before-each-frame">Clearing the canvas before each frame</h2>
+<p>The ball is leaving a trail because we’re painting a new circle on every frame without removing the previous one. Don’t worry, because there’s a method to clear canvas content: {{domxref(“CanvasRenderingContext2D.clearRect()”,“clearRect()”)}}. This method takes four parameters: the x and y coordinates of the top left corner of a rectangle, and the x and y coordinates of the bottom right corner of a rectangle. The whole area covered by this rectangle will be cleared of any content previously painted there.</p>
+<p>Add the following highlighted new line to the <code>draw()</code> function:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-2" title="2">    <span class="va">ctx</span>.<span class="at">clearRect</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">canvas</span>.<span class="at">width</span><span class="op">,</span> <span class="va">canvas</span>.<span class="at">height</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-3" title="3">    <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-4" title="4">    <span class="va">ctx</span>.<span class="at">arc</span>(x<span class="op">,</span> y<span class="op">,</span> <span class="dv">10</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">Math</span>.<span class="at">PI</span><span class="op">*</span><span class="dv">2</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-5" title="5">    <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&quot;#0095DD&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb7-6" title="6">    <span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-7" title="7">    <span class="va">ctx</span>.<span class="at">closePath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-8" title="8">    x <span class="op">+=</span> dx<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-9" title="9">    y <span class="op">+=</span> dy<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-10" title="10"><span class="op">}</span></a></code></pre></div>
+<p>Save your code and try again, and this time you’ll see the ball move without a trail. Every 10 milliseconds the canvas is cleared, the blue circle (our ball) will be drawn on a given position and the <code>x</code> and <code>y</code> values will be updated for the next frame.</p>
+<h2 id="cleaning-up-our-code">Cleaning up our code</h2>
+<p>We will be adding more and more commands to the <code>draw()</code> function in the next few articles, so it’s good to keep it as simple and clean as possible. Let’s start by moving the ball drawing code to a separate function.</p>
+<p>Replace the existing draw() function with the following two functions:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">function</span> <span class="at">drawBall</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-2" title="2">    <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-3" title="3">    <span class="va">ctx</span>.<span class="at">arc</span>(x<span class="op">,</span> y<span class="op">,</span> <span class="dv">10</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">Math</span>.<span class="at">PI</span><span class="op">*</span><span class="dv">2</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-4" title="4">    <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&quot;#0095DD&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-5" title="5">    <span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-6" title="6">    <span class="va">ctx</span>.<span class="at">closePath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-7" title="7"><span class="op">}</span></a>
+<a class="sourceLine" id="cb8-8" title="8"></a>
+<a class="sourceLine" id="cb8-9" title="9"><span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-10" title="10">    <span class="va">ctx</span>.<span class="at">clearRect</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">canvas</span>.<span class="at">width</span><span class="op">,</span> <span class="va">canvas</span>.<span class="at">height</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-11" title="11">    <span class="at">drawBall</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-12" title="12">    x <span class="op">+=</span> dx<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-13" title="13">    y <span class="op">+=</span> dy<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-14" title="14"><span class="op">}</span></a></code></pre></div>
+<h2 id="compare-your-code">Compare your code</h2>
+<p>You can check the finished code for this article for yourself in the live demo below, and play with it to understand better how it works:</p>
+<p>{{JSFiddleEmbed(“https://jsfiddle.net/end3r/3x5foxb1/”,"“,”395")}}</p>
+<blockquote>
+<p><strong>Note:</strong> Try changing the speed of the moving ball, or the direction it moves in.</p>
+</blockquote>
+<h2 id="next-steps">Next steps</h2>
+<p>We’ve drawn our ball and gotten it moving, but it keeps disappearing off the edge of the canvas. In the third chapter we’ll explore how to make it <a href="/en-US/docs/Games/Tutorials/2D_Breakout_game_pure_JavaScript/Bounce_off_the_walls">bounce off the walls</a>.</p>
+<p>{{PreviousNext(“Games/Workflows/2D_Breakout_game_pure_JavaScript/Create_the_Canvas_and_draw_on_it”, “Games/Workflows/2D_Breakout_game_pure_JavaScript/Bounce_off_the_walls”)}}</p>

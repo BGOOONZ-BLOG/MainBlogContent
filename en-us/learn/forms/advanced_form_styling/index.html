@@ -1,0 +1,426 @@
+<p>{{LearnSidebar}}{{PreviousMenuNext(“Learn/Forms/Styling_web_forms”, “Learn/Forms/UI_pseudo-classes”, “Learn/Forms”)}}</p>
+<p>In this article, we will see what can be done with CSS to style the types of form control that are more difficult to style — the “bad” and “ugly” categories. As we saw <a href="/en-US/docs/Learn/Forms/Styling_web_forms">in the previous article</a>, text fields and buttons are perfectly easy to style; now we will dig into styling the bits that are more problematic.</p>
+<table>
+<tbody>
+<tr>
+<th scope="row">
+Prerequisites:
+</th>
+<td>
+Basic computer literacy, and a basic understanding of <a href="/en-US/docs/Learn/HTML/Introduction_to_HTML">HTML</a> and <a href="/en-US/docs/Learn/CSS/First_steps">CSS</a>.
+</td>
+</tr>
+<tr>
+<th scope="row">
+Objective:
+</th>
+<td>
+To understand what parts of forms are hard to style, and why; to learn what can be done to customize them.
+</td>
+</tr>
+</tbody>
+</table>
+<p>To recap what we said in the previous article, we have:</p>
+<p><strong>The bad</strong>: Some elements are more difficult to style, requiring more complex CSS or some more specific tricks:</p>
+<ul>
+<li>Checkboxes and radio buttons</li>
+<li><a href="/en-US/docs/Web/HTML/Element/input/search"><code>&lt;input type="search"&gt;</code></a></li>
+</ul>
+<p><strong>The ugly</strong>: Some elements can’t be styled thoroughly using CSS. These include:</p>
+<ul>
+<li>Elements involved in creating dropdown widgets, including {{HTMLElement(“select”)}}, {{HTMLElement(“option”)}}, {{HTMLElement(“optgroup”)}} and {{HTMLElement(“datalist”)}}.</li>
+<li><a href="/en-US/docs/Web/HTML/Element/input/color"><code>&lt;input type="color"&gt;</code></a></li>
+<li>Date-related controls such as <a href="/en-US/docs/Web/HTML/Element/input/datetime-local"><code>&lt;input type="datetime-local"&gt;</code></a></li>
+<li><a href="/en-US/docs/Web/HTML/Element/input/range"><code>&lt;input type="range"&gt;</code></a></li>
+<li><a href="/en-US/docs/Web/HTML/Element/input/file"><code>&lt;input type="file"&gt;</code></a></li>
+<li>{{HTMLElement(“progress”)}} and {{HTMLElement(“meter”)}}</li>
+</ul>
+<p>Let’s first talk about the <a href="/en-US/docs/Web/CSS/appearance"><code>appearance</code></a> property, which is pretty useful for making all of the above more stylable.</p>
+<h2 id="appearance-controlling-os-level-styling">appearance: controlling OS-level styling</h2>
+<p>In the previous article we said that historically, styling of web form controls was largely taken from the underlying operating system, which is part of the problem with customizing the look of these controls.</p>
+<p>The {{cssxref(“appearance”)}} property was created as a way to control what OS- or system-level styling was applied to web form controls. Unfortunately, the behavior of this property’s original implementations was very different across browsers, making it not very usable. Newer implementations are more consistent in behavior; interestingly enough, both Chromium-based browsers (Chrome, Opera, Edge), Safari, and Firefox all support the <code>-webkit-</code>  prefixed version (<code>-webkit-appearance</code>). Firefox settled on this because web developers mostly seemed to be using the <code>-webkit-</code> prefixed version, so it was better for compatibility.</p>
+<p>If you look at the reference page you’ll see a lot of different possible values listed for <code>-webkit-appearance</code>, however by far the most helpful value, and probably the only one you’ll use, is <code>none</code>. This stops any control you apply it to from using system-level styling, as much as possible, and lets you build up the styles yourself using CSS.</p>
+<p>For example, let’s take the following controls:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">&lt;form&gt;</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="kw">&lt;p&gt;</span></a>
+<a class="sourceLine" id="cb1-3" title="3">    <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;search&quot;</span><span class="kw">&gt;</span>search: <span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb1-4" title="4">    <span class="kw">&lt;input</span><span class="ot"> id=</span><span class="st">&quot;search&quot;</span><span class="ot"> name=</span><span class="st">&quot;search&quot;</span><span class="ot"> type=</span><span class="st">&quot;search&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb1-5" title="5">  <span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb1-6" title="6">  <span class="kw">&lt;p&gt;</span></a>
+<a class="sourceLine" id="cb1-7" title="7">    <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;text&quot;</span><span class="kw">&gt;</span>text: <span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb1-8" title="8">    <span class="kw">&lt;input</span><span class="ot"> id=</span><span class="st">&quot;text&quot;</span><span class="ot"> name=</span><span class="st">&quot;text&quot;</span><span class="ot"> type=</span><span class="st">&quot;text&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb1-9" title="9">  <span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb1-10" title="10">  <span class="kw">&lt;p&gt;</span></a>
+<a class="sourceLine" id="cb1-11" title="11">    <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;date&quot;</span><span class="kw">&gt;</span>date: <span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb1-12" title="12">    <span class="kw">&lt;input</span><span class="ot"> id=</span><span class="st">&quot;date&quot;</span><span class="ot"> name=</span><span class="st">&quot;date&quot;</span><span class="ot"> type=</span><span class="st">&quot;datetime-local&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb1-13" title="13">  <span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb1-14" title="14">  <span class="kw">&lt;p&gt;</span></a>
+<a class="sourceLine" id="cb1-15" title="15">    <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;radio&quot;</span><span class="kw">&gt;</span>radio: <span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb1-16" title="16">    <span class="kw">&lt;input</span><span class="ot"> id=</span><span class="st">&quot;radio&quot;</span><span class="ot"> name=</span><span class="st">&quot;radio&quot;</span><span class="ot"> type=</span><span class="st">&quot;radio&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb1-17" title="17">  <span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb1-18" title="18">  <span class="kw">&lt;p&gt;</span></a>
+<a class="sourceLine" id="cb1-19" title="19">    <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;checkbox&quot;</span><span class="kw">&gt;</span>checkbox: <span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb1-20" title="20">    <span class="kw">&lt;input</span><span class="ot"> id=</span><span class="st">&quot;checkbox&quot;</span><span class="ot"> name=</span><span class="st">&quot;checkbox&quot;</span><span class="ot"> type=</span><span class="st">&quot;checkbox&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb1-21" title="21">  <span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb1-22" title="22">  <span class="kw">&lt;p&gt;&lt;input</span><span class="ot"> type=</span><span class="st">&quot;submit&quot;</span><span class="ot"> value=</span><span class="st">&quot;submit&quot;</span><span class="kw">&gt;&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb1-23" title="23">  <span class="kw">&lt;p&gt;&lt;input</span><span class="ot"> type=</span><span class="st">&quot;button&quot;</span><span class="ot"> value=</span><span class="st">&quot;button&quot;</span><span class="kw">&gt;&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb1-24" title="24"><span class="kw">&lt;/form&gt;</span></a></code></pre></div>
+<p>Applying the following CSS to them removes system-level styling.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb2-1" title="1">input {</a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">-webkit-appearance</span>: <span class="dv">none</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="kw">appearance</span>: <span class="dv">none</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">}</a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> It is a good idea to always include both declarations — prefixed and unprefixed — when using a prefixed property. Prefixed usually means “work in progress”, so in the future browser vendors may come to a consensus to drop the prefix. The above code is good for future-proofing against such an eventuality.</p>
+</blockquote>
+<p>The following live example shows you what they look like in your system — default on the left, and with the above CSS applied on the right (<a href="https://mdn.github.io/learning-area/html/forms/styling-examples/appearence-tester.html">find it here also</a> if you want to test it on other systems).</p>
+<p>{{EmbedGHLiveSample(“learning-area/html/forms/styling-examples/appearence-tester.html”, ‘100%’, 400)}}</p>
+<p>In most cases, the effect is to remove the stylized border, which makes CSS styling a bit easier, but isn’t really essential. In a couple of cases — search and radio buttons/checkboxes, it becomes way more useful. We’ll look at those now.</p>
+<h3 id="taming-search-boxes">Taming search boxes</h3>
+<p><a href="/en-US/docs/Web/HTML/Element/input/search"><code>&lt;input type="search"&gt;</code></a> is basically just a text input, so why is <code>appearance: none;</code> useful here? The answer is that in Chromium-based browsers on macOS, search boxes have some styling restrictions — you can’t adjust their <code>height</code> or <code>font-size</code> freely, for example. This is because non-macOS <a href="https://www.wired.com/2013/04/blink/">Chrome browsers no longer use the WebKit rendering engine</a>, which enabled Aqua appearance by default for certain form controls. With Aqua enabled, some form controls are not <a href="https://webkit.org/blog/28/buttons/">scalable</a>.</p>
+<p>This can be fixed using our friend <code>appearance: none;</code>, which disables the default Aqua appearance:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb3-1" title="1">input<span class="ex">[type</span><span class="op">=</span><span class="st">&quot;search&quot;</span><span class="ex">]</span> {</a>
+<a class="sourceLine" id="cb3-2" title="2">    <span class="kw">-webkit-appearance</span>: <span class="dv">none</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="kw">appearance</span>: <span class="dv">none</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4">}</a></code></pre></div>
+<p>In the example below, you can see two identical styled search boxes. The right one has <code>appearance: none;</code> applied, and the left one doesn’t. If you look at it in macOS Chrome you’ll see that the left one isn’t sized properly.</p>
+<p>{{EmbedGHLiveSample(“learning-area/html/forms/styling-examples/search-appearence.html”, ‘100%’, 200)}}</p>
+<p>Interestingly, setting border/background on the search field also fixes this problem, as it <a href="https://webkit.org/blog/28/buttons/">disables</a> or “breaks” the Aqua appearance too. The following styled search doesn’t have <code>appearance: none;</code> applied, but it doesn’t suffer from the same problem in macOS Chrome as the previous example.</p>
+<p>{{EmbedGHLiveSample(“learning-area/html/forms/styling-examples/styled-search.html”, ‘100%’, 200)}}</p>
+<blockquote>
+<p><strong>Note:</strong> You may have noticed that in the search field, the “x” delete icon disappears when the input loses focus in Edge and Chrome, but stays put in Safari. To remove via CSS, you can use <code>input[type="search"]::-webkit-search-cancel-button { display: none; }</code>. However, this seems to get rid of the icon <em>with</em> focus too, with no apparent way to get it back.</p>
+</blockquote>
+<h3 id="styling-checkboxes-and-radio-buttons">Styling checkboxes and radio buttons</h3>
+<p>Styling a checkbox or a radio button is tricky by default. The sizes of check boxes and radio buttons are not meant to be changed with their default designs, and browsers react very differently when you try.</p>
+<p>For example, consider this simple test case:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">&lt;span&gt;&lt;input</span><span class="ot"> type=</span><span class="st">&quot;checkbox&quot;</span><span class="kw">&gt;&lt;/span&gt;</span></a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb5-1" title="1">span {</a>
+<a class="sourceLine" id="cb5-2" title="2">    <span class="kw">display</span>: <span class="dv">inline-block</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3">    <span class="kw">background</span>: <span class="cn">red</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-4" title="4">}</a>
+<a class="sourceLine" id="cb5-5" title="5"></a>
+<a class="sourceLine" id="cb5-6" title="6">input<span class="ex">[type</span><span class="op">=</span><span class="st">&quot;checkbox&quot;</span><span class="ex">]</span> {</a>
+<a class="sourceLine" id="cb5-7" title="7">    <span class="kw">width</span>: <span class="dv">100</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-8" title="8">    <span class="kw">height</span>: <span class="dv">100</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-9" title="9">}</a></code></pre></div>
+<p>Different browsers handle this in many different, often ugly ways:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Browser</th>
+<th>Rendering</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Firefox 71 (macOS)</td>
+<td><img src="firefox-mac-checkbox.png" /></td>
+</tr>
+<tr class="even">
+<td>Firefox 57 (Windows 10)</td>
+<td><img src="firefox-windows-checkbox.png" /></td>
+</tr>
+<tr class="odd">
+<td>Chrome 77 (macOS), Safari 13, Opera</td>
+<td><img src="chrome-mac-checkbox.png" /></td>
+</tr>
+<tr class="even">
+<td>Chrome 63 (Windows 10)</td>
+<td><img src="chrome-windows-checkbox.png" /></td>
+</tr>
+<tr class="odd">
+<td>Internet Explorer 11 (Windows 10)</td>
+<td><img src="ie11-checkbox.png" /></td>
+</tr>
+<tr class="even">
+<td>Edge 16 (Windows 10)</td>
+<td><img src="edge-checkbox.png" /></td>
+</tr>
+</tbody>
+</table>
+<h4 id="using-appearance-none-on-radioscheckboxes">Using appearance: none on radios/checkboxes</h4>
+<p>As we showed before, you can remove the default appearance of a checkbox or radio button altogether with {{cssxref(‘appearance’)}}<code>:none;</code> Let’s take this example HTML:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">&lt;form&gt;</span></a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="kw">&lt;fieldset&gt;</span></a>
+<a class="sourceLine" id="cb6-3" title="3">    <span class="kw">&lt;legend&gt;</span>Fruit preferences<span class="kw">&lt;/legend&gt;</span></a>
+<a class="sourceLine" id="cb6-4" title="4"></a>
+<a class="sourceLine" id="cb6-5" title="5">    <span class="kw">&lt;p&gt;</span></a>
+<a class="sourceLine" id="cb6-6" title="6">      <span class="kw">&lt;label&gt;</span></a>
+<a class="sourceLine" id="cb6-7" title="7">        <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;checkbox&quot;</span><span class="ot"> name=</span><span class="st">&quot;fruit-1&quot;</span><span class="ot"> value=</span><span class="st">&quot;cherry&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb6-8" title="8">        I like cherry</a>
+<a class="sourceLine" id="cb6-9" title="9">      <span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb6-10" title="10">    <span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb6-11" title="11">    <span class="kw">&lt;p&gt;</span></a>
+<a class="sourceLine" id="cb6-12" title="12">      <span class="kw">&lt;label&gt;</span></a>
+<a class="sourceLine" id="cb6-13" title="13">        <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;checkbox&quot;</span><span class="ot"> name=</span><span class="st">&quot;fruit-2&quot;</span><span class="ot"> value=</span><span class="st">&quot;banana&quot;</span><span class="ot"> disabled</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb6-14" title="14">        I can&#39;t like banana</a>
+<a class="sourceLine" id="cb6-15" title="15">      <span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb6-16" title="16">    <span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb6-17" title="17">    <span class="kw">&lt;p&gt;</span></a>
+<a class="sourceLine" id="cb6-18" title="18">      <span class="kw">&lt;label&gt;</span></a>
+<a class="sourceLine" id="cb6-19" title="19">        <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;checkbox&quot;</span><span class="ot"> name=</span><span class="st">&quot;fruit-3&quot;</span><span class="ot"> value=</span><span class="st">&quot;strawberry&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb6-20" title="20">        I like strawberry</a>
+<a class="sourceLine" id="cb6-21" title="21">      <span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb6-22" title="22">    <span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb6-23" title="23">  <span class="kw">&lt;/fieldset&gt;</span></a>
+<a class="sourceLine" id="cb6-24" title="24"><span class="kw">&lt;/form&gt;</span></a></code></pre></div>
+<p>Now, let’s style these with a custom checkbox design. Let’s start by unstyling the original check boxes:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb7-1" title="1">input<span class="ex">[type</span><span class="op">=</span><span class="st">&quot;checkbox&quot;</span><span class="ex">]</span> {</a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="kw">-webkit-appearance</span>: <span class="dv">none</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb7-3" title="3">  <span class="kw">appearance</span>: <span class="dv">none</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb7-4" title="4">}</a></code></pre></div>
+<p>We can use the {{cssxref(“:checked”)}} and {{cssxref(“:disabled”)}} pseudo-classes to change the appearance of our custom checkbox as its state changes:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb8-1" title="1">input<span class="ex">[type</span><span class="op">=</span><span class="st">&quot;checkbox&quot;</span><span class="ex">]</span> {</a>
+<a class="sourceLine" id="cb8-2" title="2">  <span class="kw">position</span>: <span class="dv">relative</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-3" title="3">  <span class="kw">width</span>: <span class="dv">1</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-4" title="4">  <span class="kw">height</span>: <span class="dv">1</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-5" title="5">  <span class="kw">border</span>: <span class="dv">1</span><span class="dt">px</span> <span class="dv">solid</span> <span class="cn">gray</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-6" title="6">  <span class="co">/* Adjusts the position of the checkboxes on the text baseline */</span></a>
+<a class="sourceLine" id="cb8-7" title="7">  <span class="kw">vertical-align</span>: <span class="dv">-2</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-8" title="8">  <span class="co">/* Set here so that Windows&#39; High-Contrast Mode can override */</span></a>
+<a class="sourceLine" id="cb8-9" title="9">  <span class="kw">color</span>: <span class="cn">green</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-10" title="10">}</a>
+<a class="sourceLine" id="cb8-11" title="11"></a>
+<a class="sourceLine" id="cb8-12" title="12">input<span class="ex">[type</span><span class="op">=</span><span class="st">&quot;checkbox&quot;</span><span class="ex">]</span><span class="in">::before</span> {</a>
+<a class="sourceLine" id="cb8-13" title="13">  <span class="kw">content</span>: <span class="st">&quot;✔&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-14" title="14">  <span class="kw">position</span>: <span class="dv">absolute</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-15" title="15">  <span class="kw">font-size</span>: <span class="dv">1.2</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-16" title="16">  <span class="kw">right</span>: <span class="dv">-1</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-17" title="17">  <span class="kw">top</span>: <span class="dv">-0.3</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-18" title="18">  <span class="kw">visibility</span>: <span class="dv">hidden</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-19" title="19">}</a>
+<a class="sourceLine" id="cb8-20" title="20"></a>
+<a class="sourceLine" id="cb8-21" title="21">input<span class="ex">[type</span><span class="op">=</span><span class="st">&quot;checkbox&quot;</span><span class="ex">]</span><span class="in">:checked::before</span> {</a>
+<a class="sourceLine" id="cb8-22" title="22">  <span class="co">/* Use `visibility` instead of `display` to avoid recalculating layout */</span></a>
+<a class="sourceLine" id="cb8-23" title="23">  <span class="kw">visibility</span>: <span class="dv">visible</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-24" title="24">}</a>
+<a class="sourceLine" id="cb8-25" title="25"></a>
+<a class="sourceLine" id="cb8-26" title="26">input<span class="ex">[type</span><span class="op">=</span><span class="st">&quot;checkbox&quot;</span><span class="ex">]</span><span class="in">:disabled</span> {</a>
+<a class="sourceLine" id="cb8-27" title="27">  <span class="kw">border-color</span>: <span class="cn">black</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-28" title="28">  <span class="kw">background</span>: <span class="cn">#ddd</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-29" title="29">  <span class="kw">color</span>: <span class="cn">gray</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-30" title="30">}</a></code></pre></div>
+<p>You’ll find more out about such pseudo-classes and more in the <a href="/en-US/docs/Learn/Forms/UI_pseudo-classes">next article</a>; the above ones do the following:</p>
+<ul>
+<li><code>:checked</code> — the checkbox (or radio button) is in a checked state — the user has clicked/activated it.</li>
+<li><code>:disabled</code> — the checkbox (or radio button) is in a disabled state — it cannot be interacted with.</li>
+</ul>
+<p>You can see the live result:</p>
+<p>{{EmbedGHLiveSample(“learning-area/html/forms/styling-examples/checkboxes-styled.html”, ‘100%’, 200)}}</p>
+<p>We’ve also created a couple of other examples to give you more ideas:</p>
+<ul>
+<li><a href="https://mdn.github.io/learning-area/html/forms/styling-examples/radios-styled.html">Styled radio buttons</a>: Custom radio button styling.</li>
+<li><a href="https://mdn.github.io/learning-area/html/forms/toggle-switch-example/">Toggle switch example</a>: A checkbox styled to look like a toggle switch.</li>
+</ul>
+<p>If you view these checkboxes in a browser that doesn’t support {{cssxref(“appearance”)}}, your custom design will be lost, but they will still look like checkboxes and be usable.</p>
+<blockquote>
+<p><strong>Note:</strong> While Internet Explorer doesn’t support any version of <code>appearance</code>, the <code>input[type=checkbox]::-ms-check</code> enables the targeting of checkboxes in IE only. This technique works for radio buttons too, despite the name <code>-ms-check</code>.</p>
+</blockquote>
+<h2 id="what-can-be-done-about-the-ugly-elements">What can be done about the “ugly” elements?</h2>
+<p>Now let’s turn our attention to the “ugly” controls — the ones that are really hard to thoroughly  style. In short, these are drop-down boxes, complex control types like <a href="/en-US/docs/Web/HTML/Element/input/color"><code>color</code></a> and <a href="/en-US/docs/Web/HTML/Element/input/datetime-local"><code>datetime-local</code></a>, and feedback—oriented controls like {{HTMLElement(“progress”)}} and {{HTMLElement(“meter”)}}.</p>
+<p>The problem is that these elements have very different default looks across browsers, and while you can style them in some ways, some parts of their internals are literally impossible to style.</p>
+<p>If you are prepared to live with some differences in look and feel, you can get away with some simple styling to make sizing consistent, uniform styling of things like background-colors, and usage of appearance to get rid of some system-level styling.</p>
+<p>Take the following example, which shows a number of the “ugly” form features in action:</p>
+<p>{{EmbedGHLiveSample(“learning-area/html/forms/styling-examples/ugly-controls.html”, ‘100%’, 750)}}</p>
+<p>This example has the following CSS applied to it:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb9-1" title="1">body {</a>
+<a class="sourceLine" id="cb9-2" title="2">  <span class="kw">font-family</span>: <span class="st">&#39;Josefin Sans&#39;</span><span class="op">,</span> <span class="dv">sans-serif</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-3" title="3">  <span class="kw">margin</span>: <span class="dv">20</span><span class="dt">px</span> <span class="bu">auto</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-4" title="4">  <span class="kw">max-width</span>: <span class="dv">400</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-5" title="5">}</a>
+<a class="sourceLine" id="cb9-6" title="6"></a>
+<a class="sourceLine" id="cb9-7" title="7">form <span class="op">&gt;</span> div {</a>
+<a class="sourceLine" id="cb9-8" title="8">  <span class="kw">margin-bottom</span>: <span class="dv">20</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-9" title="9">}</a>
+<a class="sourceLine" id="cb9-10" title="10"></a>
+<a class="sourceLine" id="cb9-11" title="11">select {</a>
+<a class="sourceLine" id="cb9-12" title="12">  <span class="kw">-webkit-appearance</span>: <span class="dv">none</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-13" title="13">  <span class="kw">appearance</span>: <span class="dv">none</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-14" title="14">}</a>
+<a class="sourceLine" id="cb9-15" title="15"></a>
+<a class="sourceLine" id="cb9-16" title="16"><span class="fu">.select-wrapper</span> {</a>
+<a class="sourceLine" id="cb9-17" title="17">  <span class="kw">position</span>: <span class="dv">relative</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-18" title="18">}</a>
+<a class="sourceLine" id="cb9-19" title="19"></a>
+<a class="sourceLine" id="cb9-20" title="20"><span class="fu">.select-wrapper</span><span class="in">::after</span> {</a>
+<a class="sourceLine" id="cb9-21" title="21">  <span class="kw">content</span>: <span class="st">&quot;▼&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-22" title="22">  <span class="kw">font-size</span>: <span class="dv">1</span><span class="dt">rem</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-23" title="23">  <span class="kw">top</span>: <span class="dv">6</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-24" title="24">  <span class="kw">right</span>: <span class="dv">10</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-25" title="25">  <span class="kw">position</span>: <span class="dv">absolute</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-26" title="26">}</a>
+<a class="sourceLine" id="cb9-27" title="27"></a>
+<a class="sourceLine" id="cb9-28" title="28">button<span class="op">,</span> label<span class="op">,</span> input<span class="op">,</span> select<span class="op">,</span> progress<span class="op">,</span> meter {</a>
+<a class="sourceLine" id="cb9-29" title="29">  <span class="kw">display</span>: <span class="dv">block</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-30" title="30">  <span class="kw">font-family</span>: <span class="bu">inherit</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-31" title="31">  <span class="kw">font-size</span>: <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-32" title="32">  <span class="kw">margin</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-33" title="33">  <span class="kw">box-sizing</span>: <span class="dv">border-box</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-34" title="34">  <span class="kw">width</span>: <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-35" title="35">  <span class="kw">padding</span>: <span class="dv">5</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-36" title="36">  <span class="kw">height</span>: <span class="dv">30</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-37" title="37">}</a>
+<a class="sourceLine" id="cb9-38" title="38"></a>
+<a class="sourceLine" id="cb9-39" title="39">input<span class="ex">[type</span><span class="op">=</span><span class="st">&quot;text&quot;</span><span class="ex">]</span><span class="op">,</span> input<span class="ex">[type</span><span class="op">=</span><span class="st">&quot;datetime-local&quot;</span><span class="ex">]</span><span class="op">,</span> input<span class="ex">[type</span><span class="op">=</span><span class="st">&quot;color&quot;</span><span class="ex">]</span><span class="op">,</span> select {</a>
+<a class="sourceLine" id="cb9-40" title="40">  <span class="kw">box-shadow</span>: <span class="dv">inset</span> <span class="dv">1</span><span class="dt">px</span> <span class="dv">1</span><span class="dt">px</span> <span class="dv">3</span><span class="dt">px</span> <span class="cn">#ccc</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-41" title="41">  <span class="kw">border-radius</span>: <span class="dv">5</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-42" title="42">}</a>
+<a class="sourceLine" id="cb9-43" title="43"></a>
+<a class="sourceLine" id="cb9-44" title="44">label {</a>
+<a class="sourceLine" id="cb9-45" title="45">  <span class="kw">margin-bottom</span>: <span class="dv">5</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-46" title="46">}</a>
+<a class="sourceLine" id="cb9-47" title="47"></a>
+<a class="sourceLine" id="cb9-48" title="48">button {</a>
+<a class="sourceLine" id="cb9-49" title="49">  <span class="kw">width</span>: <span class="dv">60</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-50" title="50">  <span class="kw">margin</span>: <span class="dv">0</span> <span class="bu">auto</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-51" title="51">}</a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> If you want to test these examples across a number of browsers simultaneously, you can <a href="https://mdn.github.io/learning-area/html/forms/styling-examples/ugly-controls.html">find it live here</a> (also <a href="https://github.com/mdn/learning-area/blob/master/html/forms/styling-examples/ugly-controls.html">see here for the source code</a>).</p>
+<p>Also bear in mind that we’ve added some JavaScript to the page that lists the files selected by the file picker, below the control itself. This is a simplified version of the example found on the <a href="/en-US/docs/Web/HTML/Element/input/file#examples"><code>&lt;input type="file"&gt;</code></a> reference page.</p>
+</blockquote>
+<p>As you can see, we’ve done fairly well at getting these to look uniform across modern browsers.</p>
+<p>We’ve applied some global normalizing CSS to all the controls and their labels, to get them to size in the same way, adopt their parent font, etc., as mentioned in the previous article:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb10-1" title="1">button<span class="op">,</span> label<span class="op">,</span> input<span class="op">,</span> select<span class="op">,</span> progress<span class="op">,</span> meter {</a>
+<a class="sourceLine" id="cb10-2" title="2">  <span class="kw">display</span>: <span class="dv">block</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-3" title="3">  <span class="kw">font-family</span>: <span class="bu">inherit</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-4" title="4">  <span class="kw">font-size</span>: <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-5" title="5">  <span class="kw">margin</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-6" title="6">  <span class="kw">box-sizing</span>: <span class="dv">border-box</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-7" title="7">  <span class="kw">width</span>: <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-8" title="8">  <span class="kw">padding</span>: <span class="dv">5</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-9" title="9">  <span class="kw">height</span>: <span class="dv">30</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-10" title="10">}</a></code></pre></div>
+<p>We also added some uniform shadow and rounded corners to the controls on which it made sense:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb11-1" title="1">input<span class="ex">[type</span><span class="op">=</span><span class="st">&quot;text&quot;</span><span class="ex">]</span><span class="op">,</span> input<span class="ex">[type</span><span class="op">=</span><span class="st">&quot;datetime-local&quot;</span><span class="ex">]</span><span class="op">,</span> input<span class="ex">[type</span><span class="op">=</span><span class="st">&quot;color&quot;</span><span class="ex">]</span><span class="op">,</span> select {</a>
+<a class="sourceLine" id="cb11-2" title="2">  <span class="kw">box-shadow</span>: <span class="dv">inset</span> <span class="dv">1</span><span class="dt">px</span> <span class="dv">1</span><span class="dt">px</span> <span class="dv">3</span><span class="dt">px</span> <span class="cn">#ccc</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb11-3" title="3">  <span class="kw">border-radius</span>: <span class="dv">5</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb11-4" title="4">}</a></code></pre></div>
+<p>on other controls like range types, progress bars, and meters they just add an ugly box around the control area, so it doesn’t make sense.</p>
+<p>Let’s talk about some specifics of each of these types of control, highlighting difficulties along the way.</p>
+<h3 id="selects-and-datalists">Selects and datalists</h3>
+<p>In modern browsers, selects and datalists are generally not too bad to style provided you don’t want to vary the look and feel too much from the defaults.</p>
+<p>We’ve managed to get the basic look of the boxes looking pretty uniform and consistent. The datalist control is <code>&lt;input type="text"&gt;</code> anyway, so we knew this wouldn’t be a problem.</p>
+<p>Two things are slightly more problematic. First of all, the select’s “arrow” icon that indicates it is a dropdown differs across browsers. It also tends to change if you increase the size of the select box, or resize in an ugly fashion. To fix this in our example we first used our old friend <code>appearance: none</code> to get rid of the icon altogether:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb12-1" title="1">select {</a>
+<a class="sourceLine" id="cb12-2" title="2">  <span class="kw">-webkit-appearance</span>: <span class="dv">none</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-3" title="3">  <span class="kw">appearance</span>: <span class="dv">none</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-4" title="4">}</a></code></pre></div>
+<p>We then created our own icon using generated content. We put an extra wrapper around the control, because <a href="/en-US/docs/Web/CSS/::before"><code>::before</code></a>/<a href="/en-US/docs/Web/CSS/::after"><code>::after</code></a> don’t work on <code>&lt;select&gt;</code> elements (this is because generated content is placed relative to an element’s formatting box, but form inputs work more like replaced elements — their display is generated by the browser and put in place — and therefore don’t have one):</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb13-1" title="1"><span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;select-wrapper&quot;</span><span class="kw">&gt;&lt;select</span><span class="ot"> id=</span><span class="st">&quot;select&quot;</span><span class="ot"> name=</span><span class="st">&quot;select&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb13-2" title="2">  <span class="kw">&lt;option&gt;</span>Banana<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb13-3" title="3">  <span class="kw">&lt;option&gt;</span>Cherry<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb13-4" title="4">  <span class="kw">&lt;option&gt;</span>Lemon<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb13-5" title="5"><span class="kw">&lt;/select&gt;&lt;/div&gt;</span></a></code></pre></div>
+<p>We then use generated content to generate a little down arrow, and put it in the right place using positioning:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb14-1" title="1"><span class="fu">.select-wrapper</span> {</a>
+<a class="sourceLine" id="cb14-2" title="2">  <span class="kw">position</span>: <span class="dv">relative</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb14-3" title="3">}</a>
+<a class="sourceLine" id="cb14-4" title="4"></a>
+<a class="sourceLine" id="cb14-5" title="5"><span class="fu">.select-wrapper</span><span class="in">::after</span> {</a>
+<a class="sourceLine" id="cb14-6" title="6">  <span class="kw">content</span>: <span class="st">&quot;▼&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb14-7" title="7">  <span class="kw">font-size</span>: <span class="dv">1</span><span class="dt">rem</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb14-8" title="8">  <span class="kw">top</span>: <span class="dv">6</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb14-9" title="9">  <span class="kw">right</span>: <span class="dv">10</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb14-10" title="10">  <span class="kw">position</span>: <span class="dv">absolute</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb14-11" title="11">}</a></code></pre></div>
+<p>The second, slightly more major issue is that you don’t have control over the box that appears containing the options when you click on the <code>&lt;select&gt;</code> box to open it. You’ll notice that the options don’t inherit the font set on the parent. You also can’t consistently set things like spacing and colors. For example, Firefox will apply <a href="/en-US/docs/Web/CSS/color"><code>color</code></a> and <a href="/en-US/docs/Web/CSS/background-color"><code>background-color</code></a> when set on the <a href="/en-US/docs/Web/HTML/Element/option"><code>&lt;option&gt;</code></a> elements, Chrome won’t. Neither of them will apply any kind of spacing (e.g. <a href="/en-US/docs/Web/CSS/padding"><code>padding</code></a>). The same is also true of the autocomplete list that appears for the datalist.</p>
+<p>If you really need full control over the option styling, you’ll have to either use some kind of library to generate a custom control, or build your own custom control, or in the case of select use the <code>multiple</code> attribute, which makes all the options appear on the page, sidestepping this particular problem:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb15-1" title="1"><span class="kw">&lt;select</span><span class="ot"> id=</span><span class="st">&quot;select&quot;</span><span class="ot"> name=</span><span class="st">&quot;select&quot;</span><span class="ot"> multiple</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb15-2" title="2">  ...</a>
+<a class="sourceLine" id="cb15-3" title="3"><span class="kw">&lt;/select&gt;</span></a></code></pre></div>
+<p>Of course, this might also not fit in with the design you are going for, but it’s worth noting!</p>
+<h3 id="date-input-types">Date input types</h3>
+<p>The date/time input types (<a href="/en-US/docs/Web/HTML/Element/input/datetime-local"><code>datetime-local</code></a>, <a href="/en-US/docs/Web/HTML/Element/input/time"><code>time</code></a>, <a href="/en-US/docs/Web/HTML/Element/input/week"><code>week</code></a>, <a href="/en-US/docs/Web/HTML/Element/input/month"><code>month</code></a>) all have the same major associated issue. The actual containing box is as easy to style as any text input, and what we’ve got in this demo looks fine.</p>
+<p>However, the internal parts of the control (e.g. the popup calendar that you use pick a date, the spinner that you can use to increment/decrement values) are not stylable at all, and you can’t get rid of them using <code>appearance: none;</code>. If you really need full control over the styling, you’ll have to either use some kind of library to generate a custom control, or build your own.</p>
+<blockquote>
+<p><strong>Note:</strong> It is worth mentioning <a href="/en-US/docs/Web/HTML/Element/input/number"><code>&lt;input type="number"&gt;</code></a> here too — this also has a spinner that you can use to increment/decrement values, so potentially suffers from the same problem. However, in the case of the <code>number</code> type the data being collected is simpler, and it is easy to just use a <code>text</code> input type instead if desired (or <code>tel</code> if you want mobile browsers to show the numeric keypad).</p>
+</blockquote>
+<h3 id="range-input-types">Range input types</h3>
+<p><a href="/en-US/docs/Web/HTML/Element/input/range"><code>&lt;input type="range"&gt;</code></a> is annoying to style. You can use something like the following to remove the default slider track completely and replace it with a custom style (a thin red track, in this case):</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb16-1" title="1">input<span class="ex">[type</span><span class="op">=</span><span class="st">&quot;range&quot;</span><span class="ex">]</span> {</a>
+<a class="sourceLine" id="cb16-2" title="2">  <span class="kw">appearance</span>: <span class="dv">none</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-3" title="3">  <span class="kw">-webkit-appearance</span>: <span class="dv">none</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-4" title="4">  <span class="kw">background</span>: <span class="cn">red</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-5" title="5">  <span class="kw">height</span>: <span class="dv">2</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-6" title="6">  <span class="kw">padding</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-7" title="7">  <span class="kw">outline</span>: <span class="dv">1</span><span class="dt">px</span> <span class="dv">solid</span> <span class="dv">transparent</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-8" title="8">}</a></code></pre></div>
+<p>However, it is very difficult to customize the style of the range control’s drag handle — to get full control over range styling you’ll need to use a whole bunch of complex CSS code, including multiple non-standard, browser-specific pseudo-elements. Check out <a href="https://css-tricks.com/styling-cross-browser-compatible-range-inputs-css/">Styling Cross-Browser Compatible Range Inputs with CSS</a> on CSS tricks for a detailed write up of what’s needed.</p>
+<h3 id="color-input-types">Color input types</h3>
+<p>Input controls of type color are not too bad. In supporting browsers, they tend to just give you a block of solid color with a small border.</p>
+<p>You can remove the border, just leaving the block of color, using something like this:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb17-1" title="1">input<span class="ex">[type</span><span class="op">=</span><span class="st">&quot;color&quot;</span><span class="ex">]</span> {</a>
+<a class="sourceLine" id="cb17-2" title="2">  <span class="kw">border</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb17-3" title="3">  <span class="kw">padding</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb17-4" title="4">}</a></code></pre></div>
+<p>However, a custom solution is the only way to get anything significantly different.</p>
+<h3 id="file-input-types">File input types</h3>
+<p>Inputs of type file are generally OK — as you saw in our example, it is fairly easy to create something that fits in OK with the rest of the page — the output line that is part of the control will inherit the parent font if you tell the input to do so, and you can style the custom list of file names and sizes in any way you want; we created it after all.</p>
+<p>The only problem with file pickers is that the button provided that you press to open the file picker is completely unstylable — it can’t be sized or colored, and it won’t even accept a different font.</p>
+<p>One way around this is to take advantage of the fact that if you have a label associated with a form control, clicking the label will activate the control. So you could hide the actual form input using something like this:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb18-1" title="1">input<span class="ex">[type</span><span class="op">=</span><span class="st">&quot;file&quot;</span><span class="ex">]</span> {</a>
+<a class="sourceLine" id="cb18-2" title="2">  <span class="kw">height</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb18-3" title="3">  <span class="kw">padding</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb18-4" title="4">  <span class="kw">opacity</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb18-5" title="5">}</a></code></pre></div>
+<p>And then style the label to act like a button, which when pressed will open the file picker as expected:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb19-1" title="1">label<span class="ex">[for</span><span class="op">=</span><span class="st">&quot;file&quot;</span><span class="ex">]</span> {</a>
+<a class="sourceLine" id="cb19-2" title="2">  <span class="kw">box-shadow</span>: <span class="dv">1</span><span class="dt">px</span> <span class="dv">1</span><span class="dt">px</span> <span class="dv">3</span><span class="dt">px</span> <span class="cn">#ccc</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb19-3" title="3">  <span class="kw">background</span>: <span class="fu">linear-gradient(</span>to <span class="dv">bottom</span><span class="op">,</span> <span class="cn">#eee</span><span class="op">,</span> <span class="cn">#ccc</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb19-4" title="4">  <span class="kw">border</span>: <span class="dv">1</span><span class="dt">px</span> <span class="dv">solid</span> <span class="fu">rgb(</span><span class="dv">169</span><span class="op">,</span> <span class="dv">169</span><span class="op">,</span> <span class="dv">169</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb19-5" title="5">  <span class="kw">border-radius</span>: <span class="dv">5</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb19-6" title="6">  <span class="kw">text-align</span>: <span class="dv">center</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb19-7" title="7">  <span class="kw">line-height</span>: <span class="dv">1.5</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb19-8" title="8">}</a>
+<a class="sourceLine" id="cb19-9" title="9"></a>
+<a class="sourceLine" id="cb19-10" title="10">label<span class="ex">[for</span><span class="op">=</span><span class="st">&quot;file&quot;</span><span class="ex">]</span><span class="in">:hover</span> {</a>
+<a class="sourceLine" id="cb19-11" title="11">  <span class="kw">background</span>: <span class="fu">linear-gradient(</span>to <span class="dv">bottom</span><span class="op">,</span> <span class="cn">#fff</span><span class="op">,</span> <span class="cn">#ddd</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb19-12" title="12">}</a>
+<a class="sourceLine" id="cb19-13" title="13"></a>
+<a class="sourceLine" id="cb19-14" title="14">label<span class="ex">[for</span><span class="op">=</span><span class="st">&quot;file&quot;</span><span class="ex">]</span><span class="in">:active</span> {</a>
+<a class="sourceLine" id="cb19-15" title="15">  <span class="kw">box-shadow</span>: <span class="dv">inset</span> <span class="dv">1</span><span class="dt">px</span> <span class="dv">1</span><span class="dt">px</span> <span class="dv">3</span><span class="dt">px</span> <span class="cn">#ccc</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb19-16" title="16">}</a></code></pre></div>
+<p>You can see the result of the above CSS styling in the below live example (see also <a href="https://mdn.github.io/learning-area/html/forms/styling-examples/styled-file-picker.html">styled-file-picker.html</a> live, and the <a href="https://github.com/mdn/learning-area/blob/master/html/forms/styling-examples/styled-file-picker.html">source code</a>).</p>
+<p>{{EmbedGHLiveSample(“learning-area/html/forms/styling-examples/styled-file-picker.html”, ‘100%’, 200)}}</p>
+<h3 id="meters-and-progress-bars">Meters and progress bars</h3>
+<p><a href="/en-US/docs/Web/HTML/Element/meter"><code>&lt;meter&gt;</code></a> and <a href="/en-US/docs/Web/HTML/Element/progress"><code>&lt;progress&gt;</code></a> are possibly the worst of the lot. As you saw in the earlier example, we can set them to a desired width relatively accurately. But beyond that, they are really difficult to style in any way. They don’t handle height settings consistently between each other and between browsers, you can color the background, but not the foreground bar, and setting <code>appearance: none</code> on them makes things worse, not better.</p>
+<p>It is easier to just create your own custom solution for these features, if you want to be able to control the styling, or use a third-party solution such as <a href="https://kimmobrunfeldt.github.io/progressbar.js/#examples">progressbar.js</a>.</p>
+<h2 id="the-road-to-nicer-forms-useful-libraries-and-polyfills">The road to nicer forms: useful libraries and polyfills</h2>
+<p>As we’ve mentioned above a few times, if you want to gain full control over the “ugly” control types, you have no choice but to rely on JavaScript. In the article <a href="/en-US/docs/Learn/Forms/How_to_build_custom_form_controls">How to build custom form controls</a> you will see how to do it on your own, but there are some very useful libraries out there that can help you:</p>
+<ul>
+<li><a href="https://github.com/draganbabic/uni-form">Uni-form</a> is a framework that standardizes form markup, styling it with CSS. It also offers a few additional features when used with jQuery, but that’s optional.</li>
+<li><a href="https://formalize.me/">Formalize</a> is an extension to common JavaScript frameworks (such as jQuery, Dojo, YUI, etc.) that helps to normalize and customize your forms.</li>
+<li><a href="https://www.emblematiq.com/lab/niceforms/">Niceforms</a> is a standalone JavaScript method that provides complete customization of web forms. You can use some of the built in themes, or create your own.</li>
+</ul>
+<p>The following libraries aren’t just about forms, but they have very interesting features for dealing with HTML forms:</p>
+<ul>
+<li><a href="https://jqueryui.com/">jQuery UI</a> offers customizable widgets such as date pickers (with special attention given to accessibility).</li>
+<li><a href="https://getbootstrap.com/docs/5.1/forms/overview/">Bootstrap</a> can help normalize your forms.</li>
+<li><a href="https://afarkas.github.io/webshim/demos/">WebShim</a> is a huge tool that can help you deal with browser HTML5 support. The web forms part can be really helpful.</li>
+</ul>
+<p>Remember that CSS and JavaScript can have side effects. So if you choose to use one of those libraries, you should always have robust fallback HTML in case the script fails. There are many reasons why scripts may fail, especially in the mobile world, and you need to design your Web site or app to handle these cases as well as possible.</p>
+<h2 id="test-your-skills">Test your skills!</h2>
+<p>You’ve reached the end of this article, but can you remember the most important information? You can find some further tests to verify that you’ve retained this information before you move on — see <a href="/en-US/docs/Learn/Forms/Test_your_skills:_Advanced_styling">Test your skills: Advanced styling</a>. Bear in mind that some questions in this assessment series assume knowledge of the <a href="/en-US/docs/Learn/Forms/UI_pseudo-classes">next article</a> too, so you might want to work through that article first before attempting it.</p>
+<h2 id="summary">Summary</h2>
+<p>While there are still difficulties using CSS with HTML forms, there are ways to get around many of the problems. There are no clean, universal solutions, but modern browsers offer new possibilities. For now, the best solution is to learn more about the way the different browsers support CSS when applied to HTML form controls.</p>
+<p>In the next article of this module, we will explore the different <a href="/en-US/docs/Learn/Forms/UI_pseudo-classes">UI pseudo-classes</a> available to us in modern browsers for styling forms in different states.</p>
+<p>{{PreviousMenuNext(“Learn/Forms/Styling_web_forms”, “Learn/Forms/UI_pseudo-classes”, “Learn/Forms”)}}</p>
+<h2 id="in-this-module">In this module</h2>
+<ul>
+<li><a href="/en-US/docs/Learn/Forms/Your_first_form">Your first form</a></li>
+<li><a href="/en-US/docs/Learn/Forms/How_to_structure_a_web_form">How to structure a web form</a></li>
+<li><a href="/en-US/docs/Learn/Forms/Basic_native_form_controls">Basic native form controls</a></li>
+<li><a href="/en-US/docs/Learn/Forms/HTML5_input_types">The HTML5 input types</a></li>
+<li><a href="/en-US/docs/Learn/Forms/Other_form_controls">Other form controls</a></li>
+<li><a href="/en-US/docs/Learn/Forms/Styling_web_forms">Styling web forms</a></li>
+<li><a href="/en-US/docs/Learn/Forms/Advanced_form_styling">Advanced form styling</a></li>
+<li><a href="/en-US/docs/Learn/Forms/UI_pseudo-classes">UI pseudo-classes</a></li>
+<li><a href="/en-US/docs/Learn/Forms/Form_validation">Client-side form validation</a></li>
+<li><a href="/en-US/docs/Learn/Forms/Sending_and_retrieving_form_data">Sending form data</a></li>
+</ul>
+<h3 id="advanced-topics">Advanced Topics</h3>
+<ul>
+<li><a href="/en-US/docs/Learn/Forms/How_to_build_custom_form_controls">How to build custom form controls</a></li>
+<li><a href="/en-US/docs/Learn/Forms/Sending_forms_through_JavaScript">Sending forms through JavaScript</a></li>
+<li><a href="/en-US/docs/Learn/Forms/Property_compatibility_table_for_form_controls">Property compatibility table for form widgets</a></li>
+</ul>

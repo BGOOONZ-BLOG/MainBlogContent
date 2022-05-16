@@ -1,0 +1,48 @@
+<p>{{LearnSidebar}}</p>
+<p><a href="/en-US/docs/Glossary/HTML5">HTML5</a> is designed with extensibility in mind for data that should be associated with a particular element but need not have any defined meaning. <a href="/en-US/docs/Web/HTML/Global_attributes/data-*"><code>data-*</code> attributes</a> allow us to store extra information on standard, semantic HTML elements without other hacks such as non-standard attributes, or extra properties on DOM.</p>
+<h2 id="html-syntax">HTML syntax</h2>
+<p>The syntax is simple. Any attribute on any element whose attribute name starts with <code>data-</code> is a data attribute. Say you have an article and you want to store some extra information that doesn’t have any visual representation. Just use <code>data</code> attributes for that:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">&lt;article</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="ot">  id=</span><span class="st">&quot;electric-cars&quot;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="ot">  data-columns=</span><span class="st">&quot;3&quot;</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="ot">  data-index-number=</span><span class="st">&quot;12314&quot;</span></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="ot">  data-parent=</span><span class="st">&quot;cars&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb1-6" title="6">...</a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="kw">&lt;/article&gt;</span></a></code></pre></div>
+<h2 id="javascript-access">JavaScript access</h2>
+<p>Reading the values of these attributes out in <a href="/en-US/docs/Web/JavaScript">JavaScript</a> is also very simple. You could use {{domxref(“Element.getAttribute”, “getAttribute()”)}} with their full HTML name to read them, but the standard defines a simpler way: a {{domxref(“DOMStringMap”)}} you can read out via a {{domxref(“HTMLElement/dataset”, “dataset”)}} property.</p>
+<p>To get a <code>data</code> attribute through the <code>dataset</code> object, get the property by the part of the attribute name after <code>data-</code> (note that dashes are converted to camelCase).</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> article <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#electric-cars&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="co">// The following would also work:</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="co">// const article = document.getElementById(&quot;electric-cars&quot;)</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="va">article</span>.<span class="va">dataset</span>.<span class="at">columns</span> <span class="co">// &quot;3&quot;</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="va">article</span>.<span class="va">dataset</span>.<span class="at">indexNumber</span> <span class="co">// &quot;12314&quot;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="va">article</span>.<span class="va">dataset</span>.<span class="at">parent</span> <span class="co">// &quot;cars&quot;</span></a></code></pre></div>
+<p>Each property is a string and can be read and written. In the above case setting <code>article.dataset.columns = 5</code> would change that attribute to <code>"5"</code>.</p>
+<h2 id="css-access">CSS access</h2>
+<p>Note that, as data attributes are plain HTML attributes, you can even access them from <a href="/en-US/docs/Web/CSS">CSS</a>. For example to show the parent data on the article you can use <a href="/en-US/docs/Web/CSS/content">generated content</a> in CSS with the <a href="/en-US/docs/Web/CSS/attr()"><code>attr()</code></a> function:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb3-1" title="1">article<span class="in">::before</span> {</a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">content</span>: <span class="fu">attr(</span>data-parent<span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">}</a></code></pre></div>
+<p>You can also use the <a href="/en-US/docs/Web/CSS/Attribute_selectors">attribute selectors</a> in CSS to change styles according to the data:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb4-1" title="1">article<span class="ex">[data-columns</span><span class="op">=</span><span class="st">&#39;3&#39;</span><span class="ex">]</span> {</a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="kw">width</span>: <span class="dv">400</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3">}</a>
+<a class="sourceLine" id="cb4-4" title="4">article<span class="ex">[data-columns</span><span class="op">=</span><span class="st">&#39;4&#39;</span><span class="ex">]</span> {</a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="kw">width</span>: <span class="dv">600</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-6" title="6">}</a></code></pre></div>
+<p>You can see all this working together <a href="https://jsbin.com/ujiday/2/edit">in this JSBin example</a>.</p>
+<p>Data attributes can also be stored to contain information that is constantly changing, like scores in a game. Using the CSS selectors and JavaScript access here this allows you to build some nifty effects without having to write your own display routines. See <a href="https://www.youtube.com/watch?v=On_WyUB1gOk">this screencast</a> for an example using generated content and CSS transitions (<a href="https://jsbin.com/atawaz/3/edit">JSBin example</a>).</p>
+<p>Data values are strings. Number values must be quoted in the selector for the styling to take effect.</p>
+<h2 id="issues">Issues</h2>
+<p>Do not store content that should be visible and accessible in data attributes, because assistive technology may not access them. In addition, search crawlers may not index data attributes’ values.</p>
+<p>The main issues to consider are Internet Explorer support and performance. Internet Explorer 11+ provides support for the standard, but all earlier versions <a href="https://caniuse.com/#feat=dataset">do not support <code>dataset</code></a>. To support IE 10 and under you need to access data attributes with {{domxref(“Element.getAttribute”, “getAttribute()”)}} instead. Also, the <a href="https://jsperf.com/data-dataset">performance of reading data-attributes</a> compared to storing this data in a regular JS object is poor.</p>
+<p>That said, though, for custom element-associated metadata, they are a great solution.</p>
+<p>In Firefox 49.0.2 (and perhaps earlier/later versions), the data attributes that exceed 1022 characters will not be read by Javascript (EcmaScript 4).</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li>This article is adapted from <a href="https://hacks.mozilla.org/2012/10/using-data-attributes-in-javascript-and-css/">Using data attributes in JavaScript and CSS on hacks.mozilla.org</a>.</li>
+<li>Custom attributes are also supported in SVG 2; see {{domxref(“SVGElement.dataset”)}} and {{SVGAttr("data-*")}} for more information.</li>
+<li><a href="https://www.sitepoint.com/use-html5-data-attributes/">How to use HTML5 data attributes</a> (Sitepoint)</li>
+</ul>

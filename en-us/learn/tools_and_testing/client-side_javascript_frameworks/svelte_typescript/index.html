@@ -1,0 +1,750 @@
+<p>{{LearnSidebar}} {{PreviousMenuNext(“Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_stores”,“Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_deployment_next”, “Learn/Tools_and_testing/Client-side_JavaScript_frameworks”)}}</p>
+<p>In the last article we learned about Svelte stores and even implemented our own custom store to persist the app’s information to Web Storage. We also had a look at using the transition directive to implement animations on DOM elements in Svelte.</p>
+<p>We will now learn how to use TypeScript in Svelte applications. First we’ll learn what TypeScript is and what benefits it can bring us. Then we’ll see how to configure our project to work with TypeScript files. Finally we will go over our app and see what modifications we have to make to fully take advantage of TypeScript features.</p>
+<table>
+<tbody>
+<tr>
+<th scope="row">
+Prerequisites:
+</th>
+<td>
+<p>
+At minimum, it is recommended that you are familiar with the core <a href="/en-US/docs/Learn/HTML">HTML</a>, <a href="/en-US/docs/Learn/CSS">CSS</a>, and <a href="/en-US/docs/Learn/JavaScript">JavaScript</a> languages, and have knowledge of the <a
+            href="/en-US/docs/Learn/Tools_and_testing/Understanding_client-side_tools/Command_line"
+            >terminal/command line</a
+          >.
+</p>
+<p>
+You’ll need a terminal with node + npm installed to compile and build your app.
+</p>
+</td>
+</tr>
+<tr>
+<th scope="row">
+Objective:
+</th>
+<td>
+Learn how to configure and use TypeScript when developing Svelte applications.
+</td>
+</tr>
+</tbody>
+</table>
+<p>Note that our application is fully functional and porting it to TypeScript is completely optional. There are different opinions about it, and in this chapter we will talk briefly about the pros and cons of using TypeScript. Even if you are not planning to adopt it, this article will be useful for allowing you to learn what it has to offer and help you make your own decision. If you are not interested at all in TypeScript, you can skip to the next chapter, where we will look at different options for deploying our Svelte applications, further resources, and more.</p>
+<h2 id="code-along-with-us">Code along with us</h2>
+<h3 id="git">Git</h3>
+<p>Clone the github repo (if you haven’t already done it) with:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb1-1" title="1"><span class="fu">git</span> clone https://github.com/opensas/mdn-svelte-tutorial.git</a></code></pre></div>
+<p>Then to get to the current app state, run</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" title="1"><span class="bu">cd</span> mdn-svelte-tutorial/07-typescript-support</a></code></pre></div>
+<p>Or directly download the folder’s content:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb3-1" title="1"><span class="ex">npx</span> degit opensas/mdn-svelte-tutorial/07-typescript-support</a></code></pre></div>
+<p>Remember to run <code>npm install &amp;&amp; npm run dev</code> to start your app in development mode.</p>
+<h3 id="repl">REPL</h3>
+<p>Unfortunately, <a href="https://github.com/sveltejs/svelte-repl/issues/130">TypeScript support is not yet available in the REPL</a>.</p>
+<h2 id="typescript-optional-static-typing-for-javascript">TypeScript: optional static typing for JavaScript</h2>
+<p><a href="https://www.typescriptlang.org/">TypeScript</a> is a superset of JavaScript that provides features such as optional static typing, classes, interfaces, and generics. The goal of TypeScript is to help catch mistakes early through its type system and make JavaScript development more efficient. One of the big benefits is enabling IDEs to provide a richer environment for spotting common errors as you type the code.</p>
+<p>Best of all, JavaScript code is valid TypeScript code; TypeScript is a superset of JavaScript. You can rename most of your <code>.js</code> files to <code>.ts</code> files and they will just work.</p>
+<p>Our TypeScript code will be able to run everywhere JavaScript can run. How is that possible? TypeScript “transpiles” our code to vainilla JavaScript. That means that it parses TypeScript code and produces the equivalent vanilla JavaScript code for browsers to run.</p>
+<blockquote>
+<p><strong>Note:</strong> If you are curious about how TypeScript transpiles our code to JavaScript you can have a look at the <a href="https://www.typescriptlang.org/play/?target=1&amp;e=4#example/hello-world">TypeScript Playground</a>.</p>
+</blockquote>
+<p>First class TypeScript support has been Svelte’s most requested feature for quite some time. Thanks to the hard work of the Svelte team, together with many contributors, we have an <a href="https://svelte.dev/blog/svelte-and-typescript">official solution</a> ready to be put to the test. In this section we’ll show you how to setup a Svelte project With TypeScript support to give it a try.</p>
+<h2 id="why-typescript">Why TypeScript?</h2>
+<p>TypeScript’s main advantages are:</p>
+<ul>
+<li>Early spotted bugs: The compiler checks types at compile time and provides error reporting.</li>
+<li>Readability: Static typing gives the code more structure, making it self-documenting and more readable.</li>
+<li>Rich IDE support: Type information allows code editors and IDEs to offer features like code navigation, autocompletion, and smarter hints.</li>
+<li>Safer refactoring: Types allows IDEs to know more about your code, and assist you while refactoring large portions of your code base.</li>
+<li>Type inference: Enables you to take advantage of many TypeScript features even without declaring variable types.</li>
+<li>Availability of new and future JavaScript features: TypeScript transpiles many recent <a href="http://es6-features.org/">ES6 features</a> to plain old-school JavaScript, allowing you to use them even on user-agents that don’t support them natively yet.</li>
+</ul>
+<p>TypeScript also has some disadvantages:</p>
+<ul>
+<li>Not true static typing: Types are only checked at compile time, and they are removed from the generated code.</li>
+<li>Steep learning curve: Even though TypeScript is a superset of JavaScript and not a completely new language, there is a considerable learning curve, especially if you have no experience at all with static languages like Java or C#.</li>
+<li>More code: You have to write and maintain more code.</li>
+<li>No replacement for automatic tests: Even though types might help you catch several bugs, TypeScript is not a true replacement for a comprehensive suite of automated tests.</li>
+<li>Boiler plate code: Working with types, classes, interfaces, and generics can lead to over-engineered code bases.</li>
+</ul>
+<p>There seems to be a broad consensus that TypeScript is particularly well suited for large-scale projects, with many developers working on the same code base. And it is indeed being used by several large-scale projects, like Angular 2, Vue 3, Ionic, Visual Studio Code, Jest and even the Svelte compiler. Nevertheless, some developers prefer to use it even on small projects like the one we are developing.</p>
+<p>In the end, it’s your decision. In the following sections we hope to give you more evidence to make up your mind about it.</p>
+<h2 id="creating-a-svelte-typescript-project-from-scratch">Creating a Svelte TypeScript project from scratch</h2>
+<p>You can start a new Svelte TypeScript project using the <a href="https://github.com/sveltejs/template">standard template</a>. All you have to do is run the following terminal commands (run them somewhere where you are storing your Svelte test projects — it creates a new directory):</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb4-1" title="1"><span class="ex">npx</span> degit sveltejs/template svelte-typescript-app</a>
+<a class="sourceLine" id="cb4-2" title="2"></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="bu">cd</span> svelte-typescript-app</a>
+<a class="sourceLine" id="cb4-4" title="4"></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="ex">node</span> scripts/setupTypeScript.js</a></code></pre></div>
+<p>This creates a starter project that includes TypeScript support, which you can then modify as you wish.</p>
+<p>Then you’ll have to tell npm to download dependencies and start the project in development mode, like we usually do:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb5-1" title="1"><span class="ex">npm</span> install</a>
+<a class="sourceLine" id="cb5-2" title="2"></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="ex">npm</span> run dev</a></code></pre></div>
+<h2 id="adding-typescript-support-to-an-existing-svelte-project">Adding TypeScript support to an existing Svelte Project</h2>
+<p>To add TypeScript support to an existing Svelte project you can <a href="https://svelte.dev/blog/svelte-and-typescript#Adding_TypeScript_to_an_existing_project">follow these instructions</a>. Alternatively, you can download the <a href="https://github.com/sveltejs/template/blob/master/scripts/setupTypeScript.js"><code>setupTypeScript.js</code></a> file to a <code>scripts</code> folder inside your project’s root folder, and then run <code>node scripts/setupTypeScript.js</code>.</p>
+<p>You can even use <code>degit</code> to download the script. That’s what we will do to start porting our application to TypeScript.</p>
+<blockquote>
+<p><strong>Note:</strong> Remember that you can run <code>npx degit opensas/mdn-svelte-tutorial/07-typescript-support svelte-todo-typescript</code> to get the complete to-do list application in JavaScript before you start porting it to TypeScript.</p>
+</blockquote>
+<p>Go to the root directory of the project and enter these commands:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb6-1" title="1"><span class="ex">npx</span> degit sveltejs/template/scripts scripts       <span class="co"># download script file to a scripts folder</span></a>
+<a class="sourceLine" id="cb6-2" title="2"></a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="ex">node</span> scripts/setupTypeScript.js                   <span class="co"># run it</span></a>
+<a class="sourceLine" id="cb6-4" title="4"><span class="ex">Converted</span> to TypeScript.</a></code></pre></div>
+<p>You will need to re-run your dependency manager to get started.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb7-1" title="1"><span class="ex">npm</span> install                                       <span class="co"># download new dependencies</span></a>
+<a class="sourceLine" id="cb7-2" title="2"></a>
+<a class="sourceLine" id="cb7-3" title="3"><span class="ex">npm</span> run dev                                       <span class="co"># start the app in development mode</span></a></code></pre></div>
+<p>These instructions apply to any Svelte project you’d like to convert to TypeScript. Just take into account that the Svelte community is constantly improving Svelte TypeScript support, so you should run <code>npm update</code> regularly to take advantage of the latest changes.</p>
+<blockquote>
+<p><strong>Note:</strong> if you find any trouble working with TypeScript inside a Svelte application, have a look at this <a href="https://github.com/sveltejs/language-tools/blob/master/docs/preprocessors/typescript.md#troubleshooting--faq">troubleshooting/FAQ section about TypeScript support</a>.</p>
+</blockquote>
+<p>As we said before, TypeScript is a superset of JavaScript, so your application will run without modifications. Currently you will be running a regular JavaScript application with TypeScript support enabled, without taking advantage of any of the features that TypeScript provides. You can now start adding types progressively.</p>
+<p>Once you have TypeScript configured, you can start using it from a Svelte component by just adding a <code>&lt;script lang='ts'&gt;</code> at the beginning of the script section. To use it from regular JavaScript files, just change the file extension from <code>.js</code> to <code>.ts</code>. You’ll also have to update any corresponding import statements (don’t include the <code>.ts</code> in your <code>import</code> statements; TypeScript chose to omit the extensions).</p>
+<blockquote>
+<p><strong>Note:</strong> Using TypeScript in component markup sections is <a href="https://github.com/sveltejs/svelte/issues/4701">not supported yet</a>. You’ll have to use JavaScript from the markup, and TypeScript in the <code>&lt;script lang='ts'&gt;</code> section.</p>
+</blockquote>
+<h2 id="improved-developer-experience-with-typescript">Improved developer experience with TypeScript</h2>
+<p>TypeScript provides code editors and IDEs with lots of information to allow them to deliver a friendlier development experience.</p>
+<p>We’ll use <a href="https://code.visualstudio.com/">Visual Studio Code</a> to do a quick test and see how we can get autocompletion hints and type-checking as we’re writing components.</p>
+<blockquote>
+<p><strong>Note:</strong> If you don’t wish to use VS Code, we also provide instructions for using TypeScript error checking from the terminal instead, slightly later on.</p>
+</blockquote>
+<p>There is work in progress to support TypeScript in Svelte projects in several code editors; the most complete support so far is available in the <a href="https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode">Svelte for VS Code extension</a>, which is developed and maintained by the Svelte team. This extension offers type checking, inspecting, refactoring, intellisense, hover-information, auto-completion, and other features. This kind of developer assistance is another good reason to start using TypeScript in your projects.</p>
+<blockquote>
+<p><strong>Note:</strong> Make sure you are using <a href="https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode">Svelte for VS Code</a> and NOT the old “Svelte” by James Birtles, which has been discontinued. In case you have it installed, you should uninstall it and install the official Svelte extension instead.</p>
+</blockquote>
+<p>Anyway, assuming you are inside the VS Code application, from the root of your project’s folder, type <code>code .</code> (the trailing dot tells VS code to open the current folder) to open the code editor. VS Code will tell you that there are recommended extensions to install.</p>
+<figure>
+<img src="01-vscode-extension-recommendations.png" alt="dialog box saying this workspace has extension recommendations, with options to install or show a list" /><figcaption>dialog box saying this workspace has extension recommendations, with options to install or show a list</figcaption>
+</figure>
+<p>Clicking <em>Install all</em> will install Svelte for VS Code.</p>
+<figure>
+<img src="02-svelte-for-vscode.png" alt="svelte for vs code extension information" /><figcaption>svelte for vs code extension information</figcaption>
+</figure>
+<p>We can also see that the <code>setupTypeScript.js</code> file made a couple of changes to our project. The <code>main.js</code> file has been renamed to <code>main.ts</code>, which means that VS Code can provide hover-information on our svelte components:</p>
+<figure>
+<img src="03-vscode-hints-in-main-ts.png" alt="vs code screenshot showing that when you add type=“ts” to a component, it gives you three dot alert hints" /><figcaption>vs code screenshot showing that when you add type=“ts” to a component, it gives you three dot alert hints</figcaption>
+</figure>
+<p>We also get type-checking for free. If we pass an unknown property in the options parameter of the <code>App</code> constructor (for example a typo like <code>traget</code> instead of <code>target</code>) TypeScript will complain:</p>
+<figure>
+<img src="04-vscode-type-checking-in-main-ts.png" alt="type checking in vs code - App object has been given an unknown property target" /><figcaption>type checking in vs code - App object has been given an unknown property target</figcaption>
+</figure>
+<p>In the <code>App.svelte</code> component, the <code>setupTypeScript.js</code> script has added the <code>lang="ts"</code> attribute to the <code>&lt;script&gt;</code> tag. Moreover, thanks to type inference, in many cases we won’t even need to specify types to get code assistance. For example, if you start adding an <code>ms</code> property to the <code>Alert</code> component call, TypeScript will infer from the default value that the <code>ms</code> property should be a number:</p>
+<figure>
+<img src="05-vscode-type-inference-and-code-assistance.png" alt="vs code type inference and code hinting - ms variable should be a number" /><figcaption>vs code type inference and code hinting - ms variable should be a number</figcaption>
+</figure>
+<p>And if you pass something that is not a number it will complain about it:</p>
+<figure>
+<img src="06-vscode-type-checking-in-components.png" alt="type checking in vs code - App object has been given an unknown property target" /><figcaption>type checking in vs code - App object has been given an unknown property target</figcaption>
+</figure>
+<p>The application template has a <code>check</code> script configured that runs <code>svelte-check</code> against your code. This package allows you to detect errors and warnings normally displayed by a code editor from the command line, which makes it pretty useful for running it in a continuous integration (CI) pipeline. Just run <code>npm run check</code> to check for unused CSS, and return A11y hints and TypeScript compile errors.</p>
+<p>In this case, if you run <code>npm run check</code> (either in the VS Code console or terminal) you will get the following error:</p>
+<figure>
+<img src="07-vscode-svelte-check.png" alt="check command being run inside vs code showing type error, ms variable should be assigned a number" /><figcaption>check command being run inside vs code showing type error, ms variable should be assigned a number</figcaption>
+</figure>
+<p>Even better, if you run it from the VS Code integrated terminal (you can open it with the <kbd>Ctrl</kbd> + <kbd>`</kbd> keyboard shortcut), <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + clicking on the file name will take you to the line containing the error.</p>
+<p>You can also run the <code>check</code> script in watch mode with <code>npm run check -- --watch</code>. In this case, the script will execute whenever you change any file. If you are running this in your regular terminal, you are advised to keep it running in the background in a separate terminal window of its own so that it can keep reporting errors but won’t interfere with other terminal usage.</p>
+<h2 id="creating-a-custom-type">Creating a custom type</h2>
+<p>TypeScript supports structural typing. Structural typing is a way of relating types based solely on their members, even if you do not explicitly define the type.</p>
+<p>We’ll define a <code>TodoType</code> type to see how TypeScript enforces that anything passed to a component expecting a <code>TodoType</code> will be structurally compatible with it.</p>
+<ol type="1">
+<li>Inside the <code>src</code> folder create a <code>types</code> folder.</li>
+<li>Add a <code>todo.type.ts</code> file inside it.</li>
+<li><p>Give <code>todo.type.ts</code> the following content:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="im">export</span> type TodoType <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-2" title="2">  <span class="dt">id</span><span class="op">:</span> number</a>
+<a class="sourceLine" id="cb8-3" title="3">  <span class="dt">name</span><span class="op">:</span> string</a>
+<a class="sourceLine" id="cb8-4" title="4">  <span class="dt">completed</span><span class="op">:</span> boolean</a>
+<a class="sourceLine" id="cb8-5" title="5"><span class="op">}</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> The Svelte template uses <a href="https://github.com/sveltejs/svelte-preprocess">svelte-preprocess</a> 4.0.0 to support TypeScript. From that version onward you have to use <code>export</code>/<code>import</code> type syntax to import types and interfaces. Check <a href="https://github.com/sveltejs/language-tools/blob/master/docs/preprocessors/typescript.md#how-do-i-import-interfaces-into-my-svelte-components-i-get-errors-after-transpilation">this section of the troubleshooting guide</a> for more information.</p>
+</blockquote></li>
+<li>Now we’ll use <code>TodoType</code> from our <code>Todo.svelte</code> component. First add the <code>lang="ts"</code> to our <code>&lt;script&gt;</code> tag.</li>
+<li><p>Let’s <code>import</code> the type and use it to declare the <code>todo</code> property. Replace the <code>export let todo</code> line with the following:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="im">import</span> type <span class="op">{</span> TodoType <span class="op">}</span> <span class="im">from</span> <span class="st">&quot;../types/todo.type&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-2" title="2"></a>
+<a class="sourceLine" id="cb9-3" title="3"><span class="im">export</span> <span class="kw">let</span> todo<span class="op">:</span> TodoType<span class="op">;</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> Another reminder — When importing a <code>.ts</code> file you have to omit the extension. Check the <a href="https://www.typescriptlang.org/docs/handbook/modules.html#import"><code>import</code> section</a> of the TypeScript manual for more information.</p>
+</blockquote></li>
+<li><p>Now from <code>Todos.svelte</code>, we will instantiate a Todo component with a literal object as its parameter before the call to the <code>MoreActions</code> component, like this:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">&lt;hr</span> <span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb10-2" title="2"></a>
+<a class="sourceLine" id="cb10-3" title="3"><span class="kw">&lt;Todo</span><span class="ot"> todo=</span><span class="st">{</span> <span class="er">{</span><span class="ot"> name:</span> <span class="er">&#39;a</span><span class="ot"> new task with no id</span><span class="er">!&#39;,</span><span class="ot"> completed: false</span> <span class="er">}</span> <span class="er">}</span> <span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb10-4" title="4"></a>
+<a class="sourceLine" id="cb10-5" title="5"><span class="co">&lt;!-- MoreActions --&gt;</span></a>
+<a class="sourceLine" id="cb10-6" title="6"><span class="kw">&lt;MoreActions</span> <span class="er">{todos}</span></a></code></pre></div></li>
+<li><p>Add the <code>lang='ts'</code> to the <code>&lt;script&gt;</code> tag of the <code>Todos.svelte</code> component, so that it knows to use the type checking we have specified.</p>
+<p>We will get the following error:</p>
+<figure>
+<img src="08-vscode-structural-typing.png" alt="type error in vscode, Todo Type object requires an id property." /><figcaption>type error in vscode, Todo Type object requires an id property.</figcaption>
+</figure></li>
+</ol>
+<p>By now you should get an idea about the kind of assistance we can get from TypeScript when building Svelte projects.</p>
+<p>Now we will undo these changes in order to start porting our application to TypeScript, so we won’t be bothered with all the check warnings.</p>
+<ol type="1">
+<li>Remove the flawed todo and the <code>lang='ts'</code> attribute from the <code>Todos.svelte</code> file.</li>
+<li>Also remove the import of <code>TodoType</code> and the <code>lang='ts'</code> from <code>Todo.svelte</code>.</li>
+</ol>
+<p>We’ll take care of them properly, later on.</p>
+<h2 id="porting-our-to-do-list-app-to-typescript">Porting our to-do list app to TypeScript</h2>
+<p>Now we are ready to start porting our to-do list application to take advantage of all the features that TypeScript offers to us.</p>
+<p>Let’s start by running the check script in watch mode inside your project root:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb11-1" title="1"><span class="ex">npm</span> run check -- --watch</a></code></pre></div>
+<p>this should output something like the following:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb12-1" title="1"><span class="ex">svelte-check</span> <span class="st">&quot;--watch&quot;</span></a>
+<a class="sourceLine" id="cb12-2" title="2"></a>
+<a class="sourceLine" id="cb12-3" title="3"><span class="ex">Loading</span> svelte-check in workspace: ./svelte-todo-typescript</a>
+<a class="sourceLine" id="cb12-4" title="4"><span class="ex">Getting</span> Svelte diagnostics...</a>
+<a class="sourceLine" id="cb12-5" title="5">====================================</a>
+<a class="sourceLine" id="cb12-6" title="6"><span class="ex">svelte-check</span> found no errors and no warnings</a></code></pre></div>
+<p>Note that if you are using a supporting code editor like VS Code, a simple way to start porting a Svelte component is to just add the <code>&lt;script lang='ts'&gt;</code> at the top of your component and look for the three-dotted hints:</p>
+<figure>
+<img src="09-vscode-alert-hints.png" alt="vs code screenshot showing that when you add type=“ts” to a component, it gives you three dot alert hints" /><figcaption>vs code screenshot showing that when you add type=“ts” to a component, it gives you three dot alert hints</figcaption>
+</figure>
+<h3 id="alert.svelte">Alert.svelte</h3>
+<p>Let’s start with our <code>Alert.svelte</code> component.</p>
+<ol type="1">
+<li><p>Add <code>lang="ts"</code> into your <code>Alert.svelte</code> component’s <code>&lt;script&gt;</code> tag. You’ll see some warnings in the output of the <code>check</code> script:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb13-1" title="1">$ <span class="ex">npm</span> run check -- --watch</a>
+<a class="sourceLine" id="cb13-2" title="2"><span class="op">&gt;</span> <span class="ex">svelte-check</span> <span class="st">&quot;--watch&quot;</span></a>
+<a class="sourceLine" id="cb13-3" title="3"></a>
+<a class="sourceLine" id="cb13-4" title="4"><span class="ex">./svelte-todo-typescript</span></a>
+<a class="sourceLine" id="cb13-5" title="5"><span class="ex">Getting</span> Svelte diagnostics...</a>
+<a class="sourceLine" id="cb13-6" title="6">====================================</a>
+<a class="sourceLine" id="cb13-7" title="7"></a>
+<a class="sourceLine" id="cb13-8" title="8"><span class="ex">./svelte-todo-typescript/src/components</span>/Alert.svelte:<span class="ex">8</span>:7</a>
+<a class="sourceLine" id="cb13-9" title="9"><span class="ex">Warn</span>: Variable <span class="st">&#39;visible&#39;</span> implicitly has an <span class="st">&#39;any&#39;</span> type, but a better type may be inferred from usage. (ts)</a>
+<a class="sourceLine" id="cb13-10" title="10">  <span class="bu">let</span> visible</a>
+<a class="sourceLine" id="cb13-11" title="11"></a>
+<a class="sourceLine" id="cb13-12" title="12"><span class="ex">./svelte-todo-typescript/src/components</span>/Alert.svelte:<span class="ex">9</span>:7</a>
+<a class="sourceLine" id="cb13-13" title="13"><span class="ex">Warn</span>: Variable <span class="st">&#39;timeout&#39;</span> implicitly has an <span class="st">&#39;any&#39;</span> type, but a better type may be inferred from usage. (ts)</a>
+<a class="sourceLine" id="cb13-14" title="14">  <span class="bu">let</span> timeout</a>
+<a class="sourceLine" id="cb13-15" title="15"></a>
+<a class="sourceLine" id="cb13-16" title="16"><span class="ex">./svelte-todo-typescript/src/components</span>/Alert.svelte:<span class="ex">11</span>:28</a>
+<a class="sourceLine" id="cb13-17" title="17"><span class="ex">Warn</span>: Parameter <span class="st">&#39;message&#39;</span> implicitly has an <span class="st">&#39;any&#39;</span> type, but a better type may be inferred from usage. (ts)</a>
+<a class="sourceLine" id="cb13-18" title="18"><span class="ex">Change</span> = (message, ms) =<span class="op">&gt;</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb13-19" title="19"></a>
+<a class="sourceLine" id="cb13-20" title="20"><span class="ex">./svelte-todo-typescript/src/components</span>/Alert.svelte:<span class="ex">11</span>:37</a>
+<a class="sourceLine" id="cb13-21" title="21"><span class="ex">Warn</span>: Parameter <span class="st">&#39;ms&#39;</span> implicitly has an <span class="st">&#39;any&#39;</span> type, but a better type may be inferred from usage. (ts)</a>
+<a class="sourceLine" id="cb13-22" title="22"><span class="kw">(</span><span class="ex">message</span>, ms<span class="kw">)</span> =<span class="op">&gt;</span> <span class="kw">{</span></a></code></pre></div></li>
+<li><p>You can fix these by specifying the corresponding types, like so:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb14-1" title="1"><span class="im">export</span> <span class="kw">let</span> ms <span class="op">=</span> <span class="dv">3000</span></a>
+<a class="sourceLine" id="cb14-2" title="2"></a>
+<a class="sourceLine" id="cb14-3" title="3">  <span class="kw">let</span> visible<span class="op">:</span> boolean</a>
+<a class="sourceLine" id="cb14-4" title="4">  <span class="kw">let</span> timeout<span class="op">:</span> number</a>
+<a class="sourceLine" id="cb14-5" title="5"></a>
+<a class="sourceLine" id="cb14-6" title="6">  <span class="kw">const</span> onMessageChange <span class="op">=</span> (message<span class="op">:</span> string<span class="op">,</span> ms<span class="op">:</span> number) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb14-7" title="7">    <span class="at">clearTimeout</span>(timeout)</a>
+<a class="sourceLine" id="cb14-8" title="8">    <span class="cf">if</span> (<span class="op">!</span>message) <span class="op">{</span>               <span class="co">// hide Alert if message is empty</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> There’s no need to specify the <code>ms</code> type with <code>export let ms:number = 3000</code> because TypeScript is already inferring it from its default value.</p>
+</blockquote></li>
+</ol>
+<h3 id="moreactions.svelte">MoreActions.svelte</h3>
+<p>Now we’ll do the same for the <code>MoreActions.svelte</code> component.</p>
+<ol type="1">
+<li><p>Add the <code>lang='ts'</code> attribute, like before. TypeScript will warn us about the <code>todos</code> prop and the <code>t</code> variable in the call to <code>todos.filter(t =&gt;...)</code>.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb15-1" title="1"><span class="ex">Warn</span>: Variable <span class="st">&#39;todos&#39;</span> implicitly has an <span class="st">&#39;any&#39;</span> type, but a better type may be inferred from usage. (ts)</a>
+<a class="sourceLine" id="cb15-2" title="2">  <span class="bu">export</span> <span class="va">let</span> <span class="va">todos</span></a>
+<a class="sourceLine" id="cb15-3" title="3"></a>
+<a class="sourceLine" id="cb15-4" title="4"><span class="ex">Warn</span>: Parameter <span class="st">&#39;t&#39;</span> implicitly has an <span class="st">&#39;any&#39;</span> type, but a better type may be inferred from usage. (ts)</a>
+<a class="sourceLine" id="cb15-5" title="5">  $: <span class="ex">completedTodos</span> = todos.filter(t =<span class="op">&gt;</span> t.completed)<span class="ex">.length</span></a></code></pre></div></li>
+<li><p>We will use the <code>TodoType</code> we already defined to tell TypeScript that <code>todos</code> is a <code>TodoType</code> array — replace your <code>export let todos</code> line with the following:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb16-1" title="1"><span class="im">import</span> type <span class="op">{</span> TodoType <span class="op">}</span> <span class="im">from</span> <span class="st">&quot;../types/todo.type&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-2" title="2"></a>
+<a class="sourceLine" id="cb16-3" title="3"><span class="im">export</span> <span class="kw">let</span> todos<span class="op">:</span> TodoType[]<span class="op">;</span></a></code></pre></div></li>
+</ol>
+<p>Notice that now TypeScript can infer that the <code>t</code> variable in <code>todos.filter(t =&gt; t.completed)</code> is of type <code>TodoType</code>. Nevertheless, if we think it makes our code easier to read, we could specify it like this:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb17-1" title="1">$<span class="op">:</span> completedTodos <span class="op">=</span> <span class="va">todos</span>.<span class="at">filter</span>((t<span class="op">:</span> TodoType) <span class="kw">=&gt;</span> <span class="va">t</span>.<span class="at">completed</span>).<span class="at">length</span><span class="op">;</span></a></code></pre></div>
+<p>Most of the time TypeScript will be able to correctly infer the reactive variable type, but sometimes you might get an “implicitly has an ‘any’ type” error when working with reactive assignments. In those cases you can declare the typed variable in a different statement, like this:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb18-1" title="1"><span class="kw">let</span> completeTodos<span class="op">:</span> number<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-2" title="2">$<span class="op">:</span> completedTodos <span class="op">=</span> <span class="va">todos</span>.<span class="at">filter</span>((t<span class="op">:</span> TodoType) <span class="kw">=&gt;</span> <span class="va">t</span>.<span class="at">completed</span>).<span class="at">length</span><span class="op">;</span></a></code></pre></div>
+<p>You can’t specify the type in the reactive assignment itself. The following statement <code>$: completedTodos: number = todos.filter[...]</code> is invalid. For more information read <a href="https://github.com/sveltejs/language-tools/blob/master/docs/preprocessors/typescript.md#how-do-i-type-reactive-assignments--i-get-an-implicitly-has-type-any-error">How do I type reactive assignments? / I get an “implicitly has type ‘any’ error”</a>.</p>
+<h3 id="filterbutton.svelte">FilterButton.svelte</h3>
+<p>Now we’ll take care of the <code>FilterButton</code> component.</p>
+<ol type="1">
+<li>Add the <code>lang='ts'</code> attribute to the <code>&lt;script&gt;</code> tag, as usual. You’ll notice there are no warnings — TypeScript infers the type of the filter variable from the default value. But we know that there are only three valid values for the filter: all, active, and completed. So we can let TypeScript know about them by creating an enum Filter.</li>
+<li>Create a <code>filter.enum.ts</code> file in the <code>types</code> folder.</li>
+<li><p>Give it the following contents:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb19-1" title="1"><span class="im">export</span> <span class="kw">enum</span> Filter <span class="op">{</span></a>
+<a class="sourceLine" id="cb19-2" title="2">  ALL <span class="op">=</span> <span class="st">&#39;all&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb19-3" title="3">  ACTIVE <span class="op">=</span> <span class="st">&#39;active&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb19-4" title="4">  COMPLETED <span class="op">=</span> <span class="st">&#39;completed&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb19-5" title="5"><span class="op">}</span></a></code></pre></div></li>
+<li><p>Now we will use this from the <code>FilterButton</code> component. Replace the content of the <code>FilterButton.svelte</code> file with the following:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb20-1" title="1"><span class="co">&lt;!-- components/FilterButton.svelte --&gt;</span></a>
+<a class="sourceLine" id="cb20-2" title="2"><span class="kw">&lt;script</span><span class="ot"> lang=</span><span class="st">&#39;ts&#39;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb20-3" title="3">  <span class="im">import</span> <span class="op">{</span> Filter <span class="op">}</span> <span class="im">from</span> <span class="st">&#39;../types/filter.enum&#39;</span></a>
+<a class="sourceLine" id="cb20-4" title="4"></a>
+<a class="sourceLine" id="cb20-5" title="5">  <span class="im">export</span> <span class="kw">let</span> filter<span class="op">:</span> Filter <span class="op">=</span> <span class="va">Filter</span>.<span class="at">ALL</span></a>
+<a class="sourceLine" id="cb20-6" title="6"><span class="kw">&lt;/script&gt;</span></a>
+<a class="sourceLine" id="cb20-7" title="7"></a>
+<a class="sourceLine" id="cb20-8" title="8"><span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;filters btn-group stack-exception&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb20-9" title="9">  <span class="kw">&lt;button</span><span class="ot"> class=</span><span class="st">&quot;btn toggle-btn&quot;</span><span class="ot"> class:btn__primary=</span><span class="st">{filter</span> <span class="ot">=</span><span class="st">==</span><span class="ot"> Filter.ALL</span><span class="er">}</span><span class="ot"> aria-pressed=</span><span class="st">{filter</span> <span class="ot">=</span><span class="st">==</span><span class="ot"> Filter.ALL</span><span class="er">}</span><span class="ot"> on:click=</span><span class="st">{()=</span><span class="kw">&gt;</span> filter = Filter.ALL} &gt;</a>
+<a class="sourceLine" id="cb20-10" title="10">    <span class="kw">&lt;span</span><span class="ot"> class=</span><span class="st">&quot;visually-hidden&quot;</span><span class="kw">&gt;</span>Show<span class="kw">&lt;/span&gt;</span></a>
+<a class="sourceLine" id="cb20-11" title="11">    <span class="kw">&lt;span&gt;</span>All<span class="kw">&lt;/span&gt;</span></a>
+<a class="sourceLine" id="cb20-12" title="12">    <span class="kw">&lt;span</span><span class="ot"> class=</span><span class="st">&quot;visually-hidden&quot;</span><span class="kw">&gt;</span>tasks<span class="kw">&lt;/span&gt;</span></a>
+<a class="sourceLine" id="cb20-13" title="13">  <span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb20-14" title="14">  <span class="kw">&lt;button</span><span class="ot"> class=</span><span class="st">&quot;btn toggle-btn&quot;</span><span class="ot"> class:btn__primary=</span><span class="st">{filter</span> <span class="ot">=</span><span class="st">==</span><span class="ot"> Filter.ACTIVE</span><span class="er">}</span><span class="ot"> aria-pressed=</span><span class="st">{filter</span> <span class="ot">=</span><span class="st">==</span><span class="ot"> Filter.ACTIVE</span><span class="er">}</span><span class="ot"> on:click=</span><span class="st">{()=</span><span class="kw">&gt;</span> filter = Filter.ACTIVE} &gt;</a>
+<a class="sourceLine" id="cb20-15" title="15">    <span class="kw">&lt;span</span><span class="ot"> class=</span><span class="st">&quot;visually-hidden&quot;</span><span class="kw">&gt;</span>Show<span class="kw">&lt;/span&gt;</span></a>
+<a class="sourceLine" id="cb20-16" title="16">    <span class="kw">&lt;span&gt;</span>Active<span class="kw">&lt;/span&gt;</span></a>
+<a class="sourceLine" id="cb20-17" title="17">    <span class="kw">&lt;span</span><span class="ot"> class=</span><span class="st">&quot;visually-hidden&quot;</span><span class="kw">&gt;</span>tasks<span class="kw">&lt;/span&gt;</span></a>
+<a class="sourceLine" id="cb20-18" title="18">  <span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb20-19" title="19">  <span class="kw">&lt;button</span><span class="ot"> class=</span><span class="st">&quot;btn toggle-btn&quot;</span><span class="ot"> class:btn__primary=</span><span class="st">{filter</span> <span class="ot">=</span><span class="st">==</span><span class="ot"> Filter.COMPLETED</span><span class="er">}</span><span class="ot"> aria-pressed=</span><span class="st">{filter</span> <span class="ot">=</span><span class="st">==</span><span class="ot"> Filter.COMPLETED</span><span class="er">}</span><span class="ot"> on:click=</span><span class="st">{()=</span><span class="kw">&gt;</span> filter = Filter.COMPLETED} &gt;</a>
+<a class="sourceLine" id="cb20-20" title="20">    <span class="kw">&lt;span</span><span class="ot"> class=</span><span class="st">&quot;visually-hidden&quot;</span><span class="kw">&gt;</span>Show<span class="kw">&lt;/span&gt;</span></a>
+<a class="sourceLine" id="cb20-21" title="21">    <span class="kw">&lt;span&gt;</span>Completed<span class="kw">&lt;/span&gt;</span></a>
+<a class="sourceLine" id="cb20-22" title="22">    <span class="kw">&lt;span</span><span class="ot"> class=</span><span class="st">&quot;visually-hidden&quot;</span><span class="kw">&gt;</span>tasks<span class="kw">&lt;/span&gt;</span></a>
+<a class="sourceLine" id="cb20-23" title="23">  <span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb20-24" title="24"><span class="kw">&lt;/div&gt;</span></a></code></pre></div></li>
+</ol>
+<p>Here we are just importing the <code>Filter</code> enum, and using it instead of the string values we used previously.</p>
+<h3 id="todos.svelte">Todos.svelte</h3>
+<p>We will also use the <code>Filter</code> enum in the <code>Todos.svelte</code> component.</p>
+<ol type="1">
+<li>First add the <code>lang='ts'</code> attribute to it, as before.</li>
+<li><p>Next, import the <code>Filter</code> enum — add the following <code>import</code> statement below your existing ones:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb21-1" title="1"><span class="im">import</span> <span class="op">{</span> Filter <span class="op">}</span> <span class="im">from</span> <span class="st">&quot;../types/filter.enum&quot;</span><span class="op">;</span></a></code></pre></div></li>
+<li><p>Now we will use it whenever we reference the current filter. Replace your two filter-related blocks with the following:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb22-1" title="1"><span class="kw">let</span> filter<span class="op">:</span> Filter <span class="op">=</span> <span class="va">Filter</span>.<span class="at">ALL</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb22-2" title="2"><span class="kw">const</span> filterTodos <span class="op">=</span> (filter<span class="op">:</span> Filter<span class="op">,</span> todos) <span class="kw">=&gt;</span></a>
+<a class="sourceLine" id="cb22-3" title="3">  filter <span class="op">===</span> <span class="va">Filter</span>.<span class="at">ACTIVE</span></a>
+<a class="sourceLine" id="cb22-4" title="4">    <span class="op">?</span> <span class="va">todos</span>.<span class="at">filter</span>((t) <span class="kw">=&gt;</span> <span class="op">!</span><span class="va">t</span>.<span class="at">completed</span>)</a>
+<a class="sourceLine" id="cb22-5" title="5">    : filter <span class="op">===</span> <span class="va">Filter</span>.<span class="at">COMPLETED</span></a>
+<a class="sourceLine" id="cb22-6" title="6">    <span class="op">?</span> <span class="va">todos</span>.<span class="at">filter</span>((t) <span class="kw">=&gt;</span> <span class="va">t</span>.<span class="at">completed</span>)</a>
+<a class="sourceLine" id="cb22-7" title="7">    : todos<span class="op">;</span></a>
+<a class="sourceLine" id="cb22-8" title="8"></a>
+<a class="sourceLine" id="cb22-9" title="9">$<span class="op">:</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb22-10" title="10">  <span class="cf">if</span> (filter <span class="op">===</span> <span class="va">Filter</span>.<span class="at">ALL</span>) $alert <span class="op">=</span> <span class="st">&quot;Browsing all todos&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb22-11" title="11">  <span class="cf">else</span> <span class="cf">if</span> (filter <span class="op">===</span> <span class="va">Filter</span>.<span class="at">ACTIVE</span>) $alert <span class="op">=</span> <span class="st">&quot;Browsing active todos&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb22-12" title="12">  <span class="cf">else</span> <span class="cf">if</span> (filter <span class="op">===</span> <span class="va">Filter</span>.<span class="at">COMPLETED</span>) $alert <span class="op">=</span> <span class="st">&quot;Browsing completed todos&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb22-13" title="13"><span class="op">}</span></a></code></pre></div></li>
+<li><p><code>check</code> will still give us some warnings from <code>Todos.svelte</code>. Let’s fix them.</p>
+<p>Start by importing the <code>TodoType</code> and telling TypeScript that our <code>todos</code> variable is an array of <code>TodoType</code>. Replace <code>export let todos = []</code> with the following two lines:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb23-1" title="1"><span class="im">import</span> type <span class="op">{</span> TodoType <span class="op">}</span> <span class="im">from</span> <span class="st">&quot;../types/todo.type&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb23-2" title="2"></a>
+<a class="sourceLine" id="cb23-3" title="3"><span class="im">export</span> <span class="kw">let</span> todos<span class="op">:</span> TodoType[] <span class="op">=</span> []<span class="op">;</span></a></code></pre></div></li>
+<li><p>Next we’ll specify all the missing types. The variable <code>todosStatus</code>, which we used to programmatically access the methods exposed by the <code>TodosStatus</code> component, is of type <code>TodosStatus</code>. And each <code>todo</code> will be of type <code>TodoType</code>.</p>
+<p>Update your <code>&lt;script&gt;</code> section to look like this:</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb24-1" title="1"><span class="op">&lt;</span>script lang<span class="op">=</span><span class="st">&#39;ts&#39;</span><span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb24-2" title="2">  <span class="im">import</span> FilterButton <span class="im">from</span> <span class="st">&#39;./FilterButton.svelte&#39;</span></a>
+<a class="sourceLine" id="cb24-3" title="3">  <span class="im">import</span> Todo <span class="im">from</span> <span class="st">&#39;./Todo.svelte&#39;</span></a>
+<a class="sourceLine" id="cb24-4" title="4">  <span class="im">import</span> MoreActions <span class="im">from</span> <span class="st">&#39;./MoreActions.svelte&#39;</span></a>
+<a class="sourceLine" id="cb24-5" title="5">  <span class="im">import</span> NewTodo <span class="im">from</span> <span class="st">&#39;./NewTodo.svelte&#39;</span></a>
+<a class="sourceLine" id="cb24-6" title="6">  <span class="im">import</span> TodosStatus <span class="im">from</span> <span class="st">&#39;./TodosStatus.svelte&#39;</span></a>
+<a class="sourceLine" id="cb24-7" title="7">  <span class="im">import</span> <span class="op">{</span> alert <span class="op">}</span> <span class="im">from</span> <span class="st">&#39;../stores&#39;</span></a>
+<a class="sourceLine" id="cb24-8" title="8"></a>
+<a class="sourceLine" id="cb24-9" title="9">  <span class="im">import</span> <span class="op">{</span> Filter <span class="op">}</span> <span class="im">from</span> <span class="st">&#39;../types/filter.enum&#39;</span></a>
+<a class="sourceLine" id="cb24-10" title="10"></a>
+<a class="sourceLine" id="cb24-11" title="11">  <span class="im">import</span> type <span class="op">{</span> TodoType <span class="op">}</span> <span class="im">from</span> <span class="st">&#39;../types/todo.type&#39;</span></a>
+<a class="sourceLine" id="cb24-12" title="12"></a>
+<a class="sourceLine" id="cb24-13" title="13">  <span class="im">export</span> <span class="kw">let</span> todos<span class="op">:</span> TodoType[] <span class="op">=</span> []</a>
+<a class="sourceLine" id="cb24-14" title="14"></a>
+<a class="sourceLine" id="cb24-15" title="15">  <span class="kw">let</span> todosStatus<span class="op">:</span> TodosStatus                   <span class="co">// reference to TodosStatus instance</span></a>
+<a class="sourceLine" id="cb24-16" title="16"></a>
+<a class="sourceLine" id="cb24-17" title="17">  $<span class="op">:</span> newTodoId <span class="op">=</span> <span class="va">todos</span>.<span class="at">length</span> <span class="op">&gt;</span> <span class="dv">0</span> <span class="op">?</span> <span class="va">Math</span>.<span class="at">max</span>(...<span class="va">todos</span>.<span class="at">map</span>(t <span class="kw">=&gt;</span> <span class="va">t</span>.<span class="at">id</span>)) <span class="op">+</span> <span class="dv">1</span> : <span class="dv">1</span></a>
+<a class="sourceLine" id="cb24-18" title="18"></a>
+<a class="sourceLine" id="cb24-19" title="19">  <span class="kw">function</span> <span class="at">addTodo</span>(name<span class="op">:</span> string) <span class="op">{</span></a>
+<a class="sourceLine" id="cb24-20" title="20">    todos <span class="op">=</span> [...<span class="at">todos</span><span class="op">,</span> <span class="op">{</span> <span class="dt">id</span><span class="op">:</span> newTodoId<span class="op">,</span> name<span class="op">,</span> <span class="dt">completed</span><span class="op">:</span> <span class="kw">false</span> <span class="op">}</span>]</a>
+<a class="sourceLine" id="cb24-21" title="21">    $alert <span class="op">=</span> <span class="vs">`Todo &#39;</span><span class="sc">${</span>name<span class="sc">}</span><span class="vs">&#39; has been added`</span></a>
+<a class="sourceLine" id="cb24-22" title="22">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb24-23" title="23"></a>
+<a class="sourceLine" id="cb24-24" title="24">  <span class="kw">function</span> <span class="at">removeTodo</span>(todo<span class="op">:</span> TodoType) <span class="op">{</span></a>
+<a class="sourceLine" id="cb24-25" title="25">    todos <span class="op">=</span> <span class="va">todos</span>.<span class="at">filter</span>(t <span class="kw">=&gt;</span> <span class="va">t</span>.<span class="at">id</span> <span class="op">!==</span> <span class="va">todo</span>.<span class="at">id</span>)</a>
+<a class="sourceLine" id="cb24-26" title="26">    <span class="va">todosStatus</span>.<span class="at">focus</span>()             <span class="co">// give focus to status heading</span></a>
+<a class="sourceLine" id="cb24-27" title="27">    $alert <span class="op">=</span> <span class="vs">`Todo &#39;</span><span class="sc">${</span><span class="va">todo</span>.<span class="at">name</span><span class="sc">}</span><span class="vs">&#39; has been deleted`</span></a>
+<a class="sourceLine" id="cb24-28" title="28">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb24-29" title="29"></a>
+<a class="sourceLine" id="cb24-30" title="30">  <span class="kw">function</span> <span class="at">updateTodo</span>(todo<span class="op">:</span> TodoType) <span class="op">{</span></a>
+<a class="sourceLine" id="cb24-31" title="31">    <span class="kw">const</span> i <span class="op">=</span> <span class="va">todos</span>.<span class="at">findIndex</span>(t <span class="kw">=&gt;</span> <span class="va">t</span>.<span class="at">id</span> <span class="op">===</span> <span class="va">todo</span>.<span class="at">id</span>)</a>
+<a class="sourceLine" id="cb24-32" title="32">    <span class="cf">if</span> (todos[i].<span class="at">name</span> <span class="op">!==</span> <span class="va">todo</span>.<span class="at">name</span>)            $alert <span class="op">=</span> <span class="vs">`todo &#39;</span><span class="sc">${</span>todos[i].<span class="at">name</span><span class="sc">}</span><span class="vs">&#39; has been renamed to &#39;</span><span class="sc">${</span><span class="va">todo</span>.<span class="at">name</span><span class="sc">}</span><span class="vs">&#39;`</span></a>
+<a class="sourceLine" id="cb24-33" title="33">    <span class="cf">if</span> (todos[i].<span class="at">completed</span> <span class="op">!==</span> <span class="va">todo</span>.<span class="at">completed</span>)  $alert <span class="op">=</span> <span class="vs">`todo &#39;</span><span class="sc">${</span>todos[i].<span class="at">name</span><span class="sc">}</span><span class="vs">&#39; marked as </span><span class="sc">${</span><span class="va">todo</span>.<span class="at">completed</span> <span class="op">?</span> <span class="st">&#39;completed&#39;</span> : <span class="st">&#39;active&#39;</span><span class="sc">}</span><span class="vs">`</span></a>
+<a class="sourceLine" id="cb24-34" title="34">    todos[i] <span class="op">=</span> <span class="op">{</span> ...<span class="at">todos</span>[i]<span class="op">,</span> ...<span class="at">todo</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb24-35" title="35">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb24-36" title="36"></a>
+<a class="sourceLine" id="cb24-37" title="37">  <span class="kw">let</span> filter<span class="op">:</span> Filter <span class="op">=</span> <span class="va">Filter</span>.<span class="at">ALL</span></a>
+<a class="sourceLine" id="cb24-38" title="38">  <span class="kw">const</span> filterTodos <span class="op">=</span> (filter<span class="op">:</span> Filter<span class="op">,</span> todos<span class="op">:</span> TodoType[]) <span class="kw">=&gt;</span></a>
+<a class="sourceLine" id="cb24-39" title="39">    filter <span class="op">===</span> <span class="va">Filter</span>.<span class="at">ACTIVE</span> <span class="op">?</span> <span class="va">todos</span>.<span class="at">filter</span>(t <span class="kw">=&gt;</span> <span class="op">!</span><span class="va">t</span>.<span class="at">completed</span>) :</a>
+<a class="sourceLine" id="cb24-40" title="40">    filter <span class="op">===</span> <span class="va">Filter</span>.<span class="at">COMPLETED</span> <span class="op">?</span> <span class="va">todos</span>.<span class="at">filter</span>(t <span class="kw">=&gt;</span> <span class="va">t</span>.<span class="at">completed</span>) :</a>
+<a class="sourceLine" id="cb24-41" title="41">    todos</a>
+<a class="sourceLine" id="cb24-42" title="42"></a>
+<a class="sourceLine" id="cb24-43" title="43">  $<span class="op">:</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb24-44" title="44">    <span class="cf">if</span> (filter <span class="op">===</span> <span class="va">Filter</span>.<span class="at">ALL</span>)               $alert <span class="op">=</span> <span class="st">&#39;Browsing all todos&#39;</span></a>
+<a class="sourceLine" id="cb24-45" title="45">    <span class="cf">else</span> <span class="cf">if</span> (filter <span class="op">===</span> <span class="va">Filter</span>.<span class="at">ACTIVE</span>)       $alert <span class="op">=</span> <span class="st">&#39;Browsing active todos&#39;</span></a>
+<a class="sourceLine" id="cb24-46" title="46">    <span class="cf">else</span> <span class="cf">if</span> (filter <span class="op">===</span> <span class="va">Filter</span>.<span class="at">COMPLETED</span>)    $alert <span class="op">=</span> <span class="st">&#39;Browsing completed todos&#39;</span></a>
+<a class="sourceLine" id="cb24-47" title="47">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb24-48" title="48"></a>
+<a class="sourceLine" id="cb24-49" title="49">  <span class="kw">const</span> checkAllTodos <span class="op">=</span> (completed<span class="op">:</span> boolean) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb24-50" title="50">    todos <span class="op">=</span> <span class="va">todos</span>.<span class="at">map</span>(t <span class="kw">=&gt;</span> (<span class="op">{</span>...<span class="at">t</span><span class="op">,</span> completed<span class="op">}</span>))</a>
+<a class="sourceLine" id="cb24-51" title="51">    $alert <span class="op">=</span> <span class="vs">`</span><span class="sc">${</span>completed <span class="op">?</span> <span class="st">&#39;Checked&#39;</span> : <span class="st">&#39;Unchecked&#39;</span><span class="sc">}</span><span class="vs"> </span><span class="sc">${</span><span class="va">todos</span>.<span class="at">length</span><span class="sc">}</span><span class="vs"> todos`</span></a>
+<a class="sourceLine" id="cb24-52" title="52">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb24-53" title="53">  <span class="kw">const</span> removeCompletedTodos <span class="op">=</span> () <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb24-54" title="54">    $alert <span class="op">=</span> <span class="vs">`Removed </span><span class="sc">${</span><span class="va">todos</span>.<span class="at">filter</span>(t <span class="kw">=&gt;</span> <span class="va">t</span>.<span class="at">completed</span>).<span class="at">length</span><span class="sc">}</span><span class="vs"> todos`</span></a>
+<a class="sourceLine" id="cb24-55" title="55">    todos <span class="op">=</span> <span class="va">todos</span>.<span class="at">filter</span>(t <span class="kw">=&gt;</span> <span class="op">!</span><span class="va">t</span>.<span class="at">completed</span>)</a>
+<a class="sourceLine" id="cb24-56" title="56">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb24-57" title="57">&lt;/script<span class="op">&gt;</span></a></code></pre></div></li>
+</ol>
+<h3 id="todosstatus.svelte">TodosStatus.svelte</h3>
+<p>We are encountering the following errors related to passing <code>todos</code> to the <code>TodosStatus.svelte</code> (and <code>Todo.svelte</code>) components:</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb25-1" title="1"><span class="ex">./src/components</span>/Todos.svelte:<span class="ex">70</span>:39</a>
+<a class="sourceLine" id="cb25-2" title="2"><span class="ex">Error</span>: Type <span class="st">&#39;TodoType[]&#39;</span> is not assignable to type <span class="st">&#39;undefined&#39;</span>. (ts)</a>
+<a class="sourceLine" id="cb25-3" title="3">  <span class="op">&lt;</span><span class="ex">TodosStatus</span> bind:this=<span class="dt">{todosStatus}</span> <span class="dt">{todos}</span> /<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb25-4" title="4"></a>
+<a class="sourceLine" id="cb25-5" title="5"><span class="ex">./src/components</span>/Todos.svelte:<span class="ex">76</span>:12</a>
+<a class="sourceLine" id="cb25-6" title="6"><span class="ex">Error</span>: Type <span class="st">&#39;TodoType&#39;</span> is not assignable to type <span class="st">&#39;undefined&#39;</span>. (ts)</a>
+<a class="sourceLine" id="cb25-7" title="7">     <span class="op">&lt;</span><span class="ex">Todo</span> <span class="dt">{todo}</span></a></code></pre></div>
+<p>This is because the <code>todos</code> prop in the <code>TodosStatus</code> component has no default value, so TypeScript has inferred it to be of type <code>undefined</code>, which is not compatible with an array of <code>TodoType</code>. The same thing is happening with our Todo component.</p>
+<p>Let’s fix it.</p>
+<ol type="1">
+<li>Open the file <code>TodosStatus.svelte</code> and add the <code>lang='ts'</code> attribute.</li>
+<li><p>Then import the <code>TodoType</code> and declare the <code>todos</code> prop as an array of <code>TodoType</code>. Replace the first line of the <code>&lt;script&gt;</code> section with the following:</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb26-1" title="1"><span class="im">import</span> type <span class="op">{</span> TodoType <span class="op">}</span> <span class="im">from</span> <span class="st">&quot;../types/todo.type&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb26-2" title="2"></a>
+<a class="sourceLine" id="cb26-3" title="3"><span class="im">export</span> <span class="kw">let</span> todos<span class="op">:</span> TodoType[]<span class="op">;</span></a></code></pre></div></li>
+<li><p>We will also specify the <code>headingEl</code>, which we used to bind to the heading tag, as an <code>HTMLElement</code>. Update the <code>let headingEl</code> line with the following:</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb27-1" title="1"><span class="kw">let</span> headingEl<span class="op">:</span> HTMLElement<span class="op">;</span></a></code></pre></div></li>
+<li><p>Finally, you’ll notice the following error reported, related to where we set the <code>tabindex</code> attribute. That’s because TypeScript is type-checking the <code>&lt;h2&gt;</code> element and expects <code>tabindex</code> to be of type <code>number</code>.</p>
+<figure>
+<img src="10-vscode-tabindex-hint.png" alt="tabindex hint inside vs code, tabindex expects a type of number, not string" /><figcaption>tabindex hint inside vs code, tabindex expects a type of number, not string</figcaption>
+</figure>
+<p>To fix it, replace <code>tabindex="-1"</code> with <code>tabindex={-1}</code>, like this:</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb28-1" title="1"><span class="kw">&lt;h2</span><span class="ot"> id=</span><span class="st">&quot;list-heading&quot;</span><span class="ot"> bind:this=</span><span class="st">&quot;{headingEl}&quot;</span><span class="ot"> tabindex=</span><span class="st">&quot;{-1}&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb28-2" title="2">  {completedTodos} out of {totalTodos} items completed</a>
+<a class="sourceLine" id="cb28-3" title="3"><span class="kw">&lt;/h2&gt;</span></a></code></pre></div>
+<p>This way TypeScript can prevent us from incorrectly assigning it to a string variable.</p></li>
+</ol>
+<h3 id="newtodo.svelte">NewTodo.svelte</h3>
+<p>Next we will take care of <code>NewTodo.svelte</code>.</p>
+<ol type="1">
+<li>As usual, add the <code>lang='ts'</code> attribute.</li>
+<li><p>The warning will indicate that we have to specify a type for the <code>nameEl</code> variable. Set its type to <code>HTMLElement</code> like this:</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb29-1" title="1"><span class="kw">let</span> nameEl<span class="op">:</span> HTMLElement<span class="op">;</span> <span class="co">// reference to the name input DOM node</span></a></code></pre></div></li>
+<li><p>Last for this file, we need to specify the correct type for our <code>autofocus</code> variable; update its definition like this:</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb30-1" title="1"><span class="im">export</span> <span class="kw">let</span> autofocus<span class="op">:</span> boolean <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></a></code></pre></div></li>
+</ol>
+<h3 id="todo.svelte">Todo.svelte</h3>
+<p>Now the only warnings that <code>npm run check</code> emits are triggered by calling the <code>Todo.svelte</code> component; let’s fix them.</p>
+<ol type="1">
+<li>Open the <code>Todo.svelte</code> file, and add the <code>lang='ts'</code> attribute.</li>
+<li><p>Let’s import the <code>TodoType</code>, and set the type of the <code>todo</code> prop. Replace the <code>export let todo</code> line with the following:</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb31-1" title="1"><span class="im">import</span> type <span class="op">{</span> TodoType <span class="op">}</span> <span class="im">from</span> <span class="st">&quot;../types/todo.type&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb31-2" title="2"></a>
+<a class="sourceLine" id="cb31-3" title="3"><span class="im">export</span> <span class="kw">let</span> todo<span class="op">:</span> TodoType<span class="op">;</span></a></code></pre></div></li>
+<li><p>The first warning we get is TypeScript telling us to define the type of the <code>update()</code> function’s <code>updatedTodo</code> variable. This can be a little tricky because <code>updatedTodo</code> contains only the attributes of the todo that have been updated. That means it’s not a complete todo — it only has a subset of a todo’s properties.</p>
+<p>For these kinds of cases, TypeScript provides several <a href="https://www.typescriptlang.org/docs/handbook/utility-types.html">utility types</a> to make it easier to apply these common transformations. What we need right now is the <a href="https://www.typescriptlang.org/docs/handbook/utility-types.html#partialt"><code>Partial&lt;T&gt;</code></a> utility, which allows us to represent all subsets of a given type. The partial utility returns a new type based on the type <code>T</code>, where every property of <code>T</code> is optional.</p>
+<p>We’ll use it in the <code>update()</code> function — update yours like so:</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb32-1" title="1"><span class="kw">function</span> <span class="at">update</span>(updatedTodo<span class="op">:</span> Partial<span class="op">&lt;</span>TodoType<span class="op">&gt;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb32-2" title="2">  todo <span class="op">=</span> <span class="op">{</span> ...<span class="at">todo</span><span class="op">,</span> ...<span class="at">updatedTodo</span> <span class="op">};</span> <span class="co">// applies modifications to todo</span></a>
+<a class="sourceLine" id="cb32-3" title="3">  <span class="at">dispatch</span>(<span class="st">&quot;update&quot;</span><span class="op">,</span> todo)<span class="op">;</span> <span class="co">// emit update event</span></a>
+<a class="sourceLine" id="cb32-4" title="4"><span class="op">}</span></a></code></pre></div>
+<p>With this we are telling TypeScript that the <code>updatedTodo</code> variable will hold a subset of the <code>TodoType</code> properties.</p></li>
+<li><p>Now svelte-check tells us that we have to define the type of our action function parameters:</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb33-1" title="1"><span class="ex">./07-next-steps/src/components</span>/Todo.svelte:<span class="ex">45</span>:24</a>
+<a class="sourceLine" id="cb33-2" title="2"><span class="ex">Warn</span>: Parameter <span class="st">&#39;node&#39;</span> implicitly has an <span class="st">&#39;any&#39;</span> type, but a better type may be inferred from usage. (ts)</a>
+<a class="sourceLine" id="cb33-3" title="3">  <span class="ex">const</span> focusOnInit = (node) =<span class="op">&gt;</span> <span class="ex">node</span> <span class="kw">&amp;&amp;</span> <span class="ex">typeof</span> node.focus === <span class="st">&#39;function&#39;</span> <span class="kw">&amp;&amp;</span> <span class="ex">node.focus</span>()</a>
+<a class="sourceLine" id="cb33-4" title="4"></a>
+<a class="sourceLine" id="cb33-5" title="5"><span class="ex">./07-next-steps/src/components</span>/Todo.svelte:<span class="ex">47</span>:28</a>
+<a class="sourceLine" id="cb33-6" title="6"><span class="ex">Warn</span>: Parameter <span class="st">&#39;node&#39;</span> implicitly has an <span class="st">&#39;any&#39;</span> type, but a better type may be inferred from usage. (ts)</a>
+<a class="sourceLine" id="cb33-7" title="7">  <span class="ex">const</span> focusEditButton = (node) =<span class="op">&gt;</span> <span class="ex">editButtonPressed</span> <span class="kw">&amp;&amp;</span> <span class="ex">node.focus</span>()</a></code></pre></div>
+<p>We just have to define the node variable to be of type <code>HTMLElement</code>. In the two lines indicated above, replace the first instance of <code>node</code> with <code>node: HTMLElement</code>.</p></li>
+</ol>
+<h3 id="actions.js">actions.js</h3>
+<p>Next we’ll take care of the <code>actions.js</code> file.</p>
+<ol type="1">
+<li><p>Rename it to <code>actions.ts</code> and add the type of the node parameter. It should end up looking like this:</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb34-1" title="1"><span class="co">// actions.ts</span></a>
+<a class="sourceLine" id="cb34-2" title="2"><span class="im">export</span> <span class="kw">function</span> <span class="at">selectOnFocus</span>(node<span class="op">:</span> HTMLInputElement) <span class="op">{</span></a>
+<a class="sourceLine" id="cb34-3" title="3">  <span class="cf">if</span> (node <span class="op">&amp;&amp;</span> <span class="kw">typeof</span> <span class="va">node</span>.<span class="at">select</span> <span class="op">===</span> <span class="st">&quot;function&quot;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb34-4" title="4">    <span class="co">// make sure node is defined and has a select() method</span></a>
+<a class="sourceLine" id="cb34-5" title="5">    <span class="kw">const</span> onFocus <span class="op">=</span> () <span class="kw">=&gt;</span> <span class="va">node</span>.<span class="at">select</span>()<span class="op">;</span> <span class="co">// event handler</span></a>
+<a class="sourceLine" id="cb34-6" title="6">    <span class="va">node</span>.<span class="at">addEventListener</span>(<span class="st">&quot;focus&quot;</span><span class="op">,</span> onFocus)<span class="op">;</span> <span class="co">// when node gets focus call onFocus()</span></a>
+<a class="sourceLine" id="cb34-7" title="7">    <span class="cf">return</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb34-8" title="8">      <span class="dt">destroy</span><span class="op">:</span> () <span class="kw">=&gt;</span> <span class="va">node</span>.<span class="at">removeEventListener</span>(<span class="st">&quot;focus&quot;</span><span class="op">,</span> onFocus)<span class="op">,</span> <span class="co">// this will be executed when the node is removed from the DOM</span></a>
+<a class="sourceLine" id="cb34-9" title="9">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb34-10" title="10">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb34-11" title="11"><span class="op">}</span></a></code></pre></div></li>
+<li><p>Now update <code>Todo.svelte</code> and <code>NewTodo.svelte</code> where we import the actions file. Remember that imports in TypeScript don’t include the file extension. In each case it should end up like this:</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb35-1" title="1"><span class="im">import</span> <span class="op">{</span> selectOnFocus <span class="op">}</span> <span class="im">from</span> <span class="st">&quot;../actions&quot;</span><span class="op">;</span></a></code></pre></div></li>
+</ol>
+<h3 id="migrating-the-stores-to-typescript">Migrating the stores to TypeScript</h3>
+<p>Now we have to migrate the <code>stores.js</code> and <code>localStore.js</code> files to TypeScript.</p>
+<p>Tip: the script <code>npm run check</code>, which uses the <a href="https://github.com/sveltejs/language-tools/tree/master/packages/svelte-check"><code>svelte-check</code></a> tool, will only check our application’s <code>.svelte</code> files. If you want to also check the <code>.ts</code> files you can run <code>npm run check &amp;&amp; npx tsc --noemit</code>, which tells the TypeScript compiler to check for errors without generating the <code>.js</code> output files. You could even add a script to your <code>package.json</code> file that runs that command.</p>
+<p>We’ll start with <code>stores.js</code>.</p>
+<ol type="1">
+<li>Rename the file to <code>stores.ts</code>.</li>
+<li><p>Set the type of our <code>initialTodos</code> array to <code>TodoType[]</code>. This is how the contents will end up:</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb36-1" title="1"><span class="co">// stores.ts</span></a>
+<a class="sourceLine" id="cb36-2" title="2"><span class="im">import</span> <span class="op">{</span> writable <span class="op">}</span> <span class="im">from</span> <span class="st">&quot;svelte/store&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb36-3" title="3"><span class="im">import</span> <span class="op">{</span> localStore <span class="op">}</span> <span class="im">from</span> <span class="st">&quot;./localStore.js&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb36-4" title="4"><span class="im">import</span> type <span class="op">{</span> TodoType <span class="op">}</span> <span class="im">from</span> <span class="st">&quot;./types/todo.type&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb36-5" title="5"></a>
+<a class="sourceLine" id="cb36-6" title="6"><span class="im">export</span> <span class="kw">const</span> alert <span class="op">=</span> <span class="at">writable</span>(<span class="st">&quot;Welcome to the To-Do list app!&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb36-7" title="7"></a>
+<a class="sourceLine" id="cb36-8" title="8"><span class="kw">const</span> initialTodos<span class="op">:</span> TodoType[] <span class="op">=</span> [</a>
+<a class="sourceLine" id="cb36-9" title="9">  <span class="op">{</span> <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;Visit MDN web docs&quot;</span><span class="op">,</span> <span class="dt">completed</span><span class="op">:</span> <span class="kw">true</span> <span class="op">},</span></a>
+<a class="sourceLine" id="cb36-10" title="10">  <span class="op">{</span> <span class="dt">id</span><span class="op">:</span> <span class="dv">2</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;Complete the Svelte Tutorial&quot;</span><span class="op">,</span> <span class="dt">completed</span><span class="op">:</span> <span class="kw">false</span> <span class="op">},</span></a>
+<a class="sourceLine" id="cb36-11" title="11">]<span class="op">;</span></a>
+<a class="sourceLine" id="cb36-12" title="12"></a>
+<a class="sourceLine" id="cb36-13" title="13"><span class="im">export</span> <span class="kw">const</span> todos <span class="op">=</span> <span class="at">localStore</span>(<span class="st">&quot;mdn-svelte-todo&quot;</span><span class="op">,</span> initialTodos)<span class="op">;</span></a></code></pre></div></li>
+<li><p>Remember to update the <code>import</code> statements in <code>App.svelte</code>, <code>Alert.svelte</code>, and <code>Todos.svelte</code>. Just remove the <code>.js</code> extension, like this:</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb37-1" title="1"><span class="im">import</span> <span class="op">{</span> todos <span class="op">}</span> <span class="im">from</span> <span class="st">&quot;../stores&quot;</span><span class="op">;</span></a></code></pre></div></li>
+</ol>
+<p>Now onto <code>localStore.js</code>.</p>
+<p>Update the <code>import</code> statement in <code>stores.ts</code>, like so:</p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb38-1" title="1"><span class="im">import</span> <span class="op">{</span> localStore <span class="op">}</span> <span class="im">from</span> <span class="st">&quot;./localStore&quot;</span><span class="op">;</span></a></code></pre></div>
+<ol type="1">
+<li>Start by renaming the file to <code>localStore.ts</code>.</li>
+<li><p>TypeScript is telling us to specify the type of the <code>key</code>, <code>initial</code>, and <code>value</code> variables. The first one is easy — the key of our local web storage should be a string.</p>
+<p>But <code>initial</code> and <code>value</code> should be any object that could be converted to a valid JSON string with the <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify"><code>JSON.stringify</code></a> method. So it is in fact any JavaScript object with a couple limitations, for example <code>undefined</code>, functions, and symbols are not valid JSON values.</p>
+<p>So we’ll create the type <code>JsonValue</code> to specify these conditions.</p>
+<p>Create the file <code>json.type.ts</code> in the <code>types</code> folder.</p></li>
+<li><p>Give it the following content:</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb39-1" title="1"><span class="im">export</span> type JsonValue <span class="op">=</span></a>
+<a class="sourceLine" id="cb39-2" title="2">  <span class="op">|</span> string</a>
+<a class="sourceLine" id="cb39-3" title="3">  <span class="op">|</span> number</a>
+<a class="sourceLine" id="cb39-4" title="4">  <span class="op">|</span> boolean</a>
+<a class="sourceLine" id="cb39-5" title="5">  <span class="op">|</span> <span class="kw">null</span></a>
+<a class="sourceLine" id="cb39-6" title="6">  <span class="op">|</span> JsonValue[]</a>
+<a class="sourceLine" id="cb39-7" title="7">  <span class="op">|</span> <span class="op">{</span> [<span class="dt">key</span><span class="op">:</span> string]<span class="op">:</span> JsonValue <span class="op">};</span></a></code></pre></div>
+<p>The <code>|</code> operator lets us declare variables that could store values of two or more types. A <code>JsonValue</code> could be a string, a number, a boolean, and so on. In this case we are also making use of recursive types, to specify that a <code>JsonValue</code> can have an array of <code>JsonValue</code>, and also an object with properties of type <code>JsonValue</code>.</p></li>
+<li><p>We will import our <code>JsonValue</code> type and use it accordingly. Update your <code>localStore.ts</code> file like this:</p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb40-1" title="1"><span class="co">// localStore.ts</span></a>
+<a class="sourceLine" id="cb40-2" title="2"><span class="im">import</span> <span class="op">{</span> writable <span class="op">}</span> <span class="im">from</span> <span class="st">&quot;svelte/store&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb40-3" title="3"></a>
+<a class="sourceLine" id="cb40-4" title="4"><span class="im">import</span> type <span class="op">{</span> JsonValue <span class="op">}</span> <span class="im">from</span> <span class="st">&quot;./types/json.type&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb40-5" title="5"></a>
+<a class="sourceLine" id="cb40-6" title="6"><span class="im">export</span> <span class="kw">const</span> localStore <span class="op">=</span> (key<span class="op">:</span> string<span class="op">,</span> initial<span class="op">:</span> JsonValue) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb40-7" title="7">  <span class="co">// receives the key of the local storage and an initial value</span></a>
+<a class="sourceLine" id="cb40-8" title="8"></a>
+<a class="sourceLine" id="cb40-9" title="9">  <span class="kw">const</span> toString <span class="op">=</span> (<span class="dt">value</span><span class="op">:</span> JsonValue) <span class="kw">=&gt;</span> <span class="va">JSON</span>.<span class="at">stringify</span>(value<span class="op">,</span> <span class="kw">null</span><span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span> <span class="co">// helper function</span></a>
+<a class="sourceLine" id="cb40-10" title="10">  <span class="kw">const</span> toObj <span class="op">=</span> <span class="va">JSON</span>.<span class="at">parse</span><span class="op">;</span> <span class="co">// helper function</span></a>
+<a class="sourceLine" id="cb40-11" title="11"></a>
+<a class="sourceLine" id="cb40-12" title="12">  <span class="cf">if</span> (<span class="va">localStorage</span>.<span class="at">getItem</span>(key) <span class="op">===</span> <span class="kw">null</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb40-13" title="13">    <span class="co">// item not present in local storage</span></a>
+<a class="sourceLine" id="cb40-14" title="14">    <span class="va">localStorage</span>.<span class="at">setItem</span>(key<span class="op">,</span> <span class="at">toString</span>(initial))<span class="op">;</span> <span class="co">// initialize local storage with initial value</span></a>
+<a class="sourceLine" id="cb40-15" title="15">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb40-16" title="16"></a>
+<a class="sourceLine" id="cb40-17" title="17">  <span class="kw">const</span> saved <span class="op">=</span> <span class="at">toObj</span>(<span class="va">localStorage</span>.<span class="at">getItem</span>(key))<span class="op">;</span> <span class="co">// convert to object</span></a>
+<a class="sourceLine" id="cb40-18" title="18"></a>
+<a class="sourceLine" id="cb40-19" title="19">  <span class="kw">const</span> <span class="op">{</span> subscribe<span class="op">,</span> set<span class="op">,</span> update <span class="op">}</span> <span class="op">=</span> <span class="at">writable</span>(saved)<span class="op">;</span> <span class="co">// create the underlying writable store</span></a>
+<a class="sourceLine" id="cb40-20" title="20"></a>
+<a class="sourceLine" id="cb40-21" title="21">  <span class="cf">return</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb40-22" title="22">    subscribe<span class="op">,</span></a>
+<a class="sourceLine" id="cb40-23" title="23">    <span class="dt">set</span><span class="op">:</span> (<span class="dt">value</span><span class="op">:</span> JsonValue) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb40-24" title="24">      <span class="va">localStorage</span>.<span class="at">setItem</span>(key<span class="op">,</span> <span class="at">toString</span>(value))<span class="op">;</span> <span class="co">// save also to local storage as a string</span></a>
+<a class="sourceLine" id="cb40-25" title="25">      <span class="cf">return</span> <span class="at">set</span>(value)<span class="op">;</span></a>
+<a class="sourceLine" id="cb40-26" title="26">    <span class="op">},</span></a>
+<a class="sourceLine" id="cb40-27" title="27">    update<span class="op">,</span></a>
+<a class="sourceLine" id="cb40-28" title="28">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb40-29" title="29"><span class="op">};</span></a></code></pre></div></li>
+</ol>
+<p>Now if we try to create a <code>localStore</code> with something that cannot be converted to JSON via <code>JSON.stringify()</code>, for example an object with a function as a property, VS Code/<code>validate</code> will complain about it:</p>
+<figure>
+<img src="11-vscode-invalid-store.png" alt="vs code showing an error with using our store — it fails when trying to set a local storage value to something incompatible with json stringify" /><figcaption>vs code showing an error with using our store — it fails when trying to set a local storage value to something incompatible with json stringify</figcaption>
+</figure>
+<p>And best of all, it will even work with the <a href="https://svelte.dev/docs#4_Prefix_stores_with_%24_to_access_their_values"><code>$store</code> auto-subscription syntax</a>. If we try to save an invalid value to our <code>todos</code> store using the <code>$store</code> syntax, like this:</p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb41-1" title="1"><span class="co">&lt;!-- App.svelte --&gt;</span></a>
+<a class="sourceLine" id="cb41-2" title="2"><span class="kw">&lt;script</span><span class="ot"> lang=</span><span class="st">&quot;ts&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb41-3" title="3">  <span class="im">import</span> Todos <span class="im">from</span> <span class="st">&quot;./components/Todos.svelte&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb41-4" title="4">  <span class="im">import</span> Alert <span class="im">from</span> <span class="st">&quot;./components/Alert.svelte&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb41-5" title="5"></a>
+<a class="sourceLine" id="cb41-6" title="6">  <span class="im">import</span> <span class="op">{</span> todos <span class="op">}</span> <span class="im">from</span> <span class="st">&quot;./stores&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb41-7" title="7"></a>
+<a class="sourceLine" id="cb41-8" title="8">  <span class="co">// this is invalid, the content cannot be converted to JSON using JSON.stringify</span></a>
+<a class="sourceLine" id="cb41-9" title="9">  $todos <span class="op">=</span> <span class="op">{</span> <span class="dt">handler</span><span class="op">:</span> () <span class="kw">=&gt;</span> <span class="op">{}</span> <span class="op">};</span></a>
+<a class="sourceLine" id="cb41-10" title="10"><span class="kw">&lt;/script&gt;</span></a></code></pre></div>
+<p>The check script will report the following error:</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb42-1" title="1"><span class="op">&gt;</span> <span class="ex">npm</span> run check</a>
+<a class="sourceLine" id="cb42-2" title="2"></a>
+<a class="sourceLine" id="cb42-3" title="3"><span class="ex">Getting</span> Svelte diagnostics...</a>
+<a class="sourceLine" id="cb42-4" title="4">====================================</a>
+<a class="sourceLine" id="cb42-5" title="5"></a>
+<a class="sourceLine" id="cb42-6" title="6"><span class="ex">./svelte-todo-typescript/src</span>/App.svelte:<span class="ex">8</span>:12</a>
+<a class="sourceLine" id="cb42-7" title="7"><span class="ex">Error</span>: Argument of type <span class="st">&#39;{ handler: () =&gt; void; }&#39;</span> is not assignable to parameter of type <span class="st">&#39;JsonValue&#39;</span>.</a>
+<a class="sourceLine" id="cb42-8" title="8">  <span class="ex">Types</span> of property <span class="st">&#39;handler&#39;</span> are incompatible.</a>
+<a class="sourceLine" id="cb42-9" title="9">    <span class="ex">Type</span> <span class="st">&#39;() =&gt; void&#39;</span> is not assignable to type <span class="st">&#39;JsonValue&#39;</span>.</a>
+<a class="sourceLine" id="cb42-10" title="10">      <span class="ex">Type</span> <span class="st">&#39;() =&gt; void&#39;</span> is not assignable to type <span class="st">&#39;{ [key: string]: JsonValue; }&#39;</span>.</a>
+<a class="sourceLine" id="cb42-11" title="11">        <span class="ex">Index</span> signature is missing in type <span class="st">&#39;() =&gt; void&#39;</span>. (ts)</a>
+<a class="sourceLine" id="cb42-12" title="12"> <span class="va">$todos</span> = <span class="kw">{</span> <span class="fu">handler: ()</span> =<span class="op">&gt;</span> {<span class="kw">}</span> }</a></code></pre></div>
+<p>This is another example of how specifying types can make our code more robust, and help us catch more bugs before they get into production.</p>
+<p>And that’s it. We’ve converted our whole application to use TypeScript.</p>
+<h2 id="bulletproofing-our-stores-with-generics">Bulletproofing our stores with Generics</h2>
+<p>Our stores have already been ported to TypeScript but we can do better. We shouldn’t need to store any kind of value — we know that the alert store should contain string messages, and the todos store should contain an array of <code>TodoType</code>, etc. We can let TypeScript enforce this using <a href="https://www.typescriptlang.org/docs/handbook/generics.html">TypeScript Generics</a>; let’s find out more.</p>
+<h3 id="understanding-typescript-generics">Understanding TypeScript generics</h3>
+<p>Generics allow us to create reusable code components that work with a variety of types instead of a single type. They can be applied to interfaces, classes, and functions. Generic types are passed as parameters using a special syntax: they are specified between angle-brackets, and by convention are denoted with an upper-cased single char letter. Generic types allows us to capture the types provided by the user to be used later.</p>
+<p>Let’s see a quick example, a simple <code>Stack</code> class that let’s us <code>push</code> and <code>pop</code> elements, like this:</p>
+<div class="sourceCode" id="cb43"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb43-1" title="1"><span class="im">export</span> <span class="kw">class</span> Stack <span class="op">{</span></a>
+<a class="sourceLine" id="cb43-2" title="2">  <span class="kw">private</span> elements <span class="op">=</span> []</a>
+<a class="sourceLine" id="cb43-3" title="3"></a>
+<a class="sourceLine" id="cb43-4" title="4">  push <span class="op">=</span> (element) <span class="kw">=&gt;</span> <span class="kw">this</span>.<span class="va">elements</span>.<span class="at">push</span>(element)</a>
+<a class="sourceLine" id="cb43-5" title="5"></a>
+<a class="sourceLine" id="cb43-6" title="6">  <span class="at">pop</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb43-7" title="7">    <span class="cf">if</span> (<span class="kw">this</span>.<span class="va">elements</span>.<span class="at">length</span> <span class="op">===</span> <span class="dv">0</span>) <span class="cf">throw</span> <span class="kw">new</span> <span class="at">Error</span>(<span class="st">&#39;The stack is empty!&#39;</span>)</a>
+<a class="sourceLine" id="cb43-8" title="8">    <span class="cf">return</span> <span class="kw">this</span>.<span class="va">elements</span>.<span class="at">pop</span>()</a>
+<a class="sourceLine" id="cb43-9" title="9">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb43-10" title="10"><span class="op">}</span></a></code></pre></div>
+<p>In this case <code>elements</code> is an array of type <code>any</code>, and accordingly the <code>push()</code> and <code>pop()</code> methods both receive and return a variable of type <code>any</code>. So it’s perfectly valid to do something like the following:</p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb44-1" title="1"><span class="kw">const</span> anyStack <span class="op">=</span> <span class="kw">new</span> <span class="at">Stack</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb44-2" title="2"></a>
+<a class="sourceLine" id="cb44-3" title="3"><span class="va">anyStack</span>.<span class="at">push</span>(<span class="dv">1</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb44-4" title="4"><span class="va">anyStack</span>.<span class="at">push</span>(<span class="st">&quot;hello&quot;</span>)<span class="op">;</span></a></code></pre></div>
+<p>But what if we wanted to have a <code>Stack</code> that would only work with type <code>string</code>? We could do the following:</p>
+<div class="sourceCode" id="cb45"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb45-1" title="1"><span class="im">export</span> <span class="kw">class</span> StringStack <span class="op">{</span></a>
+<a class="sourceLine" id="cb45-2" title="2">  <span class="kw">private</span> <span class="dt">elements</span><span class="op">:</span> string[] <span class="op">=</span> []</a>
+<a class="sourceLine" id="cb45-3" title="3"></a>
+<a class="sourceLine" id="cb45-4" title="4">  push <span class="op">=</span> (<span class="dt">element</span><span class="op">:</span> string) <span class="kw">=&gt;</span> <span class="kw">this</span>.<span class="va">elements</span>.<span class="at">push</span>(element)</a>
+<a class="sourceLine" id="cb45-5" title="5"></a>
+<a class="sourceLine" id="cb45-6" title="6">  <span class="at">pop</span>()<span class="op">:</span> string <span class="op">{</span></a>
+<a class="sourceLine" id="cb45-7" title="7">    <span class="cf">if</span> (<span class="kw">this</span>.<span class="va">elements</span>.<span class="at">length</span> <span class="op">===</span> <span class="dv">0</span>) <span class="cf">throw</span> <span class="kw">new</span> <span class="at">Error</span>(<span class="st">&#39;The stack is empty!&#39;</span>)</a>
+<a class="sourceLine" id="cb45-8" title="8">    <span class="cf">return</span> <span class="kw">this</span>.<span class="va">elements</span>.<span class="at">pop</span>()</a>
+<a class="sourceLine" id="cb45-9" title="9">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb45-10" title="10"><span class="op">}</span></a></code></pre></div>
+<p>That would work. But if we wanted to work with numbers we would then have to duplicate our code and create a <code>NumberStack</code> class. And how could we handle a stack of types we don’t know yet, and that should be defined by the consumer?</p>
+<p>To solve all these problems we can use generics.</p>
+<p>This is our <code>Stack</code> class reimplemented using generics:</p>
+<div class="sourceCode" id="cb46"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb46-1" title="1"><span class="im">export</span> <span class="kw">class</span> Stack<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb46-2" title="2">  <span class="kw">private</span> <span class="dt">elements</span><span class="op">:</span> T[] <span class="op">=</span> []</a>
+<a class="sourceLine" id="cb46-3" title="3"></a>
+<a class="sourceLine" id="cb46-4" title="4">  push <span class="op">=</span> (<span class="dt">element</span><span class="op">:</span> T)<span class="op">:</span> number <span class="kw">=&gt;</span> <span class="kw">this</span>.<span class="va">elements</span>.<span class="at">push</span>(element)</a>
+<a class="sourceLine" id="cb46-5" title="5"></a>
+<a class="sourceLine" id="cb46-6" title="6">  <span class="at">pop</span>()<span class="op">:</span> T <span class="op">{</span></a>
+<a class="sourceLine" id="cb46-7" title="7">    <span class="cf">if</span> (<span class="kw">this</span>.<span class="va">elements</span>.<span class="at">length</span> <span class="op">===</span> <span class="dv">0</span>) <span class="cf">throw</span> <span class="kw">new</span> <span class="at">Error</span>(<span class="st">&#39;The stack is empty!&#39;</span>)</a>
+<a class="sourceLine" id="cb46-8" title="8">    <span class="cf">return</span> <span class="kw">this</span>.<span class="va">elements</span>.<span class="at">pop</span>()</a>
+<a class="sourceLine" id="cb46-9" title="9">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb46-10" title="10"><span class="op">}</span></a></code></pre></div>
+<p>We define a generic type <code>T</code> and then use it like we would normally use a specific type. Now elements is an array of type <code>T</code>, and <code>push()</code> and <code>pop()</code> both receive and return a variable of type <code>T</code>.</p>
+<p>This is how we would use our generic <code>Stack</code>:</p>
+<div class="sourceCode" id="cb47"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb47-1" title="1"><span class="kw">const</span> numberStack <span class="op">=</span> <span class="kw">new</span> Stack<span class="op">&lt;</span>number<span class="op">&gt;</span>()</a>
+<a class="sourceLine" id="cb47-2" title="2"><span class="va">numberStack</span>.<span class="at">push</span>(<span class="dv">1</span>)</a></code></pre></div>
+<p>Now TypeScript knows that our stack can only accept numbers, and will issue an error if we try to push anything else:</p>
+<figure>
+<img src="12-vscode-generic-stack-error.png" alt="Argument of type hello is not assignable to parameter of type number" /><figcaption>Argument of type hello is not assignable to parameter of type number</figcaption>
+</figure>
+<p>TypeScript can also infer generic types by its usage. Generics also support default values and constraints.</p>
+<p>Generics is a powerful feature that allows our code to abstract away from the specific types being used, making it more reusable and generic without giving up on type-safety. To learn more about it check out the <a href="https://www.typescriptlang.org/docs/handbook/generics.html">TypeScript Introduction to Generics</a>.</p>
+<h3 id="using-svelte-stores-with-generics">Using Svelte stores with generics</h3>
+<p>Svelte stores support generics out of the box. And, because of generic type inference we can take advantage of it without even touching our code.</p>
+<p>If you open the file <code>Todos.svelte</code> and assign a <code>number</code> type to our <code>$alert</code> store, you’ll get the following error:</p>
+<figure>
+<img src="13-vscode-generic-alert-error.png" alt="Todo Type object property complete should be completed" /><figcaption>Todo Type object property complete should be completed</figcaption>
+</figure>
+<p>That’s because when we defined our alert store in the <code>stores.ts</code> file with:</p>
+<div class="sourceCode" id="cb48"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb48-1" title="1"><span class="im">export</span> <span class="kw">const</span> alert <span class="op">=</span> <span class="at">writable</span>(<span class="st">&quot;Welcome to the To-Do list app!&quot;</span>)<span class="op">;</span></a></code></pre></div>
+<p>TypeScript inferred the generic type to be <code>string</code>. If we wanted to be explicit about it, we could do the following:</p>
+<div class="sourceCode" id="cb49"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb49-1" title="1"><span class="im">export</span> <span class="kw">const</span> alert <span class="op">=</span> writable <span class="op">&lt;</span> string <span class="op">&gt;</span> <span class="st">&quot;Welcome to the To-Do list app!&quot;</span><span class="op">;</span></a></code></pre></div>
+<p>Now we’ll make our <code>localStore</code> store support generics. Remember that we defined the <code>JsonValue</code> type to prevent the usage of our <code>localStore</code> store with values that cannot be persisted using <code>JSON.stringify()</code>. Now we want the consumers of <code>localStore</code> to be able to specify the type of data to persist, but instead of working with any type they should comply with the <code>JsonValue</code> type. We’ll specify that with a Generic constraint, like this:</p>
+<div class="sourceCode" id="cb50"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb50-1" title="1"><span class="im">export</span> <span class="kw">const</span> localStore <span class="op">=</span> <span class="op">&lt;</span>T <span class="kw">extends</span> JsonValue<span class="op">&gt;</span>(key<span class="op">:</span> string<span class="op">,</span> initial<span class="op">:</span> T)</a></code></pre></div>
+<p>We define a generic type <code>T</code> and specify that it must be compatible with the <code>JsonValue</code> type. Then we’ll use the <code>T</code> type appropriately.</p>
+<p>Our <code>localStore.ts</code> file will end up like this — try the new code now in your version:</p>
+<div class="sourceCode" id="cb51"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb51-1" title="1"><span class="co">// localStore.ts</span></a>
+<a class="sourceLine" id="cb51-2" title="2"><span class="im">import</span> <span class="op">{</span> writable <span class="op">}</span> <span class="im">from</span> <span class="st">&#39;svelte/store&#39;</span></a>
+<a class="sourceLine" id="cb51-3" title="3"></a>
+<a class="sourceLine" id="cb51-4" title="4"><span class="im">import</span> type <span class="op">{</span> JsonValue <span class="op">}</span> <span class="im">from</span> <span class="st">&#39;./types/json.type&#39;</span></a>
+<a class="sourceLine" id="cb51-5" title="5"></a>
+<a class="sourceLine" id="cb51-6" title="6"><span class="im">export</span> <span class="kw">const</span> localStore <span class="op">=</span> <span class="op">&lt;</span>T <span class="kw">extends</span> JsonValue<span class="op">&gt;</span>(key<span class="op">:</span> string<span class="op">,</span> initial<span class="op">:</span> T) <span class="kw">=&gt;</span> <span class="op">{</span>          <span class="co">// receives the key of the local storage and an initial value</span></a>
+<a class="sourceLine" id="cb51-7" title="7"></a>
+<a class="sourceLine" id="cb51-8" title="8">  <span class="kw">const</span> toString <span class="op">=</span> (<span class="dt">value</span><span class="op">:</span> T) <span class="kw">=&gt;</span> <span class="va">JSON</span>.<span class="at">stringify</span>(value<span class="op">,</span> <span class="kw">null</span><span class="op">,</span> <span class="dv">2</span>)           <span class="co">// helper function</span></a>
+<a class="sourceLine" id="cb51-9" title="9">  <span class="kw">const</span> toObj <span class="op">=</span> <span class="va">JSON</span>.<span class="at">parse</span>                                                <span class="co">// helper function</span></a>
+<a class="sourceLine" id="cb51-10" title="10"></a>
+<a class="sourceLine" id="cb51-11" title="11">  <span class="cf">if</span> (<span class="va">localStorage</span>.<span class="at">getItem</span>(key) <span class="op">===</span> <span class="kw">null</span>) <span class="op">{</span>                               <span class="co">// item not present in local storage</span></a>
+<a class="sourceLine" id="cb51-12" title="12">    <span class="va">localStorage</span>.<span class="at">setItem</span>(key<span class="op">,</span> <span class="at">toString</span>(initial))                          <span class="co">// initialize local storage with initial value</span></a>
+<a class="sourceLine" id="cb51-13" title="13">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb51-14" title="14"></a>
+<a class="sourceLine" id="cb51-15" title="15">  <span class="kw">const</span> saved <span class="op">=</span> <span class="at">toObj</span>(<span class="va">localStorage</span>.<span class="at">getItem</span>(key))                          <span class="co">// convert to object</span></a>
+<a class="sourceLine" id="cb51-16" title="16"></a>
+<a class="sourceLine" id="cb51-17" title="17">  <span class="kw">const</span> <span class="op">{</span> subscribe<span class="op">,</span> set<span class="op">,</span> update <span class="op">}</span> <span class="op">=</span> writable<span class="op">&lt;</span>T<span class="op">&gt;</span>(saved)                   <span class="co">// create the underlying writable store</span></a>
+<a class="sourceLine" id="cb51-18" title="18"></a>
+<a class="sourceLine" id="cb51-19" title="19">  <span class="cf">return</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb51-20" title="20">    subscribe<span class="op">,</span></a>
+<a class="sourceLine" id="cb51-21" title="21">    <span class="dt">set</span><span class="op">:</span> (<span class="dt">value</span><span class="op">:</span> T) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb51-22" title="22">      <span class="va">localStorage</span>.<span class="at">setItem</span>(key<span class="op">,</span> <span class="at">toString</span>(value))                          <span class="co">// save also to local storage as a string</span></a>
+<a class="sourceLine" id="cb51-23" title="23">      <span class="cf">return</span> <span class="at">set</span>(value)</a>
+<a class="sourceLine" id="cb51-24" title="24">    <span class="op">},</span></a>
+<a class="sourceLine" id="cb51-25" title="25">    update</a>
+<a class="sourceLine" id="cb51-26" title="26">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb51-27" title="27"><span class="op">}</span></a></code></pre></div>
+<p>And thanks to generic type inference, TypeScript already knows that our <code>$todos</code> store should contain an array of <code>TodoType</code>:</p>
+<figure>
+<img src="14-vscode-generic-localstore-error.png" alt="Todo Type object property complete should be completed" /><figcaption>Todo Type object property complete should be completed</figcaption>
+</figure>
+<p>Once again, if we wanted to be explicit about it, we could do so in the <code>stores.ts</code> file like this:</p>
+<div class="sourceCode" id="cb52"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb52-1" title="1"><span class="kw">const</span> initialTodos<span class="op">:</span> TodoType[] <span class="op">=</span> [</a>
+<a class="sourceLine" id="cb52-2" title="2">  <span class="op">{</span> <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Visit MDN web docs&#39;</span><span class="op">,</span> <span class="dt">completed</span><span class="op">:</span> <span class="kw">true</span> <span class="op">},</span></a>
+<a class="sourceLine" id="cb52-3" title="3">  <span class="op">{</span> <span class="dt">id</span><span class="op">:</span> <span class="dv">2</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Complete the Svelte Tutorial&#39;</span><span class="op">,</span> <span class="dt">completed</span><span class="op">:</span> <span class="kw">false</span> <span class="op">},</span></a>
+<a class="sourceLine" id="cb52-4" title="4">]</a>
+<a class="sourceLine" id="cb52-5" title="5"></a>
+<a class="sourceLine" id="cb52-6" title="6"><span class="im">export</span> <span class="kw">const</span> todos <span class="op">=</span> localStore<span class="op">&lt;</span>TodoType[]<span class="op">&gt;</span>(<span class="st">&#39;mdn-svelte-todo&#39;</span><span class="op">,</span> initialTodos)</a></code></pre></div>
+<p>That will do for our brief tour of TypeScript Generics.</p>
+<h2 id="the-code-so-far">The code so far</h2>
+<h3 id="git-1">Git</h3>
+<p>To see the state of the code as it should be at the end of this article, access your copy of our repo like this:</p>
+<div class="sourceCode" id="cb53"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb53-1" title="1"><span class="bu">cd</span> mdn-svelte-tutorial/08-next-steps</a></code></pre></div>
+<p>Or directly download the folder’s content:</p>
+<div class="sourceCode" id="cb54"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb54-1" title="1"><span class="ex">npx</span> degit opensas/mdn-svelte-tutorial/08-next-steps</a></code></pre></div>
+<p>Remember to run <code>npm install &amp;&amp; npm run dev</code> to start your app in development mode.</p>
+<h3 id="repl-1">REPL</h3>
+<p>As we said earlier, TypeScript is not yet available in the REPL.</p>
+<h2 id="summary">Summary</h2>
+<p>In this article we took our to-do list application and ported it to TypeScript.</p>
+<p>We first learnt about TypeScript and what advantages it can bring us. Then we saw how to create a new Svelte project with TypeScript support. We also saw how to convert an existing Svelte project to use TypeScript — our to-do list app.</p>
+<p>We saw how to work with <a href="https://code.visualstudio.com/">Visual Studio Code</a> and the <a href="https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode">Svelte extension</a> to get features like type checking and auto-completion. We also used the <code>svelte-check</code> tool to inspect TypeScript issues from the command line.</p>
+<p>In the next article we will learn how to compile and deploy our app to production. We will also see which resources are available online to go further with learning Svelte.</p>
+<p>{{PreviousMenuNext(“Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_stores”,“Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_deployment_next”, “Learn/Tools_and_testing/Client-side_JavaScript_frameworks”)}}</p>
+<h2 id="in-this-module">In this module</h2>
+<ul>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Introduction">Introduction to client-side frameworks</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Main_features">Framework main features</a></li>
+<li><p>React</p>
+<ul>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/React_getting_started">Getting started with React</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/React_todo_list_beginning">Beginning our React todo list</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/React_components">Componentizing our React app</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/React_interactivity_events_state">React interactivity: Events and state</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/React_interactivity_filtering_conditional_rendering">React interactivity: Editing, filtering, conditional rendering</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/React_accessibility">Accessibility in React</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/React_resources">React resources</a></li>
+</ul></li>
+<li><p>Ember</p>
+<ul>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_getting_started">Getting started with Ember</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_structure_componentization">Ember app structure and componentization</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_interactivity_events_state">Ember interactivity: Events, classes and state</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_conditional_footer">Ember Interactivity: Footer functionality, conditional rendering</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_routing">Routing in Ember</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_resources">Ember resources and troubleshooting</a></li>
+</ul></li>
+<li><p>Vue</p>
+<ul>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_getting_started">Getting started with Vue</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_first_component">Creating our first Vue component</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_rendering_lists">Rendering a list of Vue components</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_methods_events_models">Adding a new todo form: Vue events, methods, and models</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_styling">Styling Vue components with CSS</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_computed_properties">Using Vue computed properties</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_conditional_rendering">Vue conditional rendering: editing existing todos</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_refs_focus_management">Focus management with Vue refs</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_resources">Vue resources</a></li>
+</ul></li>
+<li><p>Svelte</p>
+<ul>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_getting_started">Getting started with Svelte</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_Todo_list_beginning">Starting our Svelte Todo list app</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_variables_props">Dynamic behavior in Svelte: working with variables and props</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_components">Componentizing our Svelte app</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_reactivity_lifecycle_accessibility">Advanced Svelte: Reactivity, lifecycle, accessibility</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_stores">Working with Svelte stores</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_TypeScript">TypeScript support in Svelte</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_deployment_next">Deployment and next steps</a></li>
+</ul></li>
+<li><p>Angular</p>
+<ul>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Angular_getting_started">Getting started with Angular</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Angular_todo_list_beginning">Beginning our Angular todo list app</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Angular_styling">Styling our Angular app</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Angular_item_component">Creating an item component</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Angular_filtering">Filtering our to-do items</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Angular_building">Building Angular applications and further resources</a></li>
+</ul></li>
+</ul>

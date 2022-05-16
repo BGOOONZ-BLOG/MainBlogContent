@@ -1,0 +1,530 @@
+<p>{{LearnSidebar}}{{PreviousMenuNext(“Learn/JavaScript/Building_blocks/Return_values”,“Learn/JavaScript/Building_blocks/Image_gallery”, “Learn/JavaScript/Building_blocks”)}}</p>
+<p>Events are actions or occurrences that happen in the system you are programming, which the system tells you about so your code can react to them.</p>
+<p>For example, if the user clicks a button on a webpage, you might want to react to that action by displaying an information box. In this article, we discuss some important concepts surrounding events, and look at how they work in browsers. This won’t be an exhaustive study; just what you need to know at this stage.</p>
+<table>
+<tbody>
+<tr>
+<th scope="row">
+Prerequisites:
+</th>
+<td>
+Basic computer literacy, a basic understanding of HTML and CSS, <a href="/en-US/docs/Learn/JavaScript/First_steps"
+          >JavaScript first steps</a
+        >.
+</td>
+</tr>
+<tr>
+<th scope="row">
+Objective:
+</th>
+<td>
+To understand the fundamental theory of events, how they work in browsers, and how events may differ in different programming environments.
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="a-series-of-fortunate-events">A series of fortunate events</h2>
+<p>As mentioned above, <strong>events</strong> are actions or occurrences that happen in the system you are programming — the system produces (or “fires”) a signal of some kind when an event occurs, and provides a mechanism by which an action can be automatically taken (that is, some code running) when the event occurs. For example, in an airport, when the runway is clear for take off, a signal is communicated to the pilot. As a result, the plane can safely take off.</p>
+<figure>
+<img src="mdn-mozilla-events-runway.png" alt="Image displaying signal for plane to take-off" /><figcaption>Image displaying signal for plane to take-off</figcaption>
+</figure>
+<p>In the case of the Web, events are fired inside the browser window, and tend to be attached to a specific item that resides in it. This might be a single element, a set of elements, the HTML document loaded in the current tab, or the entire browser window. There are many different types of events that can occur.</p>
+<p>For example:</p>
+<ul>
+<li>The user selects a certain element or hovers the cursor over a certain element.</li>
+<li>The user chooses a key on the keyboard.</li>
+<li>The user resizes or closes the browser window.</li>
+<li>A web page finishes loading.</li>
+<li>A form is submitted.</li>
+<li>A video is played, paused, or finishes.</li>
+<li>An error occurs.</li>
+</ul>
+<p>You can gather from this (and from glancing at the MDN <a href="/en-US/docs/Web/Events">event reference</a>) that there are <strong>a lot</strong> of events that can be fired.</p>
+<p>To react to an event, you attach an <strong>event handler</strong> to it. This is a block of code (usually a JavaScript function that you as a programmer create) that runs when the event fires. When such a block of code is defined to run in response to an event, we say we are <strong>registering an event handler</strong>. Note: Event handlers are sometimes called <strong>event listeners</strong> — they are pretty much interchangeable for our purposes, although strictly speaking, they work together. The listener listens out for the event happening, and the handler is the code that is run in response to it happening.</p>
+<blockquote>
+<p><strong>Note:</strong> Web events are not part of the core JavaScript language — they are defined as part of the APIs built into the browser.</p>
+</blockquote>
+<h3 id="a-simple-example">A simple example</h3>
+<p>Let’s look at a simple example of what we mean here. In the following example, we have a single {{htmlelement(“button”)}}, which when pressed, makes the background change to a random color:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">&lt;button&gt;</span>Change color<span class="kw">&lt;/button&gt;</span></a></code></pre></div>
+<p><code>css hidden button { margin: 10px };</code></p>
+<p>The JavaScript looks like so:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> btn <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;button&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">function</span> <span class="at">random</span>(number) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="cf">return</span> <span class="va">Math</span>.<span class="at">floor</span>(<span class="va">Math</span>.<span class="at">random</span>() <span class="op">*</span> (number<span class="op">+</span><span class="dv">1</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-6" title="6"></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="va">btn</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="kw">const</span> rndCol <span class="op">=</span> <span class="vs">`rgb(</span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">, </span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">, </span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">)`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" title="9">  <span class="va">document</span>.<span class="va">body</span>.<span class="va">style</span>.<span class="at">backgroundColor</span> <span class="op">=</span> rndCol<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>In this code, we store a reference to the <a href="/en-US/docs/Web/HTML/Element/button"><code>&lt;button&gt;</code></a> element inside a constant called <code>btn</code>, using the {{domxref(“Document.querySelector()”)}} function.</p>
+<p>We also define a function that returns a random number.</p>
+<p>The third part of the code is where we define and register the event handler. The <code>&lt;button&gt;</code> element has an event called <code>'click'</code> that fires when the user clicks the button. Objects that can fire events have an {{domxref(“EventTarget/addEventListener”, “addEventListener()”)}} method, that takes at least two arguments: the name of the event and a function to handle the event. So we call the button’s <code>addEventListener()</code> method, passing in:</p>
+<ul>
+<li>the string <code>'click'</code>, to indicate that we want to listen to the click event</li>
+<li>a function to call when the event happens. In our case the function generates a random RGB color and sets the page <a href="/en-US/docs/Web/HTML/Element/body"><code>&lt;body&gt;</code></a> <a href="/en-US/docs/Web/CSS/background-color"><code>background-color</code></a> equal to that color.</li>
+</ul>
+<p>The example output is as follows. Try clicking the button:</p>
+<p>{{ EmbedLiveSample(‘A_simple_example’, ‘100%’, 200, "“,”") }}</p>
+<h3 id="its-not-just-web-pages">It’s not just web pages</h3>
+<p>Events are not unique to JavaScript — most programming languages have some kind of event model, and the way the model works often differs from JavaScript’s way. In fact, the event model in JavaScript for web pages differs from the event model for JavaScript as it is used in other environments.</p>
+<p>For example, <a href="/en-US/docs/Learn/Server-side/Express_Nodejs">Node.js</a> is a very popular JavaScript runtime that enables developers to use JavaScript to build network and server-side applications. The <a href="https://nodejs.org/docs/latest-v12.x/api/events.html">Node.js event model</a> relies on listeners to listen for events and emitters to emit events periodically — it doesn’t sound that different, but the code is quite different, making use of functions like <code>on()</code> to register an event listener, and <code>once()</code> to register an event listener that unregisters after it has run once. The <a href="https://nodejs.org/docs/latest-v12.x/api/http.html#http_event_connect">HTTP connect event docs</a> provide a good example.</p>
+<p>You can also use JavaScript to build cross-browser add-ons — browser functionality enhancements — using a technology called <a href="/en-US/docs/Mozilla/Add-ons/WebExtensions">WebExtensions</a>. The event model is similar to the web events model, but a bit different — event listeners properties are camel-cased (such as <code>onMessage</code> rather than <code>onmessage</code>), and need to be combined with the <code>addListener</code> function. See the <a href="/en-US/docs/Mozilla/Add-ons/WebExtensions/API/runtime/onMessage#examples"><code>runtime.onMessage</code></a> page for an example.</p>
+<p>You don’t need to understand anything about other such environments at this stage in your learning; we just wanted to make it clear that events can differ in different programming environments.</p>
+<h2 id="using-addeventlistener">Using addEventListener()</h2>
+<p>The recommended mechanism for adding event handlers in web pages is the <a href="/en-US/docs/Web/API/EventTarget/addEventListener"><code>addEventListener()</code></a> method:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> btn <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;button&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw">function</span> <span class="at">random</span>(number) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="cf">return</span> <span class="va">Math</span>.<span class="at">floor</span>(<span class="va">Math</span>.<span class="at">random</span>() <span class="op">*</span> (number<span class="op">+</span><span class="dv">1</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-6" title="6"></a>
+<a class="sourceLine" id="cb3-7" title="7"><span class="va">btn</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="kw">const</span> rndCol <span class="op">=</span> <span class="vs">`rgb(</span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">, </span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">, </span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">)`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">  <span class="va">document</span>.<span class="va">body</span>.<span class="va">style</span>.<span class="at">backgroundColor</span> <span class="op">=</span> rndCol<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> You can find the <a href="https://github.com/mdn/learning-area/blob/master/javascript/building-blocks/events/random-color-addeventlistener.html">full source code</a> for this example on GitHub (also <a href="https://mdn.github.io/learning-area/javascript/building-blocks/events/random-color-addeventlistener.html">see it running live</a>).</p>
+</blockquote>
+<p>Inside the <code>addEventListener()</code> function, we specify two parameters: the name of the event we want to register this handler for, and the code that comprises the handler function we want to run in response to it.</p>
+<p>It is fine to make the handler function a separate named function, like this:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">const</span> btn <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;button&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="kw">function</span> <span class="at">random</span>(number) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-4" title="4">  <span class="cf">return</span> <span class="va">Math</span>.<span class="at">floor</span>(<span class="va">Math</span>.<span class="at">random</span>() <span class="op">*</span> (number<span class="op">+</span><span class="dv">1</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="op">}</span></a>
+<a class="sourceLine" id="cb4-6" title="6"></a>
+<a class="sourceLine" id="cb4-7" title="7"><span class="kw">function</span> <span class="at">changeBackground</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-8" title="8">  <span class="kw">const</span> rndCol <span class="op">=</span> <span class="vs">`rgb(</span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">, </span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">, </span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">)`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-9" title="9">  <span class="va">document</span>.<span class="va">body</span>.<span class="va">style</span>.<span class="at">backgroundColor</span> <span class="op">=</span> rndCol<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-10" title="10"><span class="op">}</span></a>
+<a class="sourceLine" id="cb4-11" title="11"></a>
+<a class="sourceLine" id="cb4-12" title="12"><span class="va">btn</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> changeBackground)<span class="op">;</span></a></code></pre></div>
+<h3 id="listening-for-other-events">Listening for other events</h3>
+<p>There are many different events that can be fired by a button element. Let’s experiment.</p>
+<p>First, make a local copy of <a href="https://mdn.github.io/learning-area/javascript/building-blocks/events/random-color-addeventlistener.html">random-color-addeventlistener.html</a>, and open it in your browser. It’s just a copy of the simple random color example we’ve played with already. Now try changing <code>click</code> to the following different values in turn, and observing the results in the example:</p>
+<ul>
+<li><a href="/en-US/docs/Web/API/Element/focus_event"><code>focus</code></a> and <a href="/en-US/docs/Web/API/Element/blur_event"><code>blur</code></a> — The color changes when the button is focused and unfocused; try pressing the tab to focus on the button and press the tab again to focus away from the button. These are often used to display information about filling in form fields when they are focused, or displaying an error message if a form field is filled with an incorrect value.</li>
+<li><a href="/en-US/docs/Web/API/Element/dblclick_event"><code>dblclick</code></a> — The color changes only when the button is double-clicked.</li>
+<li><a href="/en-US/docs/Web/API/Element/mouseover_event"><code>mouseover</code></a> and <a href="/en-US/docs/Web/API/Element/mouseout_event"><code>mouseout</code></a> — The color changes when the mouse pointer hovers over the button, or when the pointer moves off the button, respectively.</li>
+</ul>
+<p>Some events, such as <code>click</code>, are available on nearly any element. Others are more specific and only useful in certain situations: for example, the <a href="/en-US/docs/Web/API/HTMLMediaElement/play_event"><code>play</code></a> event is only available on some elements, such as {{htmlelement(“video”)}}.</p>
+<h3 id="removing-listeners">Removing listeners</h3>
+<p>If you’ve added an event handler using <code>addEventListener()</code>, you can remove it again using the <a href="/en-US/docs/Web/API/EventTarget/removeEventListener"><code>removeEventListener()</code></a> method. For example, this would remove the <code>changeBackground()</code> event handler:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="va">btn</span>.<span class="at">removeEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> changeBackground)<span class="op">;</span></a></code></pre></div>
+<p>Event handlers can also be removed by passing an {{domxref(“AbortSignal”)}} to {{domxref(“EventTarget/addEventListener()”, “addEventListener()”)}} and then later calling {{domxref(“AbortController/abort()”, “abort()”)}} on the controller owning the <code>AbortSignal</code>. For example, to add an event handler that we can remove with an <code>AbortSignal</code>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">const</span> controller <span class="op">=</span> <span class="kw">new</span> <span class="at">AbortController</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-2" title="2"></a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="va">btn</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-4" title="4">  <span class="kw">const</span> rndCol <span class="op">=</span> <span class="vs">`rgb(</span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">, </span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">, </span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">)`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-5" title="5">  <span class="va">document</span>.<span class="va">body</span>.<span class="va">style</span>.<span class="at">backgroundColor</span> <span class="op">=</span> rndCol<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="op">},</span> <span class="op">{</span> <span class="dt">signal</span><span class="op">:</span> <span class="va">controller</span>.<span class="at">signal</span> <span class="op">}</span>)<span class="op">;</span> <span class="co">// pass an AbortSignal to this handler</span></a></code></pre></div>
+<p>Then the event handler created by the code above can be removed like this:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="va">controller</span>.<span class="at">abort</span>()<span class="op">;</span> <span class="co">// removes any/all event handlers associated with this controller</span></a></code></pre></div>
+<p>For simple, small programs, cleaning up old, unused event handlers isn’t necessary, but for larger, more complex programs, it can improve efficiency. Also, the ability to remove event handlers allows you to have the same button performing different actions in different circumstances: all you have to do is add or remove handlers.</p>
+<h3 id="adding-multiple-listeners-for-a-single-event">Adding multiple listeners for a single event</h3>
+<p>By making more than one call to {{domxref(“EventTarget/addEventListener()”, “addEventListener()”)}}, providing different handlers, you can have multiple handlers for a single event:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="va">myElement</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> functionA)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-2" title="2"><span class="va">myElement</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> functionB)<span class="op">;</span></a></code></pre></div>
+<p>Both functions would now run when the element is clicked.</p>
+<h3 id="learn-more">Learn more</h3>
+<p>There are other powerful features and options available with <code>addEventListener()</code>.</p>
+<p>These are a little out of scope for this article, but if you want to read them, visit the <a href="/en-US/docs/Web/API/EventTarget/addEventListener"><code>addEventListener()</code></a> and <a href="/en-US/docs/Web/API/EventTarget/removeEventListener"><code>removeEventListener()</code></a> reference pages.</p>
+<h2 id="other-event-listener-mechanisms">Other event listener mechanisms</h2>
+<p>We recommend that you use <code>addEventListener()</code> to register event handlers. It’s the most powerful method and scales best with more complex programs. However, there are two other ways of registering event handlers that you might see: <em>event handler properties</em> and <em>inline event handlers</em>.</p>
+<h3 id="event-handler-properties">Event handler properties</h3>
+<p>Objects (such as buttons) that can fire events also usually have properties whose name is <code>on</code> followed by the name of the event. For example, elements have a property <code>onclick</code>. This is called an <em>event handler property</em>. To listen for the event, you can assign the handler function to the property.</p>
+<p>For example, we could rewrite the random-color example like this:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">const</span> btn <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;button&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-2" title="2"></a>
+<a class="sourceLine" id="cb9-3" title="3"><span class="kw">function</span> <span class="at">random</span>(number) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-4" title="4">  <span class="cf">return</span> <span class="va">Math</span>.<span class="at">floor</span>(<span class="va">Math</span>.<span class="at">random</span>() <span class="op">*</span> (number<span class="op">+</span><span class="dv">1</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-5" title="5"><span class="op">}</span></a>
+<a class="sourceLine" id="cb9-6" title="6"></a>
+<a class="sourceLine" id="cb9-7" title="7"><span class="va">btn</span>.<span class="at">onclick</span> <span class="op">=</span> () <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-8" title="8">  <span class="kw">const</span> rndCol <span class="op">=</span> <span class="vs">`rgb(</span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">, </span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">, </span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">)`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-9" title="9">  <span class="va">document</span>.<span class="va">body</span>.<span class="va">style</span>.<span class="at">backgroundColor</span> <span class="op">=</span> rndCol<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-10" title="10"><span class="op">}</span></a></code></pre></div>
+<p>You can also set the handler property to a named function:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">const</span> btn <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;button&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-2" title="2"></a>
+<a class="sourceLine" id="cb10-3" title="3"><span class="kw">function</span> <span class="at">random</span>(number) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-4" title="4">  <span class="cf">return</span> <span class="va">Math</span>.<span class="at">floor</span>(<span class="va">Math</span>.<span class="at">random</span>() <span class="op">*</span> (number<span class="op">+</span><span class="dv">1</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-5" title="5"><span class="op">}</span></a>
+<a class="sourceLine" id="cb10-6" title="6"></a>
+<a class="sourceLine" id="cb10-7" title="7"><span class="kw">function</span> <span class="at">bgChange</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-8" title="8">  <span class="kw">const</span> rndCol <span class="op">=</span> <span class="vs">`rgb(</span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">, </span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">, </span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">)`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-9" title="9">  <span class="va">document</span>.<span class="va">body</span>.<span class="va">style</span>.<span class="at">backgroundColor</span> <span class="op">=</span> rndCol<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-10" title="10"><span class="op">}</span></a>
+<a class="sourceLine" id="cb10-11" title="11"></a>
+<a class="sourceLine" id="cb10-12" title="12"><span class="va">btn</span>.<span class="at">onclick</span> <span class="op">=</span> bgChange<span class="op">;</span></a></code></pre></div>
+<p>With event handler properties, you can’t add more than one handler for a single event. For example, you can call <code>addEventListener('click', handler)</code> on an element multiple times, with different functions specified in the second argument:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1"><span class="va">element</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> function1)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-2" title="2"><span class="va">element</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> function2)<span class="op">;</span></a></code></pre></div>
+<p>This is impossible with event handler properties because any subsequent attempts to set the property will overwrite earlier ones:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb12-1" title="1"><span class="va">element</span>.<span class="at">onclick</span> <span class="op">=</span> function1<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-2" title="2"><span class="va">element</span>.<span class="at">onclick</span> <span class="op">=</span> function2<span class="op">;</span></a></code></pre></div>
+<h3 id="inline-event-handlers-dont-use-these">Inline event handlers — don’t use these</h3>
+<p>You might also see a pattern like this in your code:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb13-1" title="1"><span class="kw">&lt;button</span><span class="ot"> onclick=</span><span class="st">&quot;bgChange()&quot;</span><span class="kw">&gt;</span>Press me<span class="kw">&lt;/button&gt;</span></a></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb14-1" title="1"><span class="kw">function</span> <span class="at">bgChange</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb14-2" title="2">  <span class="kw">const</span> rndCol <span class="op">=</span> <span class="vs">`rgb(</span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">, </span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">, </span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">)`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb14-3" title="3">  <span class="va">document</span>.<span class="va">body</span>.<span class="va">style</span>.<span class="at">backgroundColor</span> <span class="op">=</span> rndCol<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-4" title="4"><span class="op">}</span></a></code></pre></div>
+<p>The earliest method of registering event handlers found on the Web involved <strong>event handler HTML attributes</strong> (or <strong>inline event handlers</strong>) like the one shown above — the attribute value is literally the JavaScript code you want to run when the event occurs. The above example invokes a function defined inside a {{htmlelement(“script”)}} element on the same page, but you could also insert JavaScript directly inside the attribute, for example:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb15-1" title="1"><span class="kw">&lt;button</span><span class="ot"> onclick=</span><span class="st">&quot;alert(&#39;Hello, this is my old-fashioned event handler!&#39;);&quot;</span><span class="kw">&gt;</span>Press me<span class="kw">&lt;/button&gt;</span></a></code></pre></div>
+<p>You can find HTML attribute equivalents for many of the event handler properties; however, you shouldn’t use these — they are considered bad practice. It might seem easy to use an event handler attribute if you are doing something really quick, but they quickly become unmanageable and inefficient.</p>
+<p>For a start, it is not a good idea to mix up your HTML and your JavaScript, as it becomes hard to read. Keeping your JavaScript separate is a good practice, and if it is in a separate file you can apply it to multiple HTML documents.</p>
+<p>Even in a single file, inline event handlers are not a good idea. One button is OK, but what if you had 100 buttons? You’d have to add 100 attributes to the file; it would quickly turn into a maintenance nightmare. With JavaScript, you could easily add an event handler function to all the buttons on the page no matter how many there were, using something like this:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb16-1" title="1"><span class="kw">const</span> buttons <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelectorAll</span>(<span class="st">&#39;button&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-2" title="2"></a>
+<a class="sourceLine" id="cb16-3" title="3"><span class="cf">for</span> (<span class="kw">const</span> button <span class="kw">of</span> buttons) <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-4" title="4">  <span class="va">button</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> bgChange)<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-5" title="5"><span class="op">}</span></a></code></pre></div>
+<p>Finally, many common server configurations will disallow inline JavaScript, as a security measure.</p>
+<p><strong>You should never use the HTML event handler attributes</strong> — those are outdated, and using them is bad practice.</p>
+<h2 id="event-objects">Event objects</h2>
+<p>Sometimes, inside an event handler function, you’ll see a parameter specified with a name such as <code>event</code>, <code>evt</code>, or <code>e</code>. This is called the <strong>event object</strong>, and it is automatically passed to event handlers to provide extra features and information. For example, let’s rewrite our random color example again slightly:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb17-1" title="1"><span class="kw">const</span> btn <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;button&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb17-2" title="2"></a>
+<a class="sourceLine" id="cb17-3" title="3"><span class="kw">function</span> <span class="at">random</span>(number) <span class="op">{</span></a>
+<a class="sourceLine" id="cb17-4" title="4">  <span class="cf">return</span> <span class="va">Math</span>.<span class="at">floor</span>(<span class="va">Math</span>.<span class="at">random</span>() <span class="op">*</span> (number<span class="op">+</span><span class="dv">1</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb17-5" title="5"><span class="op">}</span></a>
+<a class="sourceLine" id="cb17-6" title="6"></a>
+<a class="sourceLine" id="cb17-7" title="7"><span class="kw">function</span> <span class="at">bgChange</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb17-8" title="8">  <span class="kw">const</span> rndCol <span class="op">=</span> <span class="vs">`rgb(</span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">, </span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">, </span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">)`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb17-9" title="9">  <span class="va">e</span>.<span class="va">target</span>.<span class="va">style</span>.<span class="at">backgroundColor</span> <span class="op">=</span> rndCol<span class="op">;</span></a>
+<a class="sourceLine" id="cb17-10" title="10">  <span class="va">console</span>.<span class="at">log</span>(e)<span class="op">;</span></a>
+<a class="sourceLine" id="cb17-11" title="11"><span class="op">}</span></a>
+<a class="sourceLine" id="cb17-12" title="12"></a>
+<a class="sourceLine" id="cb17-13" title="13"><span class="va">btn</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> bgChange)<span class="op">;</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> You can find the <a href="https://github.com/mdn/learning-area/blob/master/javascript/building-blocks/events/random-color-eventobject.html">full source code</a> for this example on GitHub (also <a href="https://mdn.github.io/learning-area/javascript/building-blocks/events/random-color-eventobject.html">see it running live</a>).</p>
+</blockquote>
+<p>Here you can see we are including an event object, <strong>e</strong>, in the function, and in the function setting a background color style on <code>e.target</code> — which is the button itself. The <code>target</code> property of the event object is always a reference to the element the event occurred upon. So, in this example, we are setting a random background color on the button, not the page.</p>
+<blockquote>
+<p><strong>Note:</strong> See the <a href="#event_delegation">Event delegation</a> section below for an example where we use <code>event.target</code>.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> You can use any name you like for the event object — you just need to choose a name that you can then use to reference it inside the event handler function. <code>e</code>/<code>evt</code>/<code>event</code> are most commonly used by developers because they are short and easy to remember. It’s always good to be consistent — with yourself, and with others if possible.</p>
+</blockquote>
+<h3 id="extra-properties-of-event-objects">Extra properties of event objects</h3>
+<p>Most event objects have a standard set of properties and methods available on the event object; see the {{domxref(“Event”)}} object reference for a full list.</p>
+<p>Some event objects add extra properties that are relevant to that particular type of event. For example, the {{domxref(“Document/keydown_event”, “keydown”)}} event fires when the user presses a key. Its event object is a {{domxref(“KeyboardEvent”)}}, which is a specialized <code>Event</code> object with a <code>key</code> property that tells you which key was pressed:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb18-1" title="1"><span class="kw">&lt;input</span><span class="ot"> id=</span><span class="st">&quot;textBox&quot;</span><span class="ot"> type=</span><span class="st">&quot;text&quot;</span><span class="kw">&gt;&lt;/input&gt;</span></a>
+<a class="sourceLine" id="cb18-2" title="2"><span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;output&quot;</span><span class="kw">&gt;&lt;/div&gt;</span></a></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb19-1" title="1"><span class="kw">const</span> textBox <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;#textBox&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb19-2" title="2"><span class="kw">const</span> output <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&quot;#output&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb19-3" title="3"><span class="va">textBox</span>.<span class="at">addEventListener</span>(<span class="st">&#39;keydown&#39;</span><span class="op">,</span> event <span class="kw">=&gt;</span> <span class="va">output</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="vs">`You pressed &quot;</span><span class="sc">${</span><span class="va">event</span>.<span class="at">key</span><span class="sc">}</span><span class="vs">&quot;.`</span>)<span class="op">;</span></a></code></pre></div>
+<p><code>css hidden div {   margin: .5rem 0; }</code></p>
+<p>Try typing into the text box and see the output:</p>
+<p>{{EmbedLiveSample(“Extra_properties_of_event_objects”, 100, 100)}}</p>
+<h2 id="preventing-default-behavior">Preventing default behavior</h2>
+<p>Sometimes, you’ll come across a situation where you want to prevent an event from doing what it does by default. The most common example is that of a web form, for example, a custom registration form. When you fill in the details and select the submit button, the natural behavior is for the data to be submitted to a specified page on the server for processing, and the browser to be redirected to a “success message” page of some kind (or the same page, if another is not specified.)</p>
+<p>The trouble comes when the user has not submitted the data correctly — as a developer, you want to prevent the submission to the server and give an error message saying what’s wrong and what needs to be done to put things right. Some browsers support automatic form data validation features, but since many don’t, you are advised to not rely on those and implement your own validation checks. Let’s look at a simple example.</p>
+<p>First, a simple HTML form that requires you to enter your first and last name:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb20-1" title="1"><span class="kw">&lt;form&gt;</span></a>
+<a class="sourceLine" id="cb20-2" title="2">  <span class="kw">&lt;div&gt;</span></a>
+<a class="sourceLine" id="cb20-3" title="3">    <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;fname&quot;</span><span class="kw">&gt;</span>First name: <span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb20-4" title="4">    <span class="kw">&lt;input</span><span class="ot"> id=</span><span class="st">&quot;fname&quot;</span><span class="ot"> type=</span><span class="st">&quot;text&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb20-5" title="5">  <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb20-6" title="6">  <span class="kw">&lt;div&gt;</span></a>
+<a class="sourceLine" id="cb20-7" title="7">    <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;lname&quot;</span><span class="kw">&gt;</span>Last name: <span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb20-8" title="8">    <span class="kw">&lt;input</span><span class="ot"> id=</span><span class="st">&quot;lname&quot;</span><span class="ot"> type=</span><span class="st">&quot;text&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb20-9" title="9">  <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb20-10" title="10">  <span class="kw">&lt;div&gt;</span></a>
+<a class="sourceLine" id="cb20-11" title="11">     <span class="kw">&lt;input</span><span class="ot"> id=</span><span class="st">&quot;submit&quot;</span><span class="ot"> type=</span><span class="st">&quot;submit&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb20-12" title="12">  <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb20-13" title="13"><span class="kw">&lt;/form&gt;</span></a>
+<a class="sourceLine" id="cb20-14" title="14"><span class="kw">&lt;p&gt;&lt;/p&gt;</span></a></code></pre></div>
+<p><code>css hidden div {   margin-bottom: 10px; }</code></p>
+<p>Now some JavaScript — here we implement a very simple check inside a handler for the <a href="/en-US/docs/Web/API/HTMLFormElement/submit_event"><code>submit</code></a> event (the submit event is fired on a form when it is submitted) that tests whether the text fields are empty. If they are, we call the <a href="/en-US/docs/Web/API/Event/preventDefault"><code>preventDefault()</code></a> function on the event object — which stops the form submission — and then display an error message in the paragraph below our form to tell the user what’s wrong:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb21-1" title="1"><span class="kw">const</span> form <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;form&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb21-2" title="2"><span class="kw">const</span> fname <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;fname&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb21-3" title="3"><span class="kw">const</span> lname <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;lname&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb21-4" title="4"><span class="kw">const</span> para <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;p&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb21-5" title="5"></a>
+<a class="sourceLine" id="cb21-6" title="6"><span class="va">form</span>.<span class="at">addEventListener</span>(<span class="st">&#39;submit&#39;</span><span class="op">,</span> e <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb21-7" title="7">  <span class="cf">if</span> (<span class="va">fname</span>.<span class="at">value</span> <span class="op">===</span> <span class="st">&#39;&#39;</span> <span class="op">||</span> <span class="va">lname</span>.<span class="at">value</span> <span class="op">===</span> <span class="st">&#39;&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb21-8" title="8">    <span class="va">e</span>.<span class="at">preventDefault</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb21-9" title="9">    <span class="va">para</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;You need to fill in both names!&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb21-10" title="10">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb21-11" title="11"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>Obviously, this is pretty weak form validation — it wouldn’t stop the user validating the form with spaces or numbers entered into the fields, for example — but it is OK for example purposes. The output is as follows:</p>
+<p>{{ EmbedLiveSample(‘Preventing_default_behavior’, ‘100%’, 180, "“,”") }}</p>
+<blockquote>
+<p><strong>Note:</strong> for the full source code, see <a href="https://github.com/mdn/learning-area/blob/master/javascript/building-blocks/events/preventdefault-validation.html">preventdefault-validation.html</a> (also see it <a href="https://mdn.github.io/learning-area/javascript/building-blocks/events/preventdefault-validation.html">running live</a> here.)</p>
+</blockquote>
+<h2 id="event-bubbling-and-capture">Event bubbling and capture</h2>
+<p>Event bubbling and capture are terms that describe phases in how the browser handles events targeted at nested elements.</p>
+<h3 id="setting-a-listener-on-a-parent-element">Setting a listener on a parent element</h3>
+<p>Consider a web page like this:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb22-1" title="1"><span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;container&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb22-2" title="2">  <span class="kw">&lt;button&gt;</span>Click me!<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb22-3" title="3"><span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb22-4" title="4"><span class="kw">&lt;pre</span><span class="ot"> id=</span><span class="st">&quot;output&quot;</span><span class="kw">&gt;&lt;/pre&gt;</span></a></code></pre></div>
+<p>Here the button is inside another element, a {{HTMLElement(“div”)}} element. We say that the <code>&lt;div&gt;</code> element here is the <strong>parent</strong> of the element it contains. What happens if we add a click event handler to the parent, then click the button?</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb23-1" title="1"><span class="kw">const</span> output <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#output&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb23-2" title="2"><span class="kw">function</span> <span class="at">handleClick</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb23-3" title="3">  <span class="va">output</span>.<span class="at">textContent</span> <span class="op">+=</span> <span class="vs">`You clicked on a </span><span class="sc">${</span><span class="va">e</span>.<span class="va">currentTarget</span>.<span class="at">tagName</span><span class="sc">}</span><span class="vs"> element</span><span class="sc">\n</span><span class="vs">`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb23-4" title="4"><span class="op">}</span></a>
+<a class="sourceLine" id="cb23-5" title="5"></a>
+<a class="sourceLine" id="cb23-6" title="6"><span class="kw">const</span> container <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#container&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb23-7" title="7"><span class="va">container</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> handleClick)<span class="op">;</span></a></code></pre></div>
+<p>{{ EmbedLiveSample(‘Setting a listener on a parent element’, ‘100%’, 200, "“,”") }}</p>
+<p>You’ll see that the parent fires a click event when the user clicks the button:</p>
+<pre><code>You clicked on a DIV element</code></pre>
+<p>This makes sense: the button is inside the <code>&lt;div&gt;</code>, so when you click the button you’re also implicitly clicking the element it is inside.</p>
+<h3 id="bubbling-example">Bubbling example</h3>
+<p>What happens if we add event listeners to the button <em>and</em> the parent?</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb25-1" title="1"><span class="kw">&lt;body&gt;</span></a>
+<a class="sourceLine" id="cb25-2" title="2">  <span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;container&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb25-3" title="3">    <span class="kw">&lt;button&gt;</span>Click me!<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb25-4" title="4">  <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb25-5" title="5">  <span class="kw">&lt;pre</span><span class="ot"> id=</span><span class="st">&quot;output&quot;</span><span class="kw">&gt;&lt;/pre&gt;</span></a>
+<a class="sourceLine" id="cb25-6" title="6"><span class="kw">&lt;/body&gt;</span></a></code></pre></div>
+<p>Let’s try adding click event handlers to the button, its parent (the <code>&lt;div&gt;</code>), and the {{HTMLElement(“body”)}} element that contains both of them:</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb26-1" title="1"><span class="kw">const</span> output <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#output&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb26-2" title="2"><span class="kw">function</span> <span class="at">handleClick</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb26-3" title="3">  <span class="va">output</span>.<span class="at">textContent</span> <span class="op">+=</span> <span class="vs">`You clicked on a </span><span class="sc">${</span><span class="va">e</span>.<span class="va">currentTarget</span>.<span class="at">tagName</span><span class="sc">}</span><span class="vs"> element</span><span class="sc">\n</span><span class="vs">`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb26-4" title="4"><span class="op">}</span></a>
+<a class="sourceLine" id="cb26-5" title="5"></a>
+<a class="sourceLine" id="cb26-6" title="6"><span class="kw">const</span> container <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#container&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb26-7" title="7"><span class="kw">const</span> button <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;button&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb26-8" title="8"></a>
+<a class="sourceLine" id="cb26-9" title="9"><span class="va">document</span>.<span class="va">body</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> handleClick)<span class="op">;</span></a>
+<a class="sourceLine" id="cb26-10" title="10"><span class="va">container</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> handleClick)<span class="op">;</span></a>
+<a class="sourceLine" id="cb26-11" title="11"><span class="va">button</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> handleClick)<span class="op">;</span></a></code></pre></div>
+<p>{{ EmbedLiveSample(‘Bubbling example’, ‘100%’, 200, "“,”") }}</p>
+<p>You’ll see that all three elements fire a click event when the user clicks the button:</p>
+<pre><code>You clicked on a BUTTON element
+You clicked on a DIV element
+You clicked on a BODY element</code></pre>
+<p>In this case:</p>
+<ul>
+<li>the click on the button fires first</li>
+<li>followed by the click on its parent (the <code>&lt;div&gt;</code> element)</li>
+<li>followed by the <code>&lt;div&gt;</code> element’s parent (the <code>&lt;body&gt;</code> element).</li>
+</ul>
+<p>We describe this by saying that the event <strong>bubbles up</strong> from the innermost element that was clicked.</p>
+<p>This behavior can be useful and can also cause unexpected problems. In the next section we’ll see a problem that it causes, and find the solution.</p>
+<h3 id="video-player-example">Video player example</h3>
+<p>Open up the <a href="https://mdn.github.io/learning-area/javascript/building-blocks/events/show-video-box.html">show-video-box.html</a> example in a new tab (and the <a href="https://github.com/mdn/learning-area/blob/master/javascript/building-blocks/events/show-video-box.html">source code</a> in another tab.) It is also available live below:</p>
+<p>{{ EmbedLiveSample(‘Video_player_example’, ‘100%’, 500, "“,”") }}</p>
+<p>This example shows and hides a {{htmlelement(“div”)}} with a {{htmlelement(“video”)}} element inside it:</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb28-1" title="1"><span class="kw">&lt;button&gt;</span>Display video<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb28-2" title="2"></a>
+<a class="sourceLine" id="cb28-3" title="3"><span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;hidden&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb28-4" title="4">  <span class="kw">&lt;video&gt;</span></a>
+<a class="sourceLine" id="cb28-5" title="5">    <span class="kw">&lt;source</span><span class="ot"> src=</span><span class="st">&quot;https://raw.githubusercontent.com/mdn/learning-area/master/javascript/building-blocks/events/rabbit320.mp4&quot;</span><span class="ot"> type=</span><span class="st">&quot;video/mp4&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb28-6" title="6">    <span class="kw">&lt;source</span><span class="ot"> src=</span><span class="st">&quot;https://raw.githubusercontent.com/mdn/learning-area/master/javascript/building-blocks/events/rabbit320.webm&quot;</span><span class="ot"> type=</span><span class="st">&quot;video/webm&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb28-7" title="7">    <span class="kw">&lt;p&gt;</span>Your browser doesn&#39;t support HTML5 video. Here is a <span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;rabbit320.mp4&quot;</span><span class="kw">&gt;</span>link to the video<span class="kw">&lt;/a&gt;</span> instead.<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb28-8" title="8">  <span class="kw">&lt;/video&gt;</span></a>
+<a class="sourceLine" id="cb28-9" title="9"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<p>When the {{htmlelement(“button”)}} is clicked, the video is displayed, by changing the class attribute on the <code>&lt;div&gt;</code> from <code>hidden</code> to <code>showing</code> (the example’s CSS contains these two classes, which position the box off the screen and on the screen, respectively):</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb29-1" title="1"><span class="kw">const</span> btn <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;button&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-2" title="2"><span class="kw">const</span> videoBox <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;div&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-3" title="3"></a>
+<a class="sourceLine" id="cb29-4" title="4"><span class="kw">function</span> <span class="at">displayVideo</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-5" title="5">  <span class="cf">if</span> (<span class="va">videoBox</span>.<span class="at">getAttribute</span>(<span class="st">&#39;class&#39;</span>) <span class="op">===</span> <span class="st">&#39;hidden&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb29-6" title="6">    <span class="va">videoBox</span>.<span class="at">setAttribute</span>(<span class="st">&#39;class&#39;</span><span class="op">,</span><span class="st">&#39;showing&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb29-7" title="7">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb29-8" title="8"><span class="op">}</span></a>
+<a class="sourceLine" id="cb29-9" title="9"></a>
+<a class="sourceLine" id="cb29-10" title="10"><span class="va">btn</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> displayVideo)<span class="op">;</span></a></code></pre></div>
+<p>```css hidden div { position: absolute; top: 50%; transform: translate(-50%,-50%); width: 480px; height: 380px; border-radius: 10px; background-color: #eee; background-image: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.1)); }</p>
+<p>.hidden { left: -50%; }</p>
+<p>.showing { left: 50%; }</p>
+<p>div video { display: block; width: 400px; margin: 40px auto; } ```</p>
+<p>We then add a couple more <code>click</code> event handlers — the first one to the <code>&lt;div&gt;</code> and the second one to the <code>&lt;video&gt;</code>:</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb30-1" title="1"><span class="va">videoBox</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> <span class="va">videoBox</span>.<span class="at">setAttribute</span>(<span class="st">&#39;class&#39;</span><span class="op">,</span> <span class="st">&#39;hidden&#39;</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb30-2" title="2"></a>
+<a class="sourceLine" id="cb30-3" title="3"><span class="kw">const</span> video <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;video&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb30-4" title="4"></a>
+<a class="sourceLine" id="cb30-5" title="5"><span class="va">video</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> <span class="va">video</span>.<span class="at">play</span>())<span class="op">;</span></a></code></pre></div>
+<p>Now, when the area of the <code>&lt;div&gt;</code> outside the video is selected, the box should be hidden again and when the video itself is selected, the video should start to play.</p>
+<p>But there’s a problem — currently, when you select the video it starts to play, but it causes the <code>&lt;div&gt;</code> to be hidden at the same time. This is because the video is inside the <code>&lt;div&gt;</code> — it is part of it — so selecting the video actually runs <em>both</em> the above event handlers.</p>
+<h3 id="bubbling-and-capturing-explained">Bubbling and capturing explained</h3>
+<p>When an event is fired on an element that has parent elements (in this case, the {{htmlelement(“video”)}} has the {{htmlelement(“div”)}} as a parent), modern browsers run three different phases — the <strong>capturing</strong> phase, the <strong>target</strong> phase, and the <strong>bubbling</strong> phase.</p>
+<p>In the <strong>capturing</strong> phase:</p>
+<ul>
+<li>The browser checks to see if the element’s outer-most ancestor ({{htmlelement(“html”)}}) has a <code>click</code> event handler registered on it for the capturing phase, and runs it if so.</li>
+<li>Then it moves on to the next element inside <code>&lt;html&gt;</code> and does the same thing, then the next one, and so on until it reaches the direct parent of the element that was actually selected.</li>
+</ul>
+<p>In the <strong>target</strong> phase:</p>
+<ul>
+<li>The browser checks to see if the {{domxref(“Event.target”, “target”)}} property has an event handler for the <code>click</code> event registered on it, and runs it if so.</li>
+<li>Then, if {{domxref(“Event.bubbles”, “bubbles”)}} is <code>true</code>, it propagates the event to the direct parent of the selected element, then the next one, and so on until it reaches the <code>&lt;html&gt;</code> element. Otherwise, if {{domxref(“Event.bubbles”, “bubbles”)}} is <code>false</code>, it doesn’t propagate the event to any ancestors of the target.</li>
+</ul>
+<p>In the <strong>bubbling</strong> phase, the exact opposite of the <strong>capturing</strong> phase occurs:</p>
+<ul>
+<li>The browser checks to see if the direct parent of the element selected has a <code>click</code> event handler registered on it for the bubbling phase, and runs it if so.</li>
+<li>Then it moves on to the next immediate ancestor element and does the same thing, then the next one, and so on until it reaches the <code>&lt;html&gt;</code> element.</li>
+</ul>
+<p>In modern browsers, by default, all event handlers are registered for the bubbling phase. So in our current example, when you select the video, the event bubbles from the <code>&lt;video&gt;</code> element outwards to the <code>&lt;html&gt;</code> element. Along the way:</p>
+<ul>
+<li>It finds the <code>click</code> handler on the <code>video</code> element and runs it, so the video first starts playing.</li>
+<li>It then finds the <code>click</code> handler on the <code>videoBox</code> element and runs that, so the video is hidden as well.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> All JavaScript events go through the capturing and target phases. Whether an event enters the bubbling phase can be checked by the read-only {{domxref(“Event.bubbles”, “bubbles”)}} property.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> Event listeners registered for the <code>&lt;html&gt;</code> element aren’t at the top of hierarchy. For example, event listeners registered for the {{domxref(“Window”, “window”)}} and {{domxref(“Document”, “document”)}} objects are higher in the hierarchy.</p>
+</blockquote>
+<p>The following example demonstrates the behavior described above. Hover over the numbers and click on them to trigger events, and then observe the output that gets logged.</p>
+<p>{{EmbedLiveSample(“Example_code_event_phases”, “85ch”, “400”)}}</p>
+<h4 id="example-code-event-phases">Example code: event phases</h4>
+<div class="sourceCode" id="cb31"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb31-1" title="1"><span class="kw">&lt;div&gt;</span>1</a>
+<a class="sourceLine" id="cb31-2" title="2">    <span class="kw">&lt;div&gt;</span>2</a>
+<a class="sourceLine" id="cb31-3" title="3">        <span class="kw">&lt;div&gt;</span>3</a>
+<a class="sourceLine" id="cb31-4" title="4">            <span class="kw">&lt;div&gt;</span>4</a>
+<a class="sourceLine" id="cb31-5" title="5">                <span class="kw">&lt;div&gt;</span>5<span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb31-6" title="6">            <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb31-7" title="7">        <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb31-8" title="8">    <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb31-9" title="9"><span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb31-10" title="10"><span class="kw">&lt;button</span><span class="ot"> id=</span><span class="st">&quot;clear&quot;</span><span class="kw">&gt;</span>clear output<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb31-11" title="11"><span class="kw">&lt;section</span><span class="ot"> id=</span><span class="st">&quot;log&quot;</span><span class="kw">&gt;&lt;/section&gt;</span></a></code></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb32-1" title="1">p {</a>
+<a class="sourceLine" id="cb32-2" title="2">    <span class="kw">line-height</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb32-3" title="3">}</a>
+<a class="sourceLine" id="cb32-4" title="4"></a>
+<a class="sourceLine" id="cb32-5" title="5">div {</a>
+<a class="sourceLine" id="cb32-6" title="6">    <span class="kw">display</span>: <span class="dv">inline-block</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb32-7" title="7">    <span class="kw">padding</span>: <span class="dv">5</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb32-8" title="8"></a>
+<a class="sourceLine" id="cb32-9" title="9">    <span class="kw">background</span>: <span class="cn">#fff</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb32-10" title="10">    <span class="kw">border</span>: <span class="dv">1</span><span class="dt">px</span> <span class="dv">solid</span> <span class="cn">#aaa</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb32-11" title="11">    <span class="kw">cursor</span>: <span class="dv">pointer</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb32-12" title="12">}</a>
+<a class="sourceLine" id="cb32-13" title="13"></a>
+<a class="sourceLine" id="cb32-14" title="14">div<span class="in">:hover</span> {</a>
+<a class="sourceLine" id="cb32-15" title="15">    <span class="kw">border</span>: <span class="dv">1</span><span class="dt">px</span> <span class="dv">solid</span> <span class="cn">#faa</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb32-16" title="16">    <span class="kw">background</span>: <span class="cn">#fdd</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb32-17" title="17">}</a></code></pre></div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb33-1" title="1"><span class="co">/*</span></a>
+<a class="sourceLine" id="cb33-2" title="2"><span class="co"> * source 1: https://dom.spec.whatwg.org/#dom-event-eventphase</span></a>
+<a class="sourceLine" id="cb33-3" title="3"><span class="co"> * source 2: https://stackoverflow.com/a/4616720/15266715</span></a>
+<a class="sourceLine" id="cb33-4" title="4"><span class="co">*/</span></a>
+<a class="sourceLine" id="cb33-5" title="5"><span class="kw">const</span> evtPhasestr <span class="op">=</span> [<span class="st">&quot;NONE: &quot;</span><span class="op">,</span> <span class="st">&quot;CAPTURING_PHASE: &quot;</span><span class="op">,</span> <span class="st">&quot;AT_TARGET: &quot;</span><span class="op">,</span> <span class="st">&quot;BUBBLING_PHASE: &quot;</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb33-6" title="6"><span class="kw">const</span> logElement <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;log&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb33-7" title="7"></a>
+<a class="sourceLine" id="cb33-8" title="8"><span class="kw">function</span> <span class="at">log</span>(msg) <span class="op">{</span></a>
+<a class="sourceLine" id="cb33-9" title="9">    <span class="va">logElement</span>.<span class="at">innerHTML</span> <span class="op">+=</span> (<span class="vs">`&lt;p&gt;</span><span class="sc">${</span>msg<span class="sc">}</span><span class="vs">&lt;/p&gt;`</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb33-10" title="10"><span class="op">}</span></a>
+<a class="sourceLine" id="cb33-11" title="11"></a>
+<a class="sourceLine" id="cb33-12" title="12"><span class="kw">function</span> <span class="at">phase</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb33-13" title="13">    <span class="at">log</span>(evtPhasestr[<span class="va">evt</span>.<span class="at">eventPhase</span>] <span class="op">+</span> <span class="kw">this</span>.<span class="va">firstChild</span>.<span class="va">nodeValue</span>.<span class="at">trim</span>())<span class="op">;</span></a>
+<a class="sourceLine" id="cb33-14" title="14"><span class="op">}</span></a>
+<a class="sourceLine" id="cb33-15" title="15"><span class="kw">function</span> <span class="at">gphase</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb33-16" title="16">    <span class="at">log</span>(evtPhasestr[<span class="va">evt</span>.<span class="at">eventPhase</span>] <span class="op">+</span> <span class="va">evt</span>.<span class="va">currentTarget</span>.<span class="at">toString</span>().<span class="at">slice</span>(<span class="dv">8</span><span class="op">,-</span><span class="dv">1</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb33-17" title="17"><span class="op">}</span></a>
+<a class="sourceLine" id="cb33-18" title="18"></a>
+<a class="sourceLine" id="cb33-19" title="19"><span class="kw">function</span> <span class="at">clearOutput</span>(evt) <span class="op">{</span></a>
+<a class="sourceLine" id="cb33-20" title="20">    <span class="va">evt</span>.<span class="at">stopPropagation</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb33-21" title="21">    <span class="va">logElement</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="st">&#39;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb33-22" title="22"><span class="op">}</span></a>
+<a class="sourceLine" id="cb33-23" title="23"></a>
+<a class="sourceLine" id="cb33-24" title="24"><span class="kw">const</span> divs <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementsByTagName</span>(<span class="st">&#39;div&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb33-25" title="25"><span class="cf">for</span> (<span class="kw">const</span> div <span class="kw">of</span> divs) <span class="op">{</span></a>
+<a class="sourceLine" id="cb33-26" title="26">  <span class="va">div</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> phase<span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb33-27" title="27">  <span class="va">div</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> phase<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb33-28" title="28"><span class="op">}</span></a>
+<a class="sourceLine" id="cb33-29" title="29"></a>
+<a class="sourceLine" id="cb33-30" title="30"><span class="va">document</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> gphase<span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb33-31" title="31"><span class="va">document</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> gphase<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb33-32" title="32"><span class="va">window</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> gphase<span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb33-33" title="33"><span class="va">window</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> gphase<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb33-34" title="34"></a>
+<a class="sourceLine" id="cb33-35" title="35"><span class="kw">const</span> clearButton <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;clear&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb33-36" title="36"><span class="va">clearButton</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> clearOutput)<span class="op">;</span></a></code></pre></div>
+<h3 id="fixing-the-problem-with-stoppropagation">Fixing the problem with stopPropagation()</h3>
+<p>As we saw in the video example, this can be a very annoying behavior, but there is a way to prevent it! The standard <a href="/en-US/docs/Web/API/Event"><code>Event</code></a> object has a function available on it called <a href="/en-US/docs/Web/API/Event/stopPropagation"><code>stopPropagation()</code></a> which, when invoked on a handler’s event object, makes it so that first handler is run but the event doesn’t bubble any further up the chain, so no more handlers will be run.</p>
+<p>So we can fix our current problem by changing the second handler function in the previous code block to this:</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb34-1" title="1"><span class="va">video</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> e <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb34-2" title="2">  <span class="va">e</span>.<span class="at">stopPropagation</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb34-3" title="3">  <span class="va">video</span>.<span class="at">play</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb34-4" title="4"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>You can try making a local copy of the <a href="https://github.com/mdn/learning-area/blob/master/javascript/building-blocks/events/show-video-box.html">show-video-box.html source code</a> and fixing it yourself, or looking at the fixed result in <a href="https://mdn.github.io/learning-area/javascript/building-blocks/events/show-video-box-fixed.html">show-video-box-fixed.html</a> (also see the <a href="https://github.com/mdn/learning-area/blob/master/javascript/building-blocks/events/show-video-box-fixed.html">source code</a> here).</p>
+<blockquote>
+<p><strong>Note:</strong> Why bother with both capturing and bubbling? Well, in the bad old days when browsers were much less cross-compatible than they are now, Netscape only used event capturing, and Internet Explorer used only event bubbling. When the W3C decided to try to standardize the behavior and reach a consensus, they ended up with this system that included both, which is the one modern browsers implemented.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> As mentioned above, by default all event handlers are registered in the bubbling phase, and this makes more sense most of the time. If you really want to register an event in the capturing phase instead, you can do so by registering your handler using <a href="/en-US/docs/Web/API/EventTarget/addEventListener"><code>addEventListener()</code></a>, and setting the optional third property to <code>true</code>.</p>
+</blockquote>
+<h3 id="event-delegation">Event delegation</h3>
+<p>Event bubbling isn’t just annoying though: it can be very useful. In particular it enables a practice called <strong>event delegation</strong>. In this practice, when we want some code to run when the user interacts with any one of a large number of child elements, we set the event listener on their parent and have events that happen on them bubble up to their parent rather than having to set the event listener on every child individually.</p>
+<p>Let’s go back to our first example, where we set the background color of the whole page when the user clicked a button. Suppose that instead, the page is divided into 16 tiles, and we want to set each tile to a random color when the user clicks that tile.</p>
+<p>Here’s the HTML:</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb35-1" title="1"><span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;container&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb35-2" title="2">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;tile&quot;</span><span class="kw">&gt;&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb35-3" title="3">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;tile&quot;</span><span class="kw">&gt;&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb35-4" title="4">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;tile&quot;</span><span class="kw">&gt;&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb35-5" title="5">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;tile&quot;</span><span class="kw">&gt;&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb35-6" title="6">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;tile&quot;</span><span class="kw">&gt;&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb35-7" title="7">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;tile&quot;</span><span class="kw">&gt;&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb35-8" title="8">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;tile&quot;</span><span class="kw">&gt;&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb35-9" title="9">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;tile&quot;</span><span class="kw">&gt;&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb35-10" title="10">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;tile&quot;</span><span class="kw">&gt;&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb35-11" title="11">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;tile&quot;</span><span class="kw">&gt;&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb35-12" title="12">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;tile&quot;</span><span class="kw">&gt;&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb35-13" title="13">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;tile&quot;</span><span class="kw">&gt;&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb35-14" title="14">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;tile&quot;</span><span class="kw">&gt;&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb35-15" title="15">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;tile&quot;</span><span class="kw">&gt;&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb35-16" title="16">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;tile&quot;</span><span class="kw">&gt;&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb35-17" title="17">  <span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;tile&quot;</span><span class="kw">&gt;&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb35-18" title="18"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<p>We have a little CSS, to set the size and position of the tiles:</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb36-1" title="1"><span class="fu">.tile</span> {</a>
+<a class="sourceLine" id="cb36-2" title="2">  <span class="kw">height</span>: <span class="dv">100</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb36-3" title="3">  <span class="kw">width</span>: <span class="dv">25</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb36-4" title="4">  <span class="kw">float</span>: <span class="dv">left</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb36-5" title="5">}</a></code></pre></div>
+<p>Now in the JavaScript, we could add a click event handler for every tile. But a much simpler and more efficient option is to set the click event handler on the parent, and rely on event bubbling to ensure that the handler is executed when the user clicks on a tile:</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb37-1" title="1"><span class="kw">function</span> <span class="at">random</span>(number) <span class="op">{</span></a>
+<a class="sourceLine" id="cb37-2" title="2">  <span class="cf">return</span> <span class="va">Math</span>.<span class="at">floor</span>(<span class="va">Math</span>.<span class="at">random</span>()<span class="op">*</span>number)<span class="op">;</span></a>
+<a class="sourceLine" id="cb37-3" title="3"><span class="op">}</span></a>
+<a class="sourceLine" id="cb37-4" title="4"></a>
+<a class="sourceLine" id="cb37-5" title="5"><span class="kw">function</span> <span class="at">bgChange</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb37-6" title="6">  <span class="kw">const</span> rndCol <span class="op">=</span> <span class="vs">`rgb(</span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">, </span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">, </span><span class="sc">${</span><span class="at">random</span>(<span class="dv">255</span>)<span class="sc">}</span><span class="vs">)`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb37-7" title="7">  <span class="cf">return</span> rndCol<span class="op">;</span></a>
+<a class="sourceLine" id="cb37-8" title="8"><span class="op">}</span></a>
+<a class="sourceLine" id="cb37-9" title="9"></a>
+<a class="sourceLine" id="cb37-10" title="10"><span class="kw">const</span> container <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#container&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb37-11" title="11"></a>
+<a class="sourceLine" id="cb37-12" title="12"><span class="va">container</span>.<span class="at">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> event <span class="kw">=&gt;</span> <span class="va">event</span>.<span class="va">target</span>.<span class="va">style</span>.<span class="at">backgroundColor</span> <span class="op">=</span> <span class="at">bgChange</span>())<span class="op">;</span></a></code></pre></div>
+<p>The output is as follows (try clicking around on it):</p>
+<p>{{ EmbedLiveSample(‘Event delegation’, ‘100%’, 430, "“,”") }}</p>
+<blockquote>
+<p><strong>Note:</strong> In this example we’re using <code>event.target</code> to get the element that was the target of the event (that is, the innermost element). If we wanted to access the element that fired this event (in this case the container) we could use <code>event.currentTarget</code>.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> See <a href="https://github.com/mdn/learning-area/blob/master/javascript/building-blocks/events/useful-eventtarget.html">useful-eventtarget.html</a> for the full source code; also see it <a href="https://mdn.github.io/learning-area/javascript/building-blocks/events/useful-eventtarget.html">running live</a> here.</p>
+</blockquote>
+<h2 id="test-your-skills">Test your skills!</h2>
+<p>You’ve reached the end of this article, but can you remember the most important information? To verify you’ve retained this information before you move on — see <a href="/en-US/docs/Learn/JavaScript/Building_blocks/Test_your_skills:_Events">Test your skills: Events</a>.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>You should now know all you need to know about web events at this early stage. As mentioned, events are not really part of the core JavaScript — they are defined in browser Web APIs.</p>
+<p>Also, it is important to understand that the different contexts in which JavaScript is used have different event models — from Web APIs to other areas such as browser WebExtensions and Node.js (server-side JavaScript). We are not expecting you to understand all of these areas now, but it certainly helps to understand the basics of events as you forge ahead with learning web development.</p>
+<p>If there is anything you didn’t understand, feel free to read through the article again, or <a href="https://discourse.mozilla.org/c/mdn/learn">contact us</a> to ask for help.</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="https://domevents.dev/">domevents.dev</a> — a very useful interactive playground app that enables learning about the behavior of the DOM Event system through exploration.</li>
+<li><a href="/en-US/docs/Web/Events">Event reference</a></li>
+<li><a href="https://www.quirksmode.org/js/events_order.html">Event order</a> (discussion of capturing and bubbling) — an excellently detailed piece by Peter-Paul Koch.</li>
+<li><a href="https://www.quirksmode.org/js/events_access.html">Event accessing</a> (discussion of the event object) — another excellently detailed piece by Peter-Paul Koch.</li>
+</ul>
+<p>{{PreviousMenuNext(“Learn/JavaScript/Building_blocks/Return_values”,“Learn/JavaScript/Building_blocks/Image_gallery”, “Learn/JavaScript/Building_blocks”)}}</p>
+<h2 id="in-this-module">In this module</h2>
+<ul>
+<li><a href="/en-US/docs/Learn/JavaScript/Building_blocks/conditionals">Making decisions in your code — conditionals</a></li>
+<li><a href="/en-US/docs/Learn/JavaScript/Building_blocks/Looping_code">Looping code</a></li>
+<li><a href="/en-US/docs/Learn/JavaScript/Building_blocks/Functions">Functions — reusable blocks of code</a></li>
+<li><a href="/en-US/docs/Learn/JavaScript/Building_blocks/Build_your_own_function">Build your own function</a></li>
+<li><a href="/en-US/docs/Learn/JavaScript/Building_blocks/Return_values">Function return values</a></li>
+<li><strong>Introduction to events</strong></li>
+<li><a href="/en-US/docs/Learn/JavaScript/Building_blocks/Image_gallery">Image gallery</a></li>
+</ul>

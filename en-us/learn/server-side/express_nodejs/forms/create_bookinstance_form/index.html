@@ -1,0 +1,117 @@
+<p>This subarticle shows how to define a page/form to create <code>BookInstance</code> objects. This is very much like the form we used to create <code>Book</code> objects.</p>
+<h2 id="import-validation-and-sanitisation-methods">Import validation and sanitisation methods</h2>
+<p>Open <strong>/controllers/bookinstanceController.js</strong>, and add the following lines at the top of the file:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">const</span> <span class="op">{</span> body<span class="op">,</span>validationResult <span class="op">}</span> <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;express-validator&#39;</span>)<span class="op">;</span></a></code></pre></div>
+<h2 id="controllerget-route">Controller—get route</h2>
+<p>At the top of the file, require the <em>Book</em> module (needed because each <code>BookInstance</code> is associated with a particular <code>Book</code>).</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> Book <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;../models/book&#39;</span>)<span class="op">;</span></a></code></pre></div>
+<p>Find the exported <code>bookinstance_create_get()</code> controller method and replace it with the following code.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="co">// Display BookInstance create form on GET.</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="va">exports</span>.<span class="at">bookinstance_create_get</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res<span class="op">,</span> next) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-3" title="3"></a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="va">Book</span>.<span class="at">find</span>(<span class="op">{},</span><span class="st">&#39;title&#39;</span>)</a>
+<a class="sourceLine" id="cb3-5" title="5">    .<span class="at">exec</span>(<span class="kw">function</span> (err<span class="op">,</span> books) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-6" title="6">      <span class="cf">if</span> (err) <span class="op">{</span> <span class="cf">return</span> <span class="at">next</span>(err)<span class="op">;</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-7" title="7">      <span class="co">// Successful, so render.</span></a>
+<a class="sourceLine" id="cb3-8" title="8">      <span class="va">res</span>.<span class="at">render</span>(<span class="st">&#39;bookinstance_form&#39;</span><span class="op">,</span> <span class="op">{</span><span class="dt">title</span><span class="op">:</span> <span class="st">&#39;Create BookInstance&#39;</span><span class="op">,</span> <span class="dt">book_list</span><span class="op">:</span> books<span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10"></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="op">};</span></a></code></pre></div>
+<p>The controller gets a list of all books (<code>book_list</code>) and passes it to the view <strong><code>bookinstance_form.pug</code></strong> (along with the <code>title</code>)</p>
+<h2 id="controllerpost-route">Controller—post route</h2>
+<p>Find the exported <code>bookinstance_create_post()</code> controller method and replace it with the following code.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="co">// Handle BookInstance create on POST.</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="va">exports</span>.<span class="at">bookinstance_create_post</span> <span class="op">=</span> [</a>
+<a class="sourceLine" id="cb4-3" title="3"></a>
+<a class="sourceLine" id="cb4-4" title="4">    <span class="co">// Validate and sanitise fields.</span></a>
+<a class="sourceLine" id="cb4-5" title="5">    <span class="at">body</span>(<span class="st">&#39;book&#39;</span><span class="op">,</span> <span class="st">&#39;Book must be specified&#39;</span>).<span class="at">trim</span>().<span class="at">isLength</span>(<span class="op">{</span> <span class="dt">min</span><span class="op">:</span> <span class="dv">1</span> <span class="op">}</span>).<span class="at">escape</span>()<span class="op">,</span></a>
+<a class="sourceLine" id="cb4-6" title="6">    <span class="at">body</span>(<span class="st">&#39;imprint&#39;</span><span class="op">,</span> <span class="st">&#39;Imprint must be specified&#39;</span>).<span class="at">trim</span>().<span class="at">isLength</span>(<span class="op">{</span> <span class="dt">min</span><span class="op">:</span> <span class="dv">1</span> <span class="op">}</span>).<span class="at">escape</span>()<span class="op">,</span></a>
+<a class="sourceLine" id="cb4-7" title="7">    <span class="at">body</span>(<span class="st">&#39;status&#39;</span>).<span class="at">escape</span>()<span class="op">,</span></a>
+<a class="sourceLine" id="cb4-8" title="8">    <span class="at">body</span>(<span class="st">&#39;due_back&#39;</span><span class="op">,</span> <span class="st">&#39;Invalid date&#39;</span>).<span class="at">optional</span>(<span class="op">{</span> <span class="dt">checkFalsy</span><span class="op">:</span> <span class="kw">true</span> <span class="op">}</span>).<span class="at">isISO8601</span>().<span class="at">toDate</span>()<span class="op">,</span></a>
+<a class="sourceLine" id="cb4-9" title="9"></a>
+<a class="sourceLine" id="cb4-10" title="10">    <span class="co">// Process request after validation and sanitization.</span></a>
+<a class="sourceLine" id="cb4-11" title="11">    (req<span class="op">,</span> res<span class="op">,</span> next) <span class="kw">=&gt;</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-12" title="12"></a>
+<a class="sourceLine" id="cb4-13" title="13">        <span class="co">// Extract the validation errors from a request.</span></a>
+<a class="sourceLine" id="cb4-14" title="14">        <span class="kw">const</span> errors <span class="op">=</span> <span class="at">validationResult</span>(req)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-15" title="15"></a>
+<a class="sourceLine" id="cb4-16" title="16">        <span class="co">// Create a BookInstance object with escaped and trimmed data.</span></a>
+<a class="sourceLine" id="cb4-17" title="17">        <span class="kw">var</span> bookinstance <span class="op">=</span> <span class="kw">new</span> <span class="at">BookInstance</span>(</a>
+<a class="sourceLine" id="cb4-18" title="18">          <span class="op">{</span> <span class="dt">book</span><span class="op">:</span> <span class="va">req</span>.<span class="va">body</span>.<span class="at">book</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb4-19" title="19">            <span class="dt">imprint</span><span class="op">:</span> <span class="va">req</span>.<span class="va">body</span>.<span class="at">imprint</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb4-20" title="20">            <span class="dt">status</span><span class="op">:</span> <span class="va">req</span>.<span class="va">body</span>.<span class="at">status</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb4-21" title="21">            <span class="dt">due_back</span><span class="op">:</span> <span class="va">req</span>.<span class="va">body</span>.<span class="at">due_back</span></a>
+<a class="sourceLine" id="cb4-22" title="22">           <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-23" title="23"></a>
+<a class="sourceLine" id="cb4-24" title="24">        <span class="cf">if</span> (<span class="op">!</span><span class="va">errors</span>.<span class="at">isEmpty</span>()) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-25" title="25">            <span class="co">// There are errors. Render form again with sanitized values and error messages.</span></a>
+<a class="sourceLine" id="cb4-26" title="26">            <span class="va">Book</span>.<span class="at">find</span>(<span class="op">{},</span><span class="st">&#39;title&#39;</span>)</a>
+<a class="sourceLine" id="cb4-27" title="27">                .<span class="at">exec</span>(<span class="kw">function</span> (err<span class="op">,</span> books) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-28" title="28">                    <span class="cf">if</span> (err) <span class="op">{</span> <span class="cf">return</span> <span class="at">next</span>(err)<span class="op">;</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-29" title="29">                    <span class="co">// Successful, so render.</span></a>
+<a class="sourceLine" id="cb4-30" title="30">                    <span class="va">res</span>.<span class="at">render</span>(<span class="st">&#39;bookinstance_form&#39;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">title</span><span class="op">:</span> <span class="st">&#39;Create BookInstance&#39;</span><span class="op">,</span> <span class="dt">book_list</span><span class="op">:</span> books<span class="op">,</span> <span class="dt">selected_book</span><span class="op">:</span> <span class="va">bookinstance</span>.<span class="va">book</span>.<span class="at">_id</span> <span class="op">,</span> <span class="dt">errors</span><span class="op">:</span> <span class="va">errors</span>.<span class="at">array</span>()<span class="op">,</span> <span class="dt">bookinstance</span><span class="op">:</span> bookinstance <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-31" title="31">            <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-32" title="32">            <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-33" title="33">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-34" title="34">        <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-35" title="35">            <span class="co">// Data from form is valid.</span></a>
+<a class="sourceLine" id="cb4-36" title="36">            <span class="va">bookinstance</span>.<span class="at">save</span>(<span class="kw">function</span> (err) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-37" title="37">                <span class="cf">if</span> (err) <span class="op">{</span> <span class="cf">return</span> <span class="at">next</span>(err)<span class="op">;</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-38" title="38">                   <span class="co">// Successful - redirect to new record.</span></a>
+<a class="sourceLine" id="cb4-39" title="39">                   <span class="va">res</span>.<span class="at">redirect</span>(<span class="va">bookinstance</span>.<span class="at">url</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-40" title="40">                <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-41" title="41">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-42" title="42">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-43" title="43">]<span class="op">;</span></a></code></pre></div>
+<p>The structure and behavior of this code is the same as for creating our other objects. First we validate and sanitize the data. If the data is invalid, we then re-display the form along with the data that was originally entered by the user and a list of error messages. If the data is valid, we save the new <code>BookInstance</code> record and redirect the user to the detail page.</p>
+<h2 id="view">View</h2>
+<p>Create <strong>/views/bookinstance_form.pug</strong> and copy in the text below.</p>
+<pre class="plain"><code>extends layout
+
+block content
+  h1=title
+
+  form(method=&#39;POST&#39; action=&#39;&#39;)
+    div.form-group
+      label(for=&#39;book&#39;) Book:
+      select#book.form-control(type=&#39;select&#39; placeholder=&#39;Select book&#39; name=&#39;book&#39; required=&#39;true&#39;)
+        - book_list.sort(function(a, b) {let textA = a.title.toUpperCase(); let textB = b.title.toUpperCase(); return (textA &lt; textB) ? -1 : (textA &gt; textB) ? 1 : 0;});
+        for book in book_list
+          if bookinstance
+            option(value=book._id selected=(bookinstance.book.toString()==book._id.toString() ? &#39;selected&#39; : false)) #{book.title}
+          else
+            option(value=book._id) #{book.title}
+
+    div.form-group
+      label(for=&#39;imprint&#39;) Imprint:
+      input#imprint.form-control(type=&#39;text&#39; placeholder=&#39;Publisher and date information&#39; name=&#39;imprint&#39; required=&#39;true&#39; value=(undefined===bookinstance ? &#39;&#39; : bookinstance.imprint))
+    div.form-group
+      label(for=&#39;due_back&#39;) Date when book available:
+      input#due_back.form-control(type=&#39;date&#39; name=&#39;due_back&#39; value=(undefined===bookinstance ? &#39;&#39; : bookinstance.due_back))
+
+    div.form-group
+      label(for=&#39;status&#39;) Status:
+      select#status.form-control(type=&#39;select&#39; placeholder=&#39;Select status&#39; name=&#39;status&#39; required=&#39;true&#39;)
+        option(value=&#39;Maintenance&#39;) Maintenance
+        option(value=&#39;Available&#39;) Available
+        option(value=&#39;Loaned&#39;) Loaned
+        option(value=&#39;Reserved&#39;) Reserved
+
+    button.btn.btn-primary(type=&#39;submit&#39;) Submit
+
+  if errors
+    ul
+      for error in errors
+        li!= error.msg</code></pre>
+<p>The view structure and behavior is almost the same as for the <strong>book_form.pug</strong> template, so we won’t go over it again.</p>
+<blockquote>
+<p><strong>Note:</strong> The above template hard-codes the <em>Status</em> values (Maintenance, Available, etc.) and does not “remember” the user’s entered values. Should you so wish, consider reimplementing the list, passing in option data from the controller and setting the selected value when the form is re-displayed.</p>
+</blockquote>
+<h2 id="what-does-it-look-like">What does it look like?</h2>
+<p>Run the application and open your browser to <a href="http://localhost:3000/" class="uri">http://localhost:3000/</a>. Then select the <em>Create new book instance (copy)</em> link. If everything is set up correctly, your site should look something like the following screenshot. After you submit a valid <code>BookInstance</code>, it should be saved and you’ll be taken to the detail page.</p>
+<p><img src="locallibary_express_bookinstance_create_empty.png" /></p>
+<h2 id="next-steps">Next steps</h2>
+<ul>
+<li>Return to <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/forms">Express Tutorial Part 6: Working with forms</a>.</li>
+<li>Proceed to the next subarticle of part 6: <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/forms/Delete_author_form">Delete Author form</a>.</li>
+</ul>

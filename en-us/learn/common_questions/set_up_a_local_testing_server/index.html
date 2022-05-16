@@ -1,0 +1,82 @@
+<p>This article explains how to set up a simple local testing server on your machine, and the basics of how to use it.</p>
+<table>
+<tbody>
+<tr>
+<th scope="row">
+Prerequisites:
+</th>
+<td>
+You need to first know <a href="/en-US/docs/Learn/Common_questions/How_does_the_Internet_work"
+          >how the Internet works</a
+        >, and <a href="/en-US/docs/Learn/Common_questions/What_is_a_web_server"
+          >what a Web server is</a
+        >.
+</td>
+</tr>
+<tr>
+<th scope="row">
+Objective:
+</th>
+<td>
+You will learn how to set up a local testing server.
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="local-files-vs.-remote-files">Local files vs. remote files</h2>
+<p>Throughout most of the learning area, we tell you to just open your examples directly in a browser — this can be done by double clicking the HTML file, dragging and dropping it into the browser window, or choosing <em>File</em> &gt; <em>Open…</em> and navigating to the HTML file. There are many ways to achieve this.</p>
+<p>If the web address path starts with <code>file://</code> followed by the path to the file on your local hard drive, a local file is being used. In contrast, if you view one of our examples hosted on GitHub (or an example on some other remote server), the web address will start with <code>http://</code> or <code>https://</code>, to show that the file has been received via HTTP.</p>
+<h2 id="the-problem-with-testing-local-files">The problem with testing local files</h2>
+<p>Some examples won’t run if you open them as local files. This can be due to a variety of reasons, the most likely being:</p>
+<ul>
+<li><strong>They feature asynchronous requests</strong>. Some browsers (including Chrome) will not run async requests (see <a href="/en-US/docs/Learn/JavaScript/Client-side_web_APIs/Fetching_data">Fetching data from the server</a>) if you just run the example from a local file. This is because of security restrictions (for more on web security, read <a href="/en-US/docs/Learn/Server-side/First_steps/Website_security">Website security</a>).</li>
+<li><strong>They feature a server-side language</strong>. Server-side languages (such as PHP or Python) require a special server to interpret the code and deliver the results.</li>
+<li><strong>They include other files</strong>. Browsers commonly treat requests to load resources using the <code>file://</code> schema as cross-origin requests. So if you load a local file that includes other local files, this may trigger a {{Glossary(“CORS”)}} error.</li>
+</ul>
+<h2 id="running-a-simple-local-http-server">Running a simple local HTTP server</h2>
+<p>To get around the problem of async requests, we need to test such examples by running them through a local web server. One of the easiest ways to do this for our purposes is to use Python’s <code>http.server</code> module.</p>
+<blockquote>
+<p><strong>Note:</strong> Older versions of Python (up to version 2.7) provided a similar module named <code>SimpleHTTPServer</code>. If you are using Python 2.x, you can follow this guide by replacing all uses of <code>http.server</code> with <code>SimpleHTTPServer</code>. However, we recommend you use the latest version of Python.</p>
+</blockquote>
+<p>To do this:</p>
+<ol type="1">
+<li><p>Install Python. If you are using Linux or macOS, it should be available on your system already. If you are a Windows user, you can get an installer from the Python homepage and follow the instructions to install it:</p>
+<ul>
+<li>Go to <a href="https://www.python.org/">python.org</a></li>
+<li>Under the Download section, click the link for Python “3.xxx”.</li>
+<li>At the bottom of the page, click the <em>Windows Installer</em> link to download the installer file.</li>
+<li>When it has downloaded, run it.</li>
+<li>On the first installer page, make sure you check the “Add Python 3.xxx to PATH” checkbox.</li>
+<li>Click <em>Install</em>, then click <em>Close</em> when the installation has finished.</li>
+</ul></li>
+<li><p>Open your command prompt (Windows) / terminal (macOS/ Linux). To check if Python is installed, enter the following command:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb1-1" title="1"><span class="ex">python</span> -V</a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="co"># If the above fails, try:</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="ex">python3</span> -V</a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="co"># Or, if the &quot;py&quot; command is available, try:</span></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="ex">py</span> -V</a></code></pre></div></li>
+<li><p>This should return a version number. If this is OK, navigate to the directory that your example is inside, using the <code>cd</code> command.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" title="1"><span class="co"># include the directory name to enter it, for example</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="bu">cd</span> Desktop</a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="co"># use two dots to jump up one directory level if you need to</span></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="bu">cd</span> ..</a></code></pre></div></li>
+<li><p>Enter the command to start up the server in that directory:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb3-1" title="1"><span class="co"># If Python version returned above is 3.X</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="co"># On Windows, try &quot;python -m http.server&quot; or &quot;py -3 -m http.server&quot;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="ex">python3</span> -m http.server</a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="co"># If Python version returned above is 2.X</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="ex">python</span> -m SimpleHTTPServer</a></code></pre></div></li>
+<li><p>By default, this will run the contents of the directory on a local web server, on port 8000. You can go to this server by going to the URL <code>localhost:8000</code> in your web browser. Here you’ll see the contents of the directory listed — click the HTML file you want to run.</p></li>
+</ol>
+<blockquote>
+<p><strong>Note:</strong> If you already have something running on port 8000, you can choose another port by running the server command followed by an alternative port number, e.g. <code>python3 -m http.server 7800</code> (Python 3.x) or <code>python -m SimpleHTTPServer 7800</code> (Python 2.x). You can then access your content at <code>localhost:7800</code>.</p>
+</blockquote>
+<h2 id="running-server-side-languages-locally">Running server-side languages locally</h2>
+<p>Python’s <code>http.server</code> (or <code>SimpleHTTPServer</code> for Python 2) module is useful, but it is merely a <em>static</em> file server; it doesn’t know how to run code written in languages such as Python, PHP or JavaScript. To handle them, you’ll need something more — exactly what you’ll need depends on the server-side language you are trying to run. Here are a few examples:</p>
+<ul>
+<li>To run Python server-side code, you’ll need to use a Python web framework. There are many popular Python web frameworks, such as Django (a <a href="/en-US/docs/Learn/Server-side/Django">guide</a> is available), <a href="https://flask.palletsprojects.com/">Flask</a>, and <a href="https://trypyramid.com">Pyramid</a>.</li>
+<li>To run Node.js (JavaScript) server-side code, you’ll need to use raw node or a framework built on top of it. Express is a good choice — see <a href="/en-US/docs/Learn/Server-side/Express_Nodejs">Express Web Framework (Node.js/JavaScript)</a>.</li>
+<li><p>To run PHP server-side code, launch <a href="https://php.net/manual/en/features.commandline.webserver.php">PHP’s built-in development server</a>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb4-1" title="1">$ <span class="bu">cd</span> path/to/your/php/code</a>
+<a class="sourceLine" id="cb4-2" title="2">$ <span class="ex">php</span> -S localhost:8000</a></code></pre></div></li>
+</ul>

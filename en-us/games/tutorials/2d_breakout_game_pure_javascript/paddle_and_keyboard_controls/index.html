@@ -1,0 +1,85 @@
+<p>{{GamesSidebar}}</p>
+<p>{{PreviousNext(“Games/Workflows/2D_Breakout_game_pure_JavaScript/Bounce_off_the_walls”, “Games/Workflows/2D_Breakout_game_pure_JavaScript/Game_over”)}}</p>
+<p>This is the <strong>4th step</strong> out of 10 of the <a href="/en-US/docs/Games/Tutorials/2D_Breakout_game_pure_JavaScript">Gamedev Canvas tutorial</a>. You can find the source code as it should look after completing this lesson at <a href="https://github.com/end3r/Gamedev-Canvas-workshop/blob/gh-pages/lesson04.html">Gamedev-Canvas-workshop/lesson4.html</a>.</p>
+<p>The ball is bouncing off the walls freely and you can watch it indefinitely, but currently there’s no interactivity. It’s not a game if you cannot control it! So let’s add some user interaction: a controllable paddle.</p>
+<h2 id="defining-a-paddle-to-hit-the-ball">Defining a paddle to hit the ball</h2>
+<p>So, we need a paddle to hit the ball. Let’s define a few variables for that. Add the following variables near the top of your code, beside your other variables:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> paddleHeight <span class="op">=</span> <span class="dv">10</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">var</span> paddleWidth <span class="op">=</span> <span class="dv">75</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">var</span> paddleX <span class="op">=</span> (<span class="va">canvas</span>.<span class="at">width</span><span class="op">-</span>paddleWidth) / <span class="dv">2</span><span class="op">;</span></a></code></pre></div>
+<p>Here we’re defining the height and width of the paddle and its starting point on the <code>x</code> axis for use in calculations further on down the code. Let’s create a function that will draw the paddle on the screen. Add the following just below your <code>drawBall()</code> function:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">function</span> <span class="at">drawPaddle</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">    <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">    <span class="va">ctx</span>.<span class="at">rect</span>(paddleX<span class="op">,</span> <span class="va">canvas</span>.<span class="at">height</span><span class="op">-</span>paddleHeight<span class="op">,</span> paddleWidth<span class="op">,</span> paddleHeight)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">    <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&quot;#0095DD&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">    <span class="va">ctx</span>.<span class="at">closePath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="op">}</span></a></code></pre></div>
+<h2 id="allowing-the-user-to-control-the-paddle">Allowing the user to control the paddle</h2>
+<p>We can draw the paddle wherever we want, but it should respond to the user’s actions. It’s time to implement some keyboard controls. We will need the following:</p>
+<ul>
+<li>Two variables for storing information on whether the left or right control button is pressed.</li>
+<li>Two event listeners for <code>keydown</code> and <code>keyup</code> events. We want to run some code to handle the paddle movement when the buttons are pressed.</li>
+<li>Two functions handling the <code>keydown</code> and <code>keyup</code> events  the code that will be run when the buttons are pressed.</li>
+<li>The ability to move the paddle left and right</li>
+</ul>
+<p>Pressed buttons can be defined and initialized with boolean variables like in the example. Add these lines somewhere near the rest of your variables:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">var</span> rightPressed <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">var</span> leftPressed <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></a></code></pre></div>
+<p>The default value for both is <code>false</code> because at the beginning the control buttons are not pressed. To listen for key presses, we will set up two event listeners. Add the following lines just above the <code>setInterval()</code> line at the bottom of your JavaScript:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="va">document</span>.<span class="at">addEventListener</span>(<span class="st">&quot;keydown&quot;</span><span class="op">,</span> keyDownHandler<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="va">document</span>.<span class="at">addEventListener</span>(<span class="st">&quot;keyup&quot;</span><span class="op">,</span> keyUpHandler<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a></code></pre></div>
+<p>When the <code>keydown</code> event is fired on any of the keys on your keyboard (when they are pressed), the <code>keyDownHandler()</code> function will be executed. The same pattern is true for the second listener: <code>keyup</code> events will fire the <code>keyUpHandler()</code> function (when the keys stop being pressed). Add these to your code now, below the <code>addEventListener()</code> lines:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">function</span> <span class="at">keyDownHandler</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2">    <span class="cf">if</span>(<span class="va">e</span>.<span class="at">key</span> <span class="op">==</span> <span class="st">&quot;Right&quot;</span> <span class="op">||</span> <span class="va">e</span>.<span class="at">key</span> <span class="op">==</span> <span class="st">&quot;ArrowRight&quot;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-3" title="3">        rightPressed <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-4" title="4">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-5" title="5">    <span class="cf">else</span> <span class="cf">if</span>(<span class="va">e</span>.<span class="at">key</span> <span class="op">==</span> <span class="st">&quot;Left&quot;</span> <span class="op">||</span> <span class="va">e</span>.<span class="at">key</span> <span class="op">==</span> <span class="st">&quot;ArrowLeft&quot;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-6" title="6">        leftPressed <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-7" title="7">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-8" title="8"><span class="op">}</span></a>
+<a class="sourceLine" id="cb5-9" title="9"></a>
+<a class="sourceLine" id="cb5-10" title="10"><span class="kw">function</span> <span class="at">keyUpHandler</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-11" title="11">    <span class="cf">if</span>(<span class="va">e</span>.<span class="at">key</span> <span class="op">==</span> <span class="st">&quot;Right&quot;</span> <span class="op">||</span> <span class="va">e</span>.<span class="at">key</span> <span class="op">==</span> <span class="st">&quot;ArrowRight&quot;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-12" title="12">        rightPressed <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-13" title="13">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-14" title="14">    <span class="cf">else</span> <span class="cf">if</span>(<span class="va">e</span>.<span class="at">key</span> <span class="op">==</span> <span class="st">&quot;Left&quot;</span> <span class="op">||</span> <span class="va">e</span>.<span class="at">key</span> <span class="op">==</span> <span class="st">&quot;ArrowLeft&quot;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-15" title="15">        leftPressed <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-16" title="16">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-17" title="17"><span class="op">}</span></a></code></pre></div>
+<p>When we press a key down, this information is stored in a variable. The relevant variable in each case is set to <code>true</code>. When the key is released, the variable is set back to <code>false</code>.</p>
+<p>Both functions take an event as a parameter, represented by the <code>e</code> variable. From that you can get useful information: the <code>key</code> holds the information about the key that was pressed.  Most browsers use <code>ArrowRight</code> and <code>ArrowLeft</code> for the left/right cursor keys, but we need to also include <code>Right</code> and <code>Left</code> checks to support IE/Edge browsers. If the left cursor is pressed, then the <code>leftPressed</code> variable is set to <code>true</code>, and when it is released, the <code>leftPressed</code> variable is set to <code>false</code>. The same pattern follows with the right cursor and the <code>rightPressed</code> variable.</p>
+<h3 id="the-paddle-moving-logic">The paddle moving logic</h3>
+<p>We’ve now set up the variables for storing the info about the pressed keys, event listeners, and relevant functions. Next we’ll get into the code to use all of the things we just set up and to move the paddle on the screen. Inside the <code>draw()</code> function, we will check if the left or right cursor keys are pressed when each frame is rendered. Our code might look like this:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="cf">if</span>(rightPressed) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-2" title="2">    paddleX <span class="op">+=</span> <span class="dv">7</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="op">}</span></a>
+<a class="sourceLine" id="cb6-4" title="4"><span class="cf">else</span> <span class="cf">if</span>(leftPressed) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-5" title="5">    paddleX <span class="op">-=</span> <span class="dv">7</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="op">}</span></a></code></pre></div>
+<p>If the left cursor is pressed, the paddle will move seven pixels to the left, and if the right cursor is pressed, the paddle will move seven pixels to the right. This currently works, but the paddle disappears off the edge of the canvas if we hold either key for too long. We could improve that and move the paddle only within the boundaries of the canvas by changing the code like this:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="cf">if</span>(rightPressed) <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-2" title="2">    paddleX <span class="op">+=</span> <span class="dv">7</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb7-3" title="3">    <span class="cf">if</span> (paddleX <span class="op">+</span> paddleWidth <span class="op">&gt;</span> <span class="va">canvas</span>.<span class="at">width</span>)<span class="op">{</span></a>
+<a class="sourceLine" id="cb7-4" title="4">        paddleX <span class="op">=</span> <span class="va">canvas</span>.<span class="at">width</span> <span class="op">-</span> paddleWidth<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-5" title="5">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb7-6" title="6"><span class="op">}</span></a>
+<a class="sourceLine" id="cb7-7" title="7"><span class="cf">else</span> <span class="cf">if</span>(leftPressed) <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-8" title="8">    paddleX <span class="op">-=</span> <span class="dv">7</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb7-9" title="9">    <span class="cf">if</span> (paddleX <span class="op">&lt;</span> <span class="dv">0</span>)<span class="op">{</span></a>
+<a class="sourceLine" id="cb7-10" title="10">        paddleX <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb7-11" title="11">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb7-12" title="12"><span class="op">}</span></a></code></pre></div>
+<p>The <code>paddleX</code> position we’re using will move between <code>0</code> on the left side of the canvas and <code>canvas.width-paddleWidth</code> on the right hand side, which will work exactly as we want it to.</p>
+<p>Add the above code block into the <code>draw()</code> function at the bottom, just above the closing curly brace.</p>
+<p>The only thing left to do now is call the <code>drawPaddle()</code> function from within the <code>draw()</code> function, to actually print it on the screen. Add the following line inside your <code>draw()</code> function, just below the line that calls <code>drawBall()</code>:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="at">drawPaddle</span>()<span class="op">;</span></a></code></pre></div>
+<h2 id="compare-your-code">Compare your code</h2>
+<p>Here’s the working code for you to compare yours against:</p>
+<p>{{JSFiddleEmbed(“https://jsfiddle.net/L9xfn4up/1/”,"“,”395")}}</p>
+<blockquote>
+<p><strong>Note:</strong> Try making the paddle move faster or slower, or change its size.</p>
+</blockquote>
+<h2 id="next-steps">Next steps</h2>
+<p>Now we have something resembling a game. The only trouble now is that you can just continue hitting the ball with the paddle forever. This will all change in the fifth chapter, <a href="/en-US/docs/Games/Tutorials/2D_Breakout_game_pure_JavaScript/Game_over">Game over</a>, when we start to add in an endgame state for our game.</p>
+<p>{{PreviousNext(“Games/Workflows/2D_Breakout_game_pure_JavaScript/Bounce_off_the_walls”, “Games/Workflows/2D_Breakout_game_pure_JavaScript/Game_over”)}}</p>

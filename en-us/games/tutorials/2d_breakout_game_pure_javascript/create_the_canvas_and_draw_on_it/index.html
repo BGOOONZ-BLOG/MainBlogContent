@@ -1,0 +1,69 @@
+<p>{{GamesSidebar}}</p>
+<p>{{PreviousNext(“Games/Workflows/2D_Breakout_game_pure_JavaScript”, “Games/Workflows/2D_Breakout_game_pure_JavaScript/Move_the_ball”)}}</p>
+<p>This is the <strong>1st step</strong> out of 10 of the <a href="/en-US/docs/Games/Tutorials/2D_Breakout_game_pure_JavaScript">Gamedev Canvas tutorial</a>. You can find the source code as it should look after completing this lesson at <a href="https://github.com/end3r/Gamedev-Canvas-workshop/blob/gh-pages/lesson01.html">Gamedev-Canvas-workshop/lesson1.html</a>.</p>
+<p>Before we can start writing the game’s functionality, we need to create a basic structure to render the game inside. This can be done using HTML and the {{htmlelement(“canvas”)}} element.</p>
+<h2 id="the-games-html">The game’s HTML</h2>
+<p>The HTML document structure is quite simple, as the game will be rendered entirely on the {{htmlelement(“canvas”)}} element. Using your favorite text editor, create a new HTML document, save it as <code>index.html</code>, in a sensible location, and add the following code to it:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" title="1"><span class="dt">&lt;!DOCTYPE </span>html<span class="dt">&gt;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">&lt;html&gt;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">&lt;head&gt;</span></a>
+<a class="sourceLine" id="cb1-4" title="4">    <span class="kw">&lt;meta</span><span class="ot"> charset=</span><span class="st">&quot;utf-8&quot;</span> <span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb1-5" title="5">    <span class="kw">&lt;title&gt;</span>Gamedev Canvas Workshop<span class="kw">&lt;/title&gt;</span></a>
+<a class="sourceLine" id="cb1-6" title="6">    <span class="kw">&lt;style&gt;</span></a>
+<a class="sourceLine" id="cb1-7" title="7">        <span class="op">*</span> { <span class="kw">padding</span>: <span class="dv">0</span><span class="op">;</span> <span class="kw">margin</span>: <span class="dv">0</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb1-8" title="8">        canvas { <span class="kw">background</span>: <span class="cn">#eee</span><span class="op">;</span> <span class="kw">display</span>: <span class="dv">block</span><span class="op">;</span> <span class="kw">margin</span>: <span class="dv">0</span> <span class="bu">auto</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb1-9" title="9">    <span class="kw">&lt;/style&gt;</span></a>
+<a class="sourceLine" id="cb1-10" title="10"><span class="kw">&lt;/head&gt;</span></a>
+<a class="sourceLine" id="cb1-11" title="11"><span class="kw">&lt;body&gt;</span></a>
+<a class="sourceLine" id="cb1-12" title="12"></a>
+<a class="sourceLine" id="cb1-13" title="13"><span class="kw">&lt;canvas</span><span class="ot"> id=</span><span class="st">&quot;myCanvas&quot;</span><span class="ot"> width=</span><span class="st">&quot;480&quot;</span><span class="ot"> height=</span><span class="st">&quot;320&quot;</span><span class="kw">&gt;&lt;/canvas&gt;</span></a>
+<a class="sourceLine" id="cb1-14" title="14"></a>
+<a class="sourceLine" id="cb1-15" title="15"><span class="kw">&lt;script&gt;</span></a>
+<a class="sourceLine" id="cb1-16" title="16">    <span class="co">// JavaScript code goes here</span></a>
+<a class="sourceLine" id="cb1-17" title="17"><span class="kw">&lt;/script&gt;</span></a>
+<a class="sourceLine" id="cb1-18" title="18"></a>
+<a class="sourceLine" id="cb1-19" title="19"><span class="kw">&lt;/body&gt;</span></a>
+<a class="sourceLine" id="cb1-20" title="20"><span class="kw">&lt;/html&gt;</span></a></code></pre></div>
+<p>We have a <code>charset</code> defined, {{htmlelement(“title”)}} and some basic CSS in the header. The body contains {{htmlelement(“canvas”)}} and {{htmlelement(“script”)}} elements — we will render the game inside the first one and write the JavaScript code that controls it in the second one. The {{htmlelement(“canvas”)}} element has an <code>id</code> of <code>myCanvas</code> to allow us to easily grab a reference to it, and it is 480 pixels wide and 320 pixels high. All the JavaScript code we will write in this tutorial will go between the opening <code>&lt;script&gt;</code> and closing <code>&lt;/script&gt;</code> tags.</p>
+<h2 id="canvas-basics">Canvas basics</h2>
+<p>To actually be able to render graphics on the {{htmlelement(“canvas”)}} element, first we have to grab a reference to it in JavaScript. Add the following below your opening <code>&lt;script&gt;</code> tag.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;myCanvas&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">var</span> ctx <span class="op">=</span> <span class="va">canvas</span>.<span class="at">getContext</span>(<span class="st">&quot;2d&quot;</span>)<span class="op">;</span></a></code></pre></div>
+<p>Here we’re storing a reference to the {{htmlelement(“canvas”)}} element to the <code>canvas</code> variable. Then we’re creating the <code>ctx</code> variable to store the 2D rendering context — the actual tool we can use to paint on the Canvas.</p>
+<p>Let’s see an example piece of code that prints a red square on the canvas. Add this below your previous lines of JavaScript, then load your <code>index.html</code> in a browser to try it out.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="va">ctx</span>.<span class="at">rect</span>(<span class="dv">20</span><span class="op">,</span> <span class="dv">40</span><span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="dv">50</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&quot;#FF0000&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="va">ctx</span>.<span class="at">closePath</span>()<span class="op">;</span></a></code></pre></div>
+<p>All the instructions are between the {{domxref(“CanvasRenderingContext2D.beginPath()”,“beginPath()”)}} and {{domxref(“CanvasRenderingContext2D.closePath()”,“closePath()”)}} methods. We are defining a rectangle using {{domxref(“CanvasRenderingContext2D.rect()”,“rect()”)}}: the first two values specify the coordinates of the top left corner of the rectangle on the canvas, while the second two specify the width and height of the rectangle. In our case the rectangle is painted 20 pixels from the left side of the screen and 40 pixels from the top side, and is 50 pixels wide and 50 pixels high, which makes it a perfect square. The {{domxref(“CanvasRenderingContext2D.fillStyle”,“fillStyle”)}} property stores a color that will be used by the {{domxref(“CanvasRenderingContext2D.fill()”,“fill()”)}} method to paint the square, in our case, red.</p>
+<p>We’re not limited to rectangles — here’s a piece of code for printing out a green circle. Try adding this to the bottom of your JavaScript, saving and refreshing:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="va">ctx</span>.<span class="at">arc</span>(<span class="dv">240</span><span class="op">,</span> <span class="dv">160</span><span class="op">,</span> <span class="dv">20</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">Math</span>.<span class="at">PI</span><span class="op">*</span><span class="dv">2</span><span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&quot;green&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="va">ctx</span>.<span class="at">fill</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="va">ctx</span>.<span class="at">closePath</span>()<span class="op">;</span></a></code></pre></div>
+<p>As you can see we’re using the {{domxref(“CanvasRenderingContext2D.beginPath()”,“beginPath()”)}} and {{domxref(“CanvasRenderingContext2D.closePath()”,“closePath()”)}} methods again. Between them, the most important part of the code above is the {{domxref(“CanvasRenderingContext2D.arc()”,“arc()”)}} method. It takes six parameters:</p>
+<ul>
+<li><code>x</code> and <code>y</code> coordinates of the arc’s center</li>
+<li>arc radius</li>
+<li>start angle and end angle (what angle to start and finish drawing the circle, in radians)</li>
+<li>direction of drawing (<code>false</code> for clockwise, the default, or <code>true</code> for anti-clockwise.) This last parameter is optional.</li>
+</ul>
+<p>The {{domxref(“CanvasRenderingContext2D.fillStyle”,“fillStyle”)}} property looks different than before. This is because, just as with CSS, color can be specified as a hexadecimal value, a color keyword, the <code>rgba()</code> function, or any of the other available color methods.</p>
+<p>Instead of using {{domxref(“CanvasRenderingContext2D.fill()”,“fill()”)}} and filling the shapes with colors, we can use {{domxref(“CanvasRenderingContext2D.stroke()”,“stroke()”)}} to only color the outer stroke. Try adding this code to your JavaScript too:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="va">ctx</span>.<span class="at">rect</span>(<span class="dv">160</span><span class="op">,</span> <span class="dv">10</span><span class="op">,</span> <span class="dv">100</span><span class="op">,</span> <span class="dv">40</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="va">ctx</span>.<span class="at">strokeStyle</span> <span class="op">=</span> <span class="st">&quot;rgba(0, 0, 255, 0.5)&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="va">ctx</span>.<span class="at">stroke</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="va">ctx</span>.<span class="at">closePath</span>()<span class="op">;</span></a></code></pre></div>
+<p>The code above prints a blue-stroked empty rectangle. Thanks to the alpha channel in the <code>rgba()</code> function, the blue color is semi transparent.</p>
+<h2 id="compare-your-code">Compare your code</h2>
+<p>Here’s the full source code of the first lesson, running live in a JSFiddle:</p>
+<p>{{JSFiddleEmbed(“https://jsfiddle.net/end3r/x62h15e2/”,"“,”395")}}</p>
+<blockquote>
+<p><strong>Note:</strong> Try changing the size and color of the given shapes.</p>
+</blockquote>
+<h2 id="next-steps">Next steps</h2>
+<p>Now we’ve set up the basic HTML and learned a bit about canvas, lets continue to the second chapter and work out how to <a href="/en-US/docs/Games/Tutorials/2D_Breakout_game_pure_JavaScript/Move_the_ball">Move the ball in our game</a>.</p>
+<p>{{PreviousNext(“Games/Workflows/2D_Breakout_game_pure_JavaScript”, “Games/Workflows/2D_Breakout_game_pure_JavaScript/Move_the_ball”)}}</p>

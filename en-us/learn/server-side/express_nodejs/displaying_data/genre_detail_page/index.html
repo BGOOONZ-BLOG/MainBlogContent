@@ -1,0 +1,85 @@
+<p>The genre <em>detail</em> page needs to display the information for a particular genre instance, using its automatically generated <code>_id</code> field value as the identifier. The page should display the genre name and a list of all books in the genre with links to each book’s details page.</p>
+<h2 id="controller">Controller</h2>
+<p>Open <strong>/controllers/genreController.js</strong> and import the <em>async</em> and <em>Book</em> modules at the top of the file.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> Book <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;../models/book&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">var</span> <span class="kw">async</span> <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;async&#39;</span>)<span class="op">;</span></a></code></pre></div>
+<p>Find the exported <code>genre_detail()</code> controller method and replace it with the following code.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="co">// Display detail page for a specific Genre.</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="va">exports</span>.<span class="at">genre_detail</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res<span class="op">,</span> next) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4">    <span class="kw">async</span>.<span class="at">parallel</span>(<span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">        <span class="dt">genre</span><span class="op">:</span> <span class="kw">function</span>(callback) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-6" title="6">            <span class="va">Genre</span>.<span class="at">findById</span>(<span class="va">req</span>.<span class="va">params</span>.<span class="at">id</span>)</a>
+<a class="sourceLine" id="cb2-7" title="7">            <span class="va"> </span> .<span class="at">exec</span>(callback)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">        <span class="op">},</span></a>
+<a class="sourceLine" id="cb2-9" title="9"></a>
+<a class="sourceLine" id="cb2-10" title="10">        <span class="dt">genre_books</span><span class="op">:</span> <span class="kw">function</span>(callback) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-11" title="11">            <span class="va">Book</span>.<span class="at">find</span>(<span class="op">{</span> <span class="st">&#39;genre&#39;</span><span class="op">:</span> <span class="va">req</span>.<span class="va">params</span>.<span class="at">id</span> <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-12" title="12">        <span class="va"> </span>     .<span class="at">exec</span>(callback)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13">        <span class="op">},</span></a>
+<a class="sourceLine" id="cb2-14" title="14"></a>
+<a class="sourceLine" id="cb2-15" title="15">    <span class="op">},</span> <span class="kw">function</span>(err<span class="op">,</span> results) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-16" title="16">        <span class="cf">if</span> (err) <span class="op">{</span> <span class="cf">return</span> <span class="at">next</span>(err)<span class="op">;</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-17" title="17">        <span class="cf">if</span> (<span class="va">results</span>.<span class="at">genre</span><span class="op">==</span><span class="kw">null</span>) <span class="op">{</span> <span class="co">// No results.</span></a>
+<a class="sourceLine" id="cb2-18" title="18">            <span class="kw">var</span> err <span class="op">=</span> <span class="kw">new</span> <span class="at">Error</span>(<span class="st">&#39;Genre not found&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-19" title="19">            <span class="va">err</span>.<span class="at">status</span> <span class="op">=</span> <span class="dv">404</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-20" title="20">            <span class="cf">return</span> <span class="at">next</span>(err)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-21" title="21">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-22" title="22">        <span class="co">// Successful, so render</span></a>
+<a class="sourceLine" id="cb2-23" title="23">        <span class="va">res</span>.<span class="at">render</span>(<span class="st">&#39;genre_detail&#39;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">title</span><span class="op">:</span> <span class="st">&#39;Genre Detail&#39;</span><span class="op">,</span> <span class="dt">genre</span><span class="op">:</span> <span class="va">results</span>.<span class="at">genre</span><span class="op">,</span> <span class="dt">genre_books</span><span class="op">:</span> <span class="va">results</span>.<span class="at">genre_books</span> <span class="op">}</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-24" title="24">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-25" title="25"></a>
+<a class="sourceLine" id="cb2-26" title="26"><span class="op">};</span></a></code></pre></div>
+<p>The method uses <code>async.parallel()</code> to query the genre name and its associated books in parallel, with the callback rendering the page when (if) both requests complete successfully.</p>
+<p>The ID of the required genre record is encoded at the end of the URL and extracted automatically based on the route definition (<strong>/genre/:id</strong>). The ID is accessed within the controller via the request parameters: <code>req.params.id</code>. It is used in <code>Genre.findById()</code> to get the current genre. It is also used to get all <code>Book</code> objects that have the genre ID in their <code>genre</code> field: <code>Book.find({ 'genre': req.params.id })</code>.</p>
+<blockquote>
+<p><strong>Note:</strong> If the genre does not exist in the database (i.e. it may have been deleted) then <code>findById()</code>  will return successfully with no results. In this case we want to display a “not found” page, so we create an <code>Error</code> object and pass it to the <code>next</code> middleware function in the chain.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="cf">if</span> (<span class="va">results</span>.<span class="at">genre</span><span class="op">==</span><span class="kw">null</span>) <span class="op">{</span> <span class="co">// No results.</span></a>
+<a class="sourceLine" id="cb3-2" title="2">    <span class="kw">var</span> err <span class="op">=</span> <span class="kw">new</span> <span class="at">Error</span>(<span class="st">&#39;Genre not found&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="va">err</span>.<span class="at">status</span> <span class="op">=</span> <span class="dv">404</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="cf">return</span> <span class="at">next</span>(err)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="op">}</span></a></code></pre></div>
+<p>The message will then propagate through to our error handling code (this was set up when we <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/skeleton_website#app.js">generated the app skeleton</a> - for more information see <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/Introduction#handling_errors">Handling Errors</a>).</p>
+</blockquote>
+<p>The rendered view is <strong>genre_detail</strong> and it is passed variables for the <code>title</code>, <code>genre</code> and the list of books in this genre (<code>genre_books</code>).</p>
+<h2 id="view">View</h2>
+<p>Create <strong>/views/genre_detail.pug</strong> and fill it with the text below:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">extends</span> layout</a>
+<a class="sourceLine" id="cb4-2" title="2"></a>
+<a class="sourceLine" id="cb4-3" title="3">block content</a>
+<a class="sourceLine" id="cb4-4" title="4"></a>
+<a class="sourceLine" id="cb4-5" title="5">  h1 Genre<span class="op">:</span> #<span class="op">{</span><span class="va">genre</span>.<span class="at">name</span><span class="op">}</span></a>
+<a class="sourceLine" id="cb4-6" title="6"></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="at">div</span>(style<span class="op">=</span><span class="st">&#39;margin-left:20px;margin-top:20px&#39;</span>)</a>
+<a class="sourceLine" id="cb4-8" title="8"></a>
+<a class="sourceLine" id="cb4-9" title="9">    h4 Books</a>
+<a class="sourceLine" id="cb4-10" title="10"></a>
+<a class="sourceLine" id="cb4-11" title="11">    dl</a>
+<a class="sourceLine" id="cb4-12" title="12">      each book <span class="kw">in</span> genre_books</a>
+<a class="sourceLine" id="cb4-13" title="13">        dt</a>
+<a class="sourceLine" id="cb4-14" title="14">          <span class="at">a</span>(href<span class="op">=</span><span class="va">book</span>.<span class="at">url</span>) #<span class="op">{</span><span class="va">book</span>.<span class="at">title</span><span class="op">}</span></a>
+<a class="sourceLine" id="cb4-15" title="15">        dd #<span class="op">{</span><span class="va">book</span>.<span class="at">summary</span><span class="op">}</span></a>
+<a class="sourceLine" id="cb4-16" title="16"></a>
+<a class="sourceLine" id="cb4-17" title="17">      <span class="cf">else</span></a>
+<a class="sourceLine" id="cb4-18" title="18">        p This genre has no books</a></code></pre></div>
+<p>The view is very similar to all our other templates. The main difference is that we don’t use the <code>title</code> passed in for the first heading (though it is used in the underlying <strong>layout.pug</strong> template to set the page title).</p>
+<h2 id="what-does-it-look-like">What does it look like?</h2>
+<p>Run the application and open your browser to <a href="http://localhost:3000/" class="uri">http://localhost:3000/</a>. Select the <em>All genres</em> link, then select one of the genres (e.g. “Fantasy”). If everything is set up correctly, your page should look something like the following screenshot.</p>
+<figure>
+<img src="locallibary_express_genre_detail.png" alt="Genre Detail Page - Express Local Library site" /><figcaption>Genre Detail Page - Express Local Library site</figcaption>
+</figure>
+<blockquote>
+<p><strong>Note:</strong> You might get an error similar to this:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb5-1" title="1"><span class="ex">Cast</span> to ObjectId failed for value <span class="st">&quot; 59347139895ea23f9430ecbb&quot;</span> at path <span class="st">&quot;_id&quot;</span> for model <span class="st">&quot;Genre&quot;</span></a></code></pre></div>
+<p>This is a mongoose error coming from the <strong>req.params.id</strong>. To solve this problem, first you need to require mongoose on the <strong>genreController.js</strong> page like this:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"> <span class="kw">var</span> mongoose <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;mongoose&#39;</span>)<span class="op">;</span></a></code></pre></div>
+<p>Then use <strong>mongoose.Types.ObjectId()</strong> to convert the id to a type that can be used. For example:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="va">exports</span>.<span class="at">genre_detail</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res<span class="op">,</span> next) <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-2" title="2">    <span class="kw">var</span> id <span class="op">=</span> <span class="va">mongoose</span>.<span class="va">Types</span>.<span class="at">ObjectId</span>(<span class="va">req</span>.<span class="va">params</span>.<span class="at">id</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-3" title="3">    ...</a></code></pre></div>
+</blockquote>
+<h2 id="next-steps">Next steps</h2>
+<ul>
+<li>Return to <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/Displaying_data">Express Tutorial Part 5: Displaying library data</a>.</li>
+<li>Proceed to the next subarticle of part 5: <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/Displaying_data/Book_detail_page">Book detail page</a>.</li>
+</ul>

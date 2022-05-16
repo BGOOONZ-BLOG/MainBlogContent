@@ -1,0 +1,89 @@
+<p>An <strong>IIFE</strong> (Immediately Invoked Function Expression) is a {{glossary(“JavaScript”)}} {{glossary(“function”)}} that runs as soon as it is defined. The name IIFE is promoted by Ben Alman in <a href="https://web.archive.org/web/20171201033208/http://benalman.com/news/2010/11/immediately-invoked-function-expression/#iife">his blog</a>.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1">(<span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  statements</a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="op">}</span>)()<span class="op">;</span></a></code></pre></div>
+<p>It is a design pattern which is also known as a {{glossary(“Self-Executing Anonymous Function”)}} and contains two major parts:</p>
+<ol type="1">
+<li>The first is the anonymous function with lexical scope enclosed within the {{jsxref(“Operators/Grouping”, “Grouping Operator”)}} <code>()</code>. This prevents accessing variables within the IIFE idiom as well as polluting the global scope.</li>
+<li>The second part creates the immediately invoked function expression <code>()</code> through which the JavaScript engine will directly interpret the function.</li>
+</ol>
+<h2 id="use-cases">Use cases</h2>
+<h3 id="avoid-polluting-the-global-namespace">Avoid polluting the global namespace</h3>
+<p>Because our application could include many functions and global variables from different source files, it’s important to limit the number of global variables. If we have some initiation code that we don’t need to use again, we could use the IIFE pattern. As we will not reuse the code again, using IIFE in this case is better than using a function declaration or a function expression.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1">(<span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="co">// some initiation code</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="kw">let</span> firstVariable<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="kw">let</span> secondVariable<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="op">}</span>)()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6"></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="co">// firstVariable and secondVariable will be discarded after the function is executed.</span></a></code></pre></div>
+<h3 id="the-module-pattern">The module pattern</h3>
+<p>We would also use IIFE to create private and public variables and methods. For a more sophisticated use of the module pattern and other use of IIFE, you could see the book Learning JavaScript Design Patterns by Addy Osmani.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> makeWithdraw <span class="op">=</span> balance <span class="kw">=&gt;</span> (<span class="kw">function</span>(copyBalance) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">let</span> balance <span class="op">=</span> copyBalance<span class="op">;</span> <span class="co">// This variable is private</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="kw">let</span> doBadThings <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="va">console</span>.<span class="at">log</span>(<span class="st">&quot;I will do bad things with your money&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="at">doBadThings</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="cf">return</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-8" title="8">    <span class="dt">withdraw</span><span class="op">:</span> <span class="kw">function</span>(amount) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-9" title="9">      <span class="cf">if</span> (balance <span class="op">&gt;=</span> amount) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-10" title="10">        balance <span class="op">-=</span> amount<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-11" title="11">        <span class="cf">return</span> balance<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-12" title="12">      <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-13" title="13">        <span class="cf">return</span> <span class="st">&quot;Insufficient money&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-14" title="14">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-15" title="15">    <span class="op">},</span></a>
+<a class="sourceLine" id="cb3-16" title="16">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-17" title="17"><span class="op">}</span>)(balance)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-18" title="18"></a>
+<a class="sourceLine" id="cb3-19" title="19"><span class="kw">const</span> firstAccount <span class="op">=</span> <span class="at">makeWithdraw</span>(<span class="dv">100</span>)<span class="op">;</span> <span class="co">// &quot;I will do bad things with your money&quot;</span></a>
+<a class="sourceLine" id="cb3-20" title="20"><span class="va">console</span>.<span class="at">log</span>(<span class="va">firstAccount</span>.<span class="at">balance</span>)<span class="op">;</span> <span class="co">// undefined</span></a>
+<a class="sourceLine" id="cb3-21" title="21"><span class="va">console</span>.<span class="at">log</span>(<span class="va">firstAccount</span>.<span class="at">withdraw</span>(<span class="dv">20</span>))<span class="op">;</span> <span class="co">// 80</span></a>
+<a class="sourceLine" id="cb3-22" title="22"><span class="va">console</span>.<span class="at">log</span>(<span class="va">firstAccount</span>.<span class="at">withdraw</span>(<span class="dv">30</span>))<span class="op">;</span> <span class="co">// 50</span></a>
+<a class="sourceLine" id="cb3-23" title="23"><span class="va">console</span>.<span class="at">log</span>(<span class="va">firstAccount</span>.<span class="at">doBadThings</span>)<span class="op">;</span> <span class="co">// undefined; this method is private</span></a>
+<a class="sourceLine" id="cb3-24" title="24"><span class="kw">const</span> secondAccount <span class="op">=</span> <span class="at">makeWithdraw</span>(<span class="dv">20</span>)<span class="op">;</span> <span class="co">// &quot;I will do bad things with your money&quot;</span></a>
+<a class="sourceLine" id="cb3-25" title="25"><span class="va">console</span>.<span class="at">log</span>(<span class="va">secondAccount</span>.<span class="at">withdraw</span>(<span class="dv">30</span>))<span class="op">;</span> <span class="co">// &quot;Insufficient money&quot;</span></a>
+<a class="sourceLine" id="cb3-26" title="26"><span class="va">console</span>.<span class="at">log</span>(<span class="va">secondAccount</span>.<span class="at">withdraw</span>(<span class="dv">20</span>))<span class="op">;</span>  <span class="co">// 0</span></a></code></pre></div>
+<h3 id="for-loop-with-var-before-es6">For loop with var before ES6</h3>
+<p>We could see the following use of IIFE in some old code, before the introduction of the statements <strong>let</strong> and <strong>const</strong> in <strong>ES6</strong> and the block scope. With the statement <strong>var</strong>, we have only function scopes and the global scope. Suppose we want to create 2 buttons with the texts Button 0 and Button 1 and we click them, we would like them to alert 0 and 1. The following code doesn’t work:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="dv">2</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="kw">const</span> button <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;button&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3">  <span class="va">button</span>.<span class="at">innerText</span> <span class="op">=</span> <span class="st">&quot;Button &quot;</span> <span class="op">+</span> i<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-4" title="4">  <span class="va">button</span>.<span class="at">onclick</span> <span class="op">=</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-5" title="5">    <span class="at">alert</span>(i)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-6" title="6">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="va">document</span>.<span class="va">body</span>.<span class="at">appendChild</span>(button)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-8" title="8"><span class="op">}</span></a>
+<a class="sourceLine" id="cb4-9" title="9"><span class="va">console</span>.<span class="at">log</span>(i)<span class="op">;</span> <span class="co">// 2</span></a></code></pre></div>
+<p>When clicked, both Button 0 and Button 1 alert 2 because <code>i</code> is global, with the last value 2. To fix this problem before ES6, we could use the IIFE pattern:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="dv">2</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="kw">const</span> button <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;button&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3">  <span class="va">button</span>.<span class="at">innerText</span> <span class="op">=</span> <span class="st">&quot;Button &quot;</span> <span class="op">+</span> i<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-4" title="4">  <span class="va">button</span>.<span class="at">onclick</span> <span class="op">=</span> (<span class="kw">function</span> (copyOfI) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-5" title="5">    <span class="cf">return</span> <span class="kw">function</span>() <span class="op">{</span><span class="at">alert</span>(copyOfI)<span class="op">;};</span></a>
+<a class="sourceLine" id="cb5-6" title="6">  <span class="op">}</span>)(i)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-7" title="7">  <span class="va">document</span>.<span class="va">body</span>.<span class="at">appendChild</span>(button)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-8" title="8"><span class="op">}</span></a>
+<a class="sourceLine" id="cb5-9" title="9"><span class="va">console</span>.<span class="at">log</span>(i)<span class="op">;</span> <span class="co">// 2</span></a></code></pre></div>
+<p>When clicked, Buttons 0 and 1 alert 0 and 1. The variable <code>i</code> is globally defined. Using the statement <strong>let</strong>, we could simply do:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="dv">2</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="kw">const</span> button <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;button&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-3" title="3">  <span class="va">button</span>.<span class="at">innerText</span> <span class="op">=</span> <span class="st">&quot;Button &quot;</span> <span class="op">+</span> i<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-4" title="4">  <span class="va">button</span>.<span class="at">onclick</span> <span class="op">=</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-5" title="5">    <span class="at">alert</span>(i)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-6" title="6">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb6-7" title="7">  <span class="va">document</span>.<span class="va">body</span>.<span class="at">appendChild</span>(button)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-8" title="8"><span class="op">}</span></a>
+<a class="sourceLine" id="cb6-9" title="9"><span class="va">console</span>.<span class="at">log</span>(i)<span class="op">;</span> <span class="co">// Uncaught ReferenceError: i is not defined.</span></a></code></pre></div>
+<p>When clicked, these buttons alert 0 and 1.</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/JavaScript/A_re-introduction_to_JavaScript#Functions">Quick example</a> (at the end of the “Functions” section, right before “Custom objects”)</li>
+<li>{{interwiki(“wikipedia”, “Immediately-invoked function expression”, “IIFE”)}} (Wikipedia)</li>
+<li><p><a href="/en-US/docs/Glossary">Glossary</a></p>
+<ul>
+<li>{{Glossary(“Function”)}}</li>
+<li>{{Glossary(“Self-Executing Anonymous Function”)}}</li>
+</ul></li>
+</ul>

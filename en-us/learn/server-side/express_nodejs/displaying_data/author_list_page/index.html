@@ -1,0 +1,60 @@
+<p>The author list page needs to display a list of all authors in the database, with each author name linked to its associated author detail page. The date of birth and date of death should be listed after the name on the same line.</p>
+<h2 id="controller">Controller</h2>
+<p>The author list controller function needs to get a list of all <code>Author</code> instances, and then pass these to the template for rendering.</p>
+<p>Open <strong>/controllers/authorController.js</strong>. Find the exported <code>author_list()</code> controller method near the top of the file and replace it with the following code.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="co">// Display list of all Authors.</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="va">exports</span>.<span class="at">author_list</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res<span class="op">,</span> next) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-3" title="3"></a>
+<a class="sourceLine" id="cb1-4" title="4">  <span class="va">Author</span>.<span class="at">find</span>()</a>
+<a class="sourceLine" id="cb1-5" title="5">    .<span class="at">sort</span>([[<span class="st">&#39;family_name&#39;</span><span class="op">,</span> <span class="st">&#39;ascending&#39;</span>]])</a>
+<a class="sourceLine" id="cb1-6" title="6">    .<span class="at">exec</span>(<span class="kw">function</span> (err<span class="op">,</span> list_authors) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-7" title="7">      <span class="cf">if</span> (err) <span class="op">{</span> <span class="cf">return</span> <span class="at">next</span>(err)<span class="op">;</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-8" title="8">      <span class="co">//Successful, so render</span></a>
+<a class="sourceLine" id="cb1-9" title="9">      <span class="va">res</span>.<span class="at">render</span>(<span class="st">&#39;author_list&#39;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">title</span><span class="op">:</span> <span class="st">&#39;Author List&#39;</span><span class="op">,</span> <span class="dt">author_list</span><span class="op">:</span> list_authors <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-10" title="10">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-11" title="11"></a>
+<a class="sourceLine" id="cb1-12" title="12"><span class="op">};</span></a></code></pre></div>
+<p>The method uses the model’s <code>find()</code>, <code>sort()</code> and <code>exec()</code> functions to return all <code>Author</code> objects sorted by <code>family_name</code> in alphabetic order. The callback passed to the <code>exec()</code> method is called with any errors (or <code>null</code>) as the first parameter, or a list of all authors on success. If there is an error it calls the next middleware function with the error value, and if not it renders the <strong>author_list</strong>(.pug) template, passing the page <code>title</code> and the list of authors (<code>author_list</code>).</p>
+<h2 id="view">View</h2>
+<p>Create <strong>/views/author_list.pug</strong> and replace its content with the text below.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">extends</span> layout</a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3">block content</a>
+<a class="sourceLine" id="cb2-4" title="4">  h1<span class="op">=</span> title</a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6">  ul</a>
+<a class="sourceLine" id="cb2-7" title="7">    each author <span class="kw">in</span> author_list</a>
+<a class="sourceLine" id="cb2-8" title="8">      li</a>
+<a class="sourceLine" id="cb2-9" title="9">        <span class="at">a</span>(href<span class="op">=</span><span class="va">author</span>.<span class="at">url</span>) #<span class="op">{</span><span class="va">author</span>.<span class="at">name</span><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-10" title="10">        <span class="op">|</span>  (#<span class="op">{</span><span class="va">author</span>.<span class="at">date_of_birth</span><span class="op">}</span> <span class="op">-</span> #<span class="op">{</span><span class="va">author</span>.<span class="at">date_of_death</span><span class="op">}</span>)</a>
+<a class="sourceLine" id="cb2-11" title="11"></a>
+<a class="sourceLine" id="cb2-12" title="12">    <span class="cf">else</span></a>
+<a class="sourceLine" id="cb2-13" title="13">      li There are no <span class="va">authors</span>.</a></code></pre></div>
+<p>Run the application and open your browser to <a href="http://localhost:3000/" class="uri">http://localhost:3000/</a>. Then select the <em>All authors</em> link. If everything is set up correctly, the page should look something like the following screenshot.</p>
+<figure>
+<img src="locallibary_express_author_list.png" alt="Author List Page - Express Local Library site" /><figcaption>Author List Page - Express Local Library site</figcaption>
+</figure>
+<blockquote>
+<p><strong>Note:</strong> The appearance of the author <em>lifespan</em> dates is ugly! You can improve this using the <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/Displaying_data/Date_formatting_using_moment">same approach</a> as we used for the <code>BookInstance</code> list (adding the virtual property for the lifespan to the <code>Author</code> model).</p>
+<p>However, as the author may not be dead or may have missing birth/death data, in this case we need to ignore missing dates or references to nonexistent properties. One way to deal with this is to return either a formatted date, or a blank string, depending on whether the property is defined. For example:</p>
+<p><code>return this.date_of_birth ? DateTime.fromJSDate(this.date_of_birth).toLocaleString(DateTime.DATE_MED) : '';</code></p>
+</blockquote>
+<h2 id="genre-list-pagechallenge">Genre list page—challenge!</h2>
+<p>In this section you should implement your own genre list page. The page should display a list of all genres in the database, with each genre linked to its associated detail page. A screenshot of the expected result is shown below.</p>
+<figure>
+<img src="locallibary_express_genre_list.png" alt="Genre List - Express Local Library site" /><figcaption>Genre List - Express Local Library site</figcaption>
+</figure>
+<p>The genre list controller function needs to get a list of all <code>Genre</code> instances, and then pass these to the template for rendering.</p>
+<ol type="1">
+<li>You will need to edit <code>genre_list()</code> in <strong>/controllers/genreController.js</strong>.</li>
+<li><p>The implementation is almost exactly the same as the <code>author_list()</code> controller.</p>
+<ul>
+<li>Sort the results by name, in ascending order.</li>
+</ul></li>
+<li>The template to be rendered should be named <strong>genre_list.pug</strong>.</li>
+<li>The template to be rendered should be passed the variables <code>title</code> (‘Genre List’) and <code>genre_list</code> (the list of genres returned from your <code>Genre.find()</code> callback).</li>
+<li><p>The view should match the screenshot/requirements above (this should have a very similar structure/format to the Author list view, except for the fact that genres do not have dates).</p></li>
+</ol>
+<h2 id="next-steps">Next steps</h2>
+<p>Return to <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/Displaying_data">Express Tutorial Part 5: Displaying library data</a>.</p>
+<p>Proceed to the next subarticle of part 5: <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/Displaying_data/Genre_detail_page">Genre detail page</a>.</p>

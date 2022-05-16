@@ -1,0 +1,226 @@
+<p>{{LearnSidebar}} {{PreviousMenuNext(“Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_conditional_footer”,“Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_resources”, “Learn/Tools_and_testing/Client-side_JavaScript_frameworks”)}}</p>
+<p>In this article we learn about <strong>routing</strong>, or URL-based filtering as it is sometimes referred to. We’ll use it to provide a unique URL for each of the three todo views — “All”, “Active”, and “Completed”.</p>
+<table>
+<tbody>
+<tr>
+<th scope="row">
+Prerequisites:
+</th>
+<td>
+<p>
+At minimum, it is recommended that you are familiar with the core <a href="/en-US/docs/Learn/HTML">HTML</a>, <a href="/en-US/docs/Learn/CSS">CSS</a>, and <a href="/en-US/docs/Learn/JavaScript">JavaScript</a> languages, and have knowledge of the <a
+            href="/en-US/docs/Learn/Tools_and_testing/Understanding_client-side_tools/Command_line"
+            >terminal/command line</a
+          >.
+</p>
+<p>
+A deeper understanding of modern JavaScript features (such as classes, modules, etc), will be extremely beneficial, as Ember makes heavy use of them.
+</p>
+</td>
+</tr>
+<tr>
+<th scope="row">
+Objective:
+</th>
+<td>
+To learn about implementing routing in Ember.
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="url-based-filtering">URL-based filtering</h2>
+<p>Ember comes with a routing system that has a tight integration with the browser URL. Typically, when writing web applications, you want the page to be represented by the URL so that if (for any reason), the page needs to refresh, the user isn’t surprised by the state of the web app — they can link directly to significant views of the app.</p>
+<p>At the moment, we already have the “All” page, as we are currently not doing any filtering in the page that we’ve been working with, but we will need to reorganize it a bit to handle a different view for the “Active” and “Completed” todos.</p>
+<p>An Ember application has a default “application” route, which is tied to the <code>app/templates/application.hbs</code> template. Because that application template is the entry point to our todo app, we’ll need to make some changes to allow for routing.</p>
+<h2 id="creating-the-routes">Creating the routes</h2>
+<p>Let’s start by creating three new routes: “Index”, “Active” and “Completed”. To do this you’ll need to enter the following commands into your terminal, inside the root directory of your app:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb1-1" title="1"><span class="ex">ember</span> generate route index</a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="ex">ember</span> generate route completed</a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="ex">ember</span> generate route active</a></code></pre></div>
+<p>The second and third commands should have not only generated new files, but also updated an existing file, <code>app/router.js</code>. It contains the following contents:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="im">import</span> EmberRouter <span class="im">from</span> <span class="st">&#39;@ember/routing/router&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="im">import</span> config <span class="im">from</span> <span class="st">&#39;./config/environment&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="im">export</span> <span class="im">default</span> <span class="kw">class</span> Router <span class="kw">extends</span> EmberRouter <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  location <span class="op">=</span> <span class="va">config</span>.<span class="at">locationType</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  rootURL <span class="op">=</span> <span class="va">config</span>.<span class="at">rootURL</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-8" title="8"></a>
+<a class="sourceLine" id="cb2-9" title="9"><span class="va">Router</span>.<span class="at">map</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="kw">this</span>.<span class="at">route</span>(<span class="st">&#39;completed&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11">  <span class="kw">this</span>.<span class="at">route</span>(<span class="st">&#39;active&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-12" title="12"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>The highlighted lines were added when the 2nd and 3rd commands above were run.</p>
+<p><code>router.js</code> behaves as a “sitemap” for developers to be able to quickly see how the entire app is structured.  It also tells Ember how to interact with your route, such as when loading arbitrary data, handling errors while loading that data, or interpreting dynamic segments of the URL. Since our data is static, we won’t get to any of those fancy features, but we’ll still make sure that the route provides the minimally required data to view a page.</p>
+<p>Creating the “Index” route did not add a route definition line to <code>router.js</code>, because like with URL navigation and JavaScript module loading, “Index” is a special word that indicates the default route to render, load, etc.</p>
+<p>To adjust our old way of rendering the TodoList app, we’ll first need to replace the TodoList component invocation from the application template with an <code>\{{outlet}}</code> call, which means “any sub-route will be rendered in place here”.</p>
+<p>Go to the <code>todomvc/app/templates/application.hbs</code> file and replace</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">&lt;TodoList</span> <span class="kw">/&gt;</span></a></code></pre></div>
+<p>With</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1">\<span class="op">{{</span>outlet<span class="op">}}</span></a></code></pre></div>
+<p>Next, in our <code>index.hbs</code>, <code>completed.hbs</code>, and <code>active.hbs</code> templates (also found in the templates directory) we can for now just enter the TodoList component invocation.</p>
+<p>In each case, replace</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1">\<span class="op">{{</span>outlet<span class="op">}}</span></a></code></pre></div>
+<p>with</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">&lt;TodoList</span> <span class="kw">/&gt;</span></a></code></pre></div>
+<p>So at this point, if you try the app again and visit any of the three routes</p>
+<p><code>localhost:4200 localhost:4200/active localhost:4200/completed</code></p>
+<p>you’ll see exactly the same thing. At each URL, the template that corresponds to the specific path (“Active”, “Completed”, or “Index”), will render the <code>&lt;TodoList /&gt;</code> component. The location in the page where <code>&lt;TodoList /&gt;</code> is rendered is determined by the <code>\{{ outlet }}</code> inside the parent route, which in this case is <code>application.hbs</code>. So we have our routes in place. Great!</p>
+<p>But now we need a way to differentiate between each of these routes, so that they show what they are supposed to show.</p>
+<p>First of all, return once more to our <code>todo-data.js</code> file. It already contains a getter that returns all todos, and a getter that returns incomplete todos. The getter we are missing is one to return just the completed todos. Add the following below the existing getters:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1">get <span class="at">completed</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="cf">return</span> <span class="kw">this</span>.<span class="va">todos</span>.<span class="at">filter</span>(todo <span class="kw">=&gt;</span> <span class="va">todo</span>.<span class="at">isCompleted</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-3" title="3"><span class="op">}</span></a></code></pre></div>
+<h2 id="models">Models</h2>
+<p>Now we need to add models to our route JavaScript files to allow us to easily return specific data sets to display in those models. <code>model</code> is a data loading lifecycle hook. For TodoMVC, the capabilities of model aren’t that important to us; you can find more information in the <a href="https://guides.emberjs.com/release/routing/specifying-a-routes-model/">Ember model guide</a> if you want to dig deeper. We also provide access to the service, like we did for the components.</p>
+<h3 id="the-index-route-model">The index route model</h3>
+<p>First of all, update <code>todomvc/app/routes/index.js</code> so it looks as follows:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="im">import</span> Route <span class="im">from</span> <span class="st">&#39;@ember/routing/route&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-2" title="2"><span class="im">import</span> <span class="op">{</span> inject <span class="im">as</span> service <span class="op">}</span> <span class="im">from</span> <span class="st">&#39;@ember/service&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-3" title="3"></a>
+<a class="sourceLine" id="cb8-4" title="4"><span class="im">export</span> <span class="im">default</span> <span class="kw">class</span> IndexRoute <span class="kw">extends</span> Route <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-5" title="5">  @<span class="at">service</span>(<span class="st">&#39;todo-data&#39;</span>) todos<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-6" title="6"></a>
+<a class="sourceLine" id="cb8-7" title="7">  <span class="at">model</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-8" title="8">    <span class="kw">let</span> todos <span class="op">=</span> <span class="kw">this</span>.<span class="at">todos</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-9" title="9"></a>
+<a class="sourceLine" id="cb8-10" title="10">    <span class="cf">return</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-11" title="11">      get <span class="at">allTodos</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-12" title="12">        <span class="cf">return</span> <span class="va">todos</span>.<span class="at">all</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-13" title="13">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb8-14" title="14">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb8-15" title="15">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb8-16" title="16"><span class="op">}</span></a></code></pre></div>
+<p>We can now update the <code>todomvc/app/templates/index.hbs</code> file so that when it includes the <code>&lt;TodoList /&gt;</code> component, it does so explicitly with the available model, calling its <code>allTodos()</code> getter to make sure all of the todos are shown.</p>
+<p>In this file, change</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="op">&lt;</span>TodoList /<span class="op">&gt;</span></a></code></pre></div>
+<p>To</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1"><span class="op">&lt;</span>TodoList @todos<span class="op">=</span>\<span class="op">{{</span> @<span class="va">model</span>.<span class="at">allTodos</span> <span class="op">}}</span>/&gt;</a></code></pre></div>
+<h3 id="the-completed-route-model">The completed route model</h3>
+<p>Now update <code>todomvc/app/routes/completed.js</code> so it looks as follows:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1"><span class="im">import</span> Route <span class="im">from</span> <span class="st">&#39;@ember/routing/route&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb11-2" title="2"><span class="im">import</span> <span class="op">{</span> inject <span class="im">as</span> service <span class="op">}</span> <span class="im">from</span> <span class="st">&#39;@ember/service&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb11-3" title="3"></a>
+<a class="sourceLine" id="cb11-4" title="4"><span class="im">export</span> <span class="im">default</span> <span class="kw">class</span> CompletedRoute <span class="kw">extends</span> Route <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-5" title="5">  @<span class="at">service</span>(<span class="st">&#39;todo-data&#39;</span>) todos<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-6" title="6"></a>
+<a class="sourceLine" id="cb11-7" title="7">  <span class="at">model</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-8" title="8">    <span class="kw">let</span> todos <span class="op">=</span> <span class="kw">this</span>.<span class="at">todos</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb11-9" title="9"></a>
+<a class="sourceLine" id="cb11-10" title="10">    <span class="cf">return</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-11" title="11">      get <span class="at">completedTodos</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-12" title="12">        <span class="cf">return</span> <span class="va">todos</span>.<span class="at">completed</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb11-13" title="13">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb11-14" title="14">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb11-15" title="15">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb11-16" title="16"><span class="op">}</span></a></code></pre></div>
+<p>We can now update the <code>todomvc/app/templates/completed.hbs</code> file so that when it includes the <code>&lt;TodoList /&gt;</code> component, it does so explicitly with the available model, calling its <code>completedTodos()</code> getter to make sure only the completed todos are shown.</p>
+<p>In this file, change</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb12-1" title="1"><span class="op">&lt;</span>TodoList /<span class="op">&gt;</span></a></code></pre></div>
+<p>To</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb13-1" title="1"><span class="op">&lt;</span>TodoList @todos<span class="op">=</span>\<span class="op">{{</span> @<span class="va">model</span>.<span class="at">completedTodos</span> <span class="op">}}</span>/&gt;</a></code></pre></div>
+<h3 id="the-active-route-model">The active route model</h3>
+<p>Finally for the routes, let’s sort out our active route. Start by updating <code>todomvc/app/routes/active.js</code> so it looks as follows:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb14-1" title="1"><span class="im">import</span> Route <span class="im">from</span> <span class="st">&#39;@ember/routing/route&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb14-2" title="2"><span class="im">import</span> <span class="op">{</span> inject <span class="im">as</span> service <span class="op">}</span> <span class="im">from</span> <span class="st">&#39;@ember/service&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb14-3" title="3"></a>
+<a class="sourceLine" id="cb14-4" title="4"><span class="im">export</span> <span class="im">default</span> <span class="kw">class</span> ActiveRoute <span class="kw">extends</span> Route <span class="op">{</span></a>
+<a class="sourceLine" id="cb14-5" title="5">  @<span class="at">service</span>(<span class="st">&#39;todo-data&#39;</span>) todos<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-6" title="6"></a>
+<a class="sourceLine" id="cb14-7" title="7">  <span class="at">model</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb14-8" title="8">    <span class="kw">let</span> todos <span class="op">=</span> <span class="kw">this</span>.<span class="at">todos</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb14-9" title="9"></a>
+<a class="sourceLine" id="cb14-10" title="10">    <span class="cf">return</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb14-11" title="11">      get <span class="at">activeTodos</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb14-12" title="12">        <span class="cf">return</span> <span class="va">todos</span>.<span class="at">incomplete</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb14-13" title="13">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb14-14" title="14">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb14-15" title="15">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb14-16" title="16"><span class="op">}</span></a></code></pre></div>
+<p>We can now update the <code>todomvc/app/templates/active.hbs</code> file so that when it includes the <code>&lt;TodoList /&gt;</code> component, it does so explicitly with the available model, calling its <code>activeTodos()</code> getter to make sure only the active (incomplete) todos are shown.</p>
+<p>In this file, change</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb15-1" title="1"><span class="op">&lt;</span>TodoList /<span class="op">&gt;</span></a></code></pre></div>
+<p>To</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb16-1" title="1"><span class="op">&lt;</span>TodoList @todos<span class="op">=</span>\<span class="op">{{</span> @<span class="va">model</span>.<span class="at">activeTodos</span> <span class="op">}}</span>/&gt;</a></code></pre></div>
+<p>Note that, in each of the route model hooks, we are returning an object with a getter instead of a static object, or more just the static list of todos (for example, <code>this.todos.completed</code>). The reason for this is that we want the template to have a dynamic reference to the todo list, and if we returned the list directly, the data would never re-compute, which would result in the navigations appearing to fail / not actually filter. By having a getter defined in the return object from the model data, the todos are re-looked-up so that our changes to the todo list are represented in the rendered list.</p>
+<h2 id="getting-the-footer-links-working">Getting the footer links working</h2>
+<p>So our route functionality is now all in place, but we can’t access them from our app. Let’s get the footer links active so that clicking on them goes to the desired routes.</p>
+<p>Go back to <code>todomvc/app/components/footer.hbs</code>, and find the following bit of markup:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb17-1" title="1"><span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;#&quot;</span><span class="kw">&gt;</span>All<span class="kw">&lt;/a&gt;</span></a>
+<a class="sourceLine" id="cb17-2" title="2"><span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;#&quot;</span><span class="kw">&gt;</span>Active<span class="kw">&lt;/a&gt;</span></a>
+<a class="sourceLine" id="cb17-3" title="3"><span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;#&quot;</span><span class="kw">&gt;</span>Completed<span class="kw">&lt;/a&gt;</span></a></code></pre></div>
+<p>Update it to</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb18-1" title="1"><span class="op">&lt;</span>LinkTo @route<span class="op">=</span><span class="st">&#39;index&#39;</span><span class="op">&gt;</span>All&lt;/LinkTo<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb18-2" title="2"><span class="op">&lt;</span>LinkTo @route<span class="op">=</span><span class="st">&#39;active&#39;</span><span class="op">&gt;</span>Active&lt;/LinkTo<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb18-3" title="3"><span class="op">&lt;</span>LinkTo @route<span class="op">=</span><span class="st">&#39;completed&#39;</span><span class="op">&gt;</span>Completed&lt;/LinkTo<span class="op">&gt;</span></a></code></pre></div>
+<p><code>&lt;LinkTo&gt;</code> is a built-in Ember component that handles all the state changes when navigating routes, as well as setting an “active” class on any link that matches the URL, in case there is a desire to style it differently from inactive links.</p>
+<h2 id="updating-the-todos-display-inside-todolist">Updating the todos display inside TodoList</h2>
+<p>One small final thing that we need to fix is that previously, inside <code>todomvc/app/components/todo-list.hbs</code>, we were accessing the todo-data service directly and looping over all todos, as shown here:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb19-1" title="1">\<span class="op">{{</span>#each <span class="kw">this</span>.<span class="va">todos</span>.<span class="at">all</span> <span class="im">as</span> <span class="op">|</span>todo<span class="op">|</span> <span class="op">}}</span></a></code></pre></div>
+<p>Since we now want to have our TodoList component show a filtered list, we’ll want to pass an argument to the TodoList component representing the “current list of todos”, as shown here:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb20-1" title="1">\<span class="op">{{</span>#each @todos <span class="im">as</span> <span class="op">|</span>todo<span class="op">|</span> <span class="op">}}</span></a></code></pre></div>
+<p>And that’s it for this tutorial! Your app should now have fully working links in the footer that display the “Index”/default, “Active”, and “Completed” routes.</p>
+<figure>
+<img src="todos-navigation.gif" alt="The todo list app, showing the routing working for all, active, and completed todos." /><figcaption>The todo list app, showing the routing working for all, active, and completed todos.</figcaption>
+</figure>
+<h2 id="summary">Summary</h2>
+<p>Congratulations! You’ve finished this tutorial!</p>
+<p>There is a lot more to be implemented before what we’ve covered here has parity with the original <a href="https://todomvc.com">TodoMVC app</a>, such as editing, deleting, and persisting todos across page reloads.</p>
+<p>To see our finished Ember implementation, checkout the finished app folder in the repository for <a href="https://github.com/NullVoxPopuli/ember-todomvc-tutorial/tree/master/steps/00-finished-todomvc/todomvc">the code of this tutorial</a> or see the <a href="https://nullvoxpopuli.github.io/ember-todomvc-tutorial/">live deployed version</a> here. Study the code to learn more about Ember, and also check out the next article, which provides links to more resources and some troubleshooting advice.</p>
+<p>{{PreviousMenuNext(“Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_conditional_footer”,“Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_resources”, “Learn/Tools_and_testing/Client-side_JavaScript_frameworks”)}}</p>
+<h2 id="in-this-module">In this module</h2>
+<ul>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Introduction">Introduction to client-side frameworks</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Main_features">Framework main features</a></li>
+<li><p>React</p>
+<ul>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/React_getting_started">Getting started with React</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/React_todo_list_beginning">Beginning our React todo list</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/React_components">Componentizing our React app</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/React_interactivity_events_state">React interactivity: Events and state</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/React_interactivity_filtering_conditional_rendering">React interactivity: Editing, filtering, conditional rendering</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/React_accessibility">Accessibility in React</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/React_resources">React resources</a></li>
+</ul></li>
+<li><p>Ember</p>
+<ul>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_getting_started">Getting started with Ember</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_structure_componentization">Ember app structure and componentization</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_interactivity_events_state">Ember interactivity: Events, classes and state</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_conditional_footer">Ember Interactivity: Footer functionality, conditional rendering</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_routing">Routing in Ember</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_resources">Ember resources and troubleshooting</a></li>
+</ul></li>
+<li><p>Vue</p>
+<ul>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_getting_started">Getting started with Vue</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_first_component">Creating our first Vue component</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_rendering_lists">Rendering a list of Vue components</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_methods_events_models">Adding a new todo form: Vue events, methods, and models</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_styling">Styling Vue components with CSS</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_computed_properties">Using Vue computed properties</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_conditional_rendering">Vue conditional rendering: editing existing todos</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_refs_focus_management">Focus management with Vue refs</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_resources">Vue resources</a></li>
+</ul></li>
+<li><p>Svelte</p>
+<ul>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_getting_started">Getting started with Svelte</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_Todo_list_beginning">Starting our Svelte Todo list app</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_variables_props">Dynamic behavior in Svelte: working with variables and props</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_components">Componentizing our Svelte app</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_reactivity_lifecycle_accessibility">Advanced Svelte: Reactivity, lifecycle, accessibility</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_stores">Working with Svelte stores</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_TypeScript">TypeScript support in Svelte</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_deployment_next">Deployment and next steps</a></li>
+</ul></li>
+<li><p>Angular</p>
+<ul>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Angular_getting_started">Getting started with Angular</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Angular_todo_list_beginning">Beginning our Angular todo list app</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Angular_styling">Styling our Angular app</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Angular_item_component">Creating an item component</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Angular_filtering">Filtering our to-do items</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Angular_building">Building Angular applications and further resources</a></li>
+</ul></li>
+</ul>

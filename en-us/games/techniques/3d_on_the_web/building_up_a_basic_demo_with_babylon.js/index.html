@@ -1,0 +1,140 @@
+<p>{{GamesSidebar}}</p>
+<p><a href="https://babylonjs.com/">Babylon.js</a> is one of the most popular 3D game engines used by developers. As with any other 3D library it provides built-in functions to help you implement common 3D functionality more quickly. In this article we’ll take you through the real basics of using Babylon.js, including setting up a development environment, structuring the necessary HTML, and writing the JavaScript code.</p>
+<p>We will try to create a simple demo first — a cube rendered on the screen. If you have already worked through our <em>Building up a basic demo</em> <a href="/en-US/docs/Games/Techniques/3D_on_the_web">series</a> with <a href="/en-US/docs/Games/Techniques/3D_on_the_web/Building_up_a_basic_demo_with_Three.js">Three.js</a>, <a href="/en-US/docs/Games/Techniques/3D_on_the_web/Building_up_a_basic_demo_with_PlayCanvas">PlayCanvas</a> or <a href="/en-US/docs/Games/Techniques/3D_on_the_web/Building_up_a_basic_demo_with_A-Frame">A-Frame</a> (or you are familiar with other 3D libraries) you’ll notice that Babylon.js works on similar concepts: camera, light and objects.</p>
+<h2 id="environment-setup">Environment setup</h2>
+<p>To start developing with Babylon.js, you don’t need much. You should start off by:</p>
+<ul>
+<li>Making sure you are using a modern browser with good <a href="/en-US/docs/Web/API/WebGL_API">WebGL</a> support, such as the latest Firefox or Chrome.</li>
+<li>Creating a directory to store your experiments in.</li>
+<li>Saving a copy of the <a href="https://cdn.babylonjs.com/2-3/babylon.js">latest Babylon.js engine</a> inside your directory.</li>
+<li>Opening the <a href="https://doc.babylonjs.com/">Babylon.js documentation</a> in a separate tab — it is useful to refer to.</li>
+</ul>
+<h2 id="html-structure">HTML structure</h2>
+<p>Here’s the HTML structure we will use:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" title="1"><span class="dt">&lt;!DOCTYPE </span>html<span class="dt">&gt;</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">&lt;html&gt;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">&lt;head&gt;</span></a>
+<a class="sourceLine" id="cb1-4" title="4">    <span class="kw">&lt;meta</span><span class="ot"> charset=</span><span class="st">&quot;utf-8&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb1-5" title="5">    <span class="kw">&lt;title&gt;</span>MDN Games: Babylon.js demo<span class="kw">&lt;/title&gt;</span></a>
+<a class="sourceLine" id="cb1-6" title="6">    <span class="kw">&lt;style&gt;</span></a>
+<a class="sourceLine" id="cb1-7" title="7">        html<span class="op">,</span>body<span class="op">,</span>canvas { <span class="kw">margin</span>: <span class="dv">0</span><span class="op">;</span> <span class="kw">padding</span>: <span class="dv">0</span><span class="op">;</span> <span class="kw">width</span>: <span class="dv">100</span><span class="dt">%</span><span class="op">;</span> <span class="kw">height</span>: <span class="dv">100</span><span class="dt">%</span><span class="op">;</span> <span class="kw">font-size</span>: <span class="dv">0</span><span class="op">;</span> }</a>
+<a class="sourceLine" id="cb1-8" title="8">    <span class="kw">&lt;/style&gt;</span></a>
+<a class="sourceLine" id="cb1-9" title="9"><span class="kw">&lt;/head&gt;</span></a>
+<a class="sourceLine" id="cb1-10" title="10"><span class="kw">&lt;body&gt;</span></a>
+<a class="sourceLine" id="cb1-11" title="11"><span class="kw">&lt;script</span><span class="ot"> src=</span><span class="st">&quot;babylon.js&quot;</span><span class="kw">&gt;&lt;/script&gt;</span></a>
+<a class="sourceLine" id="cb1-12" title="12"><span class="kw">&lt;canvas</span><span class="ot"> id=</span><span class="st">&quot;render-canvas&quot;</span><span class="kw">&gt;&lt;/canvas&gt;</span></a>
+<a class="sourceLine" id="cb1-13" title="13"><span class="kw">&lt;script&gt;</span></a>
+<a class="sourceLine" id="cb1-14" title="14">    <span class="kw">var</span> canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;render-canvas&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-15" title="15">    <span class="co">/* all our JavaScript code goes here */</span></a>
+<a class="sourceLine" id="cb1-16" title="16"><span class="kw">&lt;/script&gt;</span></a>
+<a class="sourceLine" id="cb1-17" title="17"><span class="kw">&lt;/body&gt;</span></a>
+<a class="sourceLine" id="cb1-18" title="18"><span class="kw">&lt;/html&gt;</span></a></code></pre></div>
+<p>It contains some basic information like the document {{htmlelement(“title”)}}, and some CSS to set the width and height of the {{htmlelement(“canvas”)}} element (which Babylon.js will use to render the content on) to fill the entire available viewport space. The first {{htmlelement(“script”)}} element includes the Babylon.js library in the page; we will write our example code in the second one. There is one helper variable already included, which will store a reference to the <code>&lt;canvas&gt;</code> element.</p>
+<p>Before reading on, copy this code to a new text file and save it in your working directory as <code>index.html</code>.</p>
+<h2 id="initialising-the-babylon.js-engine">Initialising the Babylon.js engine</h2>
+<p>We have to create a Babylon.js engine instance first (passing it the <code>&lt;canvas&gt;</code> element to render on) before we start developing our game. Add the following code to the bottom of your second <code>&lt;script&gt;</code> element:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> engine <span class="op">=</span> <span class="kw">new</span> <span class="va">BABYLON</span>.<span class="at">Engine</span>(canvas)<span class="op">;</span></a></code></pre></div>
+<p>The <code>BABYLON</code> global object contains all the Babylon.js functions available in the engine.</p>
+<h2 id="creating-a-scene">Creating a scene</h2>
+<p>A scene is the place where all the game content is displayed. While creating new objects in the demo, we will be adding them all to the scene to make them visible on the screen. Let’s create a scene by adding the following lines just below our previous code:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">var</span> scene <span class="op">=</span> <span class="kw">new</span> <span class="va">BABYLON</span>.<span class="at">Scene</span>(engine)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="va">scene</span>.<span class="at">clearColor</span> <span class="op">=</span> <span class="kw">new</span> <span class="va">BABYLON</span>.<span class="at">Color3</span>(<span class="fl">0.8</span><span class="op">,</span> <span class="fl">0.8</span><span class="op">,</span> <span class="fl">0.8</span>)<span class="op">;</span></a></code></pre></div>
+<p>Thus, the scene is created and the second line sets the background color to light gray.</p>
+<h2 id="creating-a-rendering-loop">Creating a rendering loop</h2>
+<p>To make the scene actually visible we have to render it. Add these lines at the end of the <code>&lt;script&gt;</code> element, just before the closing <code>&lt;/script&gt;</code>.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">var</span> renderLoop <span class="op">=</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">    <span class="va">scene</span>.<span class="at">render</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="op">};</span></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="va">engine</span>.<span class="at">runRenderLoop</span>(renderLoop)<span class="op">;</span></a></code></pre></div>
+<p>We’re using the engine’s <code>runRenderLoop()</code> method to execute the <code>renderLoop()</code> function repeatedly on every frame — the loop will continue to render indefinitely until told to stop.</p>
+<h2 id="creating-a-camera">Creating a camera</h2>
+<p>Now the setup code is in place we need to think about implementing the standard scene components: camera, light and objects. Let’s start with the camera — add this line to your code below the scene creation and the line where we defined the <code>clearColor</code>.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">var</span> camera <span class="op">=</span> <span class="kw">new</span> <span class="va">BABYLON</span>.<span class="at">FreeCamera</span>(<span class="st">&quot;camera&quot;</span><span class="op">,</span> <span class="kw">new</span> <span class="va">BABYLON</span>.<span class="at">Vector3</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">-10</span>)<span class="op">,</span> scene)<span class="op">;</span></a></code></pre></div>
+<p>There are many <a href="https://doc.babylonjs.com/tutorials/Cameras">cameras</a> available in Babylon.js; <code>FreeCamera</code> is the most basic and universal one. To initialize it you need to pass it three parameters: any name you want to use for it, the coordinates where you want it to be positioned in the 3D space, and the scene you want to add it to.</p>
+<blockquote>
+<p><strong>Note:</strong> You probably noticed the <code>BABYLON.Vector3()</code> method in use here — this defines a 3D position on the scene. Babylon.js is bundled with a complete math library for handling vectors, colors, matrices etc.</p>
+</blockquote>
+<h2 id="let-there-be-light">Let there be light</h2>
+<p>There are various <a href="https://doc.babylonjs.com/tutorials/Lights">light sources</a> available in Babylon.js. The most basic one is the <code>PointLight</code>, which works like a flashlight — shining a spotlight in a given direction. Add the following line below your camera definition:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">var</span> light <span class="op">=</span> <span class="kw">new</span> <span class="va">BABYLON</span>.<span class="at">PointLight</span>(<span class="st">&quot;light&quot;</span><span class="op">,</span> <span class="kw">new</span> <span class="va">BABYLON</span>.<span class="at">Vector3</span>(<span class="dv">10</span><span class="op">,</span> <span class="dv">10</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">,</span> scene)<span class="op">;</span></a></code></pre></div>
+<p>The parameters are very similar to the previously defined camera: the name of the light, a position in 3D space and the scene to which the light is added.</p>
+<h2 id="geometry">Geometry</h2>
+<p>Now the scene is properly rendering we can start adding 3D shapes to it. To speed up development Babylon.js provides a bunch of <a href="https://doc.babylonjs.com/tutorials/Discover_Basic_Elements">predefined primitives</a> that you can use to create shapes instantly in a single line of code. There are cubes, spheres, cylinders and more complicated shapes available. Let’s start by defining the geometry for a box shape — add the following new code below your previous additions:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">var</span> box <span class="op">=</span> <span class="va">BABYLON</span>.<span class="va">Mesh</span>.<span class="at">CreateBox</span>(<span class="st">&quot;box&quot;</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> scene)<span class="op">;</span></a></code></pre></div>
+<p>A mesh is a way the engine creates geometric shapes, so material can be easily applied to them later on. In this case we’re creating a box using the <code>Mesh.CreateBox</code> method with it’s own name, a size of 2, and a declaration of which scene we want it added to.</p>
+<blockquote>
+<p><strong>Note:</strong> The size or position values (e.g. for the box size) are unitless, and can basically be anything you deem suitable for your scene — millimeters, meters, feet, or miles — it’s up to you.</p>
+</blockquote>
+<p>If you save and refresh now, your object will look like a square, because it’s facing the camera. The good thing about objects is that we can move them on the scene however we want, for example rotating and scaling. Let’s apply a little bit of rotation to the box, so we can see more than one face — again, add these lines below the previous one:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="va">box</span>.<span class="va">rotation</span>.<span class="at">x</span> <span class="op">=</span> <span class="fl">-0.2</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-2" title="2"><span class="va">box</span>.<span class="va">rotation</span>.<span class="at">y</span> <span class="op">=</span> <span class="fl">-0.4</span><span class="op">;</span></a></code></pre></div>
+<p>The box looks black at the moment, because we haven’t defined any material to apply to its faces. Let’s deal with that next.</p>
+<h2 id="material">Material</h2>
+<p>Material is that thing covering the object — the colors or texture on its surface. In our case we will use a simple blue color to paint our box. There are many types of <a href="https://doc.babylonjs.com/tutorials/Materials">materials</a> that can be used, but for now the standard one should be enough for us. Add these lines below the previous ones:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">var</span> boxMaterial <span class="op">=</span> <span class="kw">new</span> <span class="va">BABYLON</span>.<span class="at">StandardMaterial</span>(<span class="st">&quot;material&quot;</span><span class="op">,</span> scene)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-2" title="2"><span class="va">boxMaterial</span>.<span class="at">emissiveColor</span> <span class="op">=</span> <span class="kw">new</span> <span class="va">BABYLON</span>.<span class="at">Color3</span>(<span class="dv">0</span><span class="op">,</span> <span class="fl">0.58</span><span class="op">,</span> <span class="fl">0.86</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-3" title="3"><span class="va">box</span>.<span class="at">material</span> <span class="op">=</span> boxMaterial<span class="op">;</span></a></code></pre></div>
+<p>The <code>StandardMaterial</code> takes two parameters: a name, and the scene you want to add it to. The second line defines an <code>emissiveColor</code> — the one that will be visible for us. We can use the built-in <code>Color3</code> function to define it. The third line assigns the newly created material to our box.</p>
+<p>Congratulations, you’ve created your first object in a 3D environment using Babylon.js! It was easier than you thought, right? Here’s how it should look:</p>
+<figure>
+<img src="cube.png" alt="Blue Babylon.js 3D box on the gray background." /><figcaption>Blue Babylon.js 3D box on the gray background.</figcaption>
+</figure>
+<p>And here’s the code we have created so far:</p>
+<p>{{JSFiddleEmbed(“https://jsfiddle.net/end3r/9zoeo5sy/”,"“,”350")}}</p>
+<p>You can also <a href="https://github.com/end3r/MDN-Games-3D/blob/gh-pages/Babylon.js/cube.html">check it out on GitHub</a>.</p>
+<h2 id="more-shapes">More shapes</h2>
+<p>We have a box on the scene already; now let’s try adding more shapes.</p>
+<h3 id="torus">Torus</h3>
+<p>Let’s try adding a torus — add the following lines below the previous code:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">var</span> torus <span class="op">=</span> <span class="va">BABYLON</span>.<span class="va">Mesh</span>.<span class="at">CreateTorus</span>(<span class="st">&quot;torus&quot;</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="fl">0.5</span><span class="op">,</span> <span class="dv">15</span><span class="op">,</span> scene)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-2" title="2"><span class="va">torus</span>.<span class="va">position</span>.<span class="at">x</span> <span class="op">=</span> <span class="dv">-5</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb10-3" title="3"><span class="va">torus</span>.<span class="va">rotation</span>.<span class="at">x</span> <span class="op">=</span> <span class="fl">1.5</span><span class="op">;</span></a></code></pre></div>
+<p>This will create a torus and add it to the scene; the parameters are: name, diameter, thickness, tessellation (number of segments) and the scene to add it to. We also position it a bit to the left and rotate it on the <code>x</code> axis so it can be seen better. Now let’s add a material:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1"><span class="kw">var</span> torusMaterial <span class="op">=</span> <span class="kw">new</span> <span class="va">BABYLON</span>.<span class="at">StandardMaterial</span>(<span class="st">&quot;material&quot;</span><span class="op">,</span> scene)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-2" title="2"><span class="va">torusMaterial</span>.<span class="at">emissiveColor</span> <span class="op">=</span> <span class="kw">new</span> <span class="va">BABYLON</span>.<span class="at">Color3</span>(<span class="fl">0.4</span><span class="op">,</span> <span class="fl">0.4</span><span class="op">,</span> <span class="fl">0.4</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-3" title="3"><span class="va">torus</span>.<span class="at">material</span> <span class="op">=</span> torusMaterial<span class="op">;</span></a></code></pre></div>
+<p>It looks similar to the box element — we’re creating the standard material, giving it a grayish color and assigning it to the torus.</p>
+<h3 id="cylinder">Cylinder</h3>
+<p>Creating a cylinder and its material is done in almost exactly the same way as we did for the torus. Add the following code, again at the bottom of your script:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb12-1" title="1"><span class="kw">var</span> cylinder <span class="op">=</span> <span class="va">BABYLON</span>.<span class="va">Mesh</span>.<span class="at">CreateCylinder</span>(<span class="st">&quot;cylinder&quot;</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">12</span><span class="op">,</span> <span class="dv">1</span><span class="op">,</span> scene)<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-2" title="2"><span class="va">cylinder</span>.<span class="va">position</span>.<span class="at">x</span> <span class="op">=</span> <span class="dv">5</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-3" title="3"><span class="va">cylinder</span>.<span class="va">rotation</span>.<span class="at">x</span> <span class="op">=</span> <span class="fl">-0.2</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-4" title="4"><span class="kw">var</span> cylinderMaterial <span class="op">=</span> <span class="kw">new</span> <span class="va">BABYLON</span>.<span class="at">StandardMaterial</span>(<span class="st">&quot;material&quot;</span><span class="op">,</span> scene)<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-5" title="5"><span class="va">cylinderMaterial</span>.<span class="at">emissiveColor</span> <span class="op">=</span> <span class="kw">new</span> <span class="va">BABYLON</span>.<span class="at">Color3</span>(<span class="dv">1</span><span class="op">,</span> <span class="fl">0.58</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-6" title="6"><span class="va">cylinder</span>.<span class="at">material</span> <span class="op">=</span> cylinderMaterial<span class="op">;</span></a></code></pre></div>
+<p>The cylinder parameters are: name, height, diameter at the top, diameter at the bottom, tessellation, height subdivisions and the scene to add it to. It is then positioned to the right of the cube, rotated a bit so its 3D shape can be seen, and given a yellow material.</p>
+<p>Here’s how the scene should look right now:</p>
+<figure>
+<img src="shapes.png" alt="Light gray torus, blue box and yellow cylinder created with Babylon.js on the gray background." /><figcaption>Light gray torus, blue box and yellow cylinder created with Babylon.js on the gray background.</figcaption>
+</figure>
+<p>This works, but it is a bit boring. In a game something is usually happening — we can see animations and such — so let’s try to breathe a little life into those shapes by animating them.</p>
+<h2 id="animation">Animation</h2>
+<p>We already used <code>position</code> and <code>rotation</code> to adjust the position of the shapes; we could also scale them. To show actual animation, we need to make changes to these values inside the rendering loop at the end of our code, so they are updated on every frame. Define a helper variable — <code>t</code> — that we will use for animations, just before the <code>renderLoop</code>, and decrement it on every frame inside the loop, like this:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb13-1" title="1"><span class="kw">var</span> t <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb13-2" title="2"><span class="kw">var</span> renderLoop <span class="op">=</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-3" title="3">    <span class="va">scene</span>.<span class="at">render</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-4" title="4">    t <span class="op">-=</span> <span class="fl">0.01</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb13-5" title="5">    <span class="co">// animation code goes here</span></a>
+<a class="sourceLine" id="cb13-6" title="6"><span class="op">};</span></a>
+<a class="sourceLine" id="cb13-7" title="7"><span class="va">engine</span>.<span class="at">runRenderLoop</span>(renderLoop)<span class="op">;</span></a></code></pre></div>
+<p>The <code>t</code> variable will be incremented on every rendered frame.</p>
+<h3 id="rotation">Rotation</h3>
+<p>Applying rotation is as easy as adding this line at the end of the <code>renderLoop</code> function:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb14-1" title="1"><span class="va">box</span>.<span class="va">rotation</span>.<span class="at">y</span> <span class="op">=</span> t<span class="op">*</span><span class="dv">2</span><span class="op">;</span></a></code></pre></div>
+<p>It will rotate the box along the <code>y</code> axis.</p>
+<h3 id="scaling">Scaling</h3>
+<p>Add this line below the previous one to scale the torus:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb15-1" title="1"><span class="va">torus</span>.<span class="va">scaling</span>.<span class="at">z</span> <span class="op">=</span> <span class="va">Math</span>.<span class="at">abs</span>(<span class="va">Math</span>.<span class="at">sin</span>(t<span class="op">*</span><span class="dv">2</span>))<span class="op">+</span><span class="fl">0.5</span><span class="op">;</span></a></code></pre></div>
+<p>There’s a little bit of adjustment made to make the animation look and feel nice. You can experiment with the values and see how it affects the animation.</p>
+<h3 id="moving">Moving</h3>
+<p>By changing the position of the cylinder directly we can move it on the scene — add this line below the previous one:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb16-1" title="1"><span class="va">cylinder</span>.<span class="va">position</span>.<span class="at">y</span> <span class="op">=</span> <span class="va">Math</span>.<span class="at">sin</span>(t<span class="op">*</span><span class="dv">3</span>)<span class="op">;</span></a></code></pre></div>
+<p>The cylinder will float up and down on the <code>y</code> axis thanks to the <code>Math.sin()</code> function.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>Here’s the final code listing, along with a viewable live example:</p>
+<p>{{JSFiddleEmbed(“https://jsfiddle.net/end3r/8r66fdvp/”,"“,”350")}}</p>
+<p>You can also <a href="https://github.com/end3r/MDN-Games-3D/blob/gh-pages/Babylon.js/shapes.html">see it on GitHub</a> and <a href="https://github.com/end3r/MDN-Games-3D/">fork the repository</a> if you want to play with it yourself locally. Now you know the basics of Babylon.js engine; happy experimentation!</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="http://learningbabylonjs.com/">Learning Babylon.js book</a></li>
+</ul>

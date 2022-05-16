@@ -1,0 +1,300 @@
+<p>{{LearnSidebar}}{{PreviousMenuNext(“Learn/Tools_and_testing/Cross_browser_testing/Accessibility”,“Learn/Tools_and_testing/Cross_browser_testing/Automated_testing”, “Learn/Tools_and_testing/Cross_browser_testing”)}}</p>
+<p>Feature detection involves working out whether a browser supports a certain block of code, and running different code depending on whether it does (or doesn’t), so that the browser can always provide a working experience rather than crashing/erroring in some browsers. This article details how to write your own simple feature detection, how to use a library to speed up implementation, and native features for feature detection such as <code>@supports</code>.</p>
+<table>
+<tbody>
+<tr>
+<th scope="row">
+Prerequisites:
+</th>
+<td>
+Familiarity with the core <a href="/en-US/docs/Learn/HTML">HTML</a>, <a href="/en-US/docs/Learn/CSS">CSS</a>, and <a href="/en-US/docs/Learn/JavaScript">JavaScript</a> languages; an idea of the high-level <a
+          href="/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/Introduction"
+          >principles of cross-browser testing</a
+        >.
+</td>
+</tr>
+<tr>
+<th scope="row">
+Objective:
+</th>
+<td>
+To understand what the concept of feature detection is, and be able to implement suitable solutions in CSS and JavaScript.
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-concept-of-feature-detection">The concept of feature detection</h2>
+<p>The idea behind feature detection is that you can run a test to determine whether a feature is supported in the current browser, and then conditionally run code to provide an acceptable experience both in browsers that <em>do</em> support the feature, and browsers that <em>don’t</em>. If you don’t do this, browsers that don’t support the features you are using in your code won’t display your sites properly and will just fail, creating a bad user experience.</p>
+<p>Let’s recap and look at the example we touched on in our <a href="/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/JavaScript#feature_detection">Handling common JavaScript problems</a> — the <a href="/en-US/docs/Web/API/Geolocation_API">Geolocation API</a> (which exposes available location data for the device the web browser is running on) has the main entry point for its use, a <code>geolocation</code> property available on the global <a href="/en-US/docs/Web/API/Navigator">Navigator</a> object. Therefore, you can detect whether the browser supports geolocation or not by using something like the following:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="cf">if</span> (<span class="st">&quot;geolocation&quot;</span> <span class="kw">in</span> navigator) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="va">navigator</span>.<span class="va">geolocation</span>.<span class="at">getCurrentPosition</span>(<span class="kw">function</span>(position) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-3" title="3">    <span class="co">// show the location on a map, perhaps using the Google Maps API</span></a>
+<a class="sourceLine" id="cb1-4" title="4">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-6" title="6">  <span class="co">// Give the user a choice of static maps instead perhaps</span></a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="op">}</span></a></code></pre></div>
+<p>It is probably better to use an established feature detection library however, rather than writing your own all the time. Modernizr is the industry standard for feature detection tests, and we’ll look at that later on.</p>
+<p>Before we move on, we’d like to say one thing upfront — don’t confuse feature detection with <strong>browser sniffing</strong> (detecting what specific browser is accessing the site) — this is a terrible practice that should be discouraged at all costs. See <a href="/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/JavaScript#using_bad_browser_sniffing_code">Using bad browser sniffing code</a> for more details.</p>
+<h2 id="writing-your-own-feature-detection-tests">Writing your own feature detection tests</h2>
+<p>In this section, we’ll look at implementing your own feature detection tests, in both CSS and JavaScript.</p>
+<h3 id="css">CSS</h3>
+<p>You can write tests for CSS features by testing for the existence of <em><a href="/en-US/docs/Web/API/HTMLElement/style">element.style.property</a></em> (e.g. <code>paragraph.style.transform</code>) in JavaScript.</p>
+<p>A classic example might be to test for <a href="/en-US/docs/Learn/CSS/CSS_layout/Flexbox">Flexbox</a> support in a browser; for browsers that support the newest Flexbox spec, we could use a flexible and robust flex layout. For browsers that don’t, we could use a floated layout that works OK, although it is slightly more brittle and hacky, and not as cool-looking.</p>
+<p>Let’s implement something that demonstrates this, although we’ll keep it simple for now.</p>
+<ol type="1">
+<li>Start by making local copies of our <a href="https://github.com/mdn/learning-area/blob/master/tools-testing/cross-browser-testing/feature-detection/css-feature-detect.html"><code>css-feature-detect.html</code></a>, <a href="https://github.com/mdn/learning-area/blob/master/tools-testing/cross-browser-testing/feature-detection/flex-layout.css"><code>flex-layout.css</code></a>, <a href="https://github.com/mdn/learning-area/blob/master/tools-testing/cross-browser-testing/feature-detection/float-layout.css"><code>float-layout.css</code></a>, and <a href="https://github.com/mdn/learning-area/blob/master/tools-testing/cross-browser-testing/feature-detection/basic-styling.css"><code>basic-styling.css</code></a> files. Save them in a new directory.</li>
+<li><p>We will add the HTML5 Shiv to our example too so that the HTML5 semantic elements will style properly in older versions of IE. Download the latest version (see <a href="https://github.com/aFarkas/html5shiv#manual-installation">Manual installation</a>), unzip the ZIP file, copy the <code>html5shiv-printshiv.min.js</code> and <code>html5shiv.min.js</code> files into your example directory, and link to one of the files by putting the following under your {{htmlelement(“title”)}} element:</p>
+<pre><code>&lt;script src=&quot;html5shiv.min.js&quot;&gt;&lt;/script&gt;</code></pre></li>
+<li>Have a look at your example CSS files — you’ll see that <code>basic-styling.css</code> handles all the styling that we want to give to every browser, whereas the other two CSS files contain the CSS we want to selectively apply to browser depending on their support levels. You can look at the different effects these two files have by manually changing the CSS file referred to by the second {{htmlelement(“link”)}} element, but let’s instead implement some JavaScript to automatically swap them as needed.</li>
+<li>First, remove the contents of the second <code>&lt;link&gt;</code> element’s <code>href</code> attribute. We will fill this in dynamically later on.</li>
+<li>Next, add a <code>&lt;script&gt;&lt;/script&gt;</code> element at the bottom of your body (just before the closing <code>&lt;/body&gt;</code> tag).</li>
+<li><p>Give it the following contents:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">const</span> conditional <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;.conditional&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">const</span> testElem <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;div&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="cf">if</span> (<span class="va">testElem</span>.<span class="va">style</span>.<span class="at">flex</span> <span class="op">!==</span> <span class="kw">undefined</span> <span class="op">&amp;&amp;</span> <span class="va">testElem</span>.<span class="va">style</span>.<span class="at">flexFlow</span> <span class="op">!==</span> <span class="kw">undefined</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="va">conditional</span>.<span class="at">setAttribute</span>(<span class="st">&#39;href&#39;</span><span class="op">,</span> <span class="st">&#39;flex-layout.css&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="va">conditional</span>.<span class="at">setAttribute</span>(<span class="st">&#39;href&#39;</span><span class="op">,</span> <span class="st">&#39;float-layout.css&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7"><span class="op">}</span></a></code></pre></div></li>
+</ol>
+<p>Here we are grabbing a reference to the second <code>&lt;link&gt;</code> element, and creating a <code>&lt;div&gt;</code> element as part of our test. In our conditional statement, we test that the {{cssxref(“flex”)}} and {{cssxref(“flex-flow”)}} properties exist in the browser. Note how the JavaScript representations of those properties that are stored inside the {{domxref(“HTMLElement.style”)}} object use lower camel case, not hyphens, to separate the words.</p>
+<blockquote>
+<p><strong>Note:</strong> If you have trouble getting this to work, you can compare it to our <a href="https://github.com/mdn/learning-area/blob/master/tools-testing/cross-browser-testing/feature-detection/css-feature-detect-finished.html">css-feature-detect-finished.html</a> code (see also the <a href="https://mdn.github.io/learning-area/tools-testing/cross-browser-testing/feature-detection/css-feature-detect-finished.html">live version</a>).</p>
+</blockquote>
+<p>When you save everything and try out your example, you should see the flexbox layout applied to the page if the browser supports modern flexbox, and the float layout if not.</p>
+<blockquote>
+<p><strong>Note:</strong> Often such an approach is overkill for a minor feature detection problem — you can often get away with using multiple vendor prefixes and fallback properties, as described in <a href="/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/HTML_and_CSS#css_fallback_behavior">CSS fallback behavior</a> and <a href="/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/HTML_and_CSS#handling_css_prefixes">Handling CSS prefixes</a>.</p>
+</blockquote>
+<h4 id="supports"><span class="citation" data-cites="supports">@supports</span></h4>
+<p>In recent times, CSS has had its own native feature detection mechanism introduced — the {{cssxref(“<span class="citation" data-cites="supports">@supports</span>”)}} at-rule. This works in a similar manner to <a href="/en-US/docs/Web/CSS/Media_Queries">media queries</a> (see also <a href="/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/HTML_and_CSS#responsive_design_problems">Responsive design problems</a>) — except that instead of selectively applying CSS depending on a media feature like a resolution, screen width or aspect ratio, it selectively applies CSS depending on whether a CSS feature is supported.</p>
+<p>For example, we could rewrite our previous example to use <code>@supports</code> — see <a href="https://github.com/mdn/learning-area/blob/master/tools-testing/cross-browser-testing/feature-detection/supports-feature-detect.html"><code>supports-feature-detect.html</code></a> and <a href="https://github.com/mdn/learning-area/blob/master/tools-testing/cross-browser-testing/feature-detection/supports-styling.css"><code>supports-styling.css</code></a>. If you look at the latter, you’ll see a couple of <code>@supports</code> blocks, for example:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb4-1" title="1"><span class="im">@supports</span> (<span class="kw">flex-flow</span>: row) <span class="kw">and</span> (<span class="kw">flex</span>: <span class="dv">1</span>) {</a>
+<a class="sourceLine" id="cb4-2" title="2"></a>
+<a class="sourceLine" id="cb4-3" title="3">  main {</a>
+<a class="sourceLine" id="cb4-4" title="4">    <span class="kw">display</span>: flex<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5">  }</a>
+<a class="sourceLine" id="cb4-6" title="6"></a>
+<a class="sourceLine" id="cb4-7" title="7">  main div {</a>
+<a class="sourceLine" id="cb4-8" title="8">    <span class="kw">padding-right</span>: <span class="dv">4</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-9" title="9">    <span class="kw">flex</span>: <span class="dv">1</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-10" title="10">  }</a>
+<a class="sourceLine" id="cb4-11" title="11"></a>
+<a class="sourceLine" id="cb4-12" title="12">  main div<span class="in">:last-child</span> {</a>
+<a class="sourceLine" id="cb4-13" title="13">    <span class="kw">padding-right</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-14" title="14">  }</a>
+<a class="sourceLine" id="cb4-15" title="15"></a>
+<a class="sourceLine" id="cb4-16" title="16">}</a></code></pre></div>
+<p>This at-rule block applies the CSS rule within only if the current browser supports both the <code>flex-flow: row</code> and <code>flex: 1</code> declarations. For each condition to work, you need to include a complete declaration (not just a property name) and NOT include the semi-colon on the end.</p>
+<p><code>@supports</code> also has <code>OR</code> and <code>NOT</code> logic available — the other block applies the float layout if the flexbox properties are not available:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb5-1" title="1"><span class="im">@supports</span> <span class="kw">not</span> (<span class="kw">flex-flow</span>: row) <span class="kw">and</span> (<span class="kw">flex</span>: <span class="dv">1</span>) {</a>
+<a class="sourceLine" id="cb5-2" title="2"></a>
+<a class="sourceLine" id="cb5-3" title="3">  <span class="co">/* rules in here */</span></a>
+<a class="sourceLine" id="cb5-4" title="4"></a>
+<a class="sourceLine" id="cb5-5" title="5">}</a></code></pre></div>
+<p>This may look a lot more convenient than the previous example — we can do all of our feature detection in CSS, no JavaScript required, and we can handle all the logic in a single CSS file, cutting down on HTTP requests. the problem here is browser support — <code>@supports</code> is not supported at all in IE, and only supported in very recent versions of Safari/iOS WebKit (9+/9.2+), whereas the JavaScript version should work in much older browsers (probably back to IE8 or 9, although older versions of IE will have additional problems, such as not supporting {{domxref(“Document.querySelector”)}}, and having a messed up box model).</p>
+<h3 id="javascript">JavaScript</h3>
+<p>We already saw an example of a JavaScript feature detection test earlier on. Generally, such tests are done via one of the following common patterns:</p>
+<table class="standard-table">
+<caption>
+Summary of JavaScript feature detection techniques
+</caption>
+<thead>
+<tr>
+<th scope="col">
+Feature detection type
+</th>
+<th scope="col">
+Explanation
+</th>
+<th scope="col">
+Example
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<em>If member in object</em>
+</td>
+<td>
+Check whether a certain method or property (typically an entry point into using the API or other feature you are detecting for) exists in its parent Object.
+</td>
+<td>
+<p>
+<code>if(“geolocation” in navigator) { … }</code>
+</p>
+</td>
+</tr>
+<tr>
+<td>
+<em>Property on element</em>
+</td>
+<td>
+Create an element in memory using {{domxref(“Document.createElement()”)}} and then check if a property exists on it. The example shown is a way of detecting <a href="/en-US/docs/Web/API/Canvas_API">HTML5 Canvas</a> support.
+</td>
+<td>
+<code
+          >function supports_canvas() {<br />return !!document.createElement(‘canvas’).getContext;<br />}<br /><br />if(supports_canvas()) { … }</code
+        >
+</td>
+</tr>
+<tr>
+<td>
+<em>Method on element return value</em>
+</td>
+<td>
+Create an element in memory using {{domxref(“Document.createElement()”)}} and then check if a method exists on it. If it does, check what value it returns.
+</td>
+<td>
+See <a href="https://diveinto.html5doctor.com/detect.html#video-formats"
+          >Dive Into HTML5 Video Formats detection</a
+        > test.
+</td>
+</tr>
+<tr>
+<td>
+<em>Property on element retains value</em>
+</td>
+<td>
+Create an element in memory using {{domxref(“Document.createElement()”)}}, set a property to a certain value, then check to see if the value is retained.
+</td>
+<td>
+See <a href="https://diveinto.html5doctor.com/detect.html#input-types"
+          >Dive into HTML5 <code>&lt;input&gt;</code> types detection</a
+        > test.
+</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Note:</strong> The double <code>NOT</code> in the above example (<code>!!</code>) is a way to force a return value to become a “proper” boolean value, rather than a {{glossary(“Truthy”)}}/{{glossary(“Falsy”)}} value that may skew the results.</p>
+</blockquote>
+<p>The <a href="https://diveinto.html5doctor.com/detect.html">Dive into HTML5 Detecting HTML5 Features</a> page has a lot more useful feature detection tests besides the ones listed above, and you can generally find a feature detection test for most things by searching for “detect support for YOUR-FEATURE-HERE” in your favorite search engine. Bear in mind though that some features, however, are known to be undetectable — see Modernizr’s list of <a href="https://github.com/Modernizr/Modernizr/wiki/Undetectables">Undetectables</a>.</p>
+<h4 id="matchmedia">matchMedia</h4>
+<p>We also wanted to mention the {{domxref(“Window.matchMedia”)}} JavaScript feature at this point too. This is a property that allows you to run media query tests inside JavaScript. It looks like this:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="cf">if</span> (<span class="va">window</span>.<span class="at">matchMedia</span>(<span class="st">&quot;(max-width: 480px)&quot;</span>).<span class="at">matches</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="co">// run JavaScript in here.</span></a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="op">}</span></a></code></pre></div>
+<p>As an example, our <a href="https://github.com/chrisdavidmills/snapshot">Snapshot</a> demo makes use of it to selectively apply the Brick JavaScript library and use it to handle the UI layout, but only for the small screen layout (480px wide or less). We first use the <code>media</code> attribute to only apply the Brick CSS to the page if the page width is 480px or less:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb7-1" title="1">&lt;link href=&quot;dist/brick<span class="fu">.css</span>&quot; type=&quot;text/css&quot; rel=&quot;stylesheet&quot; media=&quot;all and (max-width<span class="in">: 480px)&quot;&gt;</span></a></code></pre></div>
+<p>We then use <code>matchMedia()</code> in the JavaScript several times, to only run Brick navigation functions if we are on the small screen layout (in wider screen layouts, everything can be seen at once, so we don’t need to navigate between different views).</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="cf">if</span> (<span class="va">window</span>.<span class="at">matchMedia</span>(<span class="st">&quot;(max-width: 480px)&quot;</span>).<span class="at">matches</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-2" title="2">  <span class="va">deck</span>.<span class="at">shuffleTo</span>(<span class="dv">1</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-3" title="3"><span class="op">}</span></a></code></pre></div>
+<h2 id="using-modernizr-to-implement-feature-detection">Using Modernizr to implement feature detection</h2>
+<p>It is possible to implement your own feature detection tests using techniques like the ones detailed above. You might as well use a dedicated feature detection library however, as it makes things much easier. The mother of all feature detection libraries is <a href="https://modernizr.com/">Modernizr</a>, and it can detect just about everything you’ll ever need. Let’s look at how to use it now.</p>
+<p>When you are experimenting with Modernizr you might as well use the development build, which includes every possible feature detection test. Download this now by:</p>
+<ol type="1">
+<li>Clicking on the <a href="https://modernizr.com/download?do_not_use_in_production">Development build</a> link.</li>
+<li>Clicking the big pink <em>Build</em> button on the page that comes up.</li>
+<li>Clicking the top <em>Download</em> link in the dialog box that appears.</li>
+</ol>
+<p>Save it somewhere sensible, like the directory you’ve been creating your other examples for in this article.</p>
+<p>When you are using Modernizr in production, you can go to the <a href="https://modernizr.com/download">Download page</a> you’ve already visited and click the plus buttons for only the features you need feature detects for. Then when you click the <em>Build</em> button, you’ll download a custom build containing only those feature detects, making for a much smaller file size.</p>
+<h3 id="css-1">CSS</h3>
+<p>Let’s have a look at how Modernizr works in terms of selectively applying CSS.</p>
+<ol type="1">
+<li>First, make a copy of <a href="https://github.com/mdn/learning-area/blob/master/tools-testing/cross-browser-testing/feature-detection/supports-feature-detect.html"><code>supports-feature-detect.html</code></a> and <a href="https://github.com/mdn/learning-area/blob/master/tools-testing/cross-browser-testing/feature-detection/supports-styling.css"><code>supports-styling.css</code></a>. Save them as <code>modernizr-css.html</code> and <code>modernizr-css.css</code>.</li>
+<li><p>Update your {{htmlelement(“link”)}} element in your HTML so it points to the correct CSS file (you should also update your {{htmlelement(“title”)}} element to something more suitable!):</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">&lt;link</span><span class="ot"> href=</span><span class="st">&quot;modernizr-css.css&quot;</span><span class="ot"> rel=</span><span class="st">&quot;stylesheet&quot;</span><span class="kw">&gt;</span></a></code></pre></div></li>
+<li><p>Above this <code>&lt;link&gt;</code> element, add a {{htmlelement(“script”)}} element to apply the Modernizr library to the page, as shown below. This needs to be applied to the page before any CSS (or JavaScript) that might make use of it.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">&lt;script</span><span class="ot"> src=</span><span class="st">&quot;modernizr-custom.js&quot;</span><span class="kw">&gt;&lt;/script&gt;</span></a></code></pre></div></li>
+<li><p>Now edit your opening <code>&lt;html&gt;</code> tag, so that it looks like this:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb11-1" title="1"><span class="kw">&lt;html</span><span class="ot"> class=</span><span class="st">&quot;no-js&quot;</span><span class="kw">&gt;</span></a></code></pre></div></li>
+</ol>
+<p>At this point, try loading your page, and you’ll get an idea of how Modernizr works for CSS features. If you look at the DOM inspector of your browser’s developer tools, you’ll see that Modernizr has updated your <code>&lt;html&gt;</code> <code>class</code> value like so:</p>
+<p>&lt;html class="js no-htmlimports sizes flash transferables applicationcache blobconstructor blob-constructor cookies cors …AND LOADS MORE VALUES!&gt;</p>
+<p>It now contains a large number of classes that indicate the support status of different technology features. As an example, if the browser didn’t support flexbox at all, <code>&lt;html&gt;</code> would be given a class name of <code>no-flexbox</code>. If it did support modern flexbox, it would get a class name of <code>flexbox</code>. If you search through the class list, you’ll also see others relating to flexbox, like:</p>
+<ul>
+<li><code>flexboxlegacy</code> for the old flexbox spec (2009).</li>
+<li><code>flexboxtweener</code> for 2011 in between syntax supported by IE10.</li>
+<li><code>flexwrap</code> for the {{cssxref(“flex-wrap”)}} property, which isn’t present in some implementations.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> You can find a list of what all the class names mean — see <a href="https://modernizr.com/docs#features">Features detected by Modernizr</a>.</p>
+</blockquote>
+<p>Moving on, let’s update our CSS to use Modernizr rather than <code>@supports</code>. Go into <code>modernizr-css.css</code>, and replace the two <code>@supports</code> blocks with the following:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb12-1" title="1"><span class="co">/* Properties for browsers with modern flexbox */</span></a>
+<a class="sourceLine" id="cb12-2" title="2"></a>
+<a class="sourceLine" id="cb12-3" title="3"><span class="fu">.flexbox</span> main {</a>
+<a class="sourceLine" id="cb12-4" title="4">  <span class="kw">display</span>: flex<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-5" title="5">}</a>
+<a class="sourceLine" id="cb12-6" title="6"></a>
+<a class="sourceLine" id="cb12-7" title="7"><span class="fu">.flexbox</span> main div {</a>
+<a class="sourceLine" id="cb12-8" title="8">  <span class="kw">padding-right</span>: <span class="dv">4</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-9" title="9">  <span class="kw">flex</span>: <span class="dv">1</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-10" title="10">}</a>
+<a class="sourceLine" id="cb12-11" title="11"></a>
+<a class="sourceLine" id="cb12-12" title="12"><span class="fu">.flexbox</span> main div<span class="in">:last-child</span> {</a>
+<a class="sourceLine" id="cb12-13" title="13">  <span class="kw">padding-right</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-14" title="14">}</a>
+<a class="sourceLine" id="cb12-15" title="15"></a>
+<a class="sourceLine" id="cb12-16" title="16"><span class="co">/* Fallbacks for browsers that don&#39;t support modern flexbox */</span></a>
+<a class="sourceLine" id="cb12-17" title="17"></a>
+<a class="sourceLine" id="cb12-18" title="18"><span class="fu">.no-flexbox</span> main div {</a>
+<a class="sourceLine" id="cb12-19" title="19">  <span class="kw">width</span>: <span class="dv">22</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-20" title="20">  <span class="kw">float</span>: <span class="dv">left</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-21" title="21">  <span class="kw">padding-right</span>: <span class="dv">4</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-22" title="22">}</a>
+<a class="sourceLine" id="cb12-23" title="23"></a>
+<a class="sourceLine" id="cb12-24" title="24"><span class="fu">.no-flexbox</span> main div<span class="in">:last-child</span> {</a>
+<a class="sourceLine" id="cb12-25" title="25">  <span class="kw">padding-right</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-26" title="26">}</a>
+<a class="sourceLine" id="cb12-27" title="27"></a>
+<a class="sourceLine" id="cb12-28" title="28"><span class="fu">.no-flexbox</span> footer {</a>
+<a class="sourceLine" id="cb12-29" title="29">  <span class="kw">clear</span>: <span class="dv">left</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-30" title="30">}</a></code></pre></div>
+<p>So how does this work? Because all those class names have been put on the <code>&lt;html&gt;</code> element, you can target browsers that do or don’t support a feature using specific descendant selectors. So here we’re applying the top set of rules only to browsers that do support flexbox, and the bottom set of rules only to browsers that don’t (<code>no-flexbox</code>).</p>
+<blockquote>
+<p><strong>Note:</strong> Bear in mind that all of Modernizr’s HTML and JavaScript feature tests are also reported in these class names, so you can quite happily apply CSS selectively based on whether the browser supports HTML or JavaScript features, if needed.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> If you have trouble getting this to work, check your code against our <a href="https://github.com/mdn/learning-area/blob/master/tools-testing/cross-browser-testing/feature-detection/modernizr-css.html"><code>modernizr-css.html</code></a> and <a href="https://github.com/mdn/learning-area/blob/master/tools-testing/cross-browser-testing/feature-detection/modernizr-css.css"><code>modernizr-css.css</code></a> files (see this running live also).</p>
+</blockquote>
+<h3 id="javascript-1">JavaScript</h3>
+<p>Modernizr is also equally well-prepared for implementing JavaScript feature detects too. It does this by making the global <code>Modernizr</code> object available to the page it is applied to, which contains results of the feature detects as <code>true</code>/<code>false</code> properties.</p>
+<p>For example, load up our <a href="https://github.com/mdn/learning-area/blob/master/tools-testing/cross-browser-testing/feature-detection/modernizr-css.html"><code>modernizr-css.html</code></a> example in your browser, then try going to your JavaScript console and typing in <code>Modernizr.</code> followed by some of those class names (they are the same here too). For example:</p>
+<p>Modernizr.flexbox Modernizr.websqldatabase Modernizr.xhr2 Modernizr.fetch</p>
+<p>The console will return <code>true</code>/<code>false</code> values to indicate whether your browser supports those features or not.</p>
+<p>Let’s look at an example to show how you’d use those properties.</p>
+<ol type="1">
+<li>First of all, make a local copy of the <a href="https://github.com/mdn/learning-area/blob/master/tools-testing/cross-browser-testing/feature-detection/modernizr-js.html"><code>modernizr-js.html</code></a> example file.</li>
+<li>Attach the Modernizr library to the HTML using a <code>&lt;script&gt;</code> element, as we have done in previous demos. Put it above the existing <code>&lt;script&gt;</code> element, which is attaching the Google Maps API to the page.</li>
+<li>Next, fill in the <code>YOUR-API-KEY</code> placeholder text in the second <code>&lt;script&gt;</code> element (as it is now) with a valid Google Maps API key. To get a key, sign in to a Google account, go to the <a href="https://developers.google.com/maps/documentation/javascript/get-api-key">Get a Key/Authentication</a> page, then click the blue <em>Get a Key</em> button and follow the instructions.</li>
+<li><p>Finally, add another <code>&lt;script&gt;</code> element at the bottom of the HTML body (just before the <code>&lt;/body&gt;</code> tag), and put the following script inside the tags:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb13-1" title="1"><span class="cf">if</span> (<span class="va">Modernizr</span>.<span class="at">geolocation</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-2" title="2"></a>
+<a class="sourceLine" id="cb13-3" title="3">  <span class="va">navigator</span>.<span class="va">geolocation</span>.<span class="at">getCurrentPosition</span>(<span class="kw">function</span>(position) <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-4" title="4"></a>
+<a class="sourceLine" id="cb13-5" title="5">    <span class="kw">let</span> latlng <span class="op">=</span> <span class="kw">new</span> <span class="va">google</span>.<span class="va">maps</span>.<span class="at">LatLng</span>(<span class="va">position</span>.<span class="va">coords</span>.<span class="at">latitude</span><span class="op">,</span><span class="va">position</span>.<span class="va">coords</span>.<span class="at">longitude</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-6" title="6">    <span class="kw">let</span> myOptions <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-7" title="7">      <span class="dt">zoom</span><span class="op">:</span> <span class="dv">8</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb13-8" title="8">      <span class="dt">center</span><span class="op">:</span> latlng<span class="op">,</span></a>
+<a class="sourceLine" id="cb13-9" title="9">      <span class="dt">mapTypeId</span><span class="op">:</span> <span class="va">google</span>.<span class="va">maps</span>.<span class="va">MapTypeId</span>.<span class="at">TERRAIN</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb13-10" title="10">      <span class="dt">disableDefaultUI</span><span class="op">:</span> <span class="kw">true</span></a>
+<a class="sourceLine" id="cb13-11" title="11">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb13-12" title="12">    <span class="kw">let</span> map <span class="op">=</span> <span class="kw">new</span> <span class="va">google</span>.<span class="va">maps</span>.<span class="at">Map</span>(<span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;map_canvas&quot;</span>)<span class="op">,</span> myOptions)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-13" title="13">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-14" title="14"></a>
+<a class="sourceLine" id="cb13-15" title="15"><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-16" title="16">  <span class="kw">const</span> para <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;p&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-17" title="17">  <span class="va">para</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;Argh, no geolocation!&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb13-18" title="18">  <span class="va">document</span>.<span class="va">body</span>.<span class="at">appendChild</span>(para)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-19" title="19"><span class="op">}</span></a></code></pre></div></li>
+</ol>
+<p>Try your example out! Here we use the <code>Modernizr.geolocation</code> test to check whether geolocation is supported by the current browser. If it is, we run some code that gets your device’s current location, and plots it on a Google Map.</p>
+<h2 id="summary">Summary</h2>
+<p>This article covered feature detection in a reasonable amount of detail, going through the main concepts and showing you how to both implement your own feature detection tests and use the Modernizr library to implement tests more easily.</p>
+<p>Next up, we’ll start looking at automated testing.</p>
+<p>{{PreviousMenuNext(“Learn/Tools_and_testing/Cross_browser_testing/Accessibility”,“Learn/Tools_and_testing/Cross_browser_testing/Automated_testing”, “Learn/Tools_and_testing/Cross_browser_testing”)}}</p>
+<h2 id="in-this-module">In this module</h2>
+<ul>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/Introduction">Introduction to cross browser testing</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/Testing_strategies">Strategies for carrying out testing</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/HTML_and_CSS">Handling common HTML and CSS problems</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/JavaScript">Handling common JavaScript problems</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/Accessibility">Handling common accessibility problems</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/Feature_detection">Implementing feature detection</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/Automated_testing">Introduction to automated testing</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/Your_own_automation_environment">Setting up your own test automation environment</a></li>
+</ul>

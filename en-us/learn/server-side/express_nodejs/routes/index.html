@@ -1,0 +1,523 @@
+<p>{{LearnSidebar}}{{PreviousMenuNext(“Learn/Server-side/Express_Nodejs/mongoose”, “Learn/Server-side/Express_Nodejs/Displaying_data”, “Learn/Server-side/Express_Nodejs”)}}</p>
+<p>In this tutorial we’ll set up routes (URL handling code) with “dummy” handler functions for all the resource endpoints that we’ll eventually need in the <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/Tutorial_local_library_website">LocalLibrary</a> website. On completion we’ll have a modular structure for our route handling code, which we can extend with real handler functions in the following articles. We’ll also have a really good understanding of how to create modular routes using Express!</p>
+<table>
+<tbody>
+<tr>
+<th scope="row">
+Prerequisites:
+</th>
+<td>
+Read the <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/Introduction"
+          >Express/Node introduction</a
+        >. Complete previous tutorial topics (including <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/mongoose"
+          >Express Tutorial Part 3: Using a Database (with Mongoose)</a
+        >).
+</td>
+</tr>
+<tr>
+<th scope="row">
+Objective:
+</th>
+<td>
+To understand how to create simple routes. To set up all our URL endpoints.
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="overview">Overview</h2>
+<p>In the <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/mongoose">last tutorial article</a> we defined <em>Mongoose</em> models to interact with the database, and used a (standalone) script to create some initial library records. We can now write the code to present that information to users. The first thing we need to do is determine what information we want to be able to display in our pages, and then define appropriate URLs for returning those resources. Then we’re going to need to create the routes (URL handlers) and views (templates) to display those pages.</p>
+<p>The diagram below is provided as a reminder of the main flow of data and things that need to be implemented when handling an HTTP request/response. In addition to the views and routes the diagram shows “controllers” — functions that separate out the code to route requests from the code that actually processes requests.</p>
+<p>As we’ve already created the models, the main things we’ll need to create are:</p>
+<ul>
+<li>“Routes” to forward the supported requests (and any information encoded in request URLs) to the appropriate controller functions.</li>
+<li>Controller functions to get the requested data from the models, create an HTML page displaying the data, and return it to the user to view in the browser.</li>
+<li>Views (templates) used by the controllers to render the data.</li>
+</ul>
+<p><img src="mvc_express.png" /></p>
+<p>Ultimately we might have pages to show lists and detail information for books, genres, authors and bookinstances, along with pages to create, update, and delete records. That’s a lot to document in one article. Therefore most of this article will concentrate on setting up our routes and controllers to return “dummy” content. We’ll extend the controller methods in our subsequent articles to work with model data.</p>
+<p>The first section below provides a brief “primer” on how to use the Express <a href="https://expressjs.com/en/4x/api.html#router">Router</a> middleware. We’ll then use that knowledge in the following sections when we set up the LocalLibrary routes.</p>
+<h2 id="routes-primer">Routes primer</h2>
+<p>A route is a section of Express code that associates an HTTP verb (<code>GET</code>, <code>POST</code>, <code>PUT</code>, <code>DELETE</code>, etc.), a URL path/pattern, and a function that is called to handle that pattern.</p>
+<p>There are several ways to create routes. For this tutorial we’re going to use the <a href="https://expressjs.com/en/guide/routing.html#express-router"><code>express.Router</code></a> middleware as it allows us to group the route handlers for a particular part of a site together and access them using a common route-prefix. We’ll keep all our library-related routes in a “catalog” module, and, if we add routes for handling user accounts or other functions, we can keep them grouped separately.</p>
+<blockquote>
+<p><strong>Note:</strong> We discussed Express application routes briefly in our <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/Introduction#creating_route_handlers">Express Introduction &gt; Creating route handlers</a>. Other than providing better support for modularization (as discussed in the first subsection below), using <em>Router</em> is very similar to defining routes directly on the <em>Express application object</em>.</p>
+</blockquote>
+<p>The rest of this section provides an overview of how the <code>Router</code> can be used to define the routes.</p>
+<h3 id="defining-and-using-separate-route-modules">Defining and using separate route modules</h3>
+<p>The code below provides a concrete example of how we can create a route module and then use it in an <em>Express</em> application.</p>
+<p>First we create routes for a wiki in a module named <strong>wiki.js</strong>. The code first imports the Express application object, uses it to get a <code>Router</code> object and then adds a couple of routes to it using the <code>get()</code> method. Last of all the module exports the <code>Router</code> object.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="co">// wiki.js - Wiki route module.</span></a>
+<a class="sourceLine" id="cb1-2" title="2"></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">var</span> express <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;express&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="kw">var</span> router <span class="op">=</span> <span class="va">express</span>.<span class="at">Router</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-5" title="5"></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="co">// Home page route.</span></a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/&#39;</span><span class="op">,</span> <span class="kw">function</span> (req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-8" title="8">  <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;Wiki home page&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-9" title="9"><span class="op">}</span>)</a>
+<a class="sourceLine" id="cb1-10" title="10"></a>
+<a class="sourceLine" id="cb1-11" title="11"><span class="co">// About page route.</span></a>
+<a class="sourceLine" id="cb1-12" title="12"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/about&#39;</span><span class="op">,</span> <span class="kw">function</span> (req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-13" title="13">  <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;About this wiki&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-14" title="14"><span class="op">}</span>)</a>
+<a class="sourceLine" id="cb1-15" title="15"></a>
+<a class="sourceLine" id="cb1-16" title="16"><span class="va">module</span>.<span class="at">exports</span> <span class="op">=</span> router<span class="op">;</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> Above we are defining our route handler callbacks directly in the router functions. In the LocalLibrary we’ll define these callbacks in a separate controller module.</p>
+</blockquote>
+<p>To use the router module in our main app file we first <code>require()</code> the route module (<strong>wiki.js</strong>). We then call <code>use()</code> on the <em>Express</em> application to add the Router to the middleware handling path, specifying a URL path of ‘wiki’.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> wiki <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;./wiki.js&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="co">// ...</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="va">app</span>.<span class="at">use</span>(<span class="st">&#39;/wiki&#39;</span><span class="op">,</span> wiki)<span class="op">;</span></a></code></pre></div>
+<p>The two routes defined in our wiki route module are then accessible from <code>/wiki/</code> and <code>/wiki/about/</code>.</p>
+<h3 id="route-functions">Route functions</h3>
+<p>Our module above defines a couple of typical route functions. The “about” route (reproduced below) is defined using the <code>Router.get()</code> method, which responds only to HTTP GET requests. The first argument to this method is the URL path while the second is a callback function that will be invoked if an HTTP GET request with the path is received.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/about&#39;</span><span class="op">,</span> <span class="kw">function</span> (req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;About this wiki&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="op">}</span>)</a></code></pre></div>
+<p>The callback takes three arguments (usually named as shown: <code>req</code>, <code>res</code>, <code>next</code>), that will contain the HTTP Request object, HTTP response, and the <em>next</em> function in the middleware chain.</p>
+<blockquote>
+<p><strong>Note:</strong> Router functions are <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/Introduction#using_middleware">Express middleware</a>, which means that they must either complete (respond to) the request or call the <code>next</code> function in the chain. In the case above we complete the request using <code>send()</code>, so the <code>next</code> argument is not used (and we choose not to specify it).</p>
+<p>The  router function above takes a single callback, but you can specify as many callback arguments as you want, or an array of callback functions. Each function is part of the middleware chain, and will be called in the order it is added to the chain (unless a preceding function completes the request).</p>
+</blockquote>
+<p>The callback function here calls <a href="https://expressjs.com/en/4x/api.html#res.send"><code>send()</code></a> on the response to return the string “About this wiki” when we receive a GET request with the path (’<code>/about'</code>). There are a <a href="https://expressjs.com/en/guide/routing.html#response-methods">number of other response methods</a> for ending the request/response cycle. For example, you could call <a href="https://expressjs.com/en/4x/api.html#res.json"><code>res.json()</code></a> to send a JSON response or <a href="https://expressjs.com/en/4x/api.html#res.sendFile"><code>res.sendFile()</code></a> to send a file. The response method that we’ll be using most often as we build up the library is <a href="https://expressjs.com/en/4x/api.html#res.render">render()</a>, which creates and returns HTML files using templates and data—we’ll talk a lot more about that in a later article!</p>
+<h3 id="http-verbs">HTTP verbs</h3>
+<p>The example routes above use the <code>Router.get()</code> method to respond to HTTP GET requests with a certain path.</p>
+<p>The <code>Router</code> also provides route methods for all the other HTTP verbs, that are mostly used in exactly the same way: <code>post()</code>, <code>put()</code>, <code>delete()</code>, <code>options()</code>, <code>trace()</code>, <code>copy()</code>, <code>lock()</code>, <code>mkcol()</code>, <code>move()</code>, <code>purge()</code>, <code>propfind()</code>, <code>proppatch()</code>, <code>unlock()</code>, <code>report()</code>, <code>mkactivity()</code>, <code>checkout()</code>, <code>merge()</code>, <code>m-search()</code>, <code>notify()</code>, <code>subscribe()</code>, <code>unsubscribe()</code>, <code>patch()</code>, <code>search()</code>, and <code>connect()</code>.</p>
+<p>For example, the code below behaves just like the previous <code>/about</code> route, but only responds to HTTP POST requests.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="va">router</span>.<span class="at">post</span>(<span class="st">&#39;/about&#39;</span><span class="op">,</span> <span class="kw">function</span> (req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;About this wiki&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="op">}</span>)</a></code></pre></div>
+<h3 id="route-paths">Route paths</h3>
+<p>The route paths define the endpoints at which requests can be made. The examples we’ve seen so far have just been strings, and are used exactly as written: ‘/’, ‘/about’, ‘/book’, ‘/any-random.path’.</p>
+<p>Route paths can also be string patterns. String patterns use a form of regular expression syntax to define <em>patterns</em> of endpoints that will be matched. The syntax is listed below (note that the hyphen (<code>-</code>) and the dot (<code>.</code>) are interpreted literally by string-based paths):</p>
+<ul>
+<li><code>?</code> : The endpoint must have 0 or 1 of the preceding character (or group), e.g. a route path of <code>'/ab?cd'</code> will match endpoints <code>acd</code> or <code>abcd</code>.</li>
+<li><code>+</code> : The endpoint must have 1 or more of the preceding character (or group), e.g. a route path of <code>'/ab+cd'</code> will match endpoints <code>abcd</code>, <code>abbcd</code>, <code>abbbcd</code>, and so on.</li>
+<li><code>*</code> : The endpoint may have an arbitrary string where the <code>*</code> character is placed. E.g. a route path of <code>'/ab*cd'</code> will match endpoints <code>abcd</code>, <code>abXcd</code>, <code>abSOMErandomTEXTcd</code>, and so on.</li>
+<li><code>()</code> : Grouping match on a set of characters to perform another operation on, e.g. <code>'/ab(cd)?e'</code> will perform a <code>?</code>-match on the group <code>(cd)</code>—it will match <code>abe</code> and <code>abcde</code>.</li>
+</ul>
+<p>The route paths can also be JavaScript <a href="/en-US/docs/Web/JavaScript/Guide/Regular_Expressions">regular expressions</a>. For example, the route path below will match <code>catfish</code> and <code>dogfish</code>, but not <code>catflap</code>, <code>catfishhead</code>, and so on. Note that the path for a regular expression uses regular expression syntax (it is not a quoted string as in the previous cases).</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="va">app</span>.<span class="at">get</span>(<span class="ss">/.</span><span class="sc">*</span><span class="ss">fish</span><span class="sc">$</span><span class="ss">/</span><span class="op">,</span> <span class="kw">function</span> (req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  ...</a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="op">}</span>)</a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> Most of our routes for the LocalLibrary will use strings and not regular expressions. We’ll also use route parameters as discussed in the next section.</p>
+</blockquote>
+<h3 id="route-parameters">Route parameters</h3>
+<p>Route parameters are <em>named URL segments</em> used to capture values at specific positions in the URL. The named segments are prefixed with a colon and then the name (e.g. <code>/:your_parameter_name/</code>. The captured values are stored in the <code>req.params</code> object using the parameter names as keys (e.g. <code>req.params.your_parameter_name</code>).</p>
+<p>So for example, consider a URL encoded to contain information about users and books: <code>http://localhost:3000/users/34/books/8989</code>. We can extract this information as shown below, with the <code>userId</code> and <code>bookId</code> path parameters:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="va">app</span>.<span class="at">get</span>(<span class="st">&#39;/users/:userId/books/:bookId&#39;</span><span class="op">,</span> <span class="kw">function</span> (req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="co">// Access userId via: req.params.userId</span></a>
+<a class="sourceLine" id="cb6-3" title="3">  <span class="co">// Access bookId via: req.params.bookId</span></a>
+<a class="sourceLine" id="cb6-4" title="4">  <span class="va">res</span>.<span class="at">send</span>(<span class="va">req</span>.<span class="at">params</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-5" title="5"><span class="op">}</span>)</a></code></pre></div>
+<p>The names of route parameters must be made up of “word characters” (A-Z, a-z, 0-9, and _).</p>
+<blockquote>
+<p><strong>Note:</strong> The URL <em>/book/create</em> will be matched by a route like <code>/book/:bookId</code> (which will extract a “bookId” value of ‘<code>create</code>’). The first route that matches an incoming URL will be used, so if you want to process <code>/book/create</code> URLs separately, their route handler must be defined before your <code>/book/:bookId</code> route.</p>
+</blockquote>
+<p>That’s all you need to get started with routes - if needed you can find more information in the Express docs: <a href="https://expressjs.com/en/starter/basic-routing.html">Basic routing</a> and <a href="https://expressjs.com/en/guide/routing.html">Routing guide</a>. The following sections show how we’ll set up our routes and controllers for the LocalLibrary.</p>
+<h2 id="routes-needed-for-the-locallibrary">Routes needed for the LocalLibrary</h2>
+<p>The URLs that we’re ultimately going to need for our pages are listed below, where <em>object</em> is replaced by the name of each of our models (book, bookinstance, genre, author), <em>objects</em> is the plural of object, and <em>id</em> is the unique instance field (<code>_id</code>) that is given to each Mongoose model instance by default.</p>
+<ul>
+<li><code>catalog/</code> — The home/index page.</li>
+<li><code>catalog/&lt;objects&gt;/</code> — The list of all books, bookinstances, genres, or authors (e.g. /<code>catalog/books/</code>, /<code>catalog/genres/</code>, etc.)</li>
+<li><code>catalog/&lt;object&gt;/&lt;id&gt;</code> — The detail page for a specific book, bookinstance, genre, or author with the given <code>_id</code> field value (e.g. <code>/catalog/book/584493c1f4887f06c0e67d37)</code>.</li>
+<li><code>catalog/&lt;object&gt;/create</code> — The form to create a new book, bookinstance, genre, or author (e.g. <code>/catalog/book/create)</code>.</li>
+<li><code>catalog/&lt;object&gt;/&lt;id&gt;/update</code> — The form to update a specific book, bookinstance, genre, or author with the given <code>_id</code> field value (e.g. <code>/catalog/book/584493c1f4887f06c0e67d37/update)</code>.</li>
+<li><code>catalog/&lt;object&gt;/&lt;id&gt;/delete</code> — The form to delete a specific book, bookinstance, genre, author with the given <code>_id</code> field value (e.g. <code>/catalog/book/584493c1f4887f06c0e67d37/delete)</code>.</li>
+</ul>
+<p>The first home page and list pages don’t encode any additional information. While the results returned will depend on the model type and the content in the database, the queries run to get the information will always be the same (similarly the code run for object creation will always be similar).</p>
+<p>By contrast the other URLs are used to act on a specific document/model instance—these encode the identity of the item in the URL (shown as <code>&lt;id&gt;</code> above). We’ll use path parameters to extract the encoded information and pass it to the route handler (and in a later article we’ll use this to dynamically determine what information to get from the database). By encoding the information in our URL we only need one route for every resource of a particular type (e.g. one route to handle the display of every single book item).</p>
+<blockquote>
+<p><strong>Note:</strong> Express allows you to construct your URLs any way you like — you can encode information in the body of the URL as shown above or use URL <code>GET</code> parameters (e.g. <code>/book/?id=6</code>). Whichever approach you use, the URLs should be kept clean, logical and readable (<a href="https://www.w3.org/Provider/Style/URI">check out the W3C advice here</a>).</p>
+</blockquote>
+<p>Next we create our route handler callback functions and route code for all the above URLs.</p>
+<h2 id="create-the-route-handler-callback-functions">Create the route-handler callback functions</h2>
+<p>Before we define our routes, we’ll first create all the dummy/skeleton callback functions that they will invoke. The callbacks will be stored in separate “controller” modules for Books, BookInstances, Genres, and Authors (you can use any file/module structure, but this seems an appropriate granularity for this project).</p>
+<p>Start by creating a folder for our controllers in the project root (<strong>/controllers</strong>) and then create separate controller files/modules for handling each of the models:</p>
+<pre class="plain"><code>/express-locallibrary-tutorial  //the project root
+  /controllers
+    authorController.js
+    bookController.js
+    bookinstanceController.js
+    genreController.js</code></pre>
+<h3 id="author-controller">Author controller</h3>
+<p>Open the <strong>/controllers/authorController.js</strong> file and type in the following code:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">var</span> Author <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;../models/author&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-2" title="2"></a>
+<a class="sourceLine" id="cb8-3" title="3"><span class="co">// Display list of all Authors.</span></a>
+<a class="sourceLine" id="cb8-4" title="4"><span class="va">exports</span>.<span class="at">author_list</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-5" title="5">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Author list&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-6" title="6"><span class="op">};</span></a>
+<a class="sourceLine" id="cb8-7" title="7"></a>
+<a class="sourceLine" id="cb8-8" title="8"><span class="co">// Display detail page for a specific Author.</span></a>
+<a class="sourceLine" id="cb8-9" title="9"><span class="va">exports</span>.<span class="at">author_detail</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-10" title="10">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Author detail: &#39;</span> <span class="op">+</span> <span class="va">req</span>.<span class="va">params</span>.<span class="at">id</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-11" title="11"><span class="op">};</span></a>
+<a class="sourceLine" id="cb8-12" title="12"></a>
+<a class="sourceLine" id="cb8-13" title="13"><span class="co">// Display Author create form on GET.</span></a>
+<a class="sourceLine" id="cb8-14" title="14"><span class="va">exports</span>.<span class="at">author_create_get</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-15" title="15">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Author create GET&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-16" title="16"><span class="op">};</span></a>
+<a class="sourceLine" id="cb8-17" title="17"></a>
+<a class="sourceLine" id="cb8-18" title="18"><span class="co">// Handle Author create on POST.</span></a>
+<a class="sourceLine" id="cb8-19" title="19"><span class="va">exports</span>.<span class="at">author_create_post</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-20" title="20">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Author create POST&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-21" title="21"><span class="op">};</span></a>
+<a class="sourceLine" id="cb8-22" title="22"></a>
+<a class="sourceLine" id="cb8-23" title="23"><span class="co">// Display Author delete form on GET.</span></a>
+<a class="sourceLine" id="cb8-24" title="24"><span class="va">exports</span>.<span class="at">author_delete_get</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-25" title="25">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Author delete GET&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-26" title="26"><span class="op">};</span></a>
+<a class="sourceLine" id="cb8-27" title="27"></a>
+<a class="sourceLine" id="cb8-28" title="28"><span class="co">// Handle Author delete on POST.</span></a>
+<a class="sourceLine" id="cb8-29" title="29"><span class="va">exports</span>.<span class="at">author_delete_post</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-30" title="30">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Author delete POST&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-31" title="31"><span class="op">};</span></a>
+<a class="sourceLine" id="cb8-32" title="32"></a>
+<a class="sourceLine" id="cb8-33" title="33"><span class="co">// Display Author update form on GET.</span></a>
+<a class="sourceLine" id="cb8-34" title="34"><span class="va">exports</span>.<span class="at">author_update_get</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-35" title="35">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Author update GET&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-36" title="36"><span class="op">};</span></a>
+<a class="sourceLine" id="cb8-37" title="37"></a>
+<a class="sourceLine" id="cb8-38" title="38"><span class="co">// Handle Author update on POST.</span></a>
+<a class="sourceLine" id="cb8-39" title="39"><span class="va">exports</span>.<span class="at">author_update_post</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-40" title="40">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Author update POST&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-41" title="41"><span class="op">};</span></a></code></pre></div>
+<p>The module first requires the model that we’ll later be using to access and update our data. It then exports functions for each of the URLs we wish to handle (the create, update and delete operations use forms, and hence also have additional methods for handling form post requests — we’ll discuss those methods in the “forms article” later on).</p>
+<p>All the functions have the standard form of an <em>Express middleware function</em>, with arguments for the request and response. We could also include the <code>next</code> function to be called if the method does not complete the request cycle, but in all these cases it does, so we’ve omitted it. The methods return a string indicating that the associated page has not yet been created. If a controller function is expected to receive path parameters, these are output in the message string (see <code>req.params.id</code> above).</p>
+<h4 id="bookinstance-controller">BookInstance controller</h4>
+<p>Open the <strong>/controllers/bookinstanceController.js</strong> file and copy in the following code (this follows an identical pattern to the <code>Author</code> controller module):</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">var</span> BookInstance <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;../models/bookinstance&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-2" title="2"></a>
+<a class="sourceLine" id="cb9-3" title="3"><span class="co">// Display list of all BookInstances.</span></a>
+<a class="sourceLine" id="cb9-4" title="4"><span class="va">exports</span>.<span class="at">bookinstance_list</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-5" title="5">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: BookInstance list&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-6" title="6"><span class="op">};</span></a>
+<a class="sourceLine" id="cb9-7" title="7"></a>
+<a class="sourceLine" id="cb9-8" title="8"><span class="co">// Display detail page for a specific BookInstance.</span></a>
+<a class="sourceLine" id="cb9-9" title="9"><span class="va">exports</span>.<span class="at">bookinstance_detail</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-10" title="10">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: BookInstance detail: &#39;</span> <span class="op">+</span> <span class="va">req</span>.<span class="va">params</span>.<span class="at">id</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-11" title="11"><span class="op">};</span></a>
+<a class="sourceLine" id="cb9-12" title="12"></a>
+<a class="sourceLine" id="cb9-13" title="13"><span class="co">// Display BookInstance create form on GET.</span></a>
+<a class="sourceLine" id="cb9-14" title="14"><span class="va">exports</span>.<span class="at">bookinstance_create_get</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-15" title="15">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: BookInstance create GET&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-16" title="16"><span class="op">};</span></a>
+<a class="sourceLine" id="cb9-17" title="17"></a>
+<a class="sourceLine" id="cb9-18" title="18"><span class="co">// Handle BookInstance create on POST.</span></a>
+<a class="sourceLine" id="cb9-19" title="19"><span class="va">exports</span>.<span class="at">bookinstance_create_post</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-20" title="20">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: BookInstance create POST&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-21" title="21"><span class="op">};</span></a>
+<a class="sourceLine" id="cb9-22" title="22"></a>
+<a class="sourceLine" id="cb9-23" title="23"><span class="co">// Display BookInstance delete form on GET.</span></a>
+<a class="sourceLine" id="cb9-24" title="24"><span class="va">exports</span>.<span class="at">bookinstance_delete_get</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-25" title="25">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: BookInstance delete GET&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-26" title="26"><span class="op">};</span></a>
+<a class="sourceLine" id="cb9-27" title="27"></a>
+<a class="sourceLine" id="cb9-28" title="28"><span class="co">// Handle BookInstance delete on POST.</span></a>
+<a class="sourceLine" id="cb9-29" title="29"><span class="va">exports</span>.<span class="at">bookinstance_delete_post</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-30" title="30">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: BookInstance delete POST&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-31" title="31"><span class="op">};</span></a>
+<a class="sourceLine" id="cb9-32" title="32"></a>
+<a class="sourceLine" id="cb9-33" title="33"><span class="co">// Display BookInstance update form on GET.</span></a>
+<a class="sourceLine" id="cb9-34" title="34"><span class="va">exports</span>.<span class="at">bookinstance_update_get</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-35" title="35">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: BookInstance update GET&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-36" title="36"><span class="op">};</span></a>
+<a class="sourceLine" id="cb9-37" title="37"></a>
+<a class="sourceLine" id="cb9-38" title="38"><span class="co">// Handle bookinstance update on POST.</span></a>
+<a class="sourceLine" id="cb9-39" title="39"><span class="va">exports</span>.<span class="at">bookinstance_update_post</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-40" title="40">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: BookInstance update POST&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-41" title="41"><span class="op">};</span></a></code></pre></div>
+<h4 id="genre-controller">Genre controller</h4>
+<p>Open the <strong>/controllers/genreController.js</strong> file and copy in the following text (this follows an identical pattern to the <code>Author</code> and <code>BookInstance</code> files):</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">var</span> Genre <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;../models/genre&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-2" title="2"></a>
+<a class="sourceLine" id="cb10-3" title="3"><span class="co">// Display list of all Genre.</span></a>
+<a class="sourceLine" id="cb10-4" title="4"><span class="va">exports</span>.<span class="at">genre_list</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-5" title="5">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Genre list&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-6" title="6"><span class="op">};</span></a>
+<a class="sourceLine" id="cb10-7" title="7"></a>
+<a class="sourceLine" id="cb10-8" title="8"><span class="co">// Display detail page for a specific Genre.</span></a>
+<a class="sourceLine" id="cb10-9" title="9"><span class="va">exports</span>.<span class="at">genre_detail</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-10" title="10">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Genre detail: &#39;</span> <span class="op">+</span> <span class="va">req</span>.<span class="va">params</span>.<span class="at">id</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-11" title="11"><span class="op">};</span></a>
+<a class="sourceLine" id="cb10-12" title="12"></a>
+<a class="sourceLine" id="cb10-13" title="13"><span class="co">// Display Genre create form on GET.</span></a>
+<a class="sourceLine" id="cb10-14" title="14"><span class="va">exports</span>.<span class="at">genre_create_get</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-15" title="15">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Genre create GET&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-16" title="16"><span class="op">};</span></a>
+<a class="sourceLine" id="cb10-17" title="17"></a>
+<a class="sourceLine" id="cb10-18" title="18"><span class="co">// Handle Genre create on POST.</span></a>
+<a class="sourceLine" id="cb10-19" title="19"><span class="va">exports</span>.<span class="at">genre_create_post</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-20" title="20">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Genre create POST&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-21" title="21"><span class="op">};</span></a>
+<a class="sourceLine" id="cb10-22" title="22"></a>
+<a class="sourceLine" id="cb10-23" title="23"><span class="co">// Display Genre delete form on GET.</span></a>
+<a class="sourceLine" id="cb10-24" title="24"><span class="va">exports</span>.<span class="at">genre_delete_get</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-25" title="25">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Genre delete GET&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-26" title="26"><span class="op">};</span></a>
+<a class="sourceLine" id="cb10-27" title="27"></a>
+<a class="sourceLine" id="cb10-28" title="28"><span class="co">// Handle Genre delete on POST.</span></a>
+<a class="sourceLine" id="cb10-29" title="29"><span class="va">exports</span>.<span class="at">genre_delete_post</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-30" title="30">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Genre delete POST&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-31" title="31"><span class="op">};</span></a>
+<a class="sourceLine" id="cb10-32" title="32"></a>
+<a class="sourceLine" id="cb10-33" title="33"><span class="co">// Display Genre update form on GET.</span></a>
+<a class="sourceLine" id="cb10-34" title="34"><span class="va">exports</span>.<span class="at">genre_update_get</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-35" title="35">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Genre update GET&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-36" title="36"><span class="op">};</span></a>
+<a class="sourceLine" id="cb10-37" title="37"></a>
+<a class="sourceLine" id="cb10-38" title="38"><span class="co">// Handle Genre update on POST.</span></a>
+<a class="sourceLine" id="cb10-39" title="39"><span class="va">exports</span>.<span class="at">genre_update_post</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-40" title="40">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Genre update POST&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-41" title="41"><span class="op">};</span></a></code></pre></div>
+<h4 id="book-controller">Book controller</h4>
+<p>Open the <strong>/controllers/bookController.js</strong> file and copy in the following code. This follows the same pattern as the other controller modules, but additionally has an <code>index()</code> function for displaying the site welcome page:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1"><span class="kw">var</span> Book <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;../models/book&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-2" title="2"></a>
+<a class="sourceLine" id="cb11-3" title="3"><span class="va">exports</span>.<span class="at">index</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-4" title="4">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Site Home Page&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-5" title="5"><span class="op">};</span></a>
+<a class="sourceLine" id="cb11-6" title="6"></a>
+<a class="sourceLine" id="cb11-7" title="7"><span class="co">// Display list of all books.</span></a>
+<a class="sourceLine" id="cb11-8" title="8"><span class="va">exports</span>.<span class="at">book_list</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-9" title="9">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Book list&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-10" title="10"><span class="op">};</span></a>
+<a class="sourceLine" id="cb11-11" title="11"></a>
+<a class="sourceLine" id="cb11-12" title="12"><span class="co">// Display detail page for a specific book.</span></a>
+<a class="sourceLine" id="cb11-13" title="13"><span class="va">exports</span>.<span class="at">book_detail</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-14" title="14">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Book detail: &#39;</span> <span class="op">+</span> <span class="va">req</span>.<span class="va">params</span>.<span class="at">id</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-15" title="15"><span class="op">};</span></a>
+<a class="sourceLine" id="cb11-16" title="16"></a>
+<a class="sourceLine" id="cb11-17" title="17"><span class="co">// Display book create form on GET.</span></a>
+<a class="sourceLine" id="cb11-18" title="18"><span class="va">exports</span>.<span class="at">book_create_get</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-19" title="19">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Book create GET&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-20" title="20"><span class="op">};</span></a>
+<a class="sourceLine" id="cb11-21" title="21"></a>
+<a class="sourceLine" id="cb11-22" title="22"><span class="co">// Handle book create on POST.</span></a>
+<a class="sourceLine" id="cb11-23" title="23"><span class="va">exports</span>.<span class="at">book_create_post</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-24" title="24">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Book create POST&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-25" title="25"><span class="op">};</span></a>
+<a class="sourceLine" id="cb11-26" title="26"></a>
+<a class="sourceLine" id="cb11-27" title="27"><span class="co">// Display book delete form on GET.</span></a>
+<a class="sourceLine" id="cb11-28" title="28"><span class="va">exports</span>.<span class="at">book_delete_get</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-29" title="29">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Book delete GET&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-30" title="30"><span class="op">};</span></a>
+<a class="sourceLine" id="cb11-31" title="31"></a>
+<a class="sourceLine" id="cb11-32" title="32"><span class="co">// Handle book delete on POST.</span></a>
+<a class="sourceLine" id="cb11-33" title="33"><span class="va">exports</span>.<span class="at">book_delete_post</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-34" title="34">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Book delete POST&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-35" title="35"><span class="op">};</span></a>
+<a class="sourceLine" id="cb11-36" title="36"></a>
+<a class="sourceLine" id="cb11-37" title="37"><span class="co">// Display book update form on GET.</span></a>
+<a class="sourceLine" id="cb11-38" title="38"><span class="va">exports</span>.<span class="at">book_update_get</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-39" title="39">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Book update GET&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-40" title="40"><span class="op">};</span></a>
+<a class="sourceLine" id="cb11-41" title="41"></a>
+<a class="sourceLine" id="cb11-42" title="42"><span class="co">// Handle book update on POST.</span></a>
+<a class="sourceLine" id="cb11-43" title="43"><span class="va">exports</span>.<span class="at">book_update_post</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-44" title="44">    <span class="va">res</span>.<span class="at">send</span>(<span class="st">&#39;NOT IMPLEMENTED: Book update POST&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-45" title="45"><span class="op">};</span></a></code></pre></div>
+<h2 id="create-the-catalog-route-module">Create the catalog route module</h2>
+<p>Next we create <em>routes</em> for all the URLs <a href="#routes_needed_for_the_locallibrary">needed by the LocalLibrary website</a>, which will call the controller functions we defined in the previous section.</p>
+<p>The skeleton already has a <strong>./routes</strong> folder containing routes for the <em>index</em> and <em>users</em>. Create another route file — <strong>catalog.js</strong> — inside this folder, as shown.</p>
+<pre class="plain"><code>/express-locallibrary-tutorial //the project root
+  /routes
+    index.js
+    users.js
+    catalog.js</code></pre>
+<p>Open <strong>/routes/catalog.js</strong> and copy in the code below:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb13-1" title="1"><span class="kw">var</span> express <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;express&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-2" title="2"><span class="kw">var</span> router <span class="op">=</span> <span class="va">express</span>.<span class="at">Router</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-3" title="3"></a>
+<a class="sourceLine" id="cb13-4" title="4"><span class="co">// Require controller modules.</span></a>
+<a class="sourceLine" id="cb13-5" title="5"><span class="kw">var</span> book_controller <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;../controllers/bookController&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-6" title="6"><span class="kw">var</span> author_controller <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;../controllers/authorController&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-7" title="7"><span class="kw">var</span> genre_controller <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;../controllers/genreController&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-8" title="8"><span class="kw">var</span> book_instance_controller <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;../controllers/bookinstanceController&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-9" title="9"></a>
+<a class="sourceLine" id="cb13-10" title="10"><span class="co">/// BOOK ROUTES ///</span></a>
+<a class="sourceLine" id="cb13-11" title="11"></a>
+<a class="sourceLine" id="cb13-12" title="12"><span class="co">// GET catalog home page.</span></a>
+<a class="sourceLine" id="cb13-13" title="13"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/&#39;</span><span class="op">,</span> <span class="va">book_controller</span>.<span class="at">index</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-14" title="14"></a>
+<a class="sourceLine" id="cb13-15" title="15"><span class="co">// GET request for creating a Book. </span><span class="al">NOTE</span><span class="co"> This must come before routes that display Book (uses id).</span></a>
+<a class="sourceLine" id="cb13-16" title="16"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/book/create&#39;</span><span class="op">,</span> <span class="va">book_controller</span>.<span class="at">book_create_get</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-17" title="17"></a>
+<a class="sourceLine" id="cb13-18" title="18"><span class="co">// POST request for creating Book.</span></a>
+<a class="sourceLine" id="cb13-19" title="19"><span class="va">router</span>.<span class="at">post</span>(<span class="st">&#39;/book/create&#39;</span><span class="op">,</span> <span class="va">book_controller</span>.<span class="at">book_create_post</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-20" title="20"></a>
+<a class="sourceLine" id="cb13-21" title="21"><span class="co">// GET request to delete Book.</span></a>
+<a class="sourceLine" id="cb13-22" title="22"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/book/:id/delete&#39;</span><span class="op">,</span> <span class="va">book_controller</span>.<span class="at">book_delete_get</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-23" title="23"></a>
+<a class="sourceLine" id="cb13-24" title="24"><span class="co">// POST request to delete Book.</span></a>
+<a class="sourceLine" id="cb13-25" title="25"><span class="va">router</span>.<span class="at">post</span>(<span class="st">&#39;/book/:id/delete&#39;</span><span class="op">,</span> <span class="va">book_controller</span>.<span class="at">book_delete_post</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-26" title="26"></a>
+<a class="sourceLine" id="cb13-27" title="27"><span class="co">// GET request to update Book.</span></a>
+<a class="sourceLine" id="cb13-28" title="28"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/book/:id/update&#39;</span><span class="op">,</span> <span class="va">book_controller</span>.<span class="at">book_update_get</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-29" title="29"></a>
+<a class="sourceLine" id="cb13-30" title="30"><span class="co">// POST request to update Book.</span></a>
+<a class="sourceLine" id="cb13-31" title="31"><span class="va">router</span>.<span class="at">post</span>(<span class="st">&#39;/book/:id/update&#39;</span><span class="op">,</span> <span class="va">book_controller</span>.<span class="at">book_update_post</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-32" title="32"></a>
+<a class="sourceLine" id="cb13-33" title="33"><span class="co">// GET request for one Book.</span></a>
+<a class="sourceLine" id="cb13-34" title="34"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/book/:id&#39;</span><span class="op">,</span> <span class="va">book_controller</span>.<span class="at">book_detail</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-35" title="35"></a>
+<a class="sourceLine" id="cb13-36" title="36"><span class="co">// GET request for list of all Book items.</span></a>
+<a class="sourceLine" id="cb13-37" title="37"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/books&#39;</span><span class="op">,</span> <span class="va">book_controller</span>.<span class="at">book_list</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-38" title="38"></a>
+<a class="sourceLine" id="cb13-39" title="39"><span class="co">/// AUTHOR ROUTES ///</span></a>
+<a class="sourceLine" id="cb13-40" title="40"></a>
+<a class="sourceLine" id="cb13-41" title="41"><span class="co">// GET request for creating Author. </span><span class="al">NOTE</span><span class="co"> This must come before route for id (i.e. display author).</span></a>
+<a class="sourceLine" id="cb13-42" title="42"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/author/create&#39;</span><span class="op">,</span> <span class="va">author_controller</span>.<span class="at">author_create_get</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-43" title="43"></a>
+<a class="sourceLine" id="cb13-44" title="44"><span class="co">// POST request for creating Author.</span></a>
+<a class="sourceLine" id="cb13-45" title="45"><span class="va">router</span>.<span class="at">post</span>(<span class="st">&#39;/author/create&#39;</span><span class="op">,</span> <span class="va">author_controller</span>.<span class="at">author_create_post</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-46" title="46"></a>
+<a class="sourceLine" id="cb13-47" title="47"><span class="co">// GET request to delete Author.</span></a>
+<a class="sourceLine" id="cb13-48" title="48"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/author/:id/delete&#39;</span><span class="op">,</span> <span class="va">author_controller</span>.<span class="at">author_delete_get</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-49" title="49"></a>
+<a class="sourceLine" id="cb13-50" title="50"><span class="co">// POST request to delete Author.</span></a>
+<a class="sourceLine" id="cb13-51" title="51"><span class="va">router</span>.<span class="at">post</span>(<span class="st">&#39;/author/:id/delete&#39;</span><span class="op">,</span> <span class="va">author_controller</span>.<span class="at">author_delete_post</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-52" title="52"></a>
+<a class="sourceLine" id="cb13-53" title="53"><span class="co">// GET request to update Author.</span></a>
+<a class="sourceLine" id="cb13-54" title="54"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/author/:id/update&#39;</span><span class="op">,</span> <span class="va">author_controller</span>.<span class="at">author_update_get</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-55" title="55"></a>
+<a class="sourceLine" id="cb13-56" title="56"><span class="co">// POST request to update Author.</span></a>
+<a class="sourceLine" id="cb13-57" title="57"><span class="va">router</span>.<span class="at">post</span>(<span class="st">&#39;/author/:id/update&#39;</span><span class="op">,</span> <span class="va">author_controller</span>.<span class="at">author_update_post</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-58" title="58"></a>
+<a class="sourceLine" id="cb13-59" title="59"><span class="co">// GET request for one Author.</span></a>
+<a class="sourceLine" id="cb13-60" title="60"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/author/:id&#39;</span><span class="op">,</span> <span class="va">author_controller</span>.<span class="at">author_detail</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-61" title="61"></a>
+<a class="sourceLine" id="cb13-62" title="62"><span class="co">// GET request for list of all Authors.</span></a>
+<a class="sourceLine" id="cb13-63" title="63"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/authors&#39;</span><span class="op">,</span> <span class="va">author_controller</span>.<span class="at">author_list</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-64" title="64"></a>
+<a class="sourceLine" id="cb13-65" title="65"><span class="co">/// GENRE ROUTES ///</span></a>
+<a class="sourceLine" id="cb13-66" title="66"></a>
+<a class="sourceLine" id="cb13-67" title="67"><span class="co">// GET request for creating a Genre. </span><span class="al">NOTE</span><span class="co"> This must come before route that displays Genre (uses id).</span></a>
+<a class="sourceLine" id="cb13-68" title="68"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/genre/create&#39;</span><span class="op">,</span> <span class="va">genre_controller</span>.<span class="at">genre_create_get</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-69" title="69"></a>
+<a class="sourceLine" id="cb13-70" title="70"><span class="co">//POST request for creating Genre.</span></a>
+<a class="sourceLine" id="cb13-71" title="71"><span class="va">router</span>.<span class="at">post</span>(<span class="st">&#39;/genre/create&#39;</span><span class="op">,</span> <span class="va">genre_controller</span>.<span class="at">genre_create_post</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-72" title="72"></a>
+<a class="sourceLine" id="cb13-73" title="73"><span class="co">// GET request to delete Genre.</span></a>
+<a class="sourceLine" id="cb13-74" title="74"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/genre/:id/delete&#39;</span><span class="op">,</span> <span class="va">genre_controller</span>.<span class="at">genre_delete_get</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-75" title="75"></a>
+<a class="sourceLine" id="cb13-76" title="76"><span class="co">// POST request to delete Genre.</span></a>
+<a class="sourceLine" id="cb13-77" title="77"><span class="va">router</span>.<span class="at">post</span>(<span class="st">&#39;/genre/:id/delete&#39;</span><span class="op">,</span> <span class="va">genre_controller</span>.<span class="at">genre_delete_post</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-78" title="78"></a>
+<a class="sourceLine" id="cb13-79" title="79"><span class="co">// GET request to update Genre.</span></a>
+<a class="sourceLine" id="cb13-80" title="80"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/genre/:id/update&#39;</span><span class="op">,</span> <span class="va">genre_controller</span>.<span class="at">genre_update_get</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-81" title="81"></a>
+<a class="sourceLine" id="cb13-82" title="82"><span class="co">// POST request to update Genre.</span></a>
+<a class="sourceLine" id="cb13-83" title="83"><span class="va">router</span>.<span class="at">post</span>(<span class="st">&#39;/genre/:id/update&#39;</span><span class="op">,</span> <span class="va">genre_controller</span>.<span class="at">genre_update_post</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-84" title="84"></a>
+<a class="sourceLine" id="cb13-85" title="85"><span class="co">// GET request for one Genre.</span></a>
+<a class="sourceLine" id="cb13-86" title="86"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/genre/:id&#39;</span><span class="op">,</span> <span class="va">genre_controller</span>.<span class="at">genre_detail</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-87" title="87"></a>
+<a class="sourceLine" id="cb13-88" title="88"><span class="co">// GET request for list of all Genre.</span></a>
+<a class="sourceLine" id="cb13-89" title="89"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/genres&#39;</span><span class="op">,</span> <span class="va">genre_controller</span>.<span class="at">genre_list</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-90" title="90"></a>
+<a class="sourceLine" id="cb13-91" title="91"><span class="co">/// BOOKINSTANCE ROUTES ///</span></a>
+<a class="sourceLine" id="cb13-92" title="92"></a>
+<a class="sourceLine" id="cb13-93" title="93"><span class="co">// GET request for creating a BookInstance. </span><span class="al">NOTE</span><span class="co"> This must come before route that displays BookInstance (uses id).</span></a>
+<a class="sourceLine" id="cb13-94" title="94"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/bookinstance/create&#39;</span><span class="op">,</span> <span class="va">book_instance_controller</span>.<span class="at">bookinstance_create_get</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-95" title="95"></a>
+<a class="sourceLine" id="cb13-96" title="96"><span class="co">// POST request for creating BookInstance.</span></a>
+<a class="sourceLine" id="cb13-97" title="97"><span class="va">router</span>.<span class="at">post</span>(<span class="st">&#39;/bookinstance/create&#39;</span><span class="op">,</span> <span class="va">book_instance_controller</span>.<span class="at">bookinstance_create_post</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-98" title="98"></a>
+<a class="sourceLine" id="cb13-99" title="99"><span class="co">// GET request to delete BookInstance.</span></a>
+<a class="sourceLine" id="cb13-100" title="100"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/bookinstance/:id/delete&#39;</span><span class="op">,</span> <span class="va">book_instance_controller</span>.<span class="at">bookinstance_delete_get</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-101" title="101"></a>
+<a class="sourceLine" id="cb13-102" title="102"><span class="co">// POST request to delete BookInstance.</span></a>
+<a class="sourceLine" id="cb13-103" title="103"><span class="va">router</span>.<span class="at">post</span>(<span class="st">&#39;/bookinstance/:id/delete&#39;</span><span class="op">,</span> <span class="va">book_instance_controller</span>.<span class="at">bookinstance_delete_post</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-104" title="104"></a>
+<a class="sourceLine" id="cb13-105" title="105"><span class="co">// GET request to update BookInstance.</span></a>
+<a class="sourceLine" id="cb13-106" title="106"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/bookinstance/:id/update&#39;</span><span class="op">,</span> <span class="va">book_instance_controller</span>.<span class="at">bookinstance_update_get</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-107" title="107"></a>
+<a class="sourceLine" id="cb13-108" title="108"><span class="co">// POST request to update BookInstance.</span></a>
+<a class="sourceLine" id="cb13-109" title="109"><span class="va">router</span>.<span class="at">post</span>(<span class="st">&#39;/bookinstance/:id/update&#39;</span><span class="op">,</span> <span class="va">book_instance_controller</span>.<span class="at">bookinstance_update_post</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-110" title="110"></a>
+<a class="sourceLine" id="cb13-111" title="111"><span class="co">// GET request for one BookInstance.</span></a>
+<a class="sourceLine" id="cb13-112" title="112"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/bookinstance/:id&#39;</span><span class="op">,</span> <span class="va">book_instance_controller</span>.<span class="at">bookinstance_detail</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-113" title="113"></a>
+<a class="sourceLine" id="cb13-114" title="114"><span class="co">// GET request for list of all BookInstance.</span></a>
+<a class="sourceLine" id="cb13-115" title="115"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/bookinstances&#39;</span><span class="op">,</span> <span class="va">book_instance_controller</span>.<span class="at">bookinstance_list</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-116" title="116"></a>
+<a class="sourceLine" id="cb13-117" title="117"><span class="va">module</span>.<span class="at">exports</span> <span class="op">=</span> router<span class="op">;</span></a></code></pre></div>
+<p>The module requires Express and then uses it to create a <code>Router</code> object. The routes are all set up on the router, which is then exported.</p>
+<p>The routes are defined either using <code>.get()</code> or <code>.post()</code> methods on the router object. All the paths are defined using strings (we don’t use string patterns or regular expressions). Routes that act on some specific resource (e.g. book) use path parameters to get the object id from the URL.</p>
+<p>The handler functions are all imported from the controller modules we created in the previous section.</p>
+<h3 id="update-the-index-route-module">Update the index route module</h3>
+<p>We’ve set up all our new routes, but we still have a route to the original page. Let’s instead redirect this to the new index page that we’ve created at the path ‘/catalog’.</p>
+<p>Open <strong>/routes/index.js</strong> and replace the existing route with the function below.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb14-1" title="1"><span class="co">// GET home page.</span></a>
+<a class="sourceLine" id="cb14-2" title="2"><span class="va">router</span>.<span class="at">get</span>(<span class="st">&#39;/&#39;</span><span class="op">,</span> <span class="kw">function</span>(req<span class="op">,</span> res) <span class="op">{</span></a>
+<a class="sourceLine" id="cb14-3" title="3">  <span class="va">res</span>.<span class="at">redirect</span>(<span class="st">&#39;/catalog&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-4" title="4"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> This is our first use of the <a href="https://expressjs.com/en/4x/api.html#res.redirect">redirect()</a> response method. This redirects to the specified page, by default sending HTTP status code “302 Found”. You can change the status code returned if needed, and supply either absolute or relative paths.</p>
+</blockquote>
+<h3 id="update-app.js">Update app.js</h3>
+<p>The last step is to add the routes to the middleware chain. We do this in <code>app.js</code>.</p>
+<p>Open <strong>app.js</strong> and require the catalog route below the other routes (add the third line shown below, underneath the other two):</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb15-1" title="1"><span class="kw">var</span> indexRouter <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;./routes/index&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb15-2" title="2"><span class="kw">var</span> usersRouter <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;./routes/users&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb15-3" title="3"><span class="kw">var</span> catalogRouter <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;./routes/catalog&#39;</span>)<span class="op">;</span>  <span class="co">//Import routes for &quot;catalog&quot; area of site</span></a></code></pre></div>
+<p>Next, add the catalog route to the middleware stack below the other routes (add the third line shown below, underneath the other two):</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb16-1" title="1"><span class="va">app</span>.<span class="at">use</span>(<span class="st">&#39;/&#39;</span><span class="op">,</span> indexRouter)<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-2" title="2"><span class="va">app</span>.<span class="at">use</span>(<span class="st">&#39;/users&#39;</span><span class="op">,</span> usersRouter)<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-3" title="3"><span class="va">app</span>.<span class="at">use</span>(<span class="st">&#39;/catalog&#39;</span><span class="op">,</span> catalogRouter)<span class="op">;</span>  <span class="co">// Add catalog routes to middleware chain.</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> We have added our catalog module at a path <code>'/catalog'</code>. This is prepended to all of the paths defined in the catalog module. So for example, to access a list of books, the URL will be: <code>/catalog/books/</code>.</p>
+</blockquote>
+<p>That’s it. We should now have routes and skeleton functions enabled for all the URLs that we will eventually support on the LocalLibrary website.</p>
+<h3 id="testing-the-routes">Testing the routes</h3>
+<p>To test the routes, first start the website using your usual approach</p>
+<ul>
+<li><p>The default method</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb17-1" title="1"><span class="ex">//</span> Windows</a>
+<a class="sourceLine" id="cb17-2" title="2"><span class="ex">SET</span> DEBUG=express-locallibrary-tutorial:* <span class="kw">&amp;</span> <span class="ex">npm</span> start</a>
+<a class="sourceLine" id="cb17-3" title="3"></a>
+<a class="sourceLine" id="cb17-4" title="4"><span class="ex">//</span> macOS or Linux</a>
+<a class="sourceLine" id="cb17-5" title="5"><span class="va">DEBUG=</span>express-locallibrary-tutorial:<span class="ex">*</span> npm start</a></code></pre></div></li>
+<li><p>If you previously set up <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/skeleton_website">nodemon</a>, you can instead use:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb18-1" title="1"><span class="ex">//</span> Windows</a>
+<a class="sourceLine" id="cb18-2" title="2"><span class="ex">SET</span> DEBUG=express-locallibrary-tutorial:* <span class="kw">&amp;</span> <span class="ex">npm</span> run devstart</a>
+<a class="sourceLine" id="cb18-3" title="3"></a>
+<a class="sourceLine" id="cb18-4" title="4"><span class="ex">//</span> macOS or Linux</a>
+<a class="sourceLine" id="cb18-5" title="5"><span class="va">DEBUG=</span>express-locallibrary-tutorial:<span class="ex">*</span> npm run devstart</a></code></pre></div></li>
+</ul>
+<p>Then navigate to a number of LocalLibrary URLs, and verify that you don’t get an error page (HTTP 404). A small set of URLs are listed below for your convenience:</p>
+<ul>
+<li><a href="http://localhost:3000/" class="uri">http://localhost:3000/</a></li>
+<li><a href="http://localhost:3000/catalog" class="uri">http://localhost:3000/catalog</a></li>
+<li><a href="http://localhost:3000/catalog/books" class="uri">http://localhost:3000/catalog/books</a></li>
+<li><a href="http://localhost:3000/catalog/bookinstances/" class="uri">http://localhost:3000/catalog/bookinstances/</a></li>
+<li><a href="http://localhost:3000/catalog/authors/" class="uri">http://localhost:3000/catalog/authors/</a></li>
+<li><a href="http://localhost:3000/catalog/genres/" class="uri">http://localhost:3000/catalog/genres/</a></li>
+<li><a href="http://localhost:3000/catalog/book/5846437593935e2f8c2aa226/">http://localhost:3000/catalog/book/5846437593935e2f8c2aa226</a></li>
+<li><a href="http://localhost:3000/catalog/book/create" class="uri">http://localhost:3000/catalog/book/create</a></li>
+</ul>
+<h2 id="summary">Summary</h2>
+<p>We’ve now created all the routes for our site, along with dummy controller functions that we can populate with a full implementation in later articles. Along the way we’ve learned a lot of fundamental information about Express routes, and some approaches for structuring our routes and controllers.</p>
+<p>In our next article we’ll create a proper welcome page for the site, using views (templates) and information stored in our models.</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="https://expressjs.com/en/starter/basic-routing.html">Basic routing</a> (Express docs)</li>
+<li><a href="https://expressjs.com/en/guide/routing.html">Routing guide</a> (Express docs)</li>
+</ul>
+<p>{{PreviousMenuNext(“Learn/Server-side/Express_Nodejs/mongoose”, “Learn/Server-side/Express_Nodejs/Displaying_data”, “Learn/Server-side/Express_Nodejs”)}}</p>
+<h2 id="in-this-module">In this module</h2>
+<ul>
+<li><a href="/en-US/docs/Learn/Server-side/Express_Nodejs/Introduction">Express/Node introduction</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Express_Nodejs/development_environment">Setting up a Node (Express) development environment</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Express_Nodejs/Tutorial_local_library_website">Express Tutorial: The Local Library website</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Express_Nodejs/skeleton_website">Express Tutorial Part 2: Creating a skeleton website</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Express_Nodejs/mongoose">Express Tutorial Part 3: Using a Database (with Mongoose)</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Express_Nodejs/routes">Express Tutorial Part 4: Routes and controllers</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Express_Nodejs/Displaying_data">Express Tutorial Part 5: Displaying library data</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Express_Nodejs/forms">Express Tutorial Part 6: Working with forms</a></li>
+<li><a href="/en-US/docs/Learn/Server-side/Express_Nodejs/deployment">Express Tutorial Part 7: Deploying to production</a></li>
+</ul>

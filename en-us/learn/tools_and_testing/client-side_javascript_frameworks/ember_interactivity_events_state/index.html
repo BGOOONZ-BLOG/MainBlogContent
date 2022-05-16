@@ -1,0 +1,233 @@
+<p>{{LearnSidebar}} {{PreviousMenuNext(“Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_structure_componentization”,“Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_conditional_footer”, “Learn/Tools_and_testing/Client-side_JavaScript_frameworks”)}}</p>
+<p>At this point we’ll start adding some interactivity to our app, providing the ability to add and display new todo items. Along the way, we’ll look at using events in Ember, creating component classes to contain JavaScript code to control interactive features, and setting up a service to keep track of the data state of our app.</p>
+<table>
+<tbody>
+<tr>
+<th scope="row">
+Prerequisites:
+</th>
+<td>
+<p>
+At minimum, it is recommended that you are familiar with the core <a href="/en-US/docs/Learn/HTML">HTML</a>, <a href="/en-US/docs/Learn/CSS">CSS</a>, and <a href="/en-US/docs/Learn/JavaScript">JavaScript</a> languages, and have knowledge of the <a
+            href="/en-US/docs/Learn/Tools_and_testing/Understanding_client-side_tools/Command_line"
+            >terminal/command line</a
+          >.
+</p>
+<p>
+A deeper understanding of modern JavaScript features (such as classes, modules, etc), will be extremely beneficial, as Ember makes heavy use of them.
+</p>
+</td>
+</tr>
+<tr>
+<th scope="row">
+Objective:
+</th>
+<td>
+To learn how to create component classes and use events to control interactivity, and keep track of app state using a service.
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="adding-interactivity">Adding Interactivity</h2>
+<p>Now we’ve got a refactored componentized version of our todo app, lets walk through how we can add the interactivity we need to make the app functional.</p>
+<p>When beginning to think about interactivity, it’s good to declare what each component’s goals and responsibilities are. In the below sections we’ll do this for each component, and then walk you through how the functionality can be implemented.</p>
+<h2 id="creating-todos">Creating todos</h2>
+<p>For our card-header / todo input, we’ll want to be able to submit our typed in todo task when we press the <kbd>Enter</kbd> key and have it appear in the todos list.</p>
+<p>We want to be able to capture the text typed into the input. We do this so that our JavaScript code knows what we typed in, and we can save our todo and pass that text along to the todo list component to display.</p>
+<p>We can capture the <a href="/en-US/docs/Web/API/Document/keydown_event"><code>keydown</code></a> event via the <a href="https://api.emberjs.com/ember/3.16/classes/Ember.Templates.helpers/methods/on?anchor=on">on modifier</a>, which is just Ember syntactic sugar around <a href="/en-US/docs/Web/API/EventTarget/addEventListener"><code>addEventListener</code></a> and <a href="/en-US/docs/Web/API/EventTarget/removeEventListener"><code>removeEventListener</code></a> (see <a href="/en-US/docs/Learn/JavaScript/Building_blocks/Events#addeventlistener_and_removeeventlistener">this explanation</a> if needed).</p>
+<p>Add the new line shown below to your <code>header.hbs</code> file:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">&lt;input</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="ot">  class=</span><span class="st">&#39;new-todo&#39;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="ot">  aria-label=</span><span class="st">&#39;What needs to be done?&#39;</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="ot">  placeholder=</span><span class="st">&#39;What needs to be done?&#39;</span></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="ot">  autofocus</span></a>
+<a class="sourceLine" id="cb1-6" title="6">  <span class="er">\{{on</span> <span class="er">&#39;keydown&#39;</span><span class="ot"> this.onKeyDown</span><span class="er">}}</span></a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="kw">&gt;</span></a></code></pre></div>
+<p>This new attribute is inside double curly braces, which tells you it is part of Ember’s dynamic templating syntax. The first argument passed to <code>on</code> is the type of event to respond to (<code>keydown</code>), and the last argument is the event handler — the code that will run in response to the <code>keydown</code> event firing. As you may expect from dealing with <a href="/en-US/docs/Learn/JavaScript/Objects/Object-oriented_JS">vanilla JavaScript objects</a>, the <code>this</code> keyword refers to the “context” or “scope” of the component. One component’s <code>this</code> will be different from another component’s <code>this</code>.</p>
+<p>We can define what is available inside <code>this</code> by generating a component class to go along with your component. This is a vanilla JavaScript class and has no special meaning to Ember, other than <em>extending</em> from the <code>Component</code> super-class.</p>
+<p>To create a header class to go with your header component, type this in to your terminal:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" title="1"><span class="ex">ember</span> generate component-class header</a></code></pre></div>
+<p>This will create the following empty class file — <code>todomvc/app/components/header.js</code>:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="im">import</span> Component <span class="im">from</span> <span class="st">&#39;@glimmer/component&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="im">export</span> <span class="im">default</span> <span class="kw">class</span> HeaderComponent <span class="kw">extends</span> Component <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4"></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="op">}</span></a></code></pre></div>
+<p>Inside this file we will implement the event handler code. Update the content to the following:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="im">import</span> Component <span class="im">from</span> <span class="st">&#39;@glimmer/component&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="im">import</span> <span class="op">{</span> action <span class="op">}</span> <span class="im">from</span> <span class="st">&#39;@ember/object&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="im">export</span> <span class="im">default</span> <span class="kw">class</span> HeaderComponent <span class="kw">extends</span> Component <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-5" title="5"></a>
+<a class="sourceLine" id="cb4-6" title="6">  @action</a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="at">onKeyDown</span>(<span class="op">{</span> target<span class="op">,</span> key <span class="op">}</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-8" title="8">    <span class="kw">let</span> text <span class="op">=</span> <span class="va">target</span>.<span class="va">value</span>.<span class="at">trim</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-9" title="9">    <span class="kw">let</span> hasValue <span class="op">=</span> <span class="at">Boolean</span>(text)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-10" title="10"></a>
+<a class="sourceLine" id="cb4-11" title="11">    <span class="cf">if</span> (key <span class="op">===</span> <span class="st">&#39;Enter&#39;</span> <span class="op">&amp;&amp;</span> hasValue) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-12" title="12">      <span class="at">alert</span>(text)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-13" title="13"></a>
+<a class="sourceLine" id="cb4-14" title="14">      <span class="va">target</span>.<span class="at">value</span> <span class="op">=</span> <span class="st">&#39;&#39;</span></a>
+<a class="sourceLine" id="cb4-15" title="15">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-16" title="16">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-17" title="17"><span class="op">}</span></a></code></pre></div>
+<p>The <code>@action</code> decorator is the only Ember-specific code here (aside from extending from the <code>Component</code> superclass, and the Ember-specific items we are importing using <a href="/en-US/docs/Web/JavaScript/Guide/Modules">JavaScript module syntax</a>) — the rest of the file is vanilla JavaScript, and would work in any application. The <code>@action</code> decorator declares that the function is an “action”, meaning it’s a type of function that will be invoked from an event that occurred in the template. <code>@action</code> also binds the <code>this</code> of the function to the class instance.</p>
+<blockquote>
+<p><strong>Note:</strong> A decorator is basically a wrapper function, which wraps and calls other functions or properties, providing additional functionality along the way. For example, the <code>@tracked</code> decorator (see slightly later on) runs code it is applied to, but additionally tracks it and automatically updates the app when values change. <a href="https://www.sitepoint.com/javascript-decorators-what-they-are/">Read JavaScript Decorators: What They Are and When to Use Them</a> for more general information on decorators.</p>
+</blockquote>
+<p>Coming back to our browser tab with the app running, we can type whatever we want, and when we hit <kbd>Enter</kbd> we’ll be greeted with an alert message telling us exactly what we typed.</p>
+<figure>
+<img src="todos-hello-there-alert.png" alt="the initial placeholder state of the add function, showing the text entered into the input elements being alerted back to you." /><figcaption>the initial placeholder state of the add function, showing the text entered into the input elements being alerted back to you.</figcaption>
+</figure>
+<p>With the interactivity of the header input out of the way, we need a place to store todos so that other components can access them.</p>
+<h2 id="storing-todos-with-a-service">Storing Todos with a service</h2>
+<p>Ember has built-in application-level <strong>state</strong> management that we can use to manage the storage of our todos and allow each of our components to access data from that application-level state. Ember calls these constructs <a href="https://guides.emberjs.com/release/services/">Services</a>, and they live for the entire lifetime of the page (a page refresh will clear them; persisting the data for longer is beyond the scope of this tutorial).</p>
+<p>Run this terminal command to generate a service for us to store our todo-list data in:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb5-1" title="1"><span class="ex">ember</span> generate service todo-data</a></code></pre></div>
+<p>This should give you a terminal output like so:</p>
+<p>installing service create app/services/todo-data.js installing service-test create tests/unit/services/todo-data-test.js</p>
+<p>This creates a <code>todo-data.js</code> file inside the <code>todomvc/app/services</code> directory to contain our service, which initially contains an import statement and an empty class:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="im">import</span> Service <span class="im">from</span> <span class="st">&#39;@ember/service&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-2" title="2"></a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="im">export</span> <span class="im">default</span> <span class="kw">class</span> TodoDataService <span class="kw">extends</span> Service <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-4" title="4"></a>
+<a class="sourceLine" id="cb6-5" title="5"><span class="op">}</span></a></code></pre></div>
+<p>First of all, we want to define <em>what a todo is</em>. We know that we want to track both the text of a todo, and whether or not it is completed.</p>
+<p>Add the following <code>import</code> statement below the existing one:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="im">import</span> <span class="op">{</span> tracked <span class="op">}</span> <span class="im">from</span> <span class="st">&#39;@glimmer/tracking&#39;</span><span class="op">;</span></a></code></pre></div>
+<p>Now add the following class below the previous line you added:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">class</span> Todo <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-2" title="2">  @tracked text <span class="op">=</span> <span class="st">&#39;&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-3" title="3">  @tracked isCompleted <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-4" title="4"></a>
+<a class="sourceLine" id="cb8-5" title="5">  <span class="at">constructor</span>(text) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-6" title="6">    <span class="kw">this</span>.<span class="at">text</span> <span class="op">=</span> text<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-7" title="7">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb8-8" title="8"><span class="op">}</span></a></code></pre></div>
+<p>This class represents a todo — it contains a <code>@tracked</code> <code>text</code> property containing the text of the todo, and a <code>@tracked</code> <code>isCompleted</code> property that specifies whether the todo has been completed or not. When instantiated, a <code>Todo</code> object will have an initial <code>text</code> value equal to the text given to it when created (see below), and an <code>isCompleted</code> value of <code>false</code>. The only Ember-specific part of this class is the <code>@tracked</code> decorator — this hooks in to the reactivity system and allows Ember to update what you’re seeing in your app automatically if the tracked properties change. <a href="https://api.emberjs.com/ember/3.15/functions/@glimmer%2Ftracking/tracked">More information on tracked can be found here</a>.</p>
+<p>Now it’s time to add to the body of the service.</p>
+<p>First add another <code>import</code> statement below the previous one, to make actions available inside the service:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="im">import</span> <span class="op">{</span> action <span class="op">}</span> <span class="im">from</span> <span class="st">&#39;@ember/object&#39;</span><span class="op">;</span></a></code></pre></div>
+<p>Update the existing <code>export default class TodoDataService extends Service { … }</code> block as follows:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1"><span class="im">export</span> <span class="im">default</span> <span class="kw">class</span> TodoDataService <span class="kw">extends</span> Service <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-2" title="2">  @tracked todos <span class="op">=</span> []<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-3" title="3"></a>
+<a class="sourceLine" id="cb10-4" title="4">  @action</a>
+<a class="sourceLine" id="cb10-5" title="5">  <span class="at">add</span>(text) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-6" title="6">    <span class="kw">let</span> newTodo <span class="op">=</span> <span class="kw">new</span> <span class="at">Todo</span>(text)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-7" title="7"></a>
+<a class="sourceLine" id="cb10-8" title="8">    <span class="kw">this</span>.<span class="at">todos</span> <span class="op">=</span> [...<span class="va">this</span>.<span class="at">todos</span><span class="op">,</span> newTodo]<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-9" title="9">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-10" title="10"><span class="op">}</span></a></code></pre></div>
+<p>Here, the <code>todos</code> property on the service will maintain our list of todos contained inside an array, and we’ll mark it with <code>@tracked</code>, because when the value of <code>todos</code> is updated we want the UI to update as well.</p>
+<p>And just like before, the <code>add()</code> function that will be called from the template gets annotated with the <code>@action</code> decorator to bind it to the class instance. This function’s contents are fairly easy to understand — when the function is invoked, a new <code>Todo</code> object instance is created with a text value of <code>text</code>, and the <code>todos</code> property value is updated to all of the current items inside the array (accessed conveniently using <a href="/en-US/docs/Web/JavaScript/Reference/Operators/Spread_syntax">spread syntax</a>), <em>plus</em> the new todo.</p>
+<h2 id="using-the-service-from-our-header-component">Using the service from our header component</h2>
+<p>Now that we’ve defined a way to add todos, we can interact with this service from the <code>header.js</code> input component to actually start adding them.</p>
+<p>First of all, the service needs to be injected into the template via the <code>@inject</code> decorator, which we’ll rename to <code>@service</code> for semantic clarity. To do this, add the following <code>import</code> line to <code>header.js</code>, beneath the two existing <code>import</code> lines:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1"><span class="im">import</span> <span class="op">{</span> inject <span class="im">as</span> service <span class="op">}</span> <span class="im">from</span> <span class="st">&#39;@ember/service&#39;</span><span class="op">;</span></a></code></pre></div>
+<p>With this import in place, we can now make the <code>todo-data</code> service available inside the <code>HeaderComponent</code> class via the <code>todos</code> object, using the <code>@service</code> decorator. Add the following line just below the opening <code>export...</code> line:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb12-1" title="1">@<span class="at">service</span>(<span class="st">&#39;todo-data&#39;</span>) todos<span class="op">;</span></a></code></pre></div>
+<p>Now the placeholder <code>alert(text);</code> line can be replaced with a call to our new <code>add()</code> function. Replace it with the following:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb13-1" title="1"><span class="kw">this</span>.<span class="va">todos</span>.<span class="at">add</span>(text)<span class="op">;</span></a></code></pre></div>
+<p>If we try this out in the todo app in our browser (<code>npm start</code>, go to <code>localhost:4200</code>), it will look like nothing happens after hitting the <kbd>Enter</kbd> key (although the fact that the app builds without any errors is a good sign). Using the <a href="https://guides.emberjs.com/release/ember-inspector/installation/">Ember Inspector</a> however, we can see that our todo was added:</p>
+<figure>
+<img src="todos-in-ember-inspector.gif" alt="The app being shown in the ember inspector, to prove that added todos are being stored by the service, even if they are not being displayed in the UI yet" /><figcaption>The app being shown in the ember inspector, to prove that added todos are being stored by the service, even if they are not being displayed in the UI yet</figcaption>
+</figure>
+<h2 id="displaying-our-todos">Displaying our todos</h2>
+<p>Now that we know that we can create todos, there needs to be a way to swap out our static “Buy Movie Tickets” todos with the todos we’re actually creating. In the <code>TodoList</code> component, we’ll want to get the todos out of the service, and render a <code>Todo</code> component for each todo.</p>
+<p>In order to retrieve the todos from the service, our <code>TodoList</code> component first needs a backing component class to contain this functionality. Press <kbd>Ctrl</kbd> + <kbd>C</kbd> to stop the development server, and enter the following terminal command:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb14-1" title="1"><span class="ex">ember</span> generate component-class todo-list</a></code></pre></div>
+<p>This generates the new component class <code>todomvc/app/components/todo-list.js</code>.</p>
+<p>Populate this file with the following code, which exposes the <code>todo-data</code> service, via the <code>todos</code> property, to our template. This makes it accessible via <code>this.todos</code> inside both the class and the template:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb15-1" title="1"><span class="im">import</span> Component <span class="im">from</span> <span class="st">&#39;@glimmer/component&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-2" title="2"><span class="im">import</span> <span class="op">{</span> inject <span class="im">as</span> service <span class="op">}</span> <span class="im">from</span> <span class="st">&#39;@ember/service&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-3" title="3"></a>
+<a class="sourceLine" id="cb15-4" title="4"><span class="im">export</span> <span class="im">default</span> <span class="kw">class</span> TodoListComponent <span class="kw">extends</span> Component <span class="op">{</span></a>
+<a class="sourceLine" id="cb15-5" title="5">  @<span class="at">service</span>(<span class="st">&#39;todo-data&#39;</span>) todos<span class="op">;</span></a>
+<a class="sourceLine" id="cb15-6" title="6"><span class="op">}</span></a></code></pre></div>
+<p>One issue here is that our service is called <code>todos</code>, but the list of todos is also called <code>todos</code>, so currently we would access the data using <code>this.todos.todos</code>. This is not intuitive, so we’ll add a <a href="/en-US/docs/Web/JavaScript/Reference/Functions/get">getter</a> to the <code>todos</code> service called <code>all</code>, which will represent all todos.</p>
+<p>To do this, go back to your <code>todo-data.js</code> file and add the following below the <code>@tracked todos = [];</code> line:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb16-1" title="1">get <span class="at">all</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-2" title="2">  <span class="cf">return</span> <span class="kw">this</span>.<span class="at">todos</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-3" title="3"><span class="op">}</span></a></code></pre></div>
+<p>Now we can access the data using <code>this.todos.all</code>, which is much more intuitive. To put this in action, go to your <code>todo-list.hbs</code> component, and replace the static component calls:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb17-1" title="1"><span class="op">&lt;</span>Todo /<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb17-2" title="2"><span class="op">&lt;</span>Todo /<span class="op">&gt;</span></a></code></pre></div>
+<p>With a dynamic <code>#each</code> block (which is basically syntactic sugar over the top of JavaScript’s <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach"><code>forEach()</code></a>) that creates a <code>&lt;Todo /&gt;</code> component for each todo available in the list of todos returned by the service’s <code>all()</code> getter:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb18-1" title="1">\<span class="op">{{</span>#each <span class="kw">this</span>.<span class="va">todos</span>.<span class="at">all</span> <span class="im">as</span> <span class="op">|</span>todo<span class="op">|}}</span></a>
+<a class="sourceLine" id="cb18-2" title="2">  <span class="op">&lt;</span>Todo @todo<span class="op">=</span>\<span class="op">{{</span>todo<span class="op">}}</span> /&gt;</a>
+<a class="sourceLine" id="cb18-3" title="3">\<span class="op">{{</span><span class="ss">/each}}</span></a></code></pre></div>
+<p>Another way to look at this:</p>
+<ul>
+<li><code>this</code> — the rendering context / component instance.</li>
+<li><code>todos</code> — a property on <code>this</code>, which we defined in the <code>todo-list.js</code> component using <code>@service('todo-data') todos;</code>. This is a reference to the <code>todo-data</code> service, allowing us to interact with the service instance directly.</li>
+<li><code>all</code> — a getter on the <code>todo-data</code> service that returns all the todos.</li>
+</ul>
+<p>Try starting the server again and navigating to our app, and you’ll find that it works! Well, sort of. Whenever you enter a new Todo item, a new list item appears below the text input, but unfortunately it always says “Buy Movie Tickets”.</p>
+<p>This is because the text label inside each list item is hardcoded to that text, as seen in <code>todo.hbs</code>:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb19-1" title="1"><span class="kw">&lt;label&gt;</span>Buy Movie Tickets<span class="kw">&lt;/label&gt;</span></a></code></pre></div>
+<p>Update this line to use the Argument <code>@todo</code> — which will represent the Todo that we passed in to this component when it was invoked in <code>todo-list.hbs</code>, in the line <code>&lt;Todo @todo=\{{todo}} /&gt;</code>:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb20-1" title="1"><span class="op">&lt;</span>label<span class="op">&gt;</span>\<span class="op">{{</span>@<span class="va">todo</span>.<span class="at">text</span><span class="op">}}</span>&lt;/label<span class="op">&gt;</span></a></code></pre></div>
+<p>OK, try it again. You should find that now the text submitted in the <code>&lt;input&gt;</code> is properly reflected in the UI:</p>
+<figure>
+<img src="todos-being-appended-with-correct-text.gif" alt="The app being shown in its final state of this article, with entered todo items being shown in the UI" /><figcaption>The app being shown in its final state of this article, with entered todo items being shown in the UI</figcaption>
+</figure>
+<h2 id="summary">Summary</h2>
+<p>OK, so that’s great progress for now. We can now add todo items to our app, and the state of the data is tracked using our service. Next we’ll move on to getting our footer functionality working, including the todo counter, and look at conditional rendering, including correctly styling todos when they’ve been checked. We’ll also wire up our “Clear completed” button.</p>
+<p>{{PreviousMenuNext(“Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_structure_componentization”,“Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_conditional_footer”, “Learn/Tools_and_testing/Client-side_JavaScript_frameworks”)}}</p>
+<h2 id="in-this-module">In this module</h2>
+<ul>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Introduction">Introduction to client-side frameworks</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Main_features">Framework main features</a></li>
+<li><p>React</p>
+<ul>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/React_getting_started">Getting started with React</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/React_todo_list_beginning">Beginning our React todo list</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/React_components">Componentizing our React app</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/React_interactivity_events_state">React interactivity: Events and state</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/React_interactivity_filtering_conditional_rendering">React interactivity: Editing, filtering, conditional rendering</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/React_accessibility">Accessibility in React</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/React_resources">React resources</a></li>
+</ul></li>
+<li><p>Ember</p>
+<ul>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_getting_started">Getting started with Ember</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_structure_componentization">Ember app structure and componentization</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_interactivity_events_state">Ember interactivity: Events, classes and state</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_conditional_footer">Ember Interactivity: Footer functionality, conditional rendering</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_routing">Routing in Ember</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Ember_resources">Ember resources and troubleshooting</a></li>
+</ul></li>
+<li><p>Vue</p>
+<ul>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_getting_started">Getting started with Vue</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_first_component">Creating our first Vue component</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_rendering_lists">Rendering a list of Vue components</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_methods_events_models">Adding a new todo form: Vue events, methods, and models</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_styling">Styling Vue components with CSS</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_computed_properties">Using Vue computed properties</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_conditional_rendering">Vue conditional rendering: editing existing todos</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_refs_focus_management">Focus management with Vue refs</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Vue_resources">Vue resources</a></li>
+</ul></li>
+<li><p>Svelte</p>
+<ul>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_getting_started">Getting started with Svelte</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_Todo_list_beginning">Starting our Svelte Todo list app</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_variables_props">Dynamic behavior in Svelte: working with variables and props</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_components">Componentizing our Svelte app</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_reactivity_lifecycle_accessibility">Advanced Svelte: Reactivity, lifecycle, accessibility</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_stores">Working with Svelte stores</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_TypeScript">TypeScript support in Svelte</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Svelte_deployment_next">Deployment and next steps</a></li>
+</ul></li>
+<li><p>Angular</p>
+<ul>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Angular_getting_started">Getting started with Angular</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Angular_todo_list_beginning">Beginning our Angular todo list app</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Angular_styling">Styling our Angular app</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Angular_item_component">Creating an item component</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Angular_filtering">Filtering our to-do items</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Angular_building">Building Angular applications and further resources</a></li>
+</ul></li>
+</ul>

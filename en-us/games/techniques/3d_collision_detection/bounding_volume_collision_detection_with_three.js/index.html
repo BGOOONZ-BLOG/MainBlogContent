@@ -1,0 +1,107 @@
+<p>{{GamesSidebar}}</p>
+<p>This article shows how to implement <strong>collision detection between bounding boxes and spheres using the Three.js</strong> library. It is assumed that before reading this you have read our <a href="/en-US/docs/Games/Techniques/3D_collision_detection">3D collision detection</a> introductory article first, and have basic knowledge about Three.js.</p>
+<h2 id="using-box3-and-sphere">Using <code>Box3</code> and <code>Sphere</code></h2>
+<p>Three.js has objects that represent <strong>mathematical volumes</strong> and shapes — for 3D AABB and bounding spheres we can use the <strong><a href="https://threejs.org/docs/#api/math/Box3"><code>Box3</code></a></strong> and <strong><a href="https://threejs.org/docs/#api/math/Sphere"><code>Sphere</code></a></strong> objects. Once instantiated, they have methods available to do intersection tests against other volumes.</p>
+<h3 id="instantiating-boxes">Instantiating boxes</h3>
+<p>To create a <strong><code>Box3</code> instance</strong>, we need to provide the <strong>lower and upper boundaries</strong> of the box. Usually we will want this AABB to be “linked” to an object in our 3D world (like a character.) In Three.js, <code>Geometry</code> instances have a <code>boundingBox</code> property with <code>min</code> and <code>max</code> boundaries for the object. Keep in mind that in order for this property to be defined, you need to manually call <code>Geometry.computeBoundingBox</code> beforehand.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">var</span> knot <span class="op">=</span> <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">Mesh</span>(</a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">TorusKnotGeometry</span>(<span class="fl">0.5</span><span class="op">,</span> <span class="fl">0.1</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="kw">new</span> <span class="at">MeshNormalMaterial</span>(<span class="op">{}</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-4" title="4"></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="va">knot</span>.<span class="va">geometry</span>.<span class="at">computeBoundingBox</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="kw">var</span> knotBBox <span class="op">=</span> <span class="kw">new</span> <span class="at">Box3</span>(</a>
+<a class="sourceLine" id="cb1-7" title="7">  <span class="va">knot</span>.<span class="va">geometry</span>.<span class="va">boundingBox</span>.<span class="at">min</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb1-8" title="8">  <span class="va">knot</span>.<span class="va">geometry</span>.<span class="va">boundingBox</span>.<span class="at">max</span>)<span class="op">;</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> The <code>boundingBox</code> property takes the <code>Geometry</code> itself as reference, and not the <code>Mesh</code>. So any transformations such as scale, position, etc. applied to the <code>Mesh</code> will be ignored while computing the calculating box.</p>
+</blockquote>
+<p>A more simple alternative that fixes the previous issue is to set those boundaries later on with <code>Box3.setFromObject</code>, which will compute the dimensions taking into account a 3D entity’s <strong>transformations <em>and</em> any child meshes</strong> as well.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> knot <span class="op">=</span> <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">Mesh</span>(</a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">TorusKnotGeometry</span>(<span class="fl">0.5</span><span class="op">,</span> <span class="fl">0.1</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="kw">new</span> <span class="at">MeshNormalMaterial</span>(<span class="op">{}</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="kw">var</span> knotBBox <span class="op">=</span> <span class="kw">new</span> <span class="at">Box3</span>(<span class="kw">new</span> <span class="va">THREE</span>.<span class="at">Vector3</span>()<span class="op">,</span> <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">Vector3</span>())<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="va">knotBBox</span>.<span class="at">setFromObject</span>(knot)<span class="op">;</span></a></code></pre></div>
+<h3 id="instantiating-spheres">Instantiating spheres</h3>
+<p>Instantiating <strong><code>Sphere</code> objects</strong> is similar. We need to provide the sphere’s center and radius, which can be added to the <code>boundingSphere</code> property available in <code>Geometry</code>.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">var</span> knot <span class="op">=</span> <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">Mesh</span>(</a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">TorusKnotGeometry</span>(<span class="fl">0.5</span><span class="op">,</span> <span class="fl">0.1</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="kw">new</span> <span class="at">MeshNormalMaterial</span>(<span class="op">{}</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-4" title="4"></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="kw">var</span> knotBSphere <span class="op">=</span> <span class="kw">new</span> <span class="at">Sphere</span>(</a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="va">knot</span>.<span class="at">position</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="va">knot</span>.<span class="va">geometry</span>.<span class="va">boundingSphere</span>.<span class="at">radius</span>)<span class="op">;</span></a></code></pre></div>
+<p>Unfortunately, there is no equivalent of <code>Box3.setFromObject</code> for Sphere instances. So if we apply transformations or change the position of the <code>Mesh</code>, we need to manually update the bounding sphere. For instance:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="va">knot</span>.<span class="va">scale</span>.<span class="at">set</span>(<span class="dv">2</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="va">knotBSphere</span>.<span class="at">radius</span> <span class="op">=</span> <span class="va">knot</span>.<span class="va">geometry</span>.<span class="at">radius</span> <span class="op">*</span> <span class="dv">2</span><span class="op">;</span></a></code></pre></div>
+<h3 id="intersection-tests">Intersection tests</h3>
+<h4 id="point-vs.-box3-sphere">Point vs. <code>Box3</code> / <code>Sphere</code></h4>
+<p>Both <code>Box3</code> and <code>Sphere</code> have a <strong><code>containsPoint</code></strong> method to do this test.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">var</span> point <span class="op">=</span> <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">Vector3</span>(<span class="dv">2</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">7</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="va">knotBBox</span>.<span class="at">containsPoint</span>(point)<span class="op">;</span></a></code></pre></div>
+<h4 id="box3-vs.-box3"><code>Box3</code> vs. <code>Box3</code></h4>
+<p>The <strong><code>Box3.intersectsBox</code></strong> method is available for performing this test.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="va">knotBbox</span>.<span class="at">intersectsBox</span>(otherBox)<span class="op">;</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> This is different from the <code>Box3.containsBox</code> method, which checks whether the Box3 <em>fully</em> wraps another one.</p>
+</blockquote>
+<h4 id="sphere-vs.-sphere"><code>Sphere</code> vs. <code>Sphere</code></h4>
+<p>In a similar fashion as before, there is a <strong><code>Sphere.intersectsSphere</code></strong> method to perform this test.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="va">knotBSphere</span>.<span class="at">intersectsSphere</span>(otherSphere)<span class="op">;</span></a></code></pre></div>
+<h4 id="sphere-vs.-box3"><code>Sphere</code> vs. <code>Box3</code></h4>
+<p>Unfortunately this test is not implemented in Three.js, but we can patch Sphere to implement a <a href="/en-US/docs/Games/Techniques/3D_collision_detection">Sphere vs. AABB intersection</a> algorithm.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="co">// expand THREE.js Sphere to support collision tests vs Box3</span></a>
+<a class="sourceLine" id="cb8-2" title="2"><span class="co">// we are creating a vector outside the method scope to</span></a>
+<a class="sourceLine" id="cb8-3" title="3"><span class="co">// avoid spawning a new instance of Vector3 on every check</span></a>
+<a class="sourceLine" id="cb8-4" title="4"></a>
+<a class="sourceLine" id="cb8-5" title="5"><span class="va">THREE</span>.<span class="va">Sphere</span>.<span class="at">__closest</span> <span class="op">=</span> <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">Vector3</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-6" title="6"><span class="va">THREE</span>.<span class="va">Sphere</span>.<span class="va">prototype</span>.<span class="at">intersectsBox</span> <span class="op">=</span> <span class="kw">function</span> (box) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-7" title="7">    <span class="co">// get box closest point to sphere center by clamping</span></a>
+<a class="sourceLine" id="cb8-8" title="8">    <span class="va">THREE</span>.<span class="va">Sphere</span>.<span class="va">__closest</span>.<span class="at">set</span>(<span class="kw">this</span>.<span class="va">center</span>.<span class="at">x</span><span class="op">,</span> <span class="kw">this</span>.<span class="va">center</span>.<span class="at">y</span><span class="op">,</span> <span class="kw">this</span>.<span class="va">center</span>.<span class="at">z</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-9" title="9">    <span class="va">THREE</span>.<span class="va">Sphere</span>.<span class="va">__closest</span>.<span class="at">clamp</span>(<span class="va">box</span>.<span class="at">min</span><span class="op">,</span> <span class="va">box</span>.<span class="at">max</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-10" title="10"></a>
+<a class="sourceLine" id="cb8-11" title="11">    <span class="kw">var</span> distance <span class="op">=</span>  <span class="kw">this</span>.<span class="va">center</span>.<span class="at">distanceToSquared</span>(<span class="va">THREE</span>.<span class="va">Sphere</span>.<span class="at">__closest</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-12" title="12">    <span class="cf">return</span> distance <span class="op">&lt;</span> (<span class="kw">this</span>.<span class="at">radius</span> <span class="op">*</span> <span class="kw">this</span>.<span class="at">radius</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-13" title="13"><span class="op">};</span></a></code></pre></div>
+<h3 id="demos">Demos</h3>
+<p>We have prepared some <a href="https://mozdevs.github.io/gamedev-js-3d-aabb/">live demos</a> to demonstrate these techniques, with <a href="https://github.com/mozdevs/gamedev-js-3d-aabb">source code</a> to examine.</p>
+<ul>
+<li><a href="https://mozdevs.github.io/gamedev-js-3d-aabb/raw_point.html">Point vs. Box and Sphere</a></li>
+<li><a href="https://mozdevs.github.io/gamedev-js-3d-aabb/raw_box.html">Box vs. Box and Sphere</a></li>
+<li><a href="https://mozdevs.github.io/gamedev-js-3d-aabb/raw_sphere.html">Sphere vs. Box and Sphere</a></li>
+</ul>
+<p><img src="screen_shot_2015-10-20_at_15.19.16.png" /></p>
+<h2 id="using-boxhelper">Using <code>BoxHelper</code></h2>
+<p>As an alternative to using raw <code>Box3</code> and <code>Sphere</code> objects, Three.js has a useful object to make handling <strong>bounding boxes easier: <a href="https://threejs.org/docs/#api/helpers/BoxHelper"><code>BoxHelper</code></a></strong> (previously <code>BoundingBoxHelper</code>, which has been deprecated). This helper takes a <code>Mesh</code> and calculates a bounding box volume for it (including its child meshes). This results in a new box <code>Mesh</code> representing the bounding box, which shows the bounding box’s shape, and can passed to the previously seen <code>setFromObject</code> method in order to have a bounding box matching the <code>Mesh</code>.</p>
+<p><code>BoxHelper</code> is the <strong>recommended</strong> way to handle 3D collisions with bounding volumes in Three.js. You will miss sphere tests, but the tradeoffs are well worth it.</p>
+<p>The advantages of using this helper are:</p>
+<ul>
+<li>It has an <code>update()</code> method that will <strong>resize</strong> its bounding box Mesh if the linked Mesh rotates or changes its dimensions, and update its <strong>position</strong>.</li>
+<li>It <strong>takes into account the child meshes</strong> when computing the size of the bounding box, so the original mesh and all its children are wrapped.</li>
+<li>We can easily debug collisions by <strong>rendering</strong> the <code>Mesh</code>es that <code>BoxHelper</code> creates. By default they are created with a <code>LineBasicMaterial</code> material (a three.js material for drawing wireframe-style geometries).</li>
+</ul>
+<p>The main disadvantage is that it <strong>only creates box bounding volumes</strong>, so if you need spheres vs AABB tests you need to create your own <code>Sphere</code> objects.</p>
+<p>To use it, we need to create a new <code>BoxHelper</code> instance and supply the geometry and — optionally — a color that will be used for the wireframe material. We also need to add the newly created object to the <code>three.js</code> scene in order to render it. We assume our scene variable to be called <code>scene</code>.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">var</span> knot <span class="op">=</span> <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">Mesh</span>(</a>
+<a class="sourceLine" id="cb9-2" title="2">  <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">TorusKnotGeometry</span>(<span class="fl">0.5</span><span class="op">,</span> <span class="fl">0.1</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb9-3" title="3">  <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">MeshNormalMaterial</span>(<span class="op">{}</span>)</a>
+<a class="sourceLine" id="cb9-4" title="4">)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-5" title="5"><span class="kw">var</span> knotBoxHelper <span class="op">=</span> <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">BoxHelper</span>(knot<span class="op">,</span> <span class="bn">0x00ff00</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-6" title="6"><span class="va">scene</span>.<span class="at">add</span>(knotBoxHelper)<span class="op">;</span></a></code></pre></div>
+<p>In order to also have our actual <code>Box3</code> bounding box, we create a new <code>Box3</code> object and make it assume the <code>BoxHelper</code>’s shape and position.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">var</span> box3 <span class="op">=</span> <span class="kw">new</span> <span class="va">THREE</span>.<span class="at">Box3</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-2" title="2"><span class="va">box3</span>.<span class="at">setFromObject</span>(knotBoxHelper)<span class="op">;</span></a></code></pre></div>
+<p>If we change the <code>Mesh</code> position, rotation, scale, etc. we need to call the <code>update()</code> method so the <code>BoxHelper</code> instance matches its linked <code>Mesh</code>. We also need to call <code>setFromObject</code> again in order to make the <code>Box3</code> follow the <code>Mesh</code>.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1"><span class="va">knot</span>.<span class="va">position</span>.<span class="at">set</span>(<span class="op">-</span><span class="dv">3</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">1</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-2" title="2"><span class="va">knot</span>.<span class="va">rotation</span>.<span class="at">x</span> <span class="op">=</span> <span class="op">-</span><span class="va">Math</span>.<span class="at">PI</span> / <span class="dv">4</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb11-3" title="3"><span class="co">// update the bounding box so it stills wraps the knot</span></a>
+<a class="sourceLine" id="cb11-4" title="4"><span class="va">knotBoxHelper</span>.<span class="at">update</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-5" title="5"><span class="va">box3</span>.<span class="at">setFromObject</span>(knotBoxHelper)<span class="op">;</span></a></code></pre></div>
+<p>Performing <strong>collision tests</strong> is done in the same way as explained in the above section — we use our Box3 object in the same way as described above.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb12-1" title="1"><span class="co">// box vs box</span></a>
+<a class="sourceLine" id="cb12-2" title="2"><span class="va">box3</span>.<span class="at">intersectsBox</span>(otherBox3)<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-3" title="3"><span class="co">// box vs point</span></a>
+<a class="sourceLine" id="cb12-4" title="4"><span class="va">box3</span>.<span class="at">containsPoint</span>(<span class="va">point</span>.<span class="at">position</span>)<span class="op">;</span></a></code></pre></div>
+<h3 id="demos-1">Demos</h3>
+<p>There are <strong>two demos</strong> you can take a look at on our <a href="https://mozdevs.github.io/gamedev-js-3d-aabb/">live demos page</a>. The <a href="https://mozdevs.github.io/gamedev-js-3d-aabb/api_point.html">first one</a> showcases point vs. box collisions using <code>BoxHelper</code>. The <a href="https://mozdevs.github.io/gamedev-js-3d-aabb/api_box.html">second one</a> performs box vs. box tests.</p>
+<p><img src="screen_shot_2015-10-19_at_12.10.06.png" /></p>

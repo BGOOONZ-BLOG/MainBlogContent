@@ -1,0 +1,80 @@
+<p>{{GamesSidebar}}</p>
+<p>This article discusses a useful technique for giving your canvas/WebGL games a crisp pixel art look, even on high definition monitors.</p>
+<h2 id="the-concept">The concept</h2>
+<p>Retro <a href="https://wikipedia.org/wiki/Pixel_art">pixel art</a> aesthetics are getting popular, especially in <a href="https://wikipedia.org/wiki/Indie_game">indie games</a> or <a href="https://wikipedia.org/wiki/Game_jam">game jam</a> entries. But since today’s screens render content at high resolutions, there is a problem with making sure the pixel art does not look blurry. Developers have been manually scaling up graphics so they are shown with blocks that represent pixels. Two downsides to this method are larger file sizes and <a href="https://wikipedia.org/wiki/Compression_artifact">compression artifacts</a>.</p>
+<table class="standard-table">
+<tbody>
+<tr>
+<td>
+<img alt="" src="technique_original.png" />
+</td>
+<td>
+<img alt="" src="technique_original.png" />
+</td>
+<td>
+<img alt="" src="technique_4x.png" />
+</td>
+</tr>
+<tr>
+<td>
+original size
+</td>
+<td>
+4x size
+</td>
+<td>
+4x size (scaled with an image editor)
+</td>
+</tr>
+<tr>
+<td>
+none
+</td>
+<td>
+vendor’s algorithm
+</td>
+<td>
+<a href="https://wikipedia.org/wiki/Nearest-neighbor_interpolation"
+          >nearest-neighbor algorithm</a
+        >
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="a-css-based-solution">A CSS-based solution</h2>
+<p>The good news is that you can use CSS to automatically do the up-scaling, which not only solves the blur problem, but also allows you to use the images in their original, smaller size, thus saving download time. Also, some game techniques require algorithms that analyze images, which also benefit from working with smaller images.</p>
+<p>The CSS property to achieve this scaling is {{cssxref(“image-rendering”)}}. It is still experimental, but there is partial support in most browsers. The steps to achieve this effect are:</p>
+<ul>
+<li>Create a {{htmlelement(“canvas”)}} element and set its <code>width</code> and <code>height</code> attributes to the original, smaller resolution.</li>
+<li>Set its CSS {{cssxref(“width”)}} and {{cssxref(“height”)}} properties to be 2x or 4x the value of the HTML <code>width</code> and <code>height</code>. If the canvas was created with a 128 pixel width, for example, we would set the CSS <code>width</code> to <code>512px</code> if we wanted a 4x scale.</li>
+<li>Set the {{htmlelement(“canvas”)}} element’s <code>image-rendering</code> CSS property to some value that does not make the image blurry. Either <code>crisp-edges</code> or <code>pixelated</code> will work. Check out the {{cssxref(“image-rendering”)}} article for more information on the differences between these values, and which prefixes to use depending on the browser.</li>
+</ul>
+<h2 id="an-example">An example</h2>
+<p>Let’s have a look at an example. The original image we want to upscale looks like this:</p>
+<p><img src="cat.png" /></p>
+<p>Here’s some HTML to create a simple canvas:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">&lt;canvas</span><span class="ot"> id=</span><span class="st">&quot;game&quot;</span><span class="ot"> width=</span><span class="st">&quot;128&quot;</span><span class="ot"> height=</span><span class="st">&quot;128&quot;</span><span class="kw">&gt;&lt;/canvas&gt;</span></a></code></pre></div>
+<p>CSS to size the canvas and render a crisp image:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb2-1" title="1">canvas {</a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">width</span>: <span class="dv">512</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="kw">height</span>: <span class="dv">512</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="kw">image-rendering</span>: -moz-crisp-edges<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="kw">image-rendering</span>: -webkit-crisp-edges<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="kw">image-rendering</span>: pixelated<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="kw">image-rendering</span>: crisp-edges<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">}</a></code></pre></div>
+<p>And some JavaScript to set up the canvas and load the image:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="co">// get canvas context</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw">var</span> ctx <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;game&#39;</span>).<span class="at">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="co">// load image</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="kw">var</span> image <span class="op">=</span> <span class="kw">new</span> <span class="at">Image</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="va">image</span>.<span class="at">onload</span> <span class="op">=</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-6" title="6">    <span class="co">// draw the image into the canvas</span></a>
+<a class="sourceLine" id="cb3-7" title="7">    <span class="va">ctx</span>.<span class="at">drawImage</span>(image<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-9" title="9"><span class="va">image</span>.<span class="at">src</span> <span class="op">=</span> <span class="st">&#39;cat.png&#39;</span><span class="op">;</span></a></code></pre></div>
+<p>This code used together produces the following result:</p>
+<p>{{ EmbedLiveSample(‘An_example’, ‘100%’, 520) }}</p>
+<blockquote>
+<p><strong>Note:</strong> You can check out the <a href="https://github.com/belen-albeza/retro-canvas">original code on Github</a> (<a href="https://belen-albeza.github.io/retro-canvas/">and a live example</a>.)</p>
+</blockquote>

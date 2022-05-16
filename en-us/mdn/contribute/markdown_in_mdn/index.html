@@ -1,0 +1,340 @@
+<p>{{MDNSidebar}}</p>
+<p>This page describes how we use Markdown to write documentation on MDN. We have chosen GitHub-Flavored Markdown (GFM) as a baseline, and added some extensions to support some of the things we need to do on MDN that aren’t readily supported in GFM.</p>
+<h2 id="baseline-github-flavored-markdown">Baseline: GitHub-Flavored Markdown</h2>
+<p>The baseline for MDN Markdown is GitHub-Flavored Markdown (GFM): <a href="https://github.github.com/gfm/" class="uri">https://github.github.com/gfm/</a>. This means that for anything not otherwise specified in this page, you can refer to the GFM specification. GFM in turn is a superset of CommonMark (<a href="https://spec.commonmark.org/">https://spec.commonmark.org/</a>).</p>
+<h2 id="example-code-blocks">Example code blocks</h2>
+<p>In GFM and CommonMark, authors can use “code fences” to demarcate <code>&lt;pre&gt;</code> blocks. The opening code fence may be followed by some text that is called the “info string”. From the spec:</p>
+<blockquote>
+<p>The first word of the info string is typically used to specify the language of the code sample, and rendered in the class attribute of the code tag.</p>
+</blockquote>
+<p>It’s permissible for the info string to contain multiple words, like:</p>
+<pre class="plain"><code>```fee fi fo fum
+// some example code
+```</code></pre>
+<p>In MDN, writers will use code fences for example code blocks. They must specify the language of the code sample using the first word of the info string, and this will be used to provide syntax highlighting for the block. The following words will be supported:</p>
+<ul>
+<li><code>bash</code></li>
+<li><code>cpp</code> (for C/C++)</li>
+<li><code>css</code></li>
+<li><code>html</code></li>
+<li><code>java</code></li>
+<li><code>js</code> (for JavaScript)</li>
+<li><code>json</code></li>
+<li><code>php</code></li>
+<li><code>python</code></li>
+<li><code>sql</code></li>
+<li><code>svg</code></li>
+<li><code>xml</code></li>
+<li><code>wasm</code> (for WebAssembly text format)</li>
+</ul>
+<p>For example:</p>
+<pre class="plain"><code>```js
+const greeting = &quot;I will get syntax highlighting&quot;;
+```</code></pre>
+<p>Writers will be able to supply any one of the following additional words, which must come after the language word:</p>
+<ul>
+<li><code>example-good</code>: style this example as a good example (one to follow)</li>
+<li><code>example-bad</code>: style this example as a bad example (one to avoid)</li>
+<li><code>hidden</code>: don’t render this code block in the page. This is for use in live samples.</li>
+</ul>
+<p>For example:</p>
+<pre class="plain"><code>```js example-good
+const greeting = &quot;I&#39;m a good example&quot;;
+```
+
+```js example-bad
+const greeting = &quot;I&#39;m a bad example&quot;;
+```</code></pre>
+<p>These will be rendered as:</p>
+<p><code>js example-good const greeting = "I'm a good example";</code></p>
+<p><code>js example-bad const greeting = "I'm a bad example";</code></p>
+<h3 id="discussion-reference">Discussion reference</h3>
+<p>This issue was resolved in <a href="https://github.com/mdn/content/issues/3512" class="uri">https://github.com/mdn/content/issues/3512</a>.</p>
+<h2 id="notes-warnings-and-callouts">Notes, warnings, and callouts</h2>
+<p>Sometimes writers want to call special attention to some piece of content. To do this, they will use a GFM blockquote with a special first paragraph. There are three types of these: notes, warnings, and callouts.</p>
+<ul>
+<li>To add a note, create a GFM blockquote whose first paragraph starts with <code>**Note:**</code>.</li>
+<li>To add a warning, create a GFM blockquote whose first paragraph starts with <code>**Warning:**</code>.</li>
+<li>To add a callout, create a GFM blockquote whose first paragraph starts with <code>**Callout:**</code>.</li>
+</ul>
+<p>Notes and warnings will render the <strong>Note:</strong> or <strong>Warning:</strong> text in the output, while callouts will not. This makes callouts a good choice when an author wants to provide a custom title.</p>
+<p>Processing of the markup works on the AST it produces, not on the exact characters provided. This means that providing <code>&lt;strong&gt;Note:&lt;/strong&gt;</code> will also generate a note. However, the Markdown syntax is required as a matter of style.</p>
+<p>Multiple lines are produced by an empty block quote line in the same way as normal paragraphs. Further, multiple lines without a space are also treated like normal markdown lines, and concatenated.</p>
+<p>The blockquote can contain code blocks or other block elements.</p>
+<p>Because the text “Note:” or “Warning:” also appears in the rendered output, it has to be sensitive to translations. In practice this means that every locale supported by MDN must supply its own translation of these strings, and the platform must recognize them as indicating that the construct needs special treatment.</p>
+<h4 id="examples">Examples</h4>
+<h5 id="note">Note</h5>
+<pre class="plain"><code>&gt; **Note:** This is how you write a note.
+&gt;
+&gt; It can have multiple lines.</code></pre>
+<p>This will produce the following HTML:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;notecard note&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="kw">&lt;p&gt;&lt;strong&gt;</span>Note:<span class="kw">&lt;/strong&gt;</span> This is how you write a note.<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb5-3" title="3">  <span class="kw">&lt;p&gt;</span>It can have multiple lines.<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<p>This HTML will be rendered as a highlighted box, like:</p>
+<blockquote>
+<p><strong>Note:</strong> This is how you write a note.</p>
+<p>It can have multiple lines.</p>
+</blockquote>
+<h5 id="warnings">Warnings</h5>
+<pre class="plain"><code>&gt; **Warning:** This is how you write a warning.
+&gt;
+&gt; It can have multiple paragraphs.</code></pre>
+<p>This will produce the following HTML:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;notecard warning&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="kw">&lt;p&gt;&lt;strong&gt;</span>Warning:<span class="kw">&lt;/strong&gt;</span> This is how you write a warning.<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb7-3" title="3">  <span class="kw">&lt;p&gt;</span>It can have multiple paragraphs.<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb7-4" title="4"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<p>This HTML will be rendered as a highlighted box, like:</p>
+<blockquote>
+<p><strong>Warning:</strong> This is how you write a warning.</p>
+<p>It can have multiple paragraphs.</p>
+</blockquote>
+<h5 id="callouts">Callouts</h5>
+<pre class="plain"><code>&gt; **Callout:** **This is how you write a callout**.
+&gt;
+&gt; It can have multiple paragaphs.</code></pre>
+<p>This will produce the following HTML:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;callout&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb9-2" title="2">  <span class="kw">&lt;p&gt;&lt;strong&gt;</span>This is how you write a callout.<span class="kw">&lt;/strong&gt;&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb9-3" title="3">  <span class="kw">&lt;p&gt;</span>It can have multiple paragraphs.<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb9-4" title="4"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<p>This HTML will be rendered as a highlighted box, like:</p>
+<blockquote>
+<p><strong>Callout:</strong></p>
+<p><strong>This is how you write a callout.</strong></p>
+<p>It can have multiple paragraphs.</p>
+</blockquote>
+<h5 id="translated-warning">Translated warning</h5>
+<p>For example, if we want to use “Warnung” for “Warning” in German, then in German pages we would write:</p>
+<pre class="plain"><code>&gt; Warnung: So schreibt man eine Warnung.</code></pre>
+<p>…and this will produce:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb11-1" title="1"><span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;notecard warning&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb11-2" title="2">  <span class="kw">&lt;p&gt;&lt;strong&gt;</span>Warnung:<span class="kw">&lt;/strong&gt;</span> So schreibt man eine Warnung.<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb11-3" title="3"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<h5 id="note-containing-a-code-block">Note containing a code block</h5>
+<p>This example contains a code block.</p>
+<pre class="plain"><code>&gt; **Note:** This is how you write a note.
+&gt;
+&gt; It can contain code blocks.
+&gt;
+&gt; ```js
+&gt; const s = &quot;I&#39;m in a code block&quot;;
+&gt; ```
+&gt; Like that.</code></pre>
+<p>This will produce the following HTML:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb13-1" title="1"><span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;notecard note&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb13-2" title="2">  <span class="kw">&lt;p&gt;&lt;strong&gt;</span>Note:<span class="kw">&lt;/strong&gt;</span> This is how you write a note.<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb13-3" title="3">  <span class="kw">&lt;p&gt;</span>It can contain code blocks.<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb13-4" title="4">  <span class="kw">&lt;pre</span><span class="ot"> class=</span><span class="st">&quot;brush: js&quot;</span><span class="kw">&gt;</span>const s = &quot;I&#39;m in a code block&quot;;<span class="kw">&lt;/pre&gt;</span></a>
+<a class="sourceLine" id="cb13-5" title="5">  <span class="kw">&lt;p&gt;</span>Like that.<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb13-6" title="6"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<p>This HTML will be rendered as with a code block, like:</p>
+<blockquote>
+<p><strong>Note:</strong> This is how you write a note.</p>
+<p>It can contain code blocks.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb14-1" title="1"><span class="kw">const</span> s <span class="op">=</span> <span class="st">&quot;I&#39;m in a code block&quot;</span><span class="op">;</span></a></code></pre></div>
+<p>Like that.</p>
+</blockquote>
+<h3 id="discussion-reference-1">Discussion reference</h3>
+<p>This issue was resolved in <a href="https://github.com/mdn/content/issues/3483" class="uri">https://github.com/mdn/content/issues/3483</a>.</p>
+<h2 id="definition-lists">Definition lists</h2>
+<p>To create definition lists in MDN authors write a modified form of a GFM unordered list ({{HTMLElement(“ul”)}}). In this form:</p>
+<ul>
+<li>The GFM <code>&lt;ul&gt;</code> contains any number of top-level GFM <code>&lt;li&gt;</code> elements.</li>
+<li>Each of these top-level GFM <code>&lt;li&gt;</code> elements must contain, as its final element, one GFM <code>&lt;ul&gt;</code> element.</li>
+<li>This final nested <code>&lt;ul&gt;</code> must contain a single GFM <code>&lt;li&gt;</code> element, whose text content must start with <code>:</code> (a colon followed by a space). This element may contain block elements, including paragraphs, code blocks, embedded lists, and notes.</li>
+</ul>
+<p>Each of these top-level GFM <code>&lt;li&gt;</code> elements will be transformed into a <code>&lt;dt&gt;</code>/<code>&lt;dd&gt;</code> pair, as follows:</p>
+<ul>
+<li>The top-level GFM <code>&lt;li&gt;</code> element will be parsed as a GFM <code>&lt;li&gt;</code> element and its internal contents will comprise the contents of the <code>&lt;dt&gt;</code>, except for the final nested <code>&lt;ul&gt;</code>, which will not be included in the <code>&lt;dt&gt;</code>.</li>
+<li>The <code>&lt;li&gt;</code> element in the final nested <code>&lt;ul&gt;</code> will be parsed as a GFM <code>&lt;li&gt;</code> element and its internal contents will comprise the contents of the <code>&lt;dd&gt;</code>, except for the leading <code>:</code>, which will be discarded.</li>
+</ul>
+<p>For example, this is a <code>&lt;dl&gt;</code>:</p>
+<pre class="plain"><code>* term1
+    * : My description of term1
+
+* `term2`
+    * : My description of term2
+
+      It can have multiple paragraphs, and code blocks too:
+
+      ```js
+      const thing = 1;
+      ```</code></pre>
+<p>In GFM/CommonMark, this would produce the following HTML:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb16-1" title="1"><span class="kw">&lt;ul&gt;</span></a>
+<a class="sourceLine" id="cb16-2" title="2">  <span class="kw">&lt;li&gt;</span></a>
+<a class="sourceLine" id="cb16-3" title="3">    <span class="kw">&lt;p&gt;</span>term1<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb16-4" title="4">    <span class="kw">&lt;ul&gt;</span></a>
+<a class="sourceLine" id="cb16-5" title="5">      <span class="kw">&lt;li&gt;</span>: My description of term1<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb16-6" title="6">    <span class="kw">&lt;/ul&gt;</span></a>
+<a class="sourceLine" id="cb16-7" title="7">  <span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb16-8" title="8">  <span class="kw">&lt;li&gt;</span></a>
+<a class="sourceLine" id="cb16-9" title="9">    <span class="kw">&lt;p&gt;&lt;code&gt;</span>term2<span class="kw">&lt;/code&gt;&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb16-10" title="10">    <span class="kw">&lt;ul&gt;</span></a>
+<a class="sourceLine" id="cb16-11" title="11">      <span class="kw">&lt;li&gt;</span></a>
+<a class="sourceLine" id="cb16-12" title="12">        <span class="kw">&lt;p&gt;</span>: My description of term2<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb16-13" title="13">        <span class="kw">&lt;p&gt;</span>It can have multiple paragraphs, and code blocks too:<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb16-14" title="14">        <span class="kw">&lt;pre&gt;</span></a>
+<a class="sourceLine" id="cb16-15" title="15">          <span class="kw">&lt;code</span><span class="ot"> class=</span><span class="st">&quot;brush: js&quot;</span><span class="kw">&gt;</span>const thing = 1;<span class="kw">&lt;/code&gt;</span></a>
+<a class="sourceLine" id="cb16-16" title="16">        <span class="kw">&lt;/pre&gt;</span></a>
+<a class="sourceLine" id="cb16-17" title="17">      <span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb16-18" title="18">    <span class="kw">&lt;/ul&gt;</span></a>
+<a class="sourceLine" id="cb16-19" title="19">  <span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb16-20" title="20"><span class="kw">&lt;/ul&gt;</span></a></code></pre></div>
+<p>On MDN, this would produce the following HTML:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb17-1" title="1"><span class="kw">&lt;dl&gt;</span></a>
+<a class="sourceLine" id="cb17-2" title="2">  <span class="kw">&lt;dt&gt;</span></a>
+<a class="sourceLine" id="cb17-3" title="3">    <span class="kw">&lt;p&gt;</span>term1<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb17-4" title="4">  <span class="kw">&lt;/dt&gt;</span></a>
+<a class="sourceLine" id="cb17-5" title="5">  <span class="kw">&lt;dd&gt;</span>My description of term1<span class="kw">&lt;/dd&gt;</span></a>
+<a class="sourceLine" id="cb17-6" title="6">  <span class="kw">&lt;dt&gt;</span></a>
+<a class="sourceLine" id="cb17-7" title="7">    <span class="kw">&lt;p&gt;&lt;code&gt;</span>term2<span class="kw">&lt;/code&gt;&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb17-8" title="8">  <span class="kw">&lt;/dt&gt;</span></a>
+<a class="sourceLine" id="cb17-9" title="9">  <span class="kw">&lt;dd&gt;</span></a>
+<a class="sourceLine" id="cb17-10" title="10">    <span class="kw">&lt;p&gt;</span>My description of term2<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb17-11" title="11">    <span class="kw">&lt;p&gt;</span>It can have multiple paragraphs, and code blocks too:<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb17-12" title="12">    <span class="kw">&lt;pre&gt;</span></a>
+<a class="sourceLine" id="cb17-13" title="13">       <span class="kw">&lt;code</span><span class="ot"> class=</span><span class="st">&quot;brush: js&quot;</span><span class="kw">&gt;</span>const thing = 1;<span class="kw">&lt;/code&gt;</span></a>
+<a class="sourceLine" id="cb17-14" title="14">    <span class="kw">&lt;/pre&gt;</span></a>
+<a class="sourceLine" id="cb17-15" title="15">  <span class="kw">&lt;/dd&gt;</span></a>
+<a class="sourceLine" id="cb17-16" title="16"><span class="kw">&lt;/dl&gt;</span></a></code></pre></div>
+<p>Definition lists written using this syntax must consist of pairs of <code>&lt;dt&gt;</code>/<code>&lt;dd&gt;</code> elements. Using this syntax, it’s not possible to write a list with more than one consecutive <code>&lt;dt&gt;</code> element or more than one consecutive <code>&lt;dd&gt;</code> element: the parser will treat this as an error. We expect almost all definition lists on MDN will work with this limitation, and for those that do not, authors can fall back to raw HTML.</p>
+<p>As a workaround for cases where an author needs to associate multiple <code>&lt;dt&gt;</code> items with a single <code>&lt;dd&gt;</code>, consider providing them as a single <code>&lt;dt&gt;</code> that holds multiple terms, separated by commas, like this:</p>
+<pre class="plain"><code>* `param1`, `param2`, `param3`
+    * : My description of params 1, 2, and 3</code></pre>
+<p>The rationale for the syntax described here is that it works well enough with tools that expect CommonMark (for example, Prettier or GitHub previews) while being reasonably easy to write and to parse.</p>
+<h3 id="discussion-reference-2">Discussion reference</h3>
+<p>This issue was resolved in <a href="https://github.com/mdn/content/issues/4367" class="uri">https://github.com/mdn/content/issues/4367</a>.</p>
+<h2 id="tables">Tables</h2>
+<p>In GFM (but not CommonMark) there is a syntax for tables: <a href="https://github.github.com/gfm/#tables-extension-" class="uri">https://github.github.com/gfm/#tables-extension-</a>. We will make use of this but:</p>
+<ul>
+<li>The GFM syntax only supports a subset of the features available in HTML. If you need to use table features that are not supported in GFM, use HTML for the table.</li>
+<li>If the GFM representation of the table would be more than 150 characters wide, use HTML for the table.</li>
+<li>We support a special kind of table called a “properties table”, which has its own CSS class and is therefore always HTML.</li>
+</ul>
+<p>So the general principle here is: authors should use the GFM Markdown syntax when they can, and fall back to raw HTML when they have to or when HTML is more readable. See “When to use HTML tables” below.</p>
+<h3 id="gfm-table-syntax-style">GFM table syntax style</h3>
+<p>In GFM table syntax, authors can omit leading and trailing pipes for rows. MDN authors must include these pipes, for the sake of readability.</p>
+<p>That is, MDN authors must use this style:</p>
+<pre class="plain"><code>| Heading 1 | Heading 2 | Heading 3 |
+|-----------|-----------|-----------|
+| cell 1    | cell 2    | cell 3    |
+| cell 4    | cell 5    | cell 6    |</code></pre>
+<p>and not this style:</p>
+<pre class="plain"><code>Heading 1 | Heading 2 | Heading 3
+ --- | --- | ---
+cell 1    | cell 2    | cell 3
+cell 4    | cell 5    | cell 6</code></pre>
+<h3 id="when-to-use-html-tables">When to use HTML tables</h3>
+<p>There are three main circumstances in which authors should use HTML tables rather than GFM syntax: when the table uses features that are not supported in GFM, when the GFM table would be too wide to be readable, and when the writer wants a special type of table called a “properties table”.</p>
+<h4 id="table-features-that-are-not-supported-in-gfm">Table features that are not supported in GFM</h4>
+<p>The main limitations of GFM table syntax are:</p>
+<ul>
+<li>GFM tables must have a header row.</li>
+<li>GFM tables may not have a header column.</li>
+<li>GFM won’t parse GFM block elements in table cells. For example, you can’t have a list in a table cell.</li>
+<li>GFM doesn’t support any table elements beyond <code>&lt;table&gt;</code>, <code>&lt;tr&gt;</code>, and <code>&lt;th&gt;</code>, and <code>&lt;td&gt;</code>.</li>
+<li>GFM doesn’t support any table element attributes like <code>colspan</code>, <code>rowspan</code>, or <code>scope</code>.</li>
+</ul>
+<p>If an author needs to use any of the unsupported features, they should write the table in HTML.</p>
+<p>Note that we don’t recommend the general use of <code>&lt;caption&gt;</code> elements on tables, since that would also rule out the GFM syntax.</p>
+<h4 id="gfm-table-maximum-width">GFM table maximum width</h4>
+<p>Even when a table could be written in GFM it is sometimes better to use HTML, because GFM uses an “ASCII art” approach to tables that is not readable when table rows get long. For example, consider this table:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb21-1" title="1">  <span class="kw">&lt;table&gt;</span></a>
+<a class="sourceLine" id="cb21-2" title="2">    <span class="kw">&lt;tr&gt;</span></a>
+<a class="sourceLine" id="cb21-3" title="3">      <span class="kw">&lt;th&gt;</span>A heading 1<span class="kw">&lt;/th&gt;</span></a>
+<a class="sourceLine" id="cb21-4" title="4">      <span class="kw">&lt;th&gt;</span>A heading 2<span class="kw">&lt;/th&gt;</span></a>
+<a class="sourceLine" id="cb21-5" title="5">      <span class="kw">&lt;th&gt;</span>A heading 3<span class="kw">&lt;/th&gt;</span></a>
+<a class="sourceLine" id="cb21-6" title="6">      <span class="kw">&lt;th&gt;</span>A heading 4<span class="kw">&lt;/th&gt;</span></a>
+<a class="sourceLine" id="cb21-7" title="7">      <span class="kw">&lt;th&gt;</span>A heading 5<span class="kw">&lt;/th&gt;</span></a>
+<a class="sourceLine" id="cb21-8" title="8">      <span class="kw">&lt;th&gt;</span>A heading 6<span class="kw">&lt;/th&gt;</span></a>
+<a class="sourceLine" id="cb21-9" title="9">    <span class="kw">&lt;/tr&gt;</span></a>
+<a class="sourceLine" id="cb21-10" title="10">    <span class="kw">&lt;tr&gt;</span></a>
+<a class="sourceLine" id="cb21-11" title="11">      <span class="kw">&lt;td&gt;</span>Something shortish<span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb21-12" title="12">      <span class="kw">&lt;td&gt;</span>Something much longer that really goes into a lot of detail about something, so much so that the table formatting starts to look bad in GFM format.<span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb21-13" title="13">      <span class="kw">&lt;td&gt;</span>Something shortish<span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb21-14" title="14">      <span class="kw">&lt;td&gt;</span>Another cell  with lots of text in it, that also really goes into a lot of detail about something, so much so that the table formatting starts to look bad in GFM format.<span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb21-15" title="15">      <span class="kw">&lt;td&gt;</span>Something shortish<span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb21-16" title="16">      <span class="kw">&lt;td&gt;</span>Something shortish<span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb21-17" title="17">    <span class="kw">&lt;/tr&gt;</span></a>
+<a class="sourceLine" id="cb21-18" title="18"><span class="kw">&lt;/table&gt;</span></a></code></pre></div>
+<p>In GFM this will look like:</p>
+<pre class="plain"><code>  | A heading 1        | A heading 2                                                                                                                                         | A heading 3        | A heading 4                                                                                                                                                              | A heading 5        | A heading 6        |
+  | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ | ------------------ |
+  | Something shortish | Something much longer that really goes into a lot of detail about something, so much so that the table formatting starts to look bad in GFM format. | Something shortish | Another cell with lots of text in it, that also really goes into a lot of detail about something, so much so that the table formatting starts to look bad in GFM format. | Something shortish | Something shortish |</code></pre>
+<p>In a case like this it would be better to use HTML.</p>
+<p>This leads us to the following guideline: <em>if the Markdown representation of the table would be more than 150 characters wide, use HTML for the table</em>.</p>
+<h4 id="properties-tables">Properties tables</h4>
+<p>Properties tables are a specific type of table used for displaying structured property-value content across a set of pages of a particular type. For example, all event pages have a properties table listing common information about the event: whether it bubbles, whether it is cancellable, and so on.</p>
+<p>These tables have two columns: the first column is the header column and lists the properties, and the second column lists their values for this particular item. For example, here’s the properties table for the {{domxref(“XMLHttpRequest/progress_event”, “progress”)}} event of the {{domxref(“XMLHttpRequest”)}} interface:</p>
+<table class="properties">
+<tbody>
+<tr>
+<th scope="row">
+Bubbles
+</th>
+<td>
+No
+</td>
+</tr>
+<tr>
+<th scope="row">
+Cancelable
+</th>
+<td>
+No
+</td>
+</tr>
+<tr>
+<th scope="row">
+Interface
+</th>
+<td>
+{{domxref(“ProgressEvent”)}}
+</td>
+</tr>
+<tr>
+<th scope="row">
+Event handler property
+</th>
+<td>
+{{domxref(“XMLHttpRequestEventTarget/onprogress”, “onprogress”)}}
+</td>
+</tr>
+</tbody>
+</table>
+<p>These pages can’t be represented in GFM anyway, because they have a header column. Writers should therefore use HTML. To get the special styling, writers should apply the <code>"properties"</code> class to the table:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb23-1" title="1"><span class="kw">&lt;table</span><span class="ot"> class=</span><span class="st">&quot;properties&quot;</span><span class="kw">&gt;</span></a></code></pre></div>
+<h3 id="discussion-reference-3">Discussion reference</h3>
+<p>This issue was resolved in <a href="https://github.com/mdn/content/issues/4325" class="uri">https://github.com/mdn/content/issues/4325</a>, <a href="https://github.com/mdn/content/issues/7342" class="uri">https://github.com/mdn/content/issues/7342</a>, and <a href="https://github.com/mdn/content/issues/7898#issuecomment-913265900" class="uri">https://github.com/mdn/content/issues/7898#issuecomment-913265900</a>.</p>
+<h2 id="superscript-and-subscript">Superscript and subscript</h2>
+<p>Writers will be able to use the HTML {{HTMLElement(“sup”)}} and {{HTMLElement(“sub”)}} elements if necessary, but should use alternatives if possible. In particular:</p>
+<ul>
+<li>For exponentiation, use the caret: <code>2^53</code>.</li>
+<li><p>For ordinal expressions like 1</p>
+<p><sup>st</sup></p>
+<p>, prefer words like “first”.</p></li>
+<li><p>For footnotes, don’t mark up the footnote references with, e.g., <code>&lt;sup&gt;[1]&lt;/sup&gt;</code>; it’s unnecessary.</p></li>
+</ul>
+<h3 id="discussion-reference-4">Discussion reference</h3>
+<p>This issue was resolved in <a href="https://github.com/mdn/content/issues/4578" class="uri">https://github.com/mdn/content/issues/4578</a>.</p>
+<h2 id="page-summary">Page summary</h2>
+<p>The <em>page summary</em> is the first “content” paragraph in a page—the first text that appears after the page front matter and any <a href="#kumascript">sidebar or page banner macros</a>.</p>
+<p>This summary is used for search engine optimisation (SEO) and also automatically included alongside page listings by some macros. The first paragraph should therefore be both succinct and informative.</p>
+<h3 id="discussion-reference-5">Discussion reference</h3>
+<p>This issue was resolved in <a href="https://github.com/mdn/content/issues/3923" class="uri">https://github.com/mdn/content/issues/3923</a>.</p>
+<h2 id="kumascript">KumaScript</h2>
+<p>Writers will be able to include KumaScript macro calls in prose content:</p>
+<pre class="plain"><code>
+The **`margin`** [CSS](https://developer.mozilla.org/en-US/docs/Web/CSS) property
+sets the margin area on all four sides of an element. It is a shorthand for
+\{{cssxref(&quot;margin-top&quot;)}}, \{{cssxref(&quot;margin-right&quot;)}}, \{{cssxref(&quot;margin-bottom&quot;)}},
+and \{{cssxref(&quot;margin-left&quot;)}}.
+
+\{{EmbedInteractiveExample(&quot;pages/css/margin.html&quot;)}}
+
+The top and bottom margins have no effect on replaced inline elements, such as
+\{{HTMLElement(&quot;span&quot;)}} or \{{HTMLElement(&quot;code&quot;)}}.</code></pre>

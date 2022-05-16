@@ -1,0 +1,37 @@
+<p>The default rendering of dates from our models is very ugly: <em>Tue Oct 06 2020 15:49:58 GMT+1100 (AUS Eastern Daylight Time)</em>. In this section we’ll show how you can update the <em>BookInstance List</em> page from the previous section to present the <code>due_date</code> field in a more friendly format: Oct 6th, 2020.</p>
+<p>The approach we will use is to create a virtual property in our <code>BookInstance</code> model that returns the formatted date. We’ll do the actual formatting using <a href="https://www.npmjs.com/package/luxon">luxon</a>, a powerful, modern, and friendly library for parsing, validating, manipulating, formatting and localising dates.</p>
+<blockquote>
+<p><strong>Note:</strong> It is possible to use <em>luxon</em> to format the strings directly in our Pug templates, or we could format the string in a number of other places. Using a virtual property allows us to get the formatted date in exactly the same way as we get the <code>due_date</code> currently.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> This tutorial previously used the <a href="https://www.npmjs.com/package/moment">moment</a> library for date formatting. We’ve moved to Luxon because moment has <a href="https://momentjs.com/docs/#/-project-status/">declared itself “legacy”</a>. Luxon is one of the <a href="https://momentjs.com/docs/#/-project-status/recommendations/">moment project’s main recommendations</a> for a great alternative library.</p>
+</blockquote>
+<h2 id="install-luxon">Install luxon</h2>
+<p>Enter the following command in the root of the project:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb1-1" title="1"><span class="ex">npm</span> install luxon</a></code></pre></div>
+<h2 id="create-the-virtual-property">Create the virtual property</h2>
+<ol type="1">
+<li>Open <strong>./models/bookinstance.js</strong>.</li>
+<li><p>At the top of the page, import <em>luxon</em>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> <span class="op">{</span> DateTime <span class="op">}</span> <span class="op">=</span> <span class="at">require</span>(<span class="st">&quot;luxon&quot;</span>)<span class="op">;</span></a></code></pre></div></li>
+</ol>
+<p>Add the virtual property <code>due_back_formatted</code> just after the url property.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1">BookInstanceSchema</a>
+<a class="sourceLine" id="cb3-2" title="2">.<span class="at">virtual</span>(<span class="st">&#39;due_back_formatted&#39;</span>)</a>
+<a class="sourceLine" id="cb3-3" title="3">.<span class="at">get</span>(<span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="cf">return</span> <span class="va">DateTime</span>.<span class="at">fromJSDate</span>(<span class="kw">this</span>.<span class="at">due_back</span>).<span class="at">toLocaleString</span>(<span class="va">DateTime</span>.<span class="at">DATE_MED</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> Luxon can import strings in many formats and export to both predefined and free-form formats. In this  case we use <code>fromJSDate()</code> to import a JavaScript date string and <code>toLocaleString()</code> to output the date in  <code>DATE_MED</code> format in English: Oct 6th, 2020. For information about other formats and date string internationalisation see the Luxon documentation on <a href="https://github.com/moment/luxon/blob/master/docs/formatting.md#formatting">formatting</a>.</p>
+</blockquote>
+<h2 id="update-the-view">Update the view</h2>
+<p>Open <strong>/views/bookinstance_list.pug</strong> and replace <code>due_back</code> with <code>due_back_formatted</code>.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1">      <span class="cf">if</span> <span class="va">val</span>.<span class="at">status</span> <span class="op">!=</span> <span class="st">&#39;Available&#39;</span></a>
+<a class="sourceLine" id="cb4-2" title="2">        <span class="co">//span  (Due: #{val.due_back} )</span></a>
+<a class="sourceLine" id="cb4-3" title="3">        <span class="at">span</span>  (Due<span class="op">:</span> #<span class="op">{</span><span class="va">val</span>.<span class="at">due_back_formatted</span><span class="op">}</span> )</a></code></pre></div>
+<p>That’s it. If you go to <em>All book-instances</em> in the sidebar, you should now see all the due dates are far more attractive!</p>
+<h2 id="next-steps">Next steps</h2>
+<ul>
+<li>Return to <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/Displaying_data">Express Tutorial Part 5: Displaying library data</a>.</li>
+<li>Proceed to the next subarticle of part 5: <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/Displaying_data/Author_list_page">Author list page and Genre list page challenge</a>.</li>
+</ul>

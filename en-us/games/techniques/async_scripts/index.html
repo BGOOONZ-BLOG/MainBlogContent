@@ -1,0 +1,26 @@
+<p>{{GamesSidebar}}</p>
+<p>Every medium or large game should compile <a href="/en-US/docs/Games/Tools/asm.js">asm.js</a> code as part of an async script to give the browser the maximum flexibility to optimize the compilation process. In Gecko, async compilation allows the JavaScript engine to compile the asm.js off the main thread when the game is loading and cache the generated machine code so that the game doesn’t need to be compiled on subsequent loads (starting in Firefox 28). To see the difference, toggle <code>javascript.options.parallel_parsing</code> in <code>about:config</code>.</p>
+<h2 id="putting-async-into-action">Putting async into action</h2>
+<p>Getting async compilation is easy: when writing your JavaScript, just use the <code>async</code> attribute like so:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="op">&lt;</span>script <span class="kw">async</span> src<span class="op">=</span><span class="st">&quot;file.js&quot;</span><span class="op">&gt;</span>&lt;/script<span class="op">&gt;</span></a></code></pre></div>
+<p>or, to do the same thing via script:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">var</span> script <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;script&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="va">script</span>.<span class="at">src</span> <span class="op">=</span> <span class="st">&quot;file.js&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="va">document</span>.<span class="va">body</span>.<span class="at">appendChild</span>(script)<span class="op">;</span></a></code></pre></div>
+<p>(Scripts created from script default to <code>async</code>.) The default HTML shell Emscripten generates produces the latter.</p>
+<h2 id="when-is-async-not-async">When is async not async?</h2>
+<p>Two common situations in which a script is *not* async (as <a href="https://www.w3.org/TR/html5/scripting-1.html">defined by the HTML spec</a>) are:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="op">&lt;</span>script <span class="kw">async</span><span class="op">&gt;</span>code&lt;/script<span class="op">&gt;</span></a></code></pre></div>
+<p>and</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">var</span> script <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;script&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="va">script</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&quot;code&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="va">document</span>.<span class="va">body</span>.<span class="at">appendChild</span>(script)<span class="op">;</span></a></code></pre></div>
+<p>Both are counted as ‘inline’ scripts and get compiled and then run immediately.</p>
+<p>What if your code is in a JS string? Instead of using <code>eval</code> or <code>innerHTML</code>, both of which trigger synchronous compilation, you should use a Blob with an object URL:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">var</span> blob <span class="op">=</span> <span class="kw">new</span> <span class="at">Blob</span>([codeString])<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="kw">var</span> script <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&#39;script&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="kw">var</span> url <span class="op">=</span> <span class="va">URL</span>.<span class="at">createObjectURL</span>(blob)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="va">script</span>.<span class="at">onload</span> <span class="op">=</span> <span class="va">script</span>.<span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span> <span class="va">URL</span>.<span class="at">revokeObjectURL</span>(url)<span class="op">;</span> <span class="op">};</span></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="va">script</span>.<span class="at">src</span> <span class="op">=</span> url<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-6" title="6"><span class="va">document</span>.<span class="va">body</span>.<span class="at">appendChild</span>(script)<span class="op">;</span></a></code></pre></div>
+<p>The setting of <code>src</code> rather than <code>innerHTML</code> is what makes this script async.</p>

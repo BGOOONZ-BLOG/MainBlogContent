@@ -1,0 +1,592 @@
+<p>{{LearnSidebar}}{{PreviousMenu(“Learn/Tools_and_testing/Cross_browser_testing/Automated_testing”, “Learn/Tools_and_testing/Cross_browser_testing”)}}</p>
+<p>In this article, we will teach you how to install your own automation environment and run your own tests using Selenium/WebDriver and a testing library such as selenium-webdriver for Node. We will also look at how to integrate your local testing environment with commercial tools like the ones discussed in the previous article.</p>
+<table>
+<tbody>
+<tr>
+<th scope="row">
+Prerequisites:
+</th>
+<td>
+Familiarity with the core <a href="/en-US/docs/Learn/HTML">HTML</a>, <a href="/en-US/docs/Learn/CSS">CSS</a>, and <a href="/en-US/docs/Learn/JavaScript">JavaScript</a> languages; an idea of the high-level <a
+          href="/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/Introduction"
+          >principles of cross browser testing</a
+        >, and <a
+          href="/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/Automated_testing"
+          >automated testing</a
+        >.
+</td>
+</tr>
+<tr>
+<th scope="row">
+Objective:
+</th>
+<td>
+To show how to set up a Selenium testing environment locally and run tests with it, and how to integrate it with tools like LambdaTest, Sauce Labs, and BrowserStack.
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="selenium">Selenium</h2>
+<p><a href="https://www.seleniumhq.org/">Selenium</a> is the most popular browser automation tool. There are other ways, but the best way to use Selenium is via WebDriver, a powerful API that builds on top of Selenium and makes calls to a browser to automate it, carrying out actions such as “open this web page”, “move over this element on the page”, “click this link”, “see whether the link opens this URL”, etc. This is ideal for running automated tests.</p>
+<p>How you install and use WebDriver depends on what programming environment you want to use to write and run your tests. Most popular environments have available a package or framework that will install WebDriver and the bindings required to communicate with WebDriver using this language, for example, Java, C#, Ruby, Python, JavaScript (Node), etc. See <a href="https://www.seleniumhq.org/docs/03_webdriver.jsp#setting-up-a-selenium-webdriver-project">Setting Up a Selenium-WebDriver Project</a> for more details of Selenium setups for different languages.</p>
+<p>Different browsers require different drivers to allow WebDriver to communicate with and control them. See <a href="https://www.selenium.dev/downloads/">Platforms Supported by Selenium</a> for more information on where to get browser drivers from, etc.</p>
+<p>We will cover writing and running Selenium tests using Node.js, as it is quick and easy to get started, and a more familiar environment for front end devs.</p>
+<blockquote>
+<p><strong>Note:</strong> If you want to find out how to use WebDriver with other server-side environments, also check out <a href="https://www.selenium.dev/downloads/">Platforms Supported by Selenium</a> for some useful links.</p>
+</blockquote>
+<h3 id="setting-up-selenium-in-node">Setting up Selenium in Node</h3>
+<ol type="1">
+<li>To start with, set up a new npm project, as discussed in <a href="/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/Automated_testing#setting_up_node_and_npm">Setting up Node and npm</a> in the last chapter. Call it something different, like <code>selenium-test</code>.</li>
+<li><p>Next, we need to install a framework to allow us to work with Selenium from inside Node. We are going to choose selenium’s official <a href="https://www.npmjs.com/package/selenium-webdriver">selenium-webdriver</a>, as the documentation seems fairly up-to-date and it is well-maintained. If you want different options, <a href="https://webdriver.io/">webdriver.io</a> and <a href="https://nightwatchjs.org/">nightwatch.js</a> are also good choices. To install selenium-webdriver, run the following command, making sure you are inside your project folder:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb1-1" title="1"><span class="ex">npm</span> install selenium-webdriver</a></code></pre></div></li>
+</ol>
+<blockquote>
+<p><strong>Note:</strong> It is still a good idea to follow these steps even if you previously installed selenium-webdriver and downloaded the browser drivers. You should make sure that everything is up-to-date.</p>
+</blockquote>
+<p>Next, you need to download the relevant drivers to allow WebDriver to control the browsers you want to test. You can find details of where to get them from on the <a href="https://www.npmjs.com/package/selenium-webdriver">selenium-webdriver</a> page (see the table in the first section.) Obviously, some of the browsers are OS-specific, but we’re going to stick with Firefox and Chrome, as they are available across all the main OSes.</p>
+<ol type="1">
+<li>Download the latest <a href="https://github.com/mozilla/geckodriver/releases/">GeckoDriver</a> (for Firefox) and <a href="https://chromedriver.storage.googleapis.com/index.html">ChromeDriver</a> drivers.</li>
+<li>Unpack them into somewhere fairly easy to navigate to, like the root of your home user directory.</li>
+<li>Add the <code>chromedriver</code> and <code>geckodriver</code> driver’s location to your system <code>PATH</code> variable. This should be an absolute path from the root of your hard disk, to the directory containing the drivers. For example, if we were using a macOS machine, our user name was bob, and we put our drivers in the root of our home folder, the path would be <code>/Users/bob</code>.</li>
+</ol>
+<blockquote>
+<p><strong>Note:</strong> Just to reiterate, the path you add to <code>PATH</code> needs to be the path to the directory containing the drivers, not the paths to the drivers themselves! This is a common mistake.</p>
+</blockquote>
+<p>To set your <code>PATH</code> variable on a macOS system and on most Linux systems:</p>
+<ol type="1">
+<li><p>If you’re not already using the <code>bash</code> shell (for example, on macOS systems, the default is the <code>zsh</code> shell, not <code>bash</code>), switch to the <code>bash</code> shell:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" title="1"><span class="bu">exec</span> bash</a></code></pre></div></li>
+<li>Open your <code>.bash_profile</code> (or <code>.bashrc</code>) file (if you can’t see hidden files, you’ll need to display them, see <a href="https://ianlunn.co.uk/articles/quickly-showhide-hidden-files-mac-os-x-mavericks/">Show/Hide hidden files in Mac OS X</a> or <a href="https://askubuntu.com/questions/470837/how-to-show-hidden-folders-in-ubuntu-14-04">Show hidden folders in Ubuntu</a>).</li>
+<li><p>Paste the following into the bottom of your file (updating the path as it actually is on your machine):</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb3-1" title="1"><span class="co">#Add WebDriver browser drivers to PATH</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="bu">export</span> <span class="va">PATH=$PATH</span>:/Users/bob</a></code></pre></div></li>
+<li>Save and close this file, then restart your Terminal/command prompt to reapply your Bash configuration.</li>
+<li><p>Check that your new paths are in the <code>PATH</code> variable by entering the following into your terminal:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb4-1" title="1"><span class="bu">echo</span> <span class="va">$PATH</span></a></code></pre></div></li>
+<li><p>You should see it printed out in the terminal.</p></li>
+</ol>
+<p>To set your <code>PATH</code> variable on Windows, follow the instructions at <a href="http://windowsitpro.com/systems-management/how-can-i-add-new-folder-my-system-path">How can I add a new folder to my system path?</a></p>
+<p>OK, let’s try a quick test to make sure everything is working.</p>
+<ol type="1">
+<li>Create a new file inside your project directory called <code>google_test.js</code>:</li>
+<li><p>Give it the following contents, then save it:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">const</span> webdriver <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;selenium-webdriver&#39;</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb5-2" title="2">    By <span class="op">=</span> <span class="va">webdriver</span>.<span class="at">By</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb5-3" title="3">    until <span class="op">=</span> <span class="va">webdriver</span>.<span class="at">until</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-4" title="4"></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="kw">const</span> driver <span class="op">=</span> <span class="kw">new</span> <span class="va">webdriver</span>.<span class="at">Builder</span>()</a>
+<a class="sourceLine" id="cb5-6" title="6">    .<span class="at">forBrowser</span>(<span class="st">&#39;firefox&#39;</span>)</a>
+<a class="sourceLine" id="cb5-7" title="7">    .<span class="at">build</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-8" title="8"></a>
+<a class="sourceLine" id="cb5-9" title="9"><span class="va">driver</span>.<span class="at">get</span>(<span class="st">&#39;http://www.google.com&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-10" title="10"></a>
+<a class="sourceLine" id="cb5-11" title="11"><span class="va">driver</span>.<span class="at">findElement</span>(<span class="va">By</span>.<span class="at">name</span>(<span class="st">&#39;q&#39;</span>)).<span class="at">sendKeys</span>(<span class="st">&#39;webdriver&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-12" title="12"></a>
+<a class="sourceLine" id="cb5-13" title="13"><span class="va">driver</span>.<span class="at">sleep</span>(<span class="dv">1000</span>).<span class="at">then</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-14" title="14">  <span class="va">driver</span>.<span class="at">findElement</span>(<span class="va">By</span>.<span class="at">name</span>(<span class="st">&#39;q&#39;</span>)).<span class="at">sendKeys</span>(<span class="va">webdriver</span>.<span class="va">Key</span>.<span class="at">TAB</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-15" title="15"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-16" title="16"></a>
+<a class="sourceLine" id="cb5-17" title="17"><span class="va">driver</span>.<span class="at">findElement</span>(<span class="va">By</span>.<span class="at">name</span>(<span class="st">&#39;btnK&#39;</span>)).<span class="at">click</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-18" title="18"></a>
+<a class="sourceLine" id="cb5-19" title="19"><span class="va">driver</span>.<span class="at">sleep</span>(<span class="dv">2000</span>).<span class="at">then</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-20" title="20">  <span class="va">driver</span>.<span class="at">getTitle</span>().<span class="at">then</span>(<span class="kw">function</span>(title) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-21" title="21">    <span class="cf">if</span>(title <span class="op">===</span> <span class="st">&#39;webdriver - Google Search&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-22" title="22">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Test passed&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-23" title="23">    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-24" title="24">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Test failed&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-25" title="25">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-26" title="26">    <span class="va">driver</span>.<span class="at">quit</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-27" title="27">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-28" title="28"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div></li>
+<li><p>In terminal, make sure you are inside your project folder, then enter the following command:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb6-1" title="1"><span class="ex">node</span> google_test</a></code></pre></div></li>
+</ol>
+<p>You should see an instance of Firefox automatically open up! Google should automatically be loaded in a tab, “webdriver” should be entered in the search box, and the search button will be clicked. WebDriver will then wait for 2 seconds; the document title is then accessed, and if it is “webdriver - Google Search”, we will return a message to claim the test is passed. WebDriver will then close down the Firefox instance and stop.</p>
+<h2 id="testing-in-multiple-browsers-at-once">Testing in multiple browsers at once</h2>
+<p>There is also nothing to stop you running the test on multiple browsers simultaneously. Let’s try this!</p>
+<ol type="1">
+<li>Create another new file inside your project directory called <code>google_test_multiple.js</code>. You can feel free to change the references to some of the other browsers we added, remove them, etc., depending on what browsers you have available to test on your operating system. You’ll need to make sure you have the right browser drivers set up on your system. In terms of what string to use inside the <code>.forBrowser()</code> method for other browsers,  see the <a href="https://seleniumhq.github.io/selenium/docs/api/javascript/module/selenium-webdriver/index_exports_Browser.html">Browser enum</a> reference page.</li>
+<li><p>Give it the following contents, then save it:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">const</span> webdriver <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;selenium-webdriver&#39;</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb7-2" title="2">    By <span class="op">=</span> <span class="va">webdriver</span>.<span class="at">By</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb7-3" title="3">    until <span class="op">=</span> <span class="va">webdriver</span>.<span class="at">until</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb7-4" title="4"></a>
+<a class="sourceLine" id="cb7-5" title="5"><span class="kw">let</span> driver_fx <span class="op">=</span> <span class="kw">new</span> <span class="va">webdriver</span>.<span class="at">Builder</span>()</a>
+<a class="sourceLine" id="cb7-6" title="6">    .<span class="at">forBrowser</span>(<span class="st">&#39;firefox&#39;</span>)</a>
+<a class="sourceLine" id="cb7-7" title="7">    .<span class="at">build</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-8" title="8"></a>
+<a class="sourceLine" id="cb7-9" title="9"><span class="kw">let</span> driver_chr <span class="op">=</span> <span class="kw">new</span> <span class="va">webdriver</span>.<span class="at">Builder</span>()</a>
+<a class="sourceLine" id="cb7-10" title="10">    .<span class="at">forBrowser</span>(<span class="st">&#39;chrome&#39;</span>)</a>
+<a class="sourceLine" id="cb7-11" title="11">    .<span class="at">build</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-12" title="12"></a>
+<a class="sourceLine" id="cb7-13" title="13"><span class="at">searchTest</span>(driver_fx)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-14" title="14"><span class="at">searchTest</span>(driver_chr)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-15" title="15"></a>
+<a class="sourceLine" id="cb7-16" title="16"><span class="kw">function</span> <span class="at">searchTest</span>(driver) <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-17" title="17">  <span class="va">driver</span>.<span class="at">get</span>(<span class="st">&#39;http://www.google.com&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-18" title="18">  <span class="va">driver</span>.<span class="at">findElement</span>(<span class="va">By</span>.<span class="at">name</span>(<span class="st">&#39;q&#39;</span>)).<span class="at">sendKeys</span>(<span class="st">&#39;webdriver&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-19" title="19"></a>
+<a class="sourceLine" id="cb7-20" title="20">  <span class="va">driver</span>.<span class="at">sleep</span>(<span class="dv">1000</span>).<span class="at">then</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-21" title="21">    <span class="va">driver</span>.<span class="at">findElement</span>(<span class="va">By</span>.<span class="at">name</span>(<span class="st">&#39;q&#39;</span>)).<span class="at">sendKeys</span>(<span class="va">webdriver</span>.<span class="va">Key</span>.<span class="at">TAB</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-22" title="22">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-23" title="23"></a>
+<a class="sourceLine" id="cb7-24" title="24">  <span class="va">driver</span>.<span class="at">findElement</span>(<span class="va">By</span>.<span class="at">name</span>(<span class="st">&#39;btnK&#39;</span>)).<span class="at">click</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-25" title="25"></a>
+<a class="sourceLine" id="cb7-26" title="26">  <span class="va">driver</span>.<span class="at">sleep</span>(<span class="dv">2000</span>).<span class="at">then</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-27" title="27">    <span class="va">driver</span>.<span class="at">getTitle</span>().<span class="at">then</span>(<span class="kw">function</span>(title) <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-28" title="28">      <span class="cf">if</span>(title <span class="op">===</span> <span class="st">&#39;webdriver - Google Search&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-29" title="29">        <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Test passed&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-30" title="30">      <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-31" title="31">        <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Test failed&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-32" title="32">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb7-33" title="33">      <span class="va">driver</span>.<span class="at">quit</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-34" title="34">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-35" title="35">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-36" title="36"></a>
+<a class="sourceLine" id="cb7-37" title="37"><span class="op">}</span></a></code></pre></div></li>
+<li><p>In terminal, make sure you are inside your project folder, then enter the following command:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb8-1" title="1"><span class="ex">node</span> google_test_multiple</a></code></pre></div></li>
+<li><p>If you are using a Mac and do decide to test Safari, you might get an error message along the lines of “Could not create a session: You must enable the ‘Allow Remote Automation’ option in Safari’s Develop menu to control Safari via WebDriver.” If you get this, follow the given instruction and try again.</p></li>
+</ol>
+<p>So here we’ve done the test as before, except that this time we’ve wrapped it inside a function, <code>searchTest()</code>. We’ve created new browser instances for multiple browsers, then passed each one to the function so the test is performed on all three browsers!</p>
+<p>Fun huh? Let’s move on, look at the basics of WebDriver syntax, in a bit more detail.</p>
+<h2 id="webdriver-syntax-crash-course">WebDriver syntax crash course</h2>
+<p>Let’s have a look at a few key features of the webdriver syntax. For more complete details, you should consult the <a href="https://seleniumhq.github.io/selenium/docs/api/javascript/module/selenium-webdriver/">selenium-webdriver JavaScript API reference</a> for a detailed reference, and the Selenium main documentation’s <a href="https://www.seleniumhq.org/docs/03_webdriver.jsp">Selenium WebDriver</a> and <a href="https://www.seleniumhq.org/docs/04_webdriver_advanced.jsp">WebDriver: Advanced Usage</a> pages, which contain multiple examples to learn from written in different languages.</p>
+<h3 id="starting-a-new-test">Starting a new test</h3>
+<p>To start up a new test, you need to include the <code>selenium-webdriver</code> module like this:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">const</span> webdriver <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;selenium-webdriver&#39;</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb9-2" title="2">    By <span class="op">=</span> <span class="va">webdriver</span>.<span class="at">By</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb9-3" title="3">    until <span class="op">=</span> <span class="va">webdriver</span>.<span class="at">until</span><span class="op">;</span></a></code></pre></div>
+<p>Next, you need to create a new instance of a driver, using the <code>new webdriver.Builder()</code> constructor. This needs to have the <code>forBrowser()</code> method chained onto it to specify what browser you want to test with this builder, and the <code>build()</code> method to actually build it (see the <a href="https://seleniumhq.github.io/selenium/docs/api/javascript/module/selenium-webdriver/index_exports_Builder.html">Builder class reference</a> for detailed information on these features).</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">let</span> driver <span class="op">=</span> <span class="kw">new</span> <span class="va">webdriver</span>.<span class="at">Builder</span>()</a>
+<a class="sourceLine" id="cb10-2" title="2">    .<span class="at">forBrowser</span>(<span class="st">&#39;firefox&#39;</span>)</a>
+<a class="sourceLine" id="cb10-3" title="3">    .<span class="at">build</span>()<span class="op">;</span></a></code></pre></div>
+<p>Note that it is possible to set specific configuration options for browsers to be tested, for example you can set a specific version and OS to test in the <code>forBrowser()</code> method:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1"><span class="kw">let</span> driver <span class="op">=</span> <span class="kw">new</span> <span class="va">webdriver</span>.<span class="at">Builder</span>()</a>
+<a class="sourceLine" id="cb11-2" title="2">    .<span class="at">forBrowser</span>(<span class="st">&#39;firefox&#39;</span><span class="op">,</span> <span class="st">&#39;46&#39;</span><span class="op">,</span> <span class="st">&#39;MAC&#39;</span>)</a>
+<a class="sourceLine" id="cb11-3" title="3">    .<span class="at">build</span>()<span class="op">;</span></a></code></pre></div>
+<p>You could also set these options using an environment variable, for example:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb12-1" title="1"><span class="va">SELENIUM_BROWSER=</span>firefox:46:MAC</a></code></pre></div>
+<p>Let’s create a new test to allow us to explore this code as we talk about it. Inside your selenium test project directory, create a new file called <code>quick_test.js</code>, and add the following code to it:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb13-1" title="1"><span class="kw">var</span> webdriver <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;selenium-webdriver&#39;</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb13-2" title="2">    By <span class="op">=</span> <span class="va">webdriver</span>.<span class="at">By</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb13-3" title="3">    until <span class="op">=</span> <span class="va">webdriver</span>.<span class="at">until</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb13-4" title="4"></a>
+<a class="sourceLine" id="cb13-5" title="5"><span class="kw">var</span> driver <span class="op">=</span> <span class="kw">new</span> <span class="va">webdriver</span>.<span class="at">Builder</span>()</a>
+<a class="sourceLine" id="cb13-6" title="6">    .<span class="at">forBrowser</span>(<span class="st">&#39;firefox&#39;</span>)</a>
+<a class="sourceLine" id="cb13-7" title="7">    .<span class="at">build</span>()<span class="op">;</span></a></code></pre></div>
+<h3 id="getting-the-document-you-want-to-test">Getting the document you want to test</h3>
+<p>To load the page you actually want to test, you use the <code>get()</code> method of the driver instance you created earlier, for example:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb14-1" title="1"><span class="va">driver</span>.<span class="at">get</span>(<span class="st">&#39;http://www.google.com&#39;</span>)<span class="op">;</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> See the <a href="https://seleniumhq.github.io/selenium/docs/api/javascript/module/selenium-webdriver/lib/webdriver_exports_WebDriver.html">WebDriver class reference</a> for details of the features in this section and the ones below it.</p>
+</blockquote>
+<p>You can use any URL to point to your resource, including a <code>file://</code> URL to test a local document:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb15-1" title="1"><span class="va">driver</span>.<span class="at">get</span>(<span class="st">&#39;file:///Users/chrismills/git/learning-area/tools-testing/cross-browser-testing/accessibility/fake-div-buttons.html&#39;</span>)<span class="op">;</span></a></code></pre></div>
+<p>or</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb16-1" title="1"><span class="va">driver</span>.<span class="at">get</span>(<span class="st">&#39;http://localhost:8888/fake-div-buttons.html&#39;</span>)<span class="op">;</span></a></code></pre></div>
+<p>But it is better to use a remote server location so the code is more flexible — when you start using a remote server to run your tests (see later on), your code will break if you try to use local paths.</p>
+<p>Add this line to the bottom of <code>quick_test.js</code> now:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb17-1" title="1"><span class="va">driver</span>.<span class="at">get</span>(<span class="st">&#39;https://mdn.github.io/learning-area/tools-testing/cross-browser-testing/accessibility/native-keyboard-accessibility.html&#39;</span>)<span class="op">;</span></a></code></pre></div>
+<h3 id="interacting-with-the-document">Interacting with the document</h3>
+<p>Now we’ve got a document to test, we need to interact with it in some way, which usually involves first selecting a specific element to test something about. You can <a href="https://www.seleniumhq.org/docs/03_webdriver.jsp#locating-ui-elements-webelements">select UI elements in many ways</a> in WebDriver, including by ID, class, element name, etc. The actual selection is done by the <code>findElement()</code> method, which accepts as a parameter a selection method. For example, to select an element by ID:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb18-1" title="1"><span class="kw">const</span> element <span class="op">=</span> <span class="va">driver</span>.<span class="at">findElement</span>(<span class="va">By</span>.<span class="at">id</span>(<span class="st">&#39;myElementId&#39;</span>))<span class="op">;</span></a></code></pre></div>
+<p>One of the most useful ways to find an element by CSS — the  By.css method allows you to select an element using a CSS selector</p>
+<p>Enter the following at the bottom of your <code>quick_test.js</code> code now:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb19-1" title="1"><span class="kw">const</span> button <span class="op">=</span> <span class="va">driver</span>.<span class="at">findElement</span>(<span class="va">By</span>.<span class="at">css</span>(<span class="st">&#39;button:nth-of-type(1)&#39;</span>))<span class="op">;</span></a></code></pre></div>
+<h3 id="testing-your-element">Testing your element</h3>
+<p>There are many ways to interact with your web documents and elements on them. You can see useful common examples starting at <a href="https://www.seleniumhq.org/docs/03_webdriver.jsp#getting-text-values">Getting text values</a> on the WebDriver docs.</p>
+<p>If we wanted to get the text inside our button, we could do this:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb20-1" title="1"><span class="va">button</span>.<span class="at">getText</span>().<span class="at">then</span>(<span class="kw">function</span>(text) <span class="op">{</span></a>
+<a class="sourceLine" id="cb20-2" title="2">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Button text is </span><span class="sc">\&#39;</span><span class="st">&#39;</span> <span class="op">+</span> text <span class="op">+</span> <span class="st">&#39;</span><span class="sc">\&#39;</span><span class="st">&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb20-3" title="3"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>Add this to <code>quick_test.js</code> now.</p>
+<p>Making sure you are inside your project directory, try running the test:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb21-1" title="1"><span class="ex">node</span> quick_test.js</a></code></pre></div>
+<p>You should see the button’s text label reported inside the console.</p>
+<p>let’s do something a bit more useful. delete the previous code entry, then add this line at the bottom instead:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb22-1" title="1"><span class="va">button</span>.<span class="at">click</span>()<span class="op">;</span></a></code></pre></div>
+<p>Try running your test again; the button will be clicked, and the <code>alert()</code> popup should appear. At least we know the button is working!</p>
+<p>You can interact with the popup too. Add the following to the bottom of the code, and try testing it again:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb23-1" title="1"><span class="kw">let</span> alert <span class="op">=</span> <span class="va">driver</span>.<span class="at">switchTo</span>().<span class="at">alert</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb23-2" title="2"></a>
+<a class="sourceLine" id="cb23-3" title="3"><span class="va">alert</span>.<span class="at">getText</span>().<span class="at">then</span>(<span class="kw">function</span>(text) <span class="op">{</span></a>
+<a class="sourceLine" id="cb23-4" title="4">  <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Alert text is </span><span class="sc">\&#39;</span><span class="st">&#39;</span> <span class="op">+</span> text <span class="op">+</span> <span class="st">&#39;</span><span class="sc">\&#39;</span><span class="st">&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb23-5" title="5"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb23-6" title="6"></a>
+<a class="sourceLine" id="cb23-7" title="7"><span class="va">alert</span>.<span class="at">accept</span>()<span class="op">;</span></a></code></pre></div>
+<p>Next, let’s try entering some text into one of the form elements. Add the following code and try running your test again:</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb24-1" title="1"><span class="kw">const</span> input <span class="op">=</span> <span class="va">driver</span>.<span class="at">findElement</span>(<span class="va">By</span>.<span class="at">id</span>(<span class="st">&#39;name&#39;</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb24-2" title="2"><span class="va">input</span>.<span class="at">sendKeys</span>(<span class="st">&#39;Filling in my form&#39;</span>)<span class="op">;</span></a></code></pre></div>
+<p>You can submit key presses that can’t be represented by normal characters using properties of the <code>webdriver.Key</code> object. For example, above we used this construct to tab out of the form input before submitting it:</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb25-1" title="1"><span class="va">driver</span>.<span class="at">sleep</span>(<span class="dv">1000</span>).<span class="at">then</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb25-2" title="2">  <span class="va">driver</span>.<span class="at">findElement</span>(<span class="va">By</span>.<span class="at">name</span>(<span class="st">&#39;q&#39;</span>)).<span class="at">sendKeys</span>(<span class="va">webdriver</span>.<span class="va">Key</span>.<span class="at">TAB</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb25-3" title="3"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h3 id="waiting-for-something-to-complete">Waiting for something to complete</h3>
+<p>There are times where you’ll want to make WebDriver wait for something to complete before carrying on. For example if you load a new page, you’ll want to wait for the page’s DOM to finish loading before you try to interact with any of its elements, otherwise the test will likely fail.</p>
+<p>In our <code>google_test.js</code> test for example, we included this block:</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb26-1" title="1"><span class="va">driver</span>.<span class="at">sleep</span>(<span class="dv">2000</span>).<span class="at">then</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb26-2" title="2">  <span class="va">driver</span>.<span class="at">getTitle</span>().<span class="at">then</span>(<span class="kw">function</span>(title) <span class="op">{</span></a>
+<a class="sourceLine" id="cb26-3" title="3">    <span class="cf">if</span>(title <span class="op">===</span> <span class="st">&#39;webdriver - Google Search&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb26-4" title="4">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Test passed&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb26-5" title="5">    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb26-6" title="6">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Test failed&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb26-7" title="7">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb26-8" title="8">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb26-9" title="9"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>The <code>sleep()</code> method accepts a value that specifies the time to wait in milliseconds — the method returns a promise that resolves at the end of that time, at which point the code inside the <code>then()</code> executes. In this case we get the title of the current page with the <code>getTitle()</code> method, then return a pass or fail message depending on what its value is.</p>
+<p>We could add a <code>sleep()</code> method to our <code>quick_test.js</code> test too — try wrapping your last line of code in a block like this:</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb27-1" title="1"><span class="va">driver</span>.<span class="at">sleep</span>(<span class="dv">2000</span>).<span class="at">then</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb27-2" title="2">  <span class="va">input</span>.<span class="at">sendKeys</span>(<span class="st">&#39;Filling in my form&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb27-3" title="3">  <span class="va">input</span>.<span class="at">getAttribute</span>(<span class="st">&quot;value&quot;</span>).<span class="at">then</span>(<span class="kw">function</span>(value) <span class="op">{</span></a>
+<a class="sourceLine" id="cb27-4" title="4">    <span class="cf">if</span>(value <span class="op">!==</span> <span class="st">&#39;&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb27-5" title="5">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Form input editable&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb27-6" title="6">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb27-7" title="7">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb27-8" title="8"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>WebDriver will now wait for 2 seconds before filling in the form field. We then test whether its value got filled in (i.e. is not empty) by using <code>getAttribute()</code> to retrieve it’s <code>value</code> attribute value, and print a message to the console if it is not empty.</p>
+<blockquote>
+<p><strong>Note:</strong> There is also a method called <a href="https://seleniumhq.github.io/selenium/docs/api/javascript/module/selenium-webdriver/lib/webdriver_exports_WebDriver.html#wait"><code>wait()</code></a>, which repeatedly tests a condition for a certain length of time, and then carries on executing the code. This also makes use of the <a href="https://seleniumhq.github.io/selenium/docs/api/javascript/module/selenium-webdriver/lib/until.html">util library</a>, which defines common conditions to use along with <code>wait()</code>.</p>
+</blockquote>
+<h3 id="shutting-down-drivers-after-use">Shutting down drivers after use</h3>
+<p>After you’ve finished running a test, you should shut down any driver instances you’ve opened, to make sure that you don’t end up with loads of rogue browser instances open on your machine! This is done using the <code>quit()</code> method. Call this on your driver instance when you are finished with it. Add this line to the bottom of your <code>quick_test.js</code> test now:</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb28-1" title="1"><span class="va">driver</span>.<span class="at">quit</span>()<span class="op">;</span></a></code></pre></div>
+<p>When you run it, you should now see the test execute and the browser instance shut down again after the test is complete. This is useful for not cluttering up your computer with loads of browser instances, especially if you have so many that it is causing the computer to slow down.</p>
+<h2 id="test-best-practices">Test best practices</h2>
+<p>There has been a lot written about best practices for writing tests. You can find some good background information at <a href="https://www.seleniumhq.org/docs/06_test_design_considerations.jsp">Test Design Considerations</a>. In general, you should make sure that your tests are:</p>
+<ol type="1">
+<li>Using good locator strategies: When you are {{anch(“Interacting with the document”)}}, make sure that you use locators and page objects that are unlikely to change — if you have a testable element that you want to perform a test on, make sure that it has a stable ID, or position on the page that can be selected using a CSS selector, which isn’t going to just change with the next site iteration. You want to make your tests as non-brittle as possible, i.e. they won’t just break when something changes.</li>
+<li>Write atomic tests: Each test should test one thing only, making it easy to keep track of what test file is testing which criterion. As an example, the <code>google_test.js</code> test we looked at above is pretty good, as it just tests a single thing — whether the title of a search results page is set correctly. We could work on giving it a better name so it is easier to work out what it does if we add more google tests. Perhaps <code>results_page_title_set_correctly.js</code> would be slightly better?</li>
+<li>Write autonomous tests: Each test should work on it’s own, and not depend on other tests to work.</li>
+</ol>
+<p>In addition, we should mention test results/reporting — we’ve been reporting results in our above examples using simple <code>console.log()</code> statements, but this is all done in JavaScript, so you can use whatever test running and reporting system you want, be it <a href="https://mochajs.org/">Mocha</a>, <a href="http://chaijs.com/">Chai</a>, or some other tool.</p>
+<ol type="1">
+<li>For example, try making a local copy of our <a href="https://github.com/mdn/learning-area/blob/master/tools-testing/cross-browser-testing/selenium/mocha_test.js"><code>mocha_test.js</code></a> example inside your project directory. Put it inside a subfolder called <code>test</code>. This example uses a long chain of promises to run all the steps required in our test — the promise-based methods WebDriver uses need to resolve for it to work properly.</li>
+<li><p>Install the mocha test harness by running the following command inside your project directory:</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb29-1" title="1"><span class="ex">npm</span> install --save-dev mocha</a></code></pre></div></li>
+<li><p>you can now run the test (and any others you put inside your <code>test</code> directory) using the following command:</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb30-1" title="1"><span class="ex">npx</span> mocha --no-timeouts</a></code></pre></div></li>
+<li><p>You should include the <code>--no-timeouts</code> flag to make sure your tests don’t end up failing because of Mocha’s arbitrary timeout (which is 3 seconds).</p></li>
+</ol>
+<blockquote>
+<p><strong>Note:</strong> <a href="https://github.com/saucelabs-sample-test-frameworks">saucelabs-sample-test-frameworks</a> contains several useful examples showing how to set up different combinations of test/assertion tools.</p>
+</blockquote>
+<h2 id="running-remote-tests">Running remote tests</h2>
+<p>It turns out that running tests on remote servers isn’t that much more difficult than running them locally. You just need to create your driver instance, but with a few more features specified, including the capabilities of the browser you want to test on, the address of the server, and the user credentials you need (if any) to access it.</p>
+<h3 id="lambdatest">LambdaTest</h3>
+<p>Getting Selenium tests to run remotely on LambdaTest is very simple. The code you need should follow the pattern seen below.</p>
+<p>Let’s write an example:</p>
+<ol type="1">
+<li>Inside your project directory, create a new file called <code>lambdatest_google_test.js</code></li>
+<li><p>Give it the following contents:</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb31-1" title="1"><span class="kw">const</span> webdriver <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;selenium-webdriver&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb31-2" title="2">    By <span class="op">=</span> <span class="va">webdriver</span>.<span class="at">By</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb31-3" title="3">    until <span class="op">=</span> <span class="va">webdriver</span>.<span class="at">until</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb31-4" title="4"></a>
+<a class="sourceLine" id="cb31-5" title="5"><span class="co">// username: Username can be found at automation dashboard</span></a>
+<a class="sourceLine" id="cb31-6" title="6"><span class="kw">const</span> USERNAME <span class="op">=</span> <span class="st">&#39;{username}&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb31-7" title="7"></a>
+<a class="sourceLine" id="cb31-8" title="8"><span class="co">// AccessKey:  AccessKey can be generated from automation dashboard or profile section</span></a>
+<a class="sourceLine" id="cb31-9" title="9"><span class="kw">const</span> KEY <span class="op">=</span> <span class="st">&#39;{accessKey}&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb31-10" title="10"></a>
+<a class="sourceLine" id="cb31-11" title="11"><span class="co">// gridUrl: gridUrl can be found at automation dashboard</span></a>
+<a class="sourceLine" id="cb31-12" title="12"><span class="kw">const</span> GRID_HOST <span class="op">=</span> <span class="st">&#39;hub.lambdatest.com/wd/hub&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb31-13" title="13"></a>
+<a class="sourceLine" id="cb31-14" title="14"><span class="kw">function</span> <span class="at">searchTextOnGoogle</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb31-15" title="15"><span class="co">// Setup Input capabilities</span></a>
+<a class="sourceLine" id="cb31-16" title="16">    <span class="kw">const</span> capabilities <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb31-17" title="17">       <span class="dt">platform</span><span class="op">:</span> <span class="st">&#39;windows 10&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb31-18" title="18">       <span class="dt">browserName</span><span class="op">:</span> <span class="st">&#39;chrome&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb31-19" title="19">       <span class="dt">version</span><span class="op">:</span> <span class="st">&#39;67.0&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb31-20" title="20">       <span class="dt">resolution</span><span class="op">:</span> <span class="st">&#39;1280x800&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb31-21" title="21">       <span class="dt">network</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb31-22" title="22">       <span class="dt">visual</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb31-23" title="23">       <span class="dt">console</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb31-24" title="24">       <span class="dt">video</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb31-25" title="25">       <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Test 1&#39;</span><span class="op">,</span> <span class="co">// name of the test</span></a>
+<a class="sourceLine" id="cb31-26" title="26">       <span class="dt">build</span><span class="op">:</span> <span class="st">&#39;NodeJS build&#39;</span> <span class="co">// name of the build</span></a>
+<a class="sourceLine" id="cb31-27" title="27">     <span class="op">};</span></a>
+<a class="sourceLine" id="cb31-28" title="28"></a>
+<a class="sourceLine" id="cb31-29" title="29"><span class="co">// URL: https://{username}:{accessToken}@hub.lambdatest.com/wd/hub</span></a>
+<a class="sourceLine" id="cb31-30" title="30"></a>
+<a class="sourceLine" id="cb31-31" title="31"><span class="kw">const</span> gridUrl <span class="op">=</span> <span class="st">&#39;https://&#39;</span> <span class="op">+</span> USERNAME <span class="op">+</span> <span class="st">&#39;:&#39;</span> <span class="op">+</span> KEY <span class="op">+</span> <span class="st">&#39;@&#39;</span> <span class="op">+</span> GRID_HOST<span class="op">;</span></a>
+<a class="sourceLine" id="cb31-32" title="32"></a>
+<a class="sourceLine" id="cb31-33" title="33"><span class="co">// setup and build selenium driver object</span></a>
+<a class="sourceLine" id="cb31-34" title="34">     <span class="kw">const</span> driver <span class="op">=</span> <span class="kw">new</span> <span class="va">webdriver</span>.<span class="at">Builder</span>()</a>
+<a class="sourceLine" id="cb31-35" title="35"><span class="va"> </span>    .<span class="at">usingServer</span>(gridUrl)</a>
+<a class="sourceLine" id="cb31-36" title="36"><span class="va"> </span>    .<span class="at">withCapabilities</span>(capabilities)</a>
+<a class="sourceLine" id="cb31-37" title="37"><span class="va"> </span>    .<span class="at">build</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb31-38" title="38"></a>
+<a class="sourceLine" id="cb31-39" title="39"><span class="co">// navigate to a url, search for a text and get title of page</span></a>
+<a class="sourceLine" id="cb31-40" title="40"><span class="va">driver</span>.<span class="at">get</span>(<span class="st">&#39;https://www.google.com/ncr&#39;</span>).<span class="at">then</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb31-41" title="41">    <span class="va">driver</span>.<span class="at">findElement</span>(<span class="va">webdriver</span>.<span class="va">By</span>.<span class="at">name</span>(<span class="st">&#39;q&#39;</span>)).<span class="at">sendKeys</span>(<span class="st">&#39;LambdaTest</span><span class="sc">\n</span><span class="st">&#39;</span>).<span class="at">then</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb31-42" title="42">         <span class="va">driver</span>.<span class="at">getTitle</span>().<span class="at">then</span>(<span class="kw">function</span>(title) <span class="op">{</span></a>
+<a class="sourceLine" id="cb31-43" title="43">               <span class="at">setTimeout</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb31-44" title="44">               <span class="va">console</span>.<span class="at">log</span>(title)<span class="op">;</span></a>
+<a class="sourceLine" id="cb31-45" title="45">               <span class="va">driver</span>.<span class="at">quit</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb31-46" title="46">               <span class="op">},</span> <span class="dv">5000</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb31-47" title="47">            <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb31-48" title="48">         <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb31-49" title="49">      <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb31-50" title="50">   <span class="op">}</span></a>
+<a class="sourceLine" id="cb31-51" title="51"></a>
+<a class="sourceLine" id="cb31-52" title="52"><span class="at">searchTextOnGoogle</span>()<span class="op">;</span></a></code></pre></div></li>
+<li>Visit your <a href="https://www.lambdatest.com/selenium-automation">LambdaTest automation dashboard</a>, to fetch your LambdaTest’s username and access key by clicking on the <strong>key</strong> icon on the top-right(see <em>Username and Access Keys</em>). Replace the <code>{username}</code> and <code>{accessKey}</code> placeholders in the code with your actual user name and access key values (and make sure you keep them secure).</li>
+<li><p>Run the below command in your terminal to execute your test:</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb32-1" title="1"><span class="ex">node</span> lambdatest_google_test</a></code></pre></div>
+<p>The test will be sent to LambdaTest, and the output of your test will be reflected on your LambdaTest console. If you wish to extract these results for reporting purpose from LambdaTest platform then you can do so by using <a href="https://www.lambdatest.com/blog/lambdatest-launches-api-for-selenium-automation/">LambdaTest restful API</a>.</p></li>
+<li><p>Now if you go to your <a href="https://www.lambdatest.com/selenium-automation">LambdaTest Automation dashboard</a>, you’ll see your test listed; from here you’ll be able to see videos, screenshots, and other such data. <a href="https://www.lambdatest.com/blog/wp-content/uploads/2019/02/Automation-logs-1.jpg"><img src="automation-logs-1.jpg" alt="LambdaTest Automation Dashboard" /></a>You can retrieve network, command, exception, and Selenium logs for every test within your test build. You will also find a video recording of your Selenium script execution.</p></li>
+</ol>
+<blockquote>
+<p><strong>Note:</strong> The <em>HELP</em>  button on LambdaTest Automation Dashboard will provide you with an ample amount of information to help you get started with LambdaTest automation. You can also follow our documentation about <a href="https://www.lambdatest.com/support/docs/quick-guide-to-run-node-js-tests-on-lambdatest-selenium-grid/">running first Selenium script in Node JS</a>.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> If you don’t want to write out the capabilities objects for your tests by hand, you can generate them using the <a href="https://www.lambdatest.com/capabilities-generator/">Selenium Desired Capabilities Generator</a>.</p>
+</blockquote>
+<h4 id="filling-in-test-details-on-lambdatest-programmatically">Filling in test details on LambdaTest programmatically</h4>
+<p>When executing numerous automation tests, marking their status as passed or failed makes the task a lot easier.</p>
+<ol type="1">
+<li><p>Use the below command for marking a status as <strong>passed</strong> on LambdaTest.</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb33-1" title="1"><span class="ex">driver.executeScript</span>(<span class="st">&quot;lambda-status=passed&quot;</span>);</a></code></pre></div></li>
+<li><p>Use the below command for marking a status as <strong>failed</strong> on LambdaTest.</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb34-1" title="1"><span class="ex">driver.executeScript</span>(<span class="st">&quot;lambda-status=failed&quot;</span>);</a></code></pre></div></li>
+</ol>
+<h3 id="browserstack">BrowserStack</h3>
+<p>Getting Selenium tests to run remotely on BrowserStack is easy. The code you need should follow the pattern seen below.</p>
+<p>Let’s write an example:</p>
+<ol type="1">
+<li>Inside your project directory, create a new file called <code>bstack_google_test.js</code>.</li>
+<li><p>Give it the following contents:</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb35-1" title="1"><span class="kw">const</span> webdriver <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;selenium-webdriver&#39;</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb35-2" title="2">    By <span class="op">=</span> <span class="va">webdriver</span>.<span class="at">By</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb35-3" title="3">    until <span class="op">=</span> <span class="va">webdriver</span>.<span class="at">until</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb35-4" title="4"></a>
+<a class="sourceLine" id="cb35-5" title="5"><span class="co">// Input capabilities</span></a>
+<a class="sourceLine" id="cb35-6" title="6"><span class="kw">let</span> capabilities <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb35-7" title="7">   <span class="st">&#39;browserName&#39;</span> <span class="op">:</span> <span class="st">&#39;Firefox&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb35-8" title="8">   <span class="st">&#39;browser_version&#39;</span> <span class="op">:</span> <span class="st">&#39;56.0 beta&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb35-9" title="9">   <span class="st">&#39;os&#39;</span> <span class="op">:</span> <span class="st">&#39;OS X&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb35-10" title="10">   <span class="st">&#39;os_version&#39;</span> <span class="op">:</span> <span class="st">&#39;Sierra&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb35-11" title="11">   <span class="st">&#39;resolution&#39;</span> <span class="op">:</span> <span class="st">&#39;1280x1024&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb35-12" title="12">   <span class="st">&#39;browserstack.user&#39;</span> <span class="op">:</span> <span class="st">&#39;YOUR-USER-NAME&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb35-13" title="13">   <span class="st">&#39;browserstack.key&#39;</span> <span class="op">:</span> <span class="st">&#39;YOUR-ACCESS-KEY&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb35-14" title="14">   <span class="st">&#39;browserstack.debug&#39;</span> <span class="op">:</span> <span class="st">&#39;true&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb35-15" title="15">   <span class="st">&#39;build&#39;</span> <span class="op">:</span> <span class="st">&#39;First build&#39;</span></a>
+<a class="sourceLine" id="cb35-16" title="16"><span class="op">};</span></a>
+<a class="sourceLine" id="cb35-17" title="17"></a>
+<a class="sourceLine" id="cb35-18" title="18"><span class="kw">let</span> driver <span class="op">=</span> <span class="kw">new</span> <span class="va">webdriver</span>.<span class="at">Builder</span>().</a>
+<a class="sourceLine" id="cb35-19" title="19">  <span class="at">usingServer</span>(<span class="st">&#39;http://hub-cloud.browserstack.com/wd/hub&#39;</span>).</a>
+<a class="sourceLine" id="cb35-20" title="20">  <span class="at">withCapabilities</span>(capabilities).</a>
+<a class="sourceLine" id="cb35-21" title="21">  <span class="at">build</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb35-22" title="22"></a>
+<a class="sourceLine" id="cb35-23" title="23"><span class="va">driver</span>.<span class="at">get</span>(<span class="st">&#39;http://www.google.com&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb35-24" title="24"><span class="va">driver</span>.<span class="at">findElement</span>(<span class="va">By</span>.<span class="at">name</span>(<span class="st">&#39;q&#39;</span>)).<span class="at">sendKeys</span>(<span class="st">&#39;webdriver&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb35-25" title="25"></a>
+<a class="sourceLine" id="cb35-26" title="26"><span class="va">driver</span>.<span class="at">sleep</span>(<span class="dv">1000</span>).<span class="at">then</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb35-27" title="27">  <span class="va">driver</span>.<span class="at">findElement</span>(<span class="va">By</span>.<span class="at">name</span>(<span class="st">&#39;q&#39;</span>)).<span class="at">sendKeys</span>(<span class="va">webdriver</span>.<span class="va">Key</span>.<span class="at">TAB</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb35-28" title="28"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb35-29" title="29"></a>
+<a class="sourceLine" id="cb35-30" title="30"><span class="va">driver</span>.<span class="at">findElement</span>(<span class="va">By</span>.<span class="at">name</span>(<span class="st">&#39;btnK&#39;</span>)).<span class="at">click</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb35-31" title="31"></a>
+<a class="sourceLine" id="cb35-32" title="32"><span class="va">driver</span>.<span class="at">sleep</span>(<span class="dv">2000</span>).<span class="at">then</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb35-33" title="33">  <span class="va">driver</span>.<span class="at">getTitle</span>().<span class="at">then</span>(<span class="kw">function</span>(title) <span class="op">{</span></a>
+<a class="sourceLine" id="cb35-34" title="34">    <span class="cf">if</span>(title <span class="op">===</span> <span class="st">&#39;webdriver - Google Search&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb35-35" title="35">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Test passed&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb35-36" title="36">    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb35-37" title="37">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Test failed&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb35-38" title="38">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb35-39" title="39">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb35-40" title="40"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb35-41" title="41"></a>
+<a class="sourceLine" id="cb35-42" title="42"><span class="va">driver</span>.<span class="at">quit</span>()<span class="op">;</span></a></code></pre></div></li>
+<li>From your <a href="https://www.browserstack.com/automate">BrowserStack automation dashboard</a>, get your user name and access key (see <em>Username and Access Keys</em>). Replace the <code>YOUR-USER-NAME</code> and <code>YOUR-ACCESS-KEY</code> placeholders in the code with your actual user name and access key values (and make sure you keep them secure).</li>
+<li><p>Run your test with the following command:</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb36-1" title="1"><span class="ex">node</span> bstack_google_test</a></code></pre></div>
+<p>The test will be sent to BrowserStack, and the test result will be returned to your console. This shows the importance of including some kind of result reporting mechanism!</p></li>
+<li><p>Now if you go back to the <a href="https://www.browserstack.com/automate">BrowserStack automation dashboard</a> page, you’ll see your test listed: <img src="bstack_automated_results.png" /></p></li>
+</ol>
+<p>If you click on the link for your test, you’ll get to a new screen where you will be able to see a video recording of the test, and multiple detailed logs of information pertaining to it.</p>
+<blockquote>
+<p><strong>Note:</strong> The <em>Resources</em> menu option on the Browserstack automation dashboard contains a wealth of useful information on using it to run automated tests. See <a href="https://www.browserstack.com/automate/node">Node JS Documentation for writing automate test scripts in Node JS</a> for the node-specific information. Explore the docs to find out all the useful things BrowserStack can do.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> If you don’t want to write out the capabilities objects for your tests by hand, you can generate them using the generators embedded in the docs. See <a href="https://www.browserstack.com/automate/node#run-tests-on-mobile">Run tests on mobile browsers</a> and <a href="https://www.browserstack.com/automate/node#setting-os-and-browser">Run tests on desktop browsers</a>.</p>
+</blockquote>
+<h4 id="filling-in-browserstack-test-details-programmatically">Filling in BrowserStack test details programmatically</h4>
+<p>You can use the BrowserStack REST API and some other capabilities to annotate your test with more details, such as whether it passed, why it passed, what project the test is part of, etc. BrowserStack doesn’t know these details by default!</p>
+<p>Let’s update our <code>bstack_google_test.js</code> demo, to show how these features work:</p>
+<ol type="1">
+<li><p>First, we’ll need to import the node request module, so we can use it to send requests to the REST API. Add the following line at the very top of your code:</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb37-1" title="1"><span class="kw">const</span> request <span class="op">=</span> <span class="at">require</span>(<span class="st">&quot;request&quot;</span>)<span class="op">;</span></a></code></pre></div></li>
+<li><p>Now we’ll update our <code>capabilities</code> object to include a project name — add the following line before the closing curly brace, remembering to add a comma at the end of the previous line (you can vary the build and project names to organize the tests in different windows in the BrowserStack automation dashboard):</p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb38-1" title="1"><span class="st">&#39;project&#39;</span> <span class="op">:</span> <span class="st">&#39;Google test 2&#39;</span></a></code></pre></div></li>
+<li><p>Next we need to access the <code>sessionId</code> of the current session, so we know where to send the request (the ID is included in the request URL, as you’ll see later). Include the following lines just below the block that creates the <code>driver</code> object (<code>let driver ...</code>) :</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb39-1" title="1"><span class="kw">let</span> sessionId<span class="op">;</span></a>
+<a class="sourceLine" id="cb39-2" title="2"></a>
+<a class="sourceLine" id="cb39-3" title="3"><span class="va">driver</span>.<span class="va">session_</span>.<span class="at">then</span>(<span class="kw">function</span>(sessionData) <span class="op">{</span></a>
+<a class="sourceLine" id="cb39-4" title="4">    sessionId <span class="op">=</span> <span class="va">sessionData</span>.<span class="at">id_</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb39-5" title="5"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div></li>
+<li><p>Finally, update the <code>driver.sleep(2000)</code> … block near the bottom of the code to add REST API calls (again, replace the <code>YOUR-USER-NAME</code> and <code>YOUR-ACCESS-KEY</code> placeholders in the code with your actual user name and access key values):</p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb40-1" title="1"><span class="va">driver</span>.<span class="at">sleep</span>(<span class="dv">2000</span>).<span class="at">then</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb40-2" title="2">  <span class="va">driver</span>.<span class="at">getTitle</span>().<span class="at">then</span>(<span class="kw">function</span>(title) <span class="op">{</span></a>
+<a class="sourceLine" id="cb40-3" title="3">    <span class="cf">if</span>(title <span class="op">===</span> <span class="st">&#39;webdriver - Google Search&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb40-4" title="4">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Test passed&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb40-5" title="5">      <span class="at">request</span>(<span class="op">{</span><span class="dt">uri</span><span class="op">:</span> <span class="st">&quot;https://YOUR-USER-NAME:YOUR-ACCESS-KEY@www.browserstack.com/automate/sessions/&quot;</span> <span class="op">+</span> sessionId <span class="op">+</span> <span class="st">&quot;.json&quot;</span><span class="op">,</span> <span class="dt">method</span><span class="op">:</span><span class="st">&quot;PUT&quot;</span><span class="op">,</span> <span class="dt">form</span><span class="op">:{</span><span class="st">&quot;status&quot;</span><span class="op">:</span><span class="st">&quot;passed&quot;</span><span class="op">,</span><span class="st">&quot;reason&quot;</span><span class="op">:</span><span class="st">&quot;Google results showed correct title&quot;</span><span class="op">}}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb40-6" title="6">    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb40-7" title="7">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Test failed&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb40-8" title="8">      <span class="at">request</span>(<span class="op">{</span><span class="dt">uri</span><span class="op">:</span> <span class="st">&quot;https://YOUR-USER-NAME:YOUR-ACCESS-KEY@www.browserstack.com/automate/sessions/&quot;</span> <span class="op">+</span> sessionId <span class="op">+</span> <span class="st">&quot;.json&quot;</span><span class="op">,</span> <span class="dt">method</span><span class="op">:</span><span class="st">&quot;PUT&quot;</span><span class="op">,</span> <span class="dt">form</span><span class="op">:{</span><span class="st">&quot;status&quot;</span><span class="op">:</span><span class="st">&quot;failed&quot;</span><span class="op">,</span><span class="st">&quot;reason&quot;</span><span class="op">:</span><span class="st">&quot;Google results showed wrong title&quot;</span><span class="op">}}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb40-9" title="9">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb40-10" title="10">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb40-11" title="11"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div></li>
+</ol>
+<p>These are fairly intuitive — once the test completes, we send an API call to BrowserStack to update the test with a passed or failed status, and a reason for the result.</p>
+<p>If you now go back to your <a href="https://www.browserstack.com/automate">BrowserStack automation dashboard</a> page, you should see your test session available, as before, but with the updated data attached to it:</p>
+<p><img src="bstack_custom_results.png" /></p>
+<h3 id="sauce-labs">Sauce Labs</h3>
+<p>Getting Selenium tests to run remotely on Sauce Labs is also very simple, and very similar to BrowserStack albeit with a few syntactic differences. The code you need should follow the pattern seen below.</p>
+<p>Let’s write an example:</p>
+<ol type="1">
+<li>Inside your project directory, create a new file called <code>sauce_google_test.js</code>.</li>
+<li><p>Give it the following contents:</p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb41-1" title="1"><span class="kw">const</span> webdriver <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;selenium-webdriver&#39;</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb41-2" title="2">    By <span class="op">=</span> <span class="va">webdriver</span>.<span class="at">By</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb41-3" title="3">    until <span class="op">=</span> <span class="va">webdriver</span>.<span class="at">until</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb41-4" title="4">    username <span class="op">=</span> <span class="st">&quot;YOUR-USER-NAME&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb41-5" title="5">    accessKey <span class="op">=</span> <span class="st">&quot;YOUR-ACCESS-KEY&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb41-6" title="6"></a>
+<a class="sourceLine" id="cb41-7" title="7"><span class="kw">let</span> driver <span class="op">=</span> <span class="kw">new</span> <span class="va">webdriver</span>.<span class="at">Builder</span>()</a>
+<a class="sourceLine" id="cb41-8" title="8">    .<span class="at">withCapabilities</span>(<span class="op">{</span></a>
+<a class="sourceLine" id="cb41-9" title="9">      <span class="st">&#39;browserName&#39;</span><span class="op">:</span> <span class="st">&#39;chrome&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb41-10" title="10">      <span class="st">&#39;platform&#39;</span><span class="op">:</span> <span class="st">&#39;Windows XP&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb41-11" title="11">      <span class="st">&#39;version&#39;</span><span class="op">:</span> <span class="st">&#39;43.0&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb41-12" title="12">      <span class="st">&#39;username&#39;</span><span class="op">:</span> username<span class="op">,</span></a>
+<a class="sourceLine" id="cb41-13" title="13">      <span class="st">&#39;accessKey&#39;</span><span class="op">:</span> accessKey</a>
+<a class="sourceLine" id="cb41-14" title="14">    <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb41-15" title="15">    .<span class="at">usingServer</span>(<span class="st">&quot;https://&quot;</span> <span class="op">+</span> username <span class="op">+</span> <span class="st">&quot;:&quot;</span> <span class="op">+</span> accessKey <span class="op">+</span></a>
+<a class="sourceLine" id="cb41-16" title="16">          <span class="st">&quot;@ondemand.saucelabs.com:443/wd/hub&quot;</span>)</a>
+<a class="sourceLine" id="cb41-17" title="17">    .<span class="at">build</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb41-18" title="18"></a>
+<a class="sourceLine" id="cb41-19" title="19"><span class="va">driver</span>.<span class="at">get</span>(<span class="st">&#39;http://www.google.com&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb41-20" title="20"></a>
+<a class="sourceLine" id="cb41-21" title="21"><span class="va">driver</span>.<span class="at">findElement</span>(<span class="va">By</span>.<span class="at">name</span>(<span class="st">&#39;q&#39;</span>)).<span class="at">sendKeys</span>(<span class="st">&#39;webdriver&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb41-22" title="22"></a>
+<a class="sourceLine" id="cb41-23" title="23"><span class="va">driver</span>.<span class="at">sleep</span>(<span class="dv">1000</span>).<span class="at">then</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb41-24" title="24">  <span class="va">driver</span>.<span class="at">findElement</span>(<span class="va">By</span>.<span class="at">name</span>(<span class="st">&#39;q&#39;</span>)).<span class="at">sendKeys</span>(<span class="va">webdriver</span>.<span class="va">Key</span>.<span class="at">TAB</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb41-25" title="25"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb41-26" title="26"></a>
+<a class="sourceLine" id="cb41-27" title="27"><span class="va">driver</span>.<span class="at">findElement</span>(<span class="va">By</span>.<span class="at">name</span>(<span class="st">&#39;btnK&#39;</span>)).<span class="at">click</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb41-28" title="28"></a>
+<a class="sourceLine" id="cb41-29" title="29"><span class="va">driver</span>.<span class="at">sleep</span>(<span class="dv">2000</span>).<span class="at">then</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb41-30" title="30">  <span class="va">driver</span>.<span class="at">getTitle</span>().<span class="at">then</span>(<span class="kw">function</span>(title) <span class="op">{</span></a>
+<a class="sourceLine" id="cb41-31" title="31">    <span class="cf">if</span>(title <span class="op">===</span> <span class="st">&#39;webdriver - Google Search&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb41-32" title="32">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Test passed&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb41-33" title="33">    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb41-34" title="34">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Test failed&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb41-35" title="35">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb41-36" title="36">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb41-37" title="37"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb41-38" title="38"></a>
+<a class="sourceLine" id="cb41-39" title="39"><span class="va">driver</span>.<span class="at">quit</span>()<span class="op">;</span></a></code></pre></div></li>
+<li>From your <a href="https://saucelabs.com/beta/user-settings">Sauce Labs user settings</a>, get your user name and access key. Replace the <code>YOUR-USER-NAME</code> and <code>YOUR-ACCESS-KEY</code> placeholders in the code with your actual user name and access key values (and make sure you keep them secure).</li>
+<li><p>Run your test with the following command:</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb42-1" title="1"><span class="ex">node</span> sauce_google_test</a></code></pre></div>
+<p>The test will be sent to Sauce Labs, and the test result will be returned to your console. This shows the importance of including some kind of result reporting mechanism!</p></li>
+<li><p>Now if you go to your <a href="https://saucelabs.com/beta/dashboard/tests">Sauce Labs Automated Test dashboard</a> page, you’ll see your test listed; from here you’ll be able to see videos, screenshots, and other such data. <img src="sauce_labs_automated_test.png" /></p></li>
+</ol>
+<blockquote>
+<p><strong>Note:</strong> Sauce Labs’ <a href="https://wiki.saucelabs.com/display/DOCS/Platform+Configurator/#/">Platform Configurator</a> is a useful tool for generating capability objects to feed to your driver instances, based on what browser/OS you want to test on.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> for more useful details on testing with Sauce Labs and Selenium, check out <a href="https://wiki.saucelabs.com/display/DOCS/Getting+Started+with+Selenium+for+Automated+Website+Testing">Getting Started with Selenium for Automated Website Testing</a>, and <a href="https://wiki.saucelabs.com/display/DOCS/Instant+Selenium+Node.js+Tests">Instant Selenium Node.js Tests</a>.</p>
+</blockquote>
+<h4 id="filling-in-sauce-labs-test-details-programmatically">Filling in Sauce Labs test details programmatically</h4>
+<p>You can use the Sauce Labs API to annotate your test with more details, such as whether it passed, the name of the test, etc. Sauce Labs doesn’t know these details by default!</p>
+<p>To do this, you need to:</p>
+<ol type="1">
+<li><p>Install the Node Sauce Labs wrapper using the following command (if you’ve not already done it for this project):</p>
+<div class="sourceCode" id="cb43"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb43-1" title="1"><span class="ex">npm</span> install saucelabs --save-dev</a></code></pre></div></li>
+<li><p>Require saucelabs — put this at the top of your <code>sauce_google_test.js</code> file, just below the previous variable declarations:</p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb44-1" title="1"><span class="kw">const</span> SauceLabs <span class="op">=</span> <span class="at">require</span>(<span class="st">&#39;saucelabs&#39;</span>)<span class="op">;</span></a></code></pre></div></li>
+<li><p>Create a new instance of SauceLabs, by adding the following just below that:</p>
+<div class="sourceCode" id="cb45"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb45-1" title="1"><span class="kw">let</span> saucelabs <span class="op">=</span> <span class="kw">new</span> <span class="at">SauceLabs</span>(<span class="op">{</span></a>
+<a class="sourceLine" id="cb45-2" title="2">    <span class="dt">username </span><span class="op">:</span> <span class="st">&quot;YOUR-USER-NAME&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb45-3" title="3">    <span class="dt">password </span><span class="op">:</span> <span class="st">&quot;YOUR-ACCESS-KEY&quot;</span></a>
+<a class="sourceLine" id="cb45-4" title="4"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>Again, replace the <code>YOUR-USER-NAME</code> and <code>YOUR-ACCESS-KEY</code> placeholders in the code with your actual user name and access key values (note that the saucelabs npm package rather confusingly uses <code>password</code>, not <code>accessKey</code>). Since you are using these twice now, you may want to create a couple of helper variables to store them in.</p></li>
+<li><p>Below the block where you define the <code>driver</code> variable (just below the <code>build()</code> line), add the following block — this gets the correct driver <code>sessionID</code> that we need to write data to the job (you can see it action in the next code block):</p>
+<div class="sourceCode" id="cb46"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb46-1" title="1"><span class="va">driver</span>.<span class="at">getSession</span>().<span class="at">then</span>(<span class="kw">function</span> (sessionid)<span class="op">{</span></a>
+<a class="sourceLine" id="cb46-2" title="2">      <span class="va">driver</span>.<span class="at">sessionID</span> <span class="op">=</span> <span class="va">sessionid</span>.<span class="at">id_</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb46-3" title="3"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div></li>
+<li><p>Finally, replace the <code>driver.sleep(2000)</code> … block near the bottom of the code with the following:</p>
+<div class="sourceCode" id="cb47"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb47-1" title="1"><span class="va">driver</span>.<span class="at">sleep</span>(<span class="dv">2000</span>).<span class="at">then</span>(<span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb47-2" title="2">  <span class="va">driver</span>.<span class="at">getTitle</span>().<span class="at">then</span>(<span class="kw">function</span>(title) <span class="op">{</span></a>
+<a class="sourceLine" id="cb47-3" title="3">    <span class="cf">if</span>(title <span class="op">===</span> <span class="st">&#39;webdriver - Google Search&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb47-4" title="4">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Test passed&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb47-5" title="5">      <span class="kw">let</span> testPassed <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb47-6" title="6">    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb47-7" title="7">      <span class="va">console</span>.<span class="at">log</span>(<span class="st">&#39;Test failed&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb47-8" title="8">      <span class="kw">let</span> testPassed <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb47-9" title="9">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb47-10" title="10"></a>
+<a class="sourceLine" id="cb47-11" title="11">    <span class="va">saucelabs</span>.<span class="at">updateJob</span>(<span class="va">driver</span>.<span class="at">sessionID</span><span class="op">,</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb47-12" title="12">      <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Google search results page title test&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb47-13" title="13">      <span class="dt">passed</span><span class="op">:</span> testPassed</a>
+<a class="sourceLine" id="cb47-14" title="14">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb47-15" title="15">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb47-16" title="16"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div></li>
+</ol>
+<p>Here we’ve set a <code>testPassed</code> variable to <code>true</code> or <code>false</code> depending on whether the test passed or fails, then we’ve used the <code>saucelabs.updateJob()</code> method to update the details.</p>
+<p>If you now go back to your <a href="https://saucelabs.com/beta/dashboard/tests">Sauce Labs Automated Test dashboard</a> page, you should see your new job now has the updated data attached to it:</p>
+<p><img src="sauce_labs_updated_job_info.png" /></p>
+<h3 id="your-own-remote-server">Your own remote server</h3>
+<p>If you don’t want to use a service like Sauce Labs or BrowserStack, you can always set up your own remote testing server. Let’s look at how to do this.</p>
+<ol type="1">
+<li>The Selenium remote server requires Java to run. Download the latest JDK for your platform from the <a href="https://www.oracle.com/technetwork/java/javase/downloads/index.html">Java SE downloads page</a>. Install it when it is downloaded.</li>
+<li>Next, download the latest <a href="https://selenium-release.storage.googleapis.com/index.html">Selenium standalone server</a> — this acts as a proxy between your script and the browser drivers. Choose the latest stable version number (i.e. not a beta), and from the list choose a file starting with “selenium-server-standalone”. When this has downloaded, put it in a sensible place, like in your home directory. If you’ve not already added the location to your <code>PATH</code>, do so now (see the {{anch(“Setting up Selenium in Node”)}} section).</li>
+<li><p>Run the standalone server by entering the following into a terminal on your server computer</p>
+<div class="sourceCode" id="cb48"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb48-1" title="1"><span class="ex">java</span> -jar selenium-server-standalone-3.0.0.jar</a></code></pre></div>
+<p>(update the <code>.jar</code> filename) so it matches exactly what file you’ve got.</p></li>
+<li><p>The server will run on <a href="http://localhost:4444/wd/hub"><code>http://localhost:4444/wd/hub</code></a> — try going there now to see what you get.</p></li>
+</ol>
+<p>Now we’ve got the server running, let’s create a demo test that will run on the remote selenium server.</p>
+<ol type="1">
+<li>Create a copy of your <code>google_test.js</code> file, and call it <code>google_test_remote.js</code>; put it in your project directory.</li>
+<li><p>Update the second code block (which starts with <code>let driver = ...</code>) like so</p>
+<div class="sourceCode" id="cb49"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb49-1" title="1"><span class="kw">let</span> driver <span class="op">=</span> <span class="kw">new</span> <span class="va">webdriver</span>.<span class="at">Builder</span>()</a>
+<a class="sourceLine" id="cb49-2" title="2">    .<span class="at">forBrowser</span>(<span class="st">&#39;firefox&#39;</span>)</a>
+<a class="sourceLine" id="cb49-3" title="3">    .<span class="at">usingServer</span>(<span class="st">&#39;http://localhost:4444/wd/hub&#39;</span>)</a>
+<a class="sourceLine" id="cb49-4" title="4">    .<span class="at">build</span>()<span class="op">;</span></a></code></pre></div></li>
+<li><p>Run your test, and you should see it run as expected; this time however you will be running it on the standalone server:</p>
+<div class="sourceCode" id="cb50"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb50-1" title="1"><span class="ex">node</span> google_test_remote.js</a></code></pre></div></li>
+</ol>
+<p>So this is pretty cool. We have tested this locally, but you could set this up on just about any server along with the relevant browser drivers, and then connect your scripts to it using the URL you choose to expose it at.</p>
+<h2 id="integrating-selenium-with-ci-tools">Integrating Selenium with CI tools</h2>
+<p>As another point, it is also possible to integrate Selenium and related tools like LambdaTest, and Sauce Labs with continuous integration (CI) tools — this is useful, as it means you can run your tests via a CI tool, and only commit new changes to your code repository if the tests pass.</p>
+<p>It is out of scope to look at this area in detail in this article, but we’d suggest getting started with Travis CI — this is probably the easiest CI tool to get started with and has good integration with web tools like GitHub and Node.</p>
+<p>To get started, see for example:</p>
+<ul>
+<li><a href="https://docs.travis-ci.com/user/for-beginners">Travis CI for complete beginners</a></li>
+<li><a href="https://docs.travis-ci.com/user/languages/javascript-with-nodejs/">Building a Node.js project</a> (with Travis)</li>
+<li><a href="https://www.lambdatest.com/support/docs/travis-ci-with-lambdatest/">Using LambdaTest with Travis CI</a></li>
+<li><a href="https://www.lambdatest.com/support/docs/circleci-integration-with-lambdatest/">Using LambdTest with CircleCI</a></li>
+<li><a href="https://www.lambdatest.com/support/docs/jenkins-with-lambdatest/">Using LambdaTest with Jenkins</a></li>
+<li><a href="https://docs.travis-ci.com/user/sauce-connect/">Using Sauce Labs with Travis CI</a></li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> If you wish to perform continuous testing with <strong>codeless automation</strong> then you can use <a href="https://endtest.io">Endtest</a> or <a href="https://testingbot.com">TestingBot</a>.</p>
+</blockquote>
+<h2 id="summary">Summary</h2>
+<p>This module should have proven fun, and should have given you enough of an insight into writing and running automated tests for you to get going with writing your own automated tests.</p>
+<p>{{PreviousMenu(“Learn/Tools_and_testing/Cross_browser_testing/Automated_testing”, “Learn/Tools_and_testing/Cross_browser_testing”)}}</p>
+<h2 id="in-this-module">In this module</h2>
+<ul>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/Introduction">Introduction to cross browser testing</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/Testing_strategies">Strategies for carrying out testing</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/HTML_and_CSS">Handling common HTML and CSS problems</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/JavaScript">Handling common JavaScript problems</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/Accessibility">Handling common accessibility problems</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/Feature_detection">Implementing feature detection</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/Automated_testing">Introduction to automated testing</a></li>
+<li><a href="/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/Your_own_automation_environment">Setting up your own test automation environment</a></li>
+</ul>

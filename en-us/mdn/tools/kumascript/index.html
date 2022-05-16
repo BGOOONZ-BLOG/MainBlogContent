@@ -1,0 +1,328 @@
+<p>{{MDNSidebar}}</p>
+<p>On the <a href="/en-US/docs/MDN/Yari">Yari</a> platform that powers MDN, we still have a legacy template/macro system available called <a href="https://github.com/mdn/yari/tree/master/kumascript">KumaScript</a> for automating certain aspects of content. We are hoping to stop using it some day, but until then MDN will still rely on it. This article provides basic information about using KumaScript</p>
+<h3 id="what-is-kumascript">What is KumaScript?</h3>
+<ul>
+<li>A way to reuse and localize content that appears repeatedly between documents (e.g., compatibility labels, section navigation, warning banners).</li>
+<li>A way to build documents out of content pulled from other documents.</li>
+<li>A way to fetch and include content from other web sites and services (e.g., Bugzilla).</li>
+</ul>
+<h3 id="what-kumascript-is-not">What KumaScript is not</h3>
+<p>KumaScript does not</p>
+<ul>
+<li>support interactive scripting of the kind that can accept form submissions.</li>
+<li>have access to a database, files, or any other way to store information persistently.</li>
+<li>support site personalization based on the currently logged in user.</li>
+<li>have access to user information, only to the content and metadata of an MDN page being viewed.</li>
+</ul>
+<h2 id="basics">Basics</h2>
+<p>KumaScript is used on MDN via <a href="https://github.com/mde/ejs">embedded JavaScript templates</a>. These templates can be invoked in document content by any MDN author, through the use of macros.</p>
+<p>A script in KumaScript is a <em>template</em>, and each template is a file in <a href="https://github.com/mdn/yari/tree/master/kumascript/macros">the macros directory</a> of the yari/kumascript repository on GitHub. A sample template might look like this:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="op">&lt;%</span> <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> $0<span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span> <span class="op">%&gt;</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  Hello #<span class="op">&lt;%=</span> i <span class="op">%&gt;</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="op">&lt;%</span> <span class="op">}</span> <span class="op">%&gt;</span></a></code></pre></div>
+<p>Invoking a template is done with a <em>macro</em>, which can be used anywhere in any wiki content. Invoking the above template would look like this (provided it was saved in the macros directory with a filename of <code>hello.ejs</code>):</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1">\<span class="op">{{</span><span class="at">hello</span>(<span class="dv">3</span>)<span class="op">}}</span></a></code></pre></div>
+<p>The output of the macro would look like this:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb3-1" title="1">Hello #0</a>
+<a class="sourceLine" id="cb3-2" title="2">Hello #1</a>
+<a class="sourceLine" id="cb3-3" title="3">Hello #2</a></code></pre></div>
+<h3 id="macro-syntax">Macro syntax</h3>
+<p>Macro syntax takes the following general form:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1">\<span class="op">{{</span><span class="at">templateName</span>(<span class="st">&quot;arg0&quot;</span><span class="op">,</span> <span class="st">&quot;arg1&quot;</span><span class="op">,</span> ...<span class="op">,</span> <span class="st">&quot;argN&quot;</span>)<span class="op">}}</span></a></code></pre></div>
+<p>Macro syntax follows these rules:</p>
+<ul>
+<li>Macros start and end with <code>\{{&lt;/code&gt; and &lt;code&gt;\}}</code> characters.</li>
+<li>The first part of the macro is the name of a template. The lowercase value of this name should match the lowercase value of one of the filenames under the macros directory.</li>
+<li>A template can accept parameters, and this parameter list starts and ends with parentheses.</li>
+<li>All non-numeric parameters must be in quotes. Numbers can be left unquoted.</li>
+</ul>
+<h4 id="using-json-as-a-macro-parameter">Using JSON as a macro parameter</h4>
+<p>As a semi-experimental feature (not guaranteed to work), you can supply a JSON object for the first and only parameter, like so:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1">\<span class="op">{{</span><span class="at">templateName</span>(<span class="op">{</span> <span class="st">&quot;Alpha&quot;</span><span class="op">:</span> <span class="st">&quot;one&quot;</span><span class="op">,</span> <span class="st">&quot;Beta&quot;</span><span class="op">:</span> [<span class="st">&quot;a&quot;</span><span class="op">,</span> <span class="st">&quot;b&quot;</span><span class="op">,</span> <span class="st">&quot;c&quot;</span>]<span class="op">,</span> <span class="st">&quot;Foo&quot;</span><span class="op">:</span> <span class="st">&quot;https:</span><span class="sc">\/\/</span><span class="st">mozilla.org</span><span class="sc">\/</span><span class="st">&quot;</span> <span class="op">}</span>)<span class="op">}}</span></a></code></pre></div>
+<p>The data from this macro is available in template code as an object in the <code>$0</code> argument (e.g., <code>$0.Alpha</code>, <code>$0.Beta</code>, <code>$0.Foo</code>). This also allows you to express complex data structures in macro parameters that are hard or impossible to do with a simple list of parameters.</p>
+<p>Note that this parameter style is very picky — it must adhere to <a href="https://json.org/">JSON syntax</a> exactly, which has some requirements about escaping characters that are easy to miss (e.g., all forward slashes are escaped). When in doubt, <a href="https://jsonlint.com/">try running your JSON through a validator</a>.</p>
+<h4 id="How_to_write_in_text">
+How to write “{{” in text
+</h4>
+<p>
+Since the character sequence “<code>{{</code>” is used to indicate the start of a macro, this can be troublesome if you actually just want to use “<code>{{</code>” and “<code>}}</code>” in a page. It will probably produce <code>DocumentParsingError</code> messages.
+</p>
+<p>
+In this case, you can escape the first brace with a backslash, like so: <code>\{{</code>.
+</p>
+<h3 id="template-syntax">Template syntax</h3>
+<p>Each KumaScript template is a file under <a href="https://github.com/mdn/yari/tree/master/kumascript/macros">the macros directory</a> of the yari/kumascript repository on GitHub. You create and edit these files as you would the files of any open-source project on GitHub.</p>
+<p>KumaScript templates are processed by an <a href="https://ejs.co">embedded JavaScript template engine</a> with a few simple rules:</p>
+<ul>
+<li>Within a template, the parameters passed in from the macro are available as the variables <code>$0</code>, <code>$1</code>, <code>$2</code>, and so on. The entire list of parameters is also available in a template as the variable <code>arguments</code>.</li>
+<li>Most text is treated as output and included in the output stream.</li>
+<li><p>JavaScript variables and expressions can be inserted into the output stream with these blocks:</p>
+<ul>
+<li><code>&lt;%= expr %&gt;</code> — the value of a JavaScript expression is escaped for HTML before being included in output (e.g., characters like <code>&lt;</code> and <code>&gt;</code> are turned into <code>&amp;lt;</code> and <code>&amp;gt;</code>).</li>
+<li><code>&lt;%- expr %&gt;</code> — the value of a JavaScript expression is included in output without any escaping. (Use this if you want to dynamically build markup or use the results of another template that may include markup.)</li>
+<li>It is an error to include semicolons inside these blocks.</li>
+</ul></li>
+<li>Anything inside a <code>&lt;% %&gt;</code> block is interpreted as JavaScript. This can include loops, conditionals, etc.</li>
+<li><p>Nothing inside a <code>&lt;% %&gt;</code> block can ever contribute to the output stream. But, you can transition from JS mode to output mode using <code>&lt;% %&gt;</code>—for example:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="op">&lt;%</span> <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> $0<span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span> <span class="op">%&gt;</span></a>
+<a class="sourceLine" id="cb6-2" title="2">  Hello #<span class="op">&lt;%=</span> i <span class="op">%&gt;</span></a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="op">&lt;%</span> <span class="op">}</span> <span class="op">%&gt;</span></a></code></pre></div>
+<p>Note how the JavaScript code is contained in <code>&lt;% ... %&gt;</code>, and output happens in the space between <code>%&gt; ... &lt;%</code>. The <code>for</code> loop in JS can begin with one <code>&lt;% %&gt;</code> block, transition to output mode, and finish up in a second <code>&lt;% %&gt;</code> JS block.</p></li>
+<li><p>For more details on EJS syntax, <a href="https://ejs.co">check out the upstream module documentation</a>.</p></li>
+</ul>
+<h2 id="advanced-features">Advanced Features</h2>
+<p>Beyond the basics, the KumaScript system offers some advanced features.</p>
+<h3 id="environment-variables">Environment variables</h3>
+<p>When the wiki makes a call to the KumaScript service, it passes along some context on the current document that KumaScript makes available to templates as variables:</p>
+<ul>
+<li><code>env.path</code>
+<ul>
+<li>: The path to the current MDN document</li>
+</ul></li>
+<li><code>env.url</code>
+<ul>
+<li>: The full URL to the current MDN document</li>
+</ul></li>
+<li><code>env.id</code>
+<ul>
+<li>: A short, unique ID for the current MDN document</li>
+</ul></li>
+<li><code>env.files</code>
+<ul>
+<li>: An array of the files attached to the current MDN document; each object in the array is as described under {{ anch(“File objects”) }} below</li>
+</ul></li>
+<li><code>env.review_tags</code>
+<ul>
+<li>: An array of the review tags on the article (“technical”, “editorial”, etc.)</li>
+</ul></li>
+<li><code>env.locale</code>
+<ul>
+<li>: The locale of the current MDN document</li>
+</ul></li>
+<li><code>env.title</code>
+<ul>
+<li>: The title of the current MDN document</li>
+</ul></li>
+<li><code>env.slug</code>
+<ul>
+<li>: The URL slug of the current MDN document</li>
+</ul></li>
+<li><code>env.tags</code>
+<ul>
+<li>: An array list of tag names for the current MDN document</li>
+</ul></li>
+<li><code>env.modified</code>
+<ul>
+<li>: Last modified timestamp for the current MDN document</li>
+</ul></li>
+<li><code>env.cache_control</code>
+<ul>
+<li>: <code>Cache-Control</code> header sent in the request for the current MDN document, useful in deciding whether to invalidate caches</li>
+</ul></li>
+</ul>
+<h4 id="file-objects">File objects</h4>
+<p>Each file object has the following fields:</p>
+<ul>
+<li><code>title</code>
+<ul>
+<li>: The attachment’s title</li>
+</ul></li>
+<li><code>description</code>
+<ul>
+<li>: A textual description of the current revision of the file</li>
+</ul></li>
+<li><code>filename</code>
+<ul>
+<li>: The file’s name</li>
+</ul></li>
+<li><code>size</code>
+<ul>
+<li>: The size of the file in bytes</li>
+</ul></li>
+<li><code>author</code>
+<ul>
+<li>: The username of the person who uploaded the file</li>
+</ul></li>
+<li><code>mime</code>
+<ul>
+<li>: The MIME type of the file</li>
+</ul></li>
+<li><code>url</code>
+<ul>
+<li>: The URL at which the file can be found</li>
+</ul></li>
+</ul>
+<h4 id="working-with-tag-lists">Working with tag lists</h4>
+<p>The <code>env.tags</code> and <code>env.review_tags</code> variables return arrays of tags. You can work with these in many ways, of course, but here are a couple of suggestions.</p>
+<h5 id="looking-to-see-if-a-specific-tag-is-set">Looking to see if a specific tag is set</h5>
+<p>You can look to see if a specific tag exists on a page like this:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="cf">if</span> (<span class="va">env</span>.<span class="va">tags</span>.<span class="at">indexOf</span>(<span class="st">&quot;tag&quot;</span>) <span class="op">!==</span> −1) <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="co">// The page has the tag &quot;tag&quot;</span></a>
+<a class="sourceLine" id="cb7-3" title="3"><span class="op">}</span></a></code></pre></div>
+<h5 id="iterating-over-all-the-tags-on-a-page">Iterating over all the tags on a page</h5>
+<p>You can also iterate over all the tags on a page, like this:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="va">env</span>.<span class="va">tag</span>.<span class="at">forEach</span>(<span class="kw">function</span>(tag) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-2" title="2">  <span class="co">// do whatever you need to do, such as:</span></a>
+<a class="sourceLine" id="cb8-3" title="3">  <span class="cf">if</span> (<span class="va">tag</span>.<span class="at">indexOf</span>(<span class="st">&quot;a&quot;</span>) <span class="op">===</span> <span class="dv">0</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-4" title="4">    <span class="co">// this tag starts with &quot;a&quot; - woohoo!</span></a>
+<a class="sourceLine" id="cb8-5" title="5">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb8-6" title="6"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<h3 id="apis-and-modules">APIs and Modules</h3>
+<p>KumaScript offers some built-in methods and APIs for KumaScript macros. Macros can also use <code>module.exports</code> to export new API methods.</p>
+<h4 id="built-in-methods">Built-in methods</h4>
+<p>This manually-maintained documentation is likely to fall out of date with the code. With that in mind, <a href="https://github.com/mdn/yari/tree/master/kumascript/src/api">you can always check out the latest state of built-in APIs in the KumaScript source</a>. But here is a selection of useful methods exposed to templates:</p>
+<ul>
+<li><code>md5(string)</code>
+<ul>
+<li>: Returns an MD5 hex digest of the given string.</li>
+</ul></li>
+<li><p><code>template("name", ["arg0", "arg1", ..., "argN"])</code></p>
+<ul>
+<li><p>: Executes and returns the result of the named template with the given list of parameters.</p>
+<p>Example: <code>&lt;%- template("warning", ["foo", "bar", "baz"]) %&gt;</code>.</p>
+<p>Example using the <code>DOMxRef</code> macro: <code>&lt;%- template("DOMxRef", ["Event.bubbles", "bubbles"]) %&gt;</code>.</p>
+<p>This is a JavaScript function. So, if one of the parameters is an arg variable like $2, do not put it in quotes. Like this: <code>&lt;%- template("warning", [$1, $2, "baz"]) %&gt;</code>. If you need to call another template from within a block of code, do not use <code>&lt;%</code> … <code>%&gt;</code>. Example: <code>myvar = "&lt;li&gt;" + template("LXRSearch", ["ident", "i", $1]) + "&lt;/li&gt;";</code></p></li>
+</ul></li>
+<li><code>require(name)</code>
+<ul>
+<li>: Loads another template as a module; any output is ignored. Anything assigned to <code>module.exports</code> in the template is returned. Used in templates like so: <code>&lt;% const my_module = require('MyModule'); %&gt;</code>.</li>
+</ul></li>
+<li><code>cacheFn(key, timeout, function_to_cache)</code>
+<ul>
+<li>: Using the given key and cache entry lifetime, cache the results of the given function. Honors the value of <code>env.cache_control</code> to invalidate cache on <code>no-cache</code>, which can be sent by a logged-in user hitting shift-refresh.</li>
+</ul></li>
+<li><code>request</code>
+<ul>
+<li>: Access to <a href="https://github.com/request/request"><code>request/request</code></a>, a library for making HTTP requests. Using this module in KumaScript templates is not yet very friendly, so you may want to wrap usage in module APIs that simplify things.</li>
+</ul></li>
+<li><code>log.debug(string)</code>
+<ul>
+<li>: Outputs a debug message into the script log on the page (i.e. the big red box that usually displays errors).</li>
+</ul></li>
+</ul>
+<h4 id="built-in-api-modules">Built-in API modules</h4>
+<p>There are a set of built-in APIs that are automatically loaded and made available to every template by the environment script, as well as providing some features from the ancient legacy DekiScript system that MDN relied on many years ago.</p>
+<p>These are used to share common variables and methods between templates:</p>
+<ul>
+<li><code>kuma.*</code> - <a href="https://github.com/mdn/kumascript/blob/master/src/api/kuma.js">Kuma</a></li>
+<li><code>MDN.*</code> - <a href="https://github.com/mdn/kumascript/blob/master/src/api/mdn.js">MDN:Common</a></li>
+<li><code>page.*</code> - <a href="https://github.com/mdn/kumascript/blob/master/src/api/page.js">DekiScript:Page</a></li>
+<li><code>string.*</code> - <a href="https://github.com/mdn/kumascript/blob/master/src/api/string.js">DekiScript:String</a></li>
+<li><code>uri.*</code> - <a href="https://github.com/mdn/kumascript/blob/master/src/api/uri.js">DekiScript:Uri</a></li>
+<li><code>web.*</code> - <a href="https://github.com/mdn/kumascript/blob/master/src/api/web.js">DekiScript:Web</a></li>
+<li><code>wiki.*</code> - <a href="https://github.com/mdn/kumascript/blob/master/src/api/wiki.js">DekiScript:Wiki</a></li>
+</ul>
+<p>Other available APIs include:</p>
+<ul>
+<li><code>kuma.inspect(object)</code>
+<ul>
+<li>: Renders any JS object as a string, handy for use with <code>log.debug()</code>. See also: <a href="https://nodejs.org/api/util.html#util_util_inspect_object_options">node.js <code>util.inspect()</code></a>.</li>
+</ul></li>
+<li><code>kuma.htmlEscape(string)</code>
+<ul>
+<li>: Escapes the characters <code>&amp;, &lt;, &gt;, "</code> to <code>&amp;amp, &amp;lt;, &amp;gt;, &amp;quot;</code>, respectively.</li>
+</ul></li>
+<li><code>kuma.url</code>
+<ul>
+<li>: See also: <a href="https://nodejs.org/api/url.html">node.js <code>url</code> module</a>.</li>
+</ul></li>
+<li><code>kuma.fetchFeed(url)</code>
+<ul>
+<li>: Fetch an RSS feed and parse it into a JS object. See also: <a href="https://github.com/mdn/kumascript/blob/master/macros/InsertFeedLinkList.ejs"><code>InsertFeedLinkList</code></a></li>
+</ul></li>
+</ul>
+<h4 id="creating-modules">Creating modules</h4>
+<p>Using the built-in <code>require()</code> method, you can load a template as a module to share common variables and methods between templates. A module can be defined in a template like this:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="op">&lt;%</span></a>
+<a class="sourceLine" id="cb9-2" title="2"><span class="va">module</span>.<span class="at">exports</span> <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-3" title="3">    <span class="dt">add</span><span class="op">:</span> <span class="kw">function</span> (a<span class="op">,</span> b) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-4" title="4">        <span class="cf">return</span> a <span class="op">+</span> b<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-5" title="5">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb9-6" title="6"><span class="op">}</span></a>
+<a class="sourceLine" id="cb9-7" title="7"><span class="op">%&gt;</span></a></code></pre></div>
+<p>Assuming this template were saved in the macros directory as <code>MathLib.ejs</code>, you could use it in another template like so:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1"><span class="op">&lt;%</span></a>
+<a class="sourceLine" id="cb10-2" title="2"><span class="kw">var</span> math_lib <span class="op">=</span> <span class="at">require</span>(<span class="st">&quot;MathLib&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-3" title="3"><span class="op">%&gt;</span></a>
+<a class="sourceLine" id="cb10-4" title="4">The result <span class="kw">of</span> <span class="dv">2</span> <span class="op">+</span> <span class="dv">2</span> <span class="op">=</span> <span class="op">&lt;%=</span> <span class="va">math_lib</span>.<span class="at">add</span>(<span class="dv">2</span><span class="op">,</span> <span class="dv">2</span>) <span class="op">%&gt;</span></a></code></pre></div>
+<p>And, the output of this template would be:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb11-1" title="1">The result of 2 + 2 = 4</a></code></pre></div>
+<h2 id="tips-and-caveats">Tips and caveats</h2>
+<h3 id="debugging">Debugging</h3>
+<p>A useful tip when debugging. You can use the <code>log.debug()</code> method to output text to the scripting messages area at the top of the page that’s running your template. Note that you need to be really sure to remove these when you’re done debugging, as they’re visible to all users! To use it, just do something like this:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb12-1" title="1"><span class="op">&lt;%-</span> <span class="va">log</span>.<span class="at">debug</span>(<span class="st">&quot;Some text goes here&quot;</span>)<span class="op">;</span> <span class="op">%&gt;</span></a></code></pre></div>
+<p>You can, of course, create more complex output using script code if it’s helpful.</p>
+<h3 id="caching">Caching</h3>
+<p>KumaScript templates are heavily cached to improve performance. For the most part, this works great to serve up content that doesn’t change very often. But, as a logged-in user, you have two options to force a page to be regenerated, in case you notice issues with scripting:</p>
+<ul>
+<li>Hit Refresh in your browser. This causes KumaScript to invalidate its cache for the content on the current page by issuing a request with a <code>Cache-Control: max-age=0</code> header.</li>
+<li>Hit Shift-Refresh in your browser. This causes KumaScript to invalidate cache for the current page, as well as for any templates or content used by the current page by issuing a request with a <code>Cache-Control: no-cache</code> header.</li>
+</ul>
+<h2 id="cookbook">Cookbook</h2>
+<p>This section will list examples of common patterns for templates used on MDN, including samples of legacy DekiScript templates and their new KumaScript equivalents.</p>
+<h3 id="force-templates-used-on-a-page-to-be-reloaded">Force templates used on a page to be reloaded</h3>
+<p>It bears repeating: To force templates used on a page to be reloaded after editing, hit Shift-Reload. Just using Reload by itself will cause the page contents to be regenerated, but using cached templates and included content. A Shift-Reload is necessary to invalidate caches beyond just the content of the page itself.</p>
+<h3 id="recovering-from-unknown-error">Recovering from “Unknown Error”</h3>
+<p>Sometimes, you’ll see a scripting message like this when you load a page:</p>
+<pre class="plain"><code>Kumascript service failed unexpectedly: &lt;class &#39;httplib.BadStatusLine&#39;&gt;</code></pre>
+<p>This is probably a temporary failure of the KumaScript service. If you Refresh the page, the error may disappear. If that doesn’t work, try a Shift-Refresh. If, after a few tries, the error persists - <a href="https://bugzilla.mozilla.org/enter_bug.cgi?product=mozilla.org&amp;format=itrequest">file an IT bug</a> for Mozilla Developer Network to ask for an investigation.</p>
+<h3 id="broken-wiki.languages-macros">Broken wiki.languages() macros</h3>
+<p>On some pages, you’ll see a scripting error like this:</p>
+<pre class="plain"><code>Syntax error at line 436, column 461: Expected valid JSON object as the parameter of the preceding macro but...</code></pre>
+<p>If you edit the page, you’ll probably see a macro like this at the bottom of the page:</p>
+<pre class="plain"><code>\{{ wiki.languages({ &quot;zh-tw&quot;: &quot;zh_tw/Core_JavaScript_1.5_教學/JavaScript_概要&quot;, ... }) }}</code></pre>
+<p>To fix the problem, just delete the macro. Or, replace the curly braces on either side with HTML comments <code>&lt;!-- --&gt;</code> to preserve the information, like so:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb16-1" title="1"><span class="co">&lt;!-- wiki.languages({ &quot;zh-tw&quot;: &quot;zh_tw/Core_JavaScript_1.5_教學/JavaScript_概要&quot;, ... }) --&gt;</span></a></code></pre></div>
+<p>Because Kuma supports localization differently, these macros aren’t actually needed any more. But, they’ve been left intact in case we need to revisit the relationships between localized pages. Unfortunately, it seems like migration has failed to convert some of them properly.</p>
+<h3 id="finding-the-current-pages-language">Finding the Current Page’s Language</h3>
+<p>In KumaScript, the locale of the current document is exposed as an environment variable:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb17-1" title="1"><span class="kw">const</span> lang <span class="op">=</span> <span class="va">env</span>.<span class="at">locale</span><span class="op">;</span></a></code></pre></div>
+<p>The <code>env.locale</code> variable should be reliable and defined for every document.</p>
+<h3 id="reading-the-contents-of-a-page-attachment">Reading the contents of a page attachment</h3>
+<p>You can read the contents of an attached file by using the <code>mdn.getFileContent()</code> function, like this:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb18-1" title="1"><span class="op">&lt;%</span></a>
+<a class="sourceLine" id="cb18-2" title="2">  <span class="kw">let</span> contents <span class="op">=</span> <span class="va">mdn</span>.<span class="at">getFileContent</span>(fileUrl)<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-3" title="3">  <span class="co">// ... do stuff with the contents ...</span></a>
+<a class="sourceLine" id="cb18-4" title="4"><span class="op">%&gt;</span></a></code></pre></div>
+<p>or</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb19-1" title="1"><span class="op">&lt;%-</span> <span class="va">mdn</span>.<span class="at">getFileContent</span>(fileObject)<span class="op">;</span> <span class="op">%&gt;</span></a></code></pre></div>
+<p>In other words, you may specify either the URL of the file to read or as a file object. The file objects for a page can be accessed through the array <code>env.files</code>. So, for example, to embed the contents of the first file attached to the article, you can do this:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb20-1" title="1"><span class="op">&lt;%-</span> <span class="va">mdn</span>.<span class="at">getFileContent</span>(<span class="va">env</span>.<span class="at">files</span>[<span class="dv">0</span>])<span class="op">;</span> <span class="op">%&gt;</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> You probably don’t want to try to embed the contents of a non-text file this way, as the raw contents would be injected as text. This is meant to let you access the contents of text attachments.</p>
+</blockquote>
+<p>If the file isn’t found, an empty string is returned. There is currently no way to tell the difference between an empty file and a nonexistent one. But if you’re putting empty files on the wiki, you’re doing it wrong.</p>
+<h3 id="localizing-template-content">Localizing template content</h3>
+<p>Templates are not translated like wiki pages, rather any single template might be used for any number of locales.</p>
+<p>So the main way to output content tailored to the current document locale is to pivot on the value of <code>env.locale</code>. There are many ways to do this, but a few patterns are common in the conversion of legacy DekiScript templates:</p>
+<h4 id="ifelse-blocks-in-kumascript">If/else blocks in KumaScript</h4>
+<p>The KumaScript equivalent of this can be achieved with simple if/else blocks, like so:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb21-1" title="1"><span class="op">&lt;%</span> <span class="cf">if</span> (<span class="st">&quot;fr&quot;</span> <span class="op">==</span> <span class="va">env</span>.<span class="at">locale</span>) <span class="op">{</span> <span class="op">%&gt;</span></a>
+<a class="sourceLine" id="cb21-2" title="2"><span class="op">&lt;%-</span> <span class="at">template</span>(<span class="st">&quot;CSSRef&quot;</span>) <span class="op">%&gt;</span> « <span class="op">&lt;</span>a href<span class="op">=</span><span class="st">&quot;/fr/docs/Référence_CSS/Extensions_Mozilla&quot;</span><span class="op">&gt;</span>Référence <span class="dt">CSS</span><span class="op">:</span> Extensions Mozilla&lt;/a<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb21-3" title="3"><span class="op">&lt;%</span> <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (<span class="st">&quot;ja&quot;</span> <span class="op">==</span> <span class="va">env</span>.<span class="at">locale</span>) <span class="op">{</span> <span class="op">%&gt;</span></a>
+<a class="sourceLine" id="cb21-4" title="4"><span class="op">&lt;%-</span> <span class="at">template</span>(<span class="st">&quot;CSSRef&quot;</span>) <span class="op">%&gt;</span> « <span class="op">&lt;</span>a href<span class="op">=</span><span class="st">&quot;/ja/docs/CSS_Reference/Mozilla_Extensions&quot;</span><span class="op">&gt;</span>CSS <span class="dt">リファレンス</span><span class="op">:</span> Mozilla 拡張仕様&lt;/a<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb21-5" title="5"><span class="op">&lt;%</span> <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (<span class="st">&quot;pl&quot;</span> <span class="op">==</span> <span class="va">env</span>.<span class="at">locale</span>) <span class="op">{</span> <span class="op">%&gt;</span></a>
+<a class="sourceLine" id="cb21-6" title="6"><span class="op">&lt;%-</span> <span class="at">template</span>(<span class="st">&quot;CSSRef&quot;</span>) <span class="op">%&gt;</span> « <span class="op">&lt;</span>a href<span class="op">=</span><span class="st">&quot;/pl/docs/Dokumentacja_CSS/Rozszerzenia_Mozilli&quot;</span><span class="op">&gt;</span>Dokumentacja <span class="dt">CSS</span><span class="op">:</span> Rozszerzenia Mozilli&lt;/a<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb21-7" title="7"><span class="op">&lt;%</span> <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (<span class="st">&quot;de&quot;</span> <span class="op">==</span> <span class="va">env</span>.<span class="at">locale</span>) <span class="op">{</span> <span class="op">%&gt;</span></a>
+<a class="sourceLine" id="cb21-8" title="8"><span class="op">&lt;%-</span> <span class="at">template</span>(<span class="st">&quot;CSSRef&quot;</span>) <span class="op">%&gt;</span> « <span class="op">&lt;</span>a href<span class="op">=</span><span class="st">&quot;/de/docs/CSS_Referenz/Mozilla_CSS_Erweiterungen&quot;</span><span class="op">&gt;</span>CSS <span class="dt">Referenz</span><span class="op">:</span> Mozilla Erweiterungen&lt;/a<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb21-9" title="9"><span class="op">&lt;%</span> <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span> <span class="op">%&gt;</span></a>
+<a class="sourceLine" id="cb21-10" title="10"><span class="op">&lt;%-</span> <span class="at">template</span>(<span class="st">&quot;CSSRef&quot;</span>) <span class="op">%&gt;</span> « <span class="op">&lt;</span>a href<span class="op">=</span><span class="st">&quot;/en-US/docs/CSS_Reference/Mozilla_Extensions&quot;</span><span class="op">&gt;</span>CSS <span class="dt">Reference</span><span class="op">:</span> Mozilla Extensions&lt;/a<span class="op">&gt;</span></a>
+<a class="sourceLine" id="cb21-11" title="11"><span class="op">&lt;%</span> <span class="op">}</span> <span class="op">%&gt;</span></a></code></pre></div>
+<p>Depending on what text editor is your favorite, you may be able to copy &amp; paste from the browser-based editor and attack this pattern with a series of search/replace regexes to get you most of the way there.</p>
+<p>My favorite editor is MacVim, and a series of regexes like this does the bulk of the work with just a little manual clean up following:</p>
+<pre class="plain"><code>%s#&lt;span#^M&lt;span#g
+%s#&lt;span lang=&quot;\(.*\)&quot; .*&gt;#&lt;% } else if (&quot;\1&quot; == env.locale) { %&gt;#g
+%s#&lt;span class=&quot;script&quot;&gt;template.CSSxRef(#&lt;%- template(&quot;CSSxRef&quot;, [#
+%s#)&lt;/span&gt; &lt;/span&gt;#]) %&gt;</code></pre>
+<p>Your mileage may vary, and patterns change slightly from template to template. That’s why the migration script was unable to just handle this automatically, after all.</p>
+<h4 id="string-variables-and-switch">String variables and switch</h4>
+<p>Different strings are defined and chosen depending on locale using <code>mdn.localString()</code>, like this:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb23-1" title="1"><span class="op">&lt;%</span></a>
+<a class="sourceLine" id="cb23-2" title="2"><span class="kw">var</span> s_title <span class="op">=</span> <span class="va">mdn</span>.<span class="at">localString</span>(<span class="op">{</span></a>
+<a class="sourceLine" id="cb23-3" title="3">  <span class="st">&quot;en-US&quot;</span><span class="op">:</span> <span class="st">&quot;Firefox for Developers&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb23-4" title="4">  <span class="st">&quot;de&quot;</span><span class="op">:</span> <span class="st">&quot;Firefox für Entwickler&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb23-5" title="5">  <span class="st">&quot;es&quot;</span><span class="op">:</span> <span class="st">&quot;Firefox para desarrolladores&quot;</span></a>
+<a class="sourceLine" id="cb23-6" title="6"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb23-7" title="7"><span class="op">%&gt;</span></a>
+<a class="sourceLine" id="cb23-8" title="8"><span class="op">&lt;</span>span <span class="kw">class</span><span class="op">=</span><span class="st">&quot;title&quot;</span><span class="op">&gt;&lt;%=</span> s_title <span class="op">%&gt;</span>&lt;/span<span class="op">&gt;</span></a></code></pre></div>
+<p>When the object does not have the appropriate locale, the value of “en-US” is used as the initial value.</p>

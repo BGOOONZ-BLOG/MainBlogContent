@@ -1,0 +1,128 @@
+<p>This subarticle shows how to define a page to delete <code>Author</code> objects.</p>
+<p>As discussed in the <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/forms#form_design">form design</a> section, our strategy will be to only allow deletion of objects that are not referenced by other objects (in this case that means we won’t allow an <code>Author</code> to be deleted if it is referenced by a <code>Book</code>). In terms of implementation this means that the form needs to confirm that there are no associated books before the author is deleted. If there are associated books, it should display them, and state that they must be deleted before the <code>Author</code> object can be deleted.</p>
+<h2 id="controllerget-route">Controller—get route</h2>
+<p>Open <strong>/controllers/authorController.js</strong>. Find the exported <code>author_delete_get()</code> controller method and replace it with the following code.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="co">// Display Author delete form on GET.</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="va">exports</span>.<span class="at">author_delete_get</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res<span class="op">,</span> next) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-3" title="3"></a>
+<a class="sourceLine" id="cb1-4" title="4">    <span class="kw">async</span>.<span class="at">parallel</span>(<span class="op">{</span></a>
+<a class="sourceLine" id="cb1-5" title="5">        <span class="dt">author</span><span class="op">:</span> <span class="kw">function</span>(callback) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-6" title="6">            <span class="va">Author</span>.<span class="at">findById</span>(<span class="va">req</span>.<span class="va">params</span>.<span class="at">id</span>).<span class="at">exec</span>(callback)</a>
+<a class="sourceLine" id="cb1-7" title="7">        <span class="op">},</span></a>
+<a class="sourceLine" id="cb1-8" title="8">        <span class="dt">authors_books</span><span class="op">:</span> <span class="kw">function</span>(callback) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-9" title="9">            <span class="va">Book</span>.<span class="at">find</span>(<span class="op">{</span> <span class="st">&#39;author&#39;</span><span class="op">:</span> <span class="va">req</span>.<span class="va">params</span>.<span class="at">id</span> <span class="op">}</span>).<span class="at">exec</span>(callback)</a>
+<a class="sourceLine" id="cb1-10" title="10">        <span class="op">},</span></a>
+<a class="sourceLine" id="cb1-11" title="11">    <span class="op">},</span> <span class="kw">function</span>(err<span class="op">,</span> results) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-12" title="12">        <span class="cf">if</span> (err) <span class="op">{</span> <span class="cf">return</span> <span class="at">next</span>(err)<span class="op">;</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-13" title="13">        <span class="cf">if</span> (<span class="va">results</span>.<span class="at">author</span><span class="op">==</span><span class="kw">null</span>) <span class="op">{</span> <span class="co">// No results.</span></a>
+<a class="sourceLine" id="cb1-14" title="14">            <span class="va">res</span>.<span class="at">redirect</span>(<span class="st">&#39;/catalog/authors&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-15" title="15">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-16" title="16">        <span class="co">// Successful, so render.</span></a>
+<a class="sourceLine" id="cb1-17" title="17">        <span class="va">res</span>.<span class="at">render</span>(<span class="st">&#39;author_delete&#39;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">title</span><span class="op">:</span> <span class="st">&#39;Delete Author&#39;</span><span class="op">,</span> <span class="dt">author</span><span class="op">:</span> <span class="va">results</span>.<span class="at">author</span><span class="op">,</span> <span class="dt">author_books</span><span class="op">:</span> <span class="va">results</span>.<span class="at">authors_books</span> <span class="op">}</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-18" title="18">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-19" title="19"></a>
+<a class="sourceLine" id="cb1-20" title="20"><span class="op">};</span></a></code></pre></div>
+<p>The controller gets the id of the <code>Author</code> instance to be deleted from the URL parameter (<code>req.params.id</code>). It uses the <code>async.parallel()</code> method to get the author record and all associated books in parallel. When both operations have completed it renders the <strong>author_delete.pug</strong> view, passing variables for the <code>title</code>, <code>author</code>, and <code>author_books</code>.</p>
+<blockquote>
+<p><strong>Note:</strong> If <code>findById()</code> returns no results the author is not in the database. In this case there is nothing to delete, so we immediately render the list of all authors.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1">  <span class="kw">function</span>(err<span class="op">,</span> results) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">    <span class="cf">if</span> (err) <span class="op">{</span> <span class="cf">return</span> <span class="at">next</span>(err)<span class="op">;</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-3" title="3">    <span class="cf">if</span> (<span class="va">results</span>.<span class="at">author</span><span class="op">==</span><span class="kw">null</span>) <span class="op">{</span> <span class="co">// No results.</span></a>
+<a class="sourceLine" id="cb2-4" title="4">        <span class="va">res</span>.<span class="at">redirect</span>(<span class="st">&#39;/catalog/authors&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5">    <span class="op">}</span></a></code></pre></div>
+</blockquote>
+<h2 id="controllerpost-route">Controller—post route</h2>
+<p>Find the exported <code>author_delete_post()</code> controller method, and replace it with the following code.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="co">// Handle Author delete on POST.</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="va">exports</span>.<span class="at">author_delete_post</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res<span class="op">,</span> next) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-3" title="3"></a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="kw">async</span>.<span class="at">parallel</span>(<span class="op">{</span></a>
+<a class="sourceLine" id="cb3-5" title="5">        <span class="dt">author</span><span class="op">:</span> <span class="kw">function</span>(callback) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-6" title="6">          <span class="va">Author</span>.<span class="at">findById</span>(<span class="va">req</span>.<span class="va">body</span>.<span class="at">authorid</span>).<span class="at">exec</span>(callback)</a>
+<a class="sourceLine" id="cb3-7" title="7">        <span class="op">},</span></a>
+<a class="sourceLine" id="cb3-8" title="8">        <span class="dt">authors_books</span><span class="op">:</span> <span class="kw">function</span>(callback) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-9" title="9">          <span class="va">Book</span>.<span class="at">find</span>(<span class="op">{</span> <span class="st">&#39;author&#39;</span><span class="op">:</span> <span class="va">req</span>.<span class="va">body</span>.<span class="at">authorid</span> <span class="op">}</span>).<span class="at">exec</span>(callback)</a>
+<a class="sourceLine" id="cb3-10" title="10">        <span class="op">},</span></a>
+<a class="sourceLine" id="cb3-11" title="11">    <span class="op">},</span> <span class="kw">function</span>(err<span class="op">,</span> results) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-12" title="12">        <span class="cf">if</span> (err) <span class="op">{</span> <span class="cf">return</span> <span class="at">next</span>(err)<span class="op">;</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-13" title="13">        <span class="co">// Success</span></a>
+<a class="sourceLine" id="cb3-14" title="14">        <span class="cf">if</span> (<span class="va">results</span>.<span class="va">authors_books</span>.<span class="at">length</span> <span class="op">&gt;</span> <span class="dv">0</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-15" title="15">            <span class="co">// Author has books. Render in same way as for GET route.</span></a>
+<a class="sourceLine" id="cb3-16" title="16">            <span class="va">res</span>.<span class="at">render</span>(<span class="st">&#39;author_delete&#39;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">title</span><span class="op">:</span> <span class="st">&#39;Delete Author&#39;</span><span class="op">,</span> <span class="dt">author</span><span class="op">:</span> <span class="va">results</span>.<span class="at">author</span><span class="op">,</span> <span class="dt">author_books</span><span class="op">:</span> <span class="va">results</span>.<span class="at">authors_books</span> <span class="op">}</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-17" title="17">            <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-18" title="18">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-19" title="19">        <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-20" title="20">            <span class="co">// Author has no books. Delete object and redirect to the list of authors.</span></a>
+<a class="sourceLine" id="cb3-21" title="21">            <span class="va">Author</span>.<span class="at">findByIdAndRemove</span>(<span class="va">req</span>.<span class="va">body</span>.<span class="at">authorid</span><span class="op">,</span> <span class="kw">function</span> <span class="at">deleteAuthor</span>(err) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-22" title="22">                <span class="cf">if</span> (err) <span class="op">{</span> <span class="cf">return</span> <span class="at">next</span>(err)<span class="op">;</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-23" title="23">                <span class="co">// Success - go to author list</span></a>
+<a class="sourceLine" id="cb3-24" title="24">                <span class="va">res</span>.<span class="at">redirect</span>(<span class="st">&#39;/catalog/authors&#39;</span>)</a>
+<a class="sourceLine" id="cb3-25" title="25">            <span class="op">}</span>)</a>
+<a class="sourceLine" id="cb3-26" title="26">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-27" title="27">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-28" title="28"><span class="op">};</span></a></code></pre></div>
+<p>First we validate that an id has been provided (this is sent via the form body parameters, rather than using the version in the URL). Then we get the author and their associated books in the same way as for the <code>GET</code> route. If there are no books then we delete the author object and redirect to the list of all authors. If there are still books then we just re-render the form, passing in the author and list of books to be deleted.</p>
+<blockquote>
+<p><strong>Note:</strong> We could check if the call to <code>findById()</code> returns any result, and if not, immediately render the list of all authors. We’ve left the code as it is above for brevity (it will still return the list of authors if the id is not found, but this will happen after <code>findByIdAndRemove()</code>).</p>
+</blockquote>
+<h2 id="view">View</h2>
+<p>Create <strong>/views/author_delete.pug</strong> and copy in the text below.</p>
+<pre class="plain"><code>extends layout
+
+block content
+  h1 #{title}: #{author.name}
+  p= author.lifespan
+
+  if author_books.length
+
+    p #[strong Delete the following books before attempting to delete this author.]
+
+    div(style=&#39;margin-left:20px;margin-top:20px&#39;)
+
+      h4 Books
+
+      dl
+      each book in author_books
+        dt
+          a(href=book.url) #{book.title}
+        dd #{book.summary}
+
+  else
+    p Do you really want to delete this Author?
+
+    form(method=&#39;POST&#39; action=&#39;&#39;)
+      div.form-group
+        input#authorid.form-control(type=&#39;hidden&#39;,name=&#39;authorid&#39;, required=&#39;true&#39;, value=author._id )
+
+      button.btn.btn-primary(type=&#39;submit&#39;) Delete</code></pre>
+<p>The view extends the layout template, overriding the block named <code>content</code>. At the top it displays the author details. It then includes a conditional statement based on the number of <strong><code>author_books</code></strong> (the <code>if</code> and <code>else</code> clauses).</p>
+<ul>
+<li>If there <em>are</em> books associated with the author then the page lists the books and states that these must be deleted before this <code>Author</code> may be deleted.</li>
+<li>If there <em>are no</em> books then the page displays a confirmation prompt.</li>
+<li>If the <strong>Delete</strong> button is clicked then the author id is sent to the server in a <code>POST</code> request and that author’s record will be deleted.</li>
+</ul>
+<h2 id="add-a-delete-control">Add a delete control</h2>
+<p>Next we will add a <strong>Delete</strong> control to the <em>Author detail</em> view (the detail page is a good place from which to delete a record).</p>
+<blockquote>
+<p><strong>Note:</strong> In a full implementation the control would be made visible only to authorized users. However at this point we haven’t got an authorization system in place!</p>
+</blockquote>
+<p>Open the <strong>author_detail.pug</strong> view and add the following lines at the bottom.</p>
+<pre class="plain"><code>hr
+p
+  a(href=author.url+&#39;/delete&#39;) Delete author</code></pre>
+<p>The control should now appear as a link, as shown below on the <em>Author detail</em> page.</p>
+<p><img src="locallibary_express_author_detail_delete.png" /></p>
+<h2 id="what-does-it-look-like">What does it look like?</h2>
+<p>Run the application and open your browser to <a href="http://localhost:3000/" class="uri">http://localhost:3000/</a>. Then select the <em>All authors</em> link, and then select a particular author. Finally select the <em>Delete author</em> link.</p>
+<p>If the author has no books, you’ll be presented with a page like this. After pressing delete, the server will delete the author and redirect to the author list.</p>
+<p><img src="locallibary_express_author_delete_nobooks.png" /></p>
+<p>If the author does have books, then you’ll be presented with a view like the following. You can then delete the books from their detail pages (once that code is implemented!).</p>
+<p><img src="locallibary_express_author_delete_withbooks.png" /></p>
+<blockquote>
+<p><strong>Note:</strong> The other pages for deleting objects can be implemented in much the same way. We’ve left that as a challenge.</p>
+</blockquote>
+<h2 id="next-steps">Next steps</h2>
+<ul>
+<li>Return to <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/forms">Express Tutorial Part 6: Working with forms</a>.</li>
+<li>Proceed to the final subarticle of part 6: <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/forms/Update_Book_form">Update Book form</a>.</li>
+</ul>

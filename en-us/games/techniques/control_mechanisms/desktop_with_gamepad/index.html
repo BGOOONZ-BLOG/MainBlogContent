@@ -1,0 +1,285 @@
+<p>{{GamesSidebar}}</p>
+<p>{{PreviousMenuNext(“Games/Techniques/Control_mechanisms/Desktop_with_mouse_and_keyboard”, “Games/Techniques/Control_mechanisms/Other”, “Games/Techniques/Control_mechanisms”)}}</p>
+<p>Now we’ll look at adding something extra — support for gamepad controls, via the Gamepad API. It brings a console-like experience to your web games.</p>
+<p>The Gamepad API gives you the ability to connect a gamepad to your computer and detect pressed buttons directly from the JavaScript code thanks to the browsers implementing such feature. An API exposes all the information you need to hook up your game’s logic and successfully control the user interface and gameplay.</p>
+<h2 id="api-status-browser-and-hardware-support">API status, browser and hardware support</h2>
+<p>The <a href="/en-US/docs/Web/API/Gamepad_API">Gamepad API</a> is still in Working Draft status, although browser support is already quite good — around 63% global coverage, according to <a href="https://caniuse.com/#search=gamepad">caniuse.com</a>. The list of supported devices is also quite extensive — most popular gamepads (e.g. XBox 360 or PS3) should be suitable for web implementations.</p>
+<h2 id="pure-javascript-approach">Pure JavaScript approach</h2>
+<p>Let’s think about implementing pure JavaScript gamepad controls in our <a href="https://github.com/end3r/JavaScript-Game-Controls/">little controls demo</a> first to see how it would work. First, we need an event listener to listen for the connection of the new device:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">window</span>.<span class="at">addEventListener</span>(<span class="st">&quot;gamepadconnected&quot;</span><span class="op">,</span> gamepadHandler)<span class="op">;</span></a></code></pre></div>
+<p>It’s executed once, so we can create some variables we will need later on for storing the controller info and the pressed buttons:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">let</span> controller <span class="op">=</span> <span class="op">{};</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">let</span> buttonsPressed <span class="op">=</span> []<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">function</span> <span class="at">gamepadHandler</span>(e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  controller <span class="op">=</span> <span class="va">e</span>.<span class="at">gamepad</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="va">output</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="vs">`Gamepad: </span><span class="sc">${</span><span class="va">controller</span>.<span class="at">id</span><span class="sc">}</span><span class="vs">`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="op">}</span></a></code></pre></div>
+<p>The second line in the <code>gamepadHandler</code> function shows up on the screen when the device is connected:</p>
+<figure>
+<img src="controls-gamepadtext.png" alt="Gamepad connected message under the Captain Rogers game - wireless XBox 360 controller." /><figcaption>Gamepad connected message under the Captain Rogers game - wireless XBox 360 controller.</figcaption>
+</figure>
+<p>We can also show the <code>id</code> of the device — in the case above we’re using the XBox 360 wireless controller.</p>
+<p>To update the state of the gamepad’s currently pressed buttons we will need a function that will do exactly that on every frame:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">function</span> <span class="at">gamepadUpdateHandler</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">    buttonsPressed <span class="op">=</span> []<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="cf">if</span>(<span class="va">controller</span>.<span class="at">buttons</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">        <span class="cf">for</span>(<span class="kw">var</span> b<span class="op">=</span><span class="dv">0</span><span class="op">;</span> b<span class="op">&lt;</span><span class="va">controller</span>.<span class="va">buttons</span>.<span class="at">length</span><span class="op">;</span> b<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-5" title="5">            <span class="cf">if</span>(<span class="va">controller</span>.<span class="at">buttons</span>[b].<span class="at">pressed</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-6" title="6">                <span class="va">buttonsPressed</span>.<span class="at">push</span>(b)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">            <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-8" title="8">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-9" title="9">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-10" title="10"><span class="op">}</span></a></code></pre></div>
+<p>We first reset the <code>buttonsPressed</code> array to get it ready to store the latest info we’ll write to it from the current frame. Then, if the buttons are available we loop through them; if the <code>pressed</code> property is set to <code>true</code>, then we add them to the <code>buttonsPressed</code> array for later processing. Next, we’ll consider the <code>gamepadButtonPressedHandler()</code> function:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">function</span> <span class="at">gamepadButtonPressedHandler</span>(button) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">    <span class="kw">var</span> press <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3">    <span class="cf">for</span>(<span class="kw">var</span> i<span class="op">=</span><span class="dv">0</span><span class="op">;</span> i<span class="op">&lt;</span><span class="va">buttonsPressed</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-4" title="4">        <span class="cf">if</span>(buttonsPressed[i] <span class="op">==</span> button) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-5" title="5">            press <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-6" title="6">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-7" title="7">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-8" title="8">    <span class="cf">return</span> press<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-9" title="9"><span class="op">}</span></a></code></pre></div>
+<p>The function takes a button as a parameter; in the loop it checks if the given button’s number is among the currently pressed buttons available in the <code>buttonsPressed</code> array. If it is, then the function returns <code>true</code>; <code>false</code> otherwise.</p>
+<p>Next, in the <code>draw()</code> function we do two things — execute the <code>gamepadUpdateHandler()</code> function to get the current state of pressed buttons on every frame, and use the <code>gamepadButtonPressedHandler()</code> function to check the buttons we are interested to see whether they are pressed, and do something if they are:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">function</span> <span class="at">draw</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2">    <span class="va">ctx</span>.<span class="at">clearRect</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="va">canvas</span>.<span class="at">width</span><span class="op">,</span> <span class="va">canvas</span>.<span class="at">height</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3"></a>
+<a class="sourceLine" id="cb5-4" title="4">    <span class="co">// ...</span></a>
+<a class="sourceLine" id="cb5-5" title="5"></a>
+<a class="sourceLine" id="cb5-6" title="6">    <span class="at">gamepadUpdateHandler</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-7" title="7">    <span class="cf">if</span>(<span class="at">gamepadButtonPressedHandler</span>(<span class="dv">0</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-8" title="8">        playerY <span class="op">-=</span> <span class="dv">5</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-9" title="9">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-10" title="10">    <span class="cf">else</span> <span class="cf">if</span>(<span class="at">gamepadButtonPressedHandler</span>(<span class="dv">1</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-11" title="11">        playerY <span class="op">+=</span> <span class="dv">5</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-12" title="12">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-13" title="13">    <span class="cf">if</span>(<span class="at">gamepadButtonPressedHandler</span>(<span class="dv">2</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-14" title="14">        playerX <span class="op">-=</span> <span class="dv">5</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-15" title="15">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-16" title="16">    <span class="cf">else</span> <span class="cf">if</span>(<span class="at">gamepadButtonPressedHandler</span>(<span class="dv">3</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-17" title="17">        playerX <span class="op">+=</span> <span class="dv">5</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-18" title="18">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-19" title="19">    <span class="cf">if</span>(<span class="at">gamepadButtonPressedHandler</span>(<span class="dv">11</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-20" title="20">        <span class="at">alert</span>(<span class="st">&#39;BOOM!&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-21" title="21">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-22" title="22"></a>
+<a class="sourceLine" id="cb5-23" title="23">    <span class="co">// ...</span></a>
+<a class="sourceLine" id="cb5-24" title="24"></a>
+<a class="sourceLine" id="cb5-25" title="25">    <span class="va">ctx</span>.<span class="at">drawImage</span>(img<span class="op">,</span> playerX<span class="op">,</span> playerY)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-26" title="26">    <span class="at">requestAnimationFrame</span>(draw)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-27" title="27"><span class="op">}</span></a></code></pre></div>
+<p>In this case, we are checking the four D-Pad buttons (0-3) and the A button (11).</p>
+<blockquote>
+<p><strong>Note:</strong> Please remember that different devices may have different key mappings, i.e. the D-Pad Right button have an index of 3 on the wireless XBox 360, but may have a different one on another device.</p>
+</blockquote>
+<p>You could also create a helper function that would assign proper names to the listed buttons, so for example instead of checking out if <code>gamepadButtonPressedHandler(3)</code> is pressed, you could do a more descriptive check: <code>gamepadButtonPressedHandler('DPad-Right')</code>.</p>
+<p>You can see a <a href="https://end3r.github.io/JavaScript-Game-Controls/">live demo</a> in action — try connecting your gamepad and pressing the buttons.</p>
+<h2 id="phaser-approach">Phaser approach</h2>
+<p>Let’s move on to the final Gamepad API implementation in the <a href="https://rogers2.enclavegames.com/demo/">Captain Rogers: Battle at Andromeda</a> game we created with Phaser. This is pure JavaScript code however too, so can be used in any other project no matter what framework was used.</p>
+<p>First off, we’ll create a small library that will take care of handling the input for us. Here’s the <code>GamepadAPI</code> object, which contains useful variables and functions:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">var</span> GamepadAPI <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-2" title="2">    <span class="dt">active</span><span class="op">:</span> <span class="kw">false</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb6-3" title="3">    <span class="dt">controller</span><span class="op">:</span> <span class="op">{},</span></a>
+<a class="sourceLine" id="cb6-4" title="4">    <span class="dt">connect</span><span class="op">:</span> <span class="kw">function</span>(event) <span class="op">{},</span></a>
+<a class="sourceLine" id="cb6-5" title="5">    <span class="dt">disconnect</span><span class="op">:</span> <span class="kw">function</span>(event) <span class="op">{},</span></a>
+<a class="sourceLine" id="cb6-6" title="6">    <span class="dt">update</span><span class="op">:</span> <span class="kw">function</span>() <span class="op">{},</span></a>
+<a class="sourceLine" id="cb6-7" title="7">    <span class="dt">buttons</span><span class="op">:</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-8" title="8">        <span class="dt">layout</span><span class="op">:</span> []<span class="op">,</span></a>
+<a class="sourceLine" id="cb6-9" title="9">        <span class="dt">cache</span><span class="op">:</span> []<span class="op">,</span></a>
+<a class="sourceLine" id="cb6-10" title="10">        <span class="dt">status</span><span class="op">:</span> []<span class="op">,</span></a>
+<a class="sourceLine" id="cb6-11" title="11">        <span class="dt">pressed</span><span class="op">:</span> <span class="kw">function</span>(button<span class="op">,</span> state) <span class="op">{}</span></a>
+<a class="sourceLine" id="cb6-12" title="12">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-13" title="13">    <span class="dt">axes</span><span class="op">:</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-14" title="14">        <span class="dt">status</span><span class="op">:</span> []</a>
+<a class="sourceLine" id="cb6-15" title="15">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-16" title="16"><span class="op">};</span></a></code></pre></div>
+<p>The <code>controller</code> variable stores the information about the connected gamepad, and there’s an <code>active</code> boolean variable we can use to know if the controller is connected or not. The <code>connect()</code> and <code>disconnect()</code> functions are bound to the following events:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="va">window</span>.<span class="at">addEventListener</span>(<span class="st">&quot;gamepadconnected&quot;</span><span class="op">,</span> <span class="va">GamepadAPI</span>.<span class="at">connect</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb7-2" title="2"><span class="va">window</span>.<span class="at">addEventListener</span>(<span class="st">&quot;gamepaddisconnected&quot;</span><span class="op">,</span> <span class="va">GamepadAPI</span>.<span class="at">disconnect</span>)<span class="op">;</span></a></code></pre></div>
+<p>They are fired when the gamepad is connected and disconnected respectively. The next function is <code>update()</code>, which updates the information about the pressed buttons and axes.</p>
+<p>The <code>buttons</code> variable contains the <code>layout</code> of a given controller (for example which buttons are where, because an XBox 360 layout may be different to a generic one), the <code>cache</code> containing the information about the buttons from the previous frame and the <code>status</code> containing the information from the current frame.</p>
+<p>The <code>pressed()</code> function gets the input data and sets the information about it in our object, and the <code>axes</code> property stores the array containing the values signifying the amount an axis is pressed in the <code>x</code> and <code>y</code> directions, represented by a float in the <code>(-1, 1)</code> range.</p>
+<p>After the gamepad is connected, the information about the controller is stored in the object:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1">connect<span class="op">:</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-2" title="2">    <span class="va">GamepadAPI</span>.<span class="at">controller</span> <span class="op">=</span> <span class="va">event</span>.<span class="at">gamepad</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-3" title="3">    <span class="va">GamepadAPI</span>.<span class="at">active</span> <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-4" title="4"><span class="op">},</span></a></code></pre></div>
+<p>The <code>disconnect</code> function removes the information from the object:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1">disconnect<span class="op">:</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-2" title="2">    <span class="kw">delete</span> <span class="va">GamepadAPI</span>.<span class="at">controller</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-3" title="3">    <span class="va">GamepadAPI</span>.<span class="at">active</span> <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-4" title="4"><span class="op">},</span></a></code></pre></div>
+<p>The <code>update()</code> function is executed in the update loop of the game on every frame, so it contains the latest information on the pressed buttons:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1">update<span class="op">:</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-2" title="2">  <span class="va">GamepadAPI</span>.<span class="va">buttons</span>.<span class="at">cache</span> <span class="op">=</span> []<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-3" title="3">  <span class="cf">for</span>(<span class="kw">var</span> k<span class="op">=</span><span class="dv">0</span><span class="op">;</span> k<span class="op">&lt;</span><span class="va">GamepadAPI</span>.<span class="va">buttons</span>.<span class="va">status</span>.<span class="at">length</span><span class="op">;</span> k<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-4" title="4">    <span class="va">GamepadAPI</span>.<span class="va">buttons</span>.<span class="at">cache</span>[k] <span class="op">=</span> <span class="va">GamepadAPI</span>.<span class="va">buttons</span>.<span class="at">status</span>[k]<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-5" title="5">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-6" title="6">  <span class="va">GamepadAPI</span>.<span class="va">buttons</span>.<span class="at">status</span> <span class="op">=</span> []<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-7" title="7">  <span class="kw">var</span> c <span class="op">=</span> <span class="va">GamepadAPI</span>.<span class="at">controller</span> <span class="op">||</span> <span class="op">{};</span></a>
+<a class="sourceLine" id="cb10-8" title="8">  <span class="kw">var</span> pressed <span class="op">=</span> []<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-9" title="9">  <span class="cf">if</span>(<span class="va">c</span>.<span class="at">buttons</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-10" title="10">    <span class="cf">for</span>(<span class="kw">var</span> b<span class="op">=</span><span class="dv">0</span><span class="op">,</span>t<span class="op">=</span><span class="va">c</span>.<span class="va">buttons</span>.<span class="at">length</span><span class="op">;</span> b<span class="op">&lt;</span>t<span class="op">;</span> b<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-11" title="11">      <span class="cf">if</span>(<span class="va">c</span>.<span class="at">buttons</span>[b].<span class="at">pressed</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-12" title="12">        <span class="va">pressed</span>.<span class="at">push</span>(<span class="va">GamepadAPI</span>.<span class="va">buttons</span>.<span class="at">layout</span>[b])<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-13" title="13">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-14" title="14">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-15" title="15">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-16" title="16">  <span class="kw">var</span> axes <span class="op">=</span> []<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-17" title="17">  <span class="cf">if</span>(<span class="va">c</span>.<span class="at">axes</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-18" title="18">    <span class="cf">for</span>(<span class="kw">var</span> a<span class="op">=</span><span class="dv">0</span><span class="op">,</span>x<span class="op">=</span><span class="va">c</span>.<span class="va">axes</span>.<span class="at">length</span><span class="op">;</span> a<span class="op">&lt;</span>x<span class="op">;</span> a<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-19" title="19">      <span class="va">axes</span>.<span class="at">push</span>(<span class="va">c</span>.<span class="at">axes</span>[a].<span class="at">toFixed</span>(<span class="dv">2</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-20" title="20">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-21" title="21">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-22" title="22">  <span class="va">GamepadAPI</span>.<span class="va">axes</span>.<span class="at">status</span> <span class="op">=</span> axes<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-23" title="23">  <span class="va">GamepadAPI</span>.<span class="va">buttons</span>.<span class="at">status</span> <span class="op">=</span> pressed<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-24" title="24">  <span class="cf">return</span> pressed<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-25" title="25"><span class="op">},</span></a></code></pre></div>
+<p>The function above clears the buttons cache, and copies their status from the previous frame to the cache. Next, the button status is cleared and the new information is added. The same goes for the axes information — looping through axes adds the values to the array. Received values are assigned to the proper objects and returns the pressed info for debugging purposes.</p>
+<p>The <code>button.pressed()</code> function detects the actual button presses:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1">pressed<span class="op">:</span> <span class="kw">function</span>(button<span class="op">,</span> hold) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-2" title="2">  <span class="kw">var</span> newPress <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb11-3" title="3">  <span class="cf">for</span>(<span class="kw">var</span> i<span class="op">=</span><span class="dv">0</span><span class="op">,</span>s<span class="op">=</span><span class="va">GamepadAPI</span>.<span class="va">buttons</span>.<span class="va">status</span>.<span class="at">length</span><span class="op">;</span> i<span class="op">&lt;</span>s<span class="op">;</span> i<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-4" title="4">    <span class="cf">if</span>(<span class="va">GamepadAPI</span>.<span class="va">buttons</span>.<span class="at">status</span>[i] <span class="op">==</span> button) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-5" title="5">      newPress <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb11-6" title="6">      <span class="cf">if</span>(<span class="op">!</span>hold) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-7" title="7">        <span class="cf">for</span>(<span class="kw">var</span> j<span class="op">=</span><span class="dv">0</span><span class="op">,</span>p<span class="op">=</span><span class="va">GamepadAPI</span>.<span class="va">buttons</span>.<span class="va">cache</span>.<span class="at">length</span><span class="op">;</span> j<span class="op">&lt;</span>p<span class="op">;</span> j<span class="op">++</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-8" title="8">          <span class="cf">if</span>(<span class="va">GamepadAPI</span>.<span class="va">buttons</span>.<span class="at">cache</span>[j] <span class="op">==</span> button) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-9" title="9">            newPress <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb11-10" title="10">          <span class="op">}</span></a>
+<a class="sourceLine" id="cb11-11" title="11">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb11-12" title="12">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb11-13" title="13">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb11-14" title="14">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb11-15" title="15">  <span class="cf">return</span> newPress<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-16" title="16"><span class="op">},</span></a></code></pre></div>
+<p>It loops through pressed buttons and if the button we’re looking for is pressed, then the corresponding boolean variable is set to <code>true</code>. If we want to check the button is not held already (so it’s a new press), then looping through the cached states from the previous frame does the job — if the button was already pressed, then we ignore the new press and set it to <code>false</code>.</p>
+<h2 id="implementation">Implementation</h2>
+<p>We now know what the <code>GamepadAPI</code> object looks like and what variables and functions it contain, so let’s learn how all this is actually used in the game. To indicate that the gamepad controller is active we can show the user some custom text on the game’s main menu screen.</p>
+<p>The <code>textGamepad</code> object holds the text saying a gamepad has been connected, and is hidden by default. Here’s the code we’ve prepared in the <code>create()</code> function that is executed once when the new state is created:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb12-1" title="1"><span class="at">create</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb12-2" title="2">    <span class="co">// ...</span></a>
+<a class="sourceLine" id="cb12-3" title="3">    <span class="kw">var</span> message <span class="op">=</span> <span class="st">&#39;Gamepad connected! Press Y for controls&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-4" title="4">    <span class="kw">var</span> textGamepad <span class="op">=</span> <span class="kw">this</span>.<span class="va">add</span>.<span class="at">text</span>(message<span class="op">,</span> ...)<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-5" title="5">    <span class="va">textGamepad</span>.<span class="at">visible</span> <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-6" title="6"><span class="op">}</span></a></code></pre></div>
+<p>In the <code>update()</code> function, which is executed every frame, we can wait until the controller is actually connected, so the proper text can be shown. Then we can keep the track of the information about pressed buttons by using the <code>Gamepad.update()</code> method, and react to the given information:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb13-1" title="1">update<span class="op">:</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-2" title="2">    <span class="co">// ...</span></a>
+<a class="sourceLine" id="cb13-3" title="3">    <span class="cf">if</span>(<span class="va">GamepadAPI</span>.<span class="at">active</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-4" title="4">        <span class="cf">if</span>(<span class="op">!</span><span class="kw">this</span>.<span class="va">textGamepad</span>.<span class="at">visible</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-5" title="5">            <span class="kw">this</span>.<span class="va">textGamepad</span>.<span class="at">visible</span> <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb13-6" title="6">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb13-7" title="7">        <span class="va">GamepadAPI</span>.<span class="at">update</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-8" title="8">        <span class="cf">if</span>(<span class="va">GamepadAPI</span>.<span class="va">buttons</span>.<span class="at">pressed</span>(<span class="st">&#39;Start&#39;</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-9" title="9">            <span class="co">// start the game</span></a>
+<a class="sourceLine" id="cb13-10" title="10">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb13-11" title="11">        <span class="cf">if</span>(<span class="va">GamepadAPI</span>.<span class="va">buttons</span>.<span class="at">pressed</span>(<span class="st">&#39;X&#39;</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-12" title="12">            <span class="co">// turn on/off the sounds</span></a>
+<a class="sourceLine" id="cb13-13" title="13">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb13-14" title="14">        <span class="cf">if</span>(<span class="va">GamepadAPI</span>.<span class="va">buttons</span>.<span class="at">pressed</span>(<span class="st">&#39;Y&#39;</span><span class="op">,</span><span class="st">&#39;hold&#39;</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-15" title="15">            <span class="cf">if</span>(<span class="op">!</span><span class="kw">this</span>.<span class="va">screenGamepadHelp</span>.<span class="at">visible</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-16" title="16">                <span class="kw">this</span>.<span class="va">screenGamepadHelp</span>.<span class="at">visible</span> <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb13-17" title="17">            <span class="op">}</span></a>
+<a class="sourceLine" id="cb13-18" title="18">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb13-19" title="19">        <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-20" title="20">            <span class="cf">if</span>(<span class="kw">this</span>.<span class="va">screenGamepadHelp</span>.<span class="at">visible</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-21" title="21">                <span class="kw">this</span>.<span class="va">screenGamepadHelp</span>.<span class="at">visible</span> <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb13-22" title="22">            <span class="op">}</span></a>
+<a class="sourceLine" id="cb13-23" title="23">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb13-24" title="24">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb13-25" title="25"><span class="op">}</span></a></code></pre></div>
+<p>When pressing the <code>Start</code> button the relevant function will be called to begin the game, and the same approach is used for turning the audio on and off. There’s an option wired up to show <code>screenGamepadHelp</code>, which holds an image with all the button controls explained — if the <code>Y</code> button is pressed and held, the help becomes visible; when it is released the help disappears.</p>
+<figure>
+<img src="controls-gamepadinfo.png" alt="Gamepad info with all the available keys described and explained." /><figcaption>Gamepad info with all the available keys described and explained.</figcaption>
+</figure>
+<h2 id="on-screen-instructions">On-screen instructions</h2>
+<p>When the game is started, some introductory text is shown that shows you available controls — we are already detecting if the game is launched on desktop or mobile then showing a relevant message for the device, but we can go even further, to allow for the presence of a gamepad:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb14-1" title="1"><span class="at">create</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb14-2" title="2">    <span class="co">// ...</span></a>
+<a class="sourceLine" id="cb14-3" title="3">    <span class="cf">if</span>(<span class="kw">this</span>.<span class="va">game</span>.<span class="va">device</span>.<span class="at">desktop</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb14-4" title="4">        <span class="cf">if</span>(<span class="va">GamepadAPI</span>.<span class="at">active</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb14-5" title="5">            moveText <span class="op">=</span> <span class="st">&#39;DPad or left Stick</span><span class="sc">\n</span><span class="st">to move&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb14-6" title="6">            shootText <span class="op">=</span> <span class="st">&#39;A to shoot,</span><span class="sc">\n</span><span class="st">Y for controls&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb14-7" title="7">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb14-8" title="8">        <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb14-9" title="9">            moveText <span class="op">=</span> <span class="st">&#39;Arrow keys</span><span class="sc">\n</span><span class="st">or WASD to move&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb14-10" title="10">            shootText <span class="op">=</span> <span class="st">&#39;X or Space</span><span class="sc">\n</span><span class="st">to shoot&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb14-11" title="11">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb14-12" title="12">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb14-13" title="13">    <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb14-14" title="14">        moveText <span class="op">=</span> <span class="st">&#39;Tap and hold to move&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb14-15" title="15">        shootText <span class="op">=</span> <span class="st">&#39;Tap to shoot&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb14-16" title="16">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb14-17" title="17"><span class="op">}</span></a></code></pre></div>
+<p>When on desktop, we can check if the controller is active and show the gamepad controls — if not, then the keyboard controls will be shown.</p>
+<h2 id="gameplay-controls">Gameplay controls</h2>
+<p>We can offer even more flexibility to the player by giving him main and alternative gamepad movement controls:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb15-1" title="1"><span class="cf">if</span>(<span class="va">GamepadAPI</span>.<span class="va">buttons</span>.<span class="at">pressed</span>(<span class="st">&#39;DPad-Up&#39;</span><span class="op">,</span><span class="st">&#39;hold&#39;</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb15-2" title="2">    <span class="co">// move player up</span></a>
+<a class="sourceLine" id="cb15-3" title="3"><span class="op">}</span></a>
+<a class="sourceLine" id="cb15-4" title="4"><span class="cf">else</span> <span class="cf">if</span>(<span class="va">GamepadAPI</span>.<span class="va">buttons</span>.<span class="at">pressed</span>(<span class="st">&#39;DPad-Down&#39;</span><span class="op">,</span><span class="st">&#39;hold&#39;</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb15-5" title="5">    <span class="co">// move player down</span></a>
+<a class="sourceLine" id="cb15-6" title="6"><span class="op">}</span></a>
+<a class="sourceLine" id="cb15-7" title="7"><span class="cf">if</span>(<span class="va">GamepadAPI</span>.<span class="va">buttons</span>.<span class="at">pressed</span>(<span class="st">&#39;DPad-Left&#39;</span><span class="op">,</span><span class="st">&#39;hold&#39;</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb15-8" title="8">    <span class="co">// move player left</span></a>
+<a class="sourceLine" id="cb15-9" title="9"><span class="op">}</span></a>
+<a class="sourceLine" id="cb15-10" title="10"><span class="cf">if</span>(<span class="va">GamepadAPI</span>.<span class="va">buttons</span>.<span class="at">pressed</span>(<span class="st">&#39;DPad-Right&#39;</span><span class="op">,</span><span class="st">&#39;hold&#39;</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb15-11" title="11">    <span class="co">// move player right</span></a>
+<a class="sourceLine" id="cb15-12" title="12"><span class="op">}</span></a>
+<a class="sourceLine" id="cb15-13" title="13"><span class="cf">if</span>(<span class="va">GamepadAPI</span>.<span class="va">axes</span>.<span class="at">status</span> <span class="op">&amp;&amp;</span> <span class="va">GamepadAPI</span>.<span class="va">axes</span>.<span class="at">status</span>[<span class="dv">0</span>]) <span class="op">{</span></a>
+<a class="sourceLine" id="cb15-14" title="14">    <span class="cf">if</span>(<span class="va">GamepadAPI</span>.<span class="va">axes</span>.<span class="at">status</span>[<span class="dv">0</span>] <span class="op">&gt;</span> <span class="fl">0.5</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb15-15" title="15">        <span class="co">// move player up</span></a>
+<a class="sourceLine" id="cb15-16" title="16">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb15-17" title="17">    <span class="cf">else</span> <span class="cf">if</span>(<span class="va">GamepadAPI</span>.<span class="va">axes</span>.<span class="at">status</span>[<span class="dv">0</span>] <span class="op">&lt;</span> <span class="fl">-0.5</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb15-18" title="18">        <span class="co">// move player down</span></a>
+<a class="sourceLine" id="cb15-19" title="19">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb15-20" title="20">    <span class="cf">if</span>(<span class="va">GamepadAPI</span>.<span class="va">axes</span>.<span class="at">status</span>[<span class="dv">1</span>] <span class="op">&gt;</span> <span class="fl">0.5</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb15-21" title="21">        <span class="co">// move player left</span></a>
+<a class="sourceLine" id="cb15-22" title="22">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb15-23" title="23">    <span class="cf">else</span> <span class="cf">if</span>(<span class="va">GamepadAPI</span>.<span class="va">axes</span>.<span class="at">status</span>[<span class="dv">1</span>] <span class="op">&lt;</span> <span class="fl">-0.5</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb15-24" title="24">        <span class="co">// move player right</span></a>
+<a class="sourceLine" id="cb15-25" title="25">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb15-26" title="26"><span class="op">}</span></a></code></pre></div>
+<p>They can now move the ship on the screen by using the <code>DPad</code> buttons, or the left stick axes.</p>
+<p>Have you noticed that the current value of the axes is evaluated against <code>0.5</code>? It’s because axes are having floating point values while buttons are booleans. After a certain threshold is reached we can assume the input is done deliberately by the user and can act accordingly.</p>
+<p>For the shooting controls, we used the <code>A</code> button — when it is held down, a new bullet is spawned, and everything else is handled by the game:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb16-1" title="1"><span class="cf">if</span>(<span class="va">GamepadAPI</span>.<span class="va">buttons</span>.<span class="at">pressed</span>(<span class="st">&#39;A&#39;</span><span class="op">,</span><span class="st">&#39;hold&#39;</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-2" title="2">    <span class="kw">this</span>.<span class="at">spawnBullet</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-3" title="3"><span class="op">}</span></a></code></pre></div>
+<p>Showing the screen with all the controls looks exactly the same as in the main menu:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb17-1" title="1"><span class="cf">if</span>(<span class="va">GamepadAPI</span>.<span class="va">buttons</span>.<span class="at">pressed</span>(<span class="st">&#39;Y&#39;</span><span class="op">,</span><span class="st">&#39;hold&#39;</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb17-2" title="2">    <span class="cf">if</span>(<span class="op">!</span><span class="kw">this</span>.<span class="va">screenGamepadHelp</span>.<span class="at">visible</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb17-3" title="3">        <span class="kw">this</span>.<span class="va">screenGamepadHelp</span>.<span class="at">visible</span> <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb17-4" title="4">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb17-5" title="5"><span class="op">}</span></a>
+<a class="sourceLine" id="cb17-6" title="6"><span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb17-7" title="7">    <span class="cf">if</span>(<span class="kw">this</span>.<span class="va">screenGamepadHelp</span>.<span class="at">visible</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb17-8" title="8">        <span class="kw">this</span>.<span class="va">screenGamepadHelp</span>.<span class="at">visible</span> <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb17-9" title="9">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb17-10" title="10"><span class="op">}</span></a></code></pre></div>
+<p>If the <code>B</code> button is pressed, the game is paused:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb18-1" title="1"><span class="cf">if</span>(<span class="va">gamepadAPI</span>.<span class="at">buttonPressed</span>(<span class="st">&#39;B&#39;</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb18-2" title="2">    <span class="kw">this</span>.<span class="at">managePause</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-3" title="3"><span class="op">}</span></a></code></pre></div>
+<h2 id="pause-and-game-over-states">Pause and game over states</h2>
+<p>We already learned how to control the whole lifecycle of the game: pausing the gameplay, restarting it, or getting back to the main menu. It works smooth on mobile and desktop, and adding gamepad controls is just as straightforward — in the <code>update()</code> function, we check to see if the current state status is <code>paused</code> — if so, the relevant actions are enabled:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb19-1" title="1"><span class="cf">if</span>(<span class="va">GamepadAPI</span>.<span class="va">buttons</span>.<span class="at">pressed</span>(<span class="st">&#39;Start&#39;</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb19-2" title="2">    <span class="kw">this</span>.<span class="at">managePause</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb19-3" title="3"><span class="op">}</span></a>
+<a class="sourceLine" id="cb19-4" title="4"><span class="cf">if</span>(<span class="va">GamepadAPI</span>.<span class="va">buttons</span>.<span class="at">pressed</span>(<span class="st">&#39;Back&#39;</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb19-5" title="5">    <span class="kw">this</span>.<span class="at">stateBack</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb19-6" title="6"><span class="op">}</span></a></code></pre></div>
+<p>Similarly, when the <code>gameover</code> state status is active, then we can allow the user to restart the game instead of continuing it:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb20-1" title="1"><span class="cf">if</span>(<span class="va">GamepadAPI</span>.<span class="va">buttons</span>.<span class="at">pressed</span>(<span class="st">&#39;Start&#39;</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb20-2" title="2">    <span class="kw">this</span>.<span class="at">stateRestart</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb20-3" title="3"><span class="op">}</span></a>
+<a class="sourceLine" id="cb20-4" title="4"><span class="cf">if</span>(<span class="va">GamepadAPI</span>.<span class="va">buttons</span>.<span class="at">pressed</span>(<span class="st">&#39;Back&#39;</span>)) <span class="op">{</span></a>
+<a class="sourceLine" id="cb20-5" title="5">    <span class="kw">this</span>.<span class="at">stateBack</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb20-6" title="6"><span class="op">}</span></a></code></pre></div>
+<p>When the game over screen is visible, the <code>Start</code> button restarts the game while the <code>Back</code> button helps us get back to the main menu. The same goes for when the game is paused: the <code>Start</code> button unpauses the game and the <code>Back</code> button goes back, just like before.</p>
+<h2 id="summary">Summary</h2>
+<p>That’s it! We have successfully implemented gamepad controls in our game — try connecting any popular controller like the XBox 360 one and see for yourself how fun it is to avoid the asteroids and shoot the aliens with a gamepad.</p>
+<p>Now we can move on and explore new, even more unconventional ways to control the HTML5 game like waving your hand in front of the laptop or screaming into your microphone.</p>
+<p>{{PreviousMenuNext(“Games/Techniques/Control_mechanisms/Desktop_with_mouse_and_keyboard”, “Games/Techniques/Control_mechanisms/Other”, “Games/Techniques/Control_mechanisms”)}}</p>

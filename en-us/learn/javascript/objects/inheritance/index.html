@@ -1,0 +1,320 @@
+<p>{{LearnSidebar}}{{PreviousMenuNext(“Learn/JavaScript/Objects/Object_prototypes”, “Learn/JavaScript/Objects/JSON”, “Learn/JavaScript/Objects”)}}</p>
+<p>With most of the gory details of OOJS now explained, this article shows how to create “child” object classes (constructors) that inherit features from their “parent” classes. In addition, we present some advice on when and where you might use OOJS, and look at how classes are dealt with in modern ECMAScript syntax.</p>
+<table>
+<tbody>
+<tr>
+<th scope="row">
+Prerequisites:
+</th>
+<td>
+Basic computer literacy, a basic understanding of HTML and CSS, familiarity with JavaScript basics (see <a href="/en-US/docs/Learn/JavaScript/First_steps">First steps</a> and <a href="/en-US/docs/Learn/JavaScript/Building_blocks"
+          >Building blocks</a
+        >) and OOJS basics (see <a href="/en-US/docs/Learn/JavaScript/Objects/Basics"
+          >Introduction to objects</a
+        >).
+</td>
+</tr>
+<tr>
+<th scope="row">
+Objective:
+</th>
+<td>
+To understand how it is possible to implement inheritance in JavaScript.
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="prototypal-inheritance">Prototypal inheritance</h2>
+<p>So far we have seen some inheritance in action — we have seen how prototype chains work, and how members are inherited going up a chain. But mostly this has involved built-in browser functions. How do we create an object in JavaScript that inherits from another object?</p>
+<p>Let’s explore how to do this with a concrete example.</p>
+<h2 id="getting-started">Getting started</h2>
+<p>First of all, make yourself a local copy of our <a href="https://github.com/mdn/learning-area/blob/master/javascript/oojs/advanced/oojs-class-inheritance-start.html">oojs-class-inheritance-start.html</a> file (see it <a href="https://mdn.github.io/learning-area/javascript/oojs/advanced/oojs-class-inheritance-start.html">running live</a> also). Inside here you’ll find the same <code>Person()</code> constructor example that we’ve been using all the way through the module, with a slight difference — we’ve defined only the properties inside the constructor:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">function</span> <span class="at">Person</span>(first<span class="op">,</span> last<span class="op">,</span> age<span class="op">,</span> gender<span class="op">,</span> interests) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="kw">this</span>.<span class="at">name</span> <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-3" title="3">    first<span class="op">,</span></a>
+<a class="sourceLine" id="cb1-4" title="4">    last</a>
+<a class="sourceLine" id="cb1-5" title="5">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb1-6" title="6">  <span class="kw">this</span>.<span class="at">age</span> <span class="op">=</span> age<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-7" title="7">  <span class="kw">this</span>.<span class="at">gender</span> <span class="op">=</span> gender<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-8" title="8">  <span class="kw">this</span>.<span class="at">interests</span> <span class="op">=</span> interests<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-9" title="9"><span class="op">};</span></a></code></pre></div>
+<p>The methods are <em>all</em> defined on the constructor’s prototype. For example:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="va">Person</span>.<span class="va">prototype</span>.<span class="at">greeting</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="at">alert</span>(<span class="st">&#39;Hi! I</span><span class="sc">\&#39;</span><span class="st">m &#39;</span> <span class="op">+</span> <span class="kw">this</span>.<span class="va">name</span>.<span class="at">first</span> <span class="op">+</span> <span class="st">&#39;.&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="op">};</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> In the source code, you’ll also see <code>bio()</code> and <code>farewell()</code> methods defined. Later you’ll see how these can be inherited by other constructors.</p>
+</blockquote>
+<p>Say we wanted to create a <code>Teacher</code> class, like the one we described in our initial object-oriented definition, which inherits all the members from <code>Person</code>, but also includes:</p>
+<ol type="1">
+<li>A new property, <code>subject</code> — this will contain the subject the teacher teaches.</li>
+<li>An updated <code>greeting()</code> method, which sounds a bit more formal than the standard <code>greeting()</code> method — more suitable for a teacher addressing some students at school.</li>
+</ol>
+<h2 id="defining-a-teacher-constructor-function">Defining a Teacher() constructor function</h2>
+<p>The first thing we need to do is create a <code>Teacher()</code> constructor — add the following below the existing code:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">function</span> <span class="at">Teacher</span>(first<span class="op">,</span> last<span class="op">,</span> age<span class="op">,</span> gender<span class="op">,</span> interests<span class="op">,</span> subject) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="va">Person</span>.<span class="at">call</span>(<span class="kw">this</span><span class="op">,</span> first<span class="op">,</span> last<span class="op">,</span> age<span class="op">,</span> gender<span class="op">,</span> interests)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="kw">this</span>.<span class="at">subject</span> <span class="op">=</span> subject<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="op">}</span></a></code></pre></div>
+<p>This looks similar to the Person constructor in many ways, but there is something strange here that we’ve not seen before — the <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/call"><code>call()</code></a> function. This function basically allows you to call a function defined somewhere else, but in the current context. The first parameter specifies the value of <code>this</code> that you want to use when running the function, and the other parameters are those that should be passed to the function when it is invoked.</p>
+<p>We want the <code>Teacher()</code> constructor to take the same parameters as the <code>Person()</code> constructor it is inheriting from, so we specify them all as parameters in the <code>call()</code> invocation.</p>
+<p>The last line inside the constructor defines the new <code>subject</code> property that teachers are going to have, which generic people don’t have.</p>
+<p>As a note, we could have done this:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">function</span> <span class="at">Teacher</span>(first<span class="op">,</span> last<span class="op">,</span> age<span class="op">,</span> gender<span class="op">,</span> interests<span class="op">,</span> subject) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="kw">this</span>.<span class="at">name</span> <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-3" title="3">    first<span class="op">,</span></a>
+<a class="sourceLine" id="cb4-4" title="4">    last</a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb4-6" title="6">  <span class="kw">this</span>.<span class="at">age</span> <span class="op">=</span> age<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="kw">this</span>.<span class="at">gender</span> <span class="op">=</span> gender<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-8" title="8">  <span class="kw">this</span>.<span class="at">interests</span> <span class="op">=</span> interests<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-9" title="9">  <span class="kw">this</span>.<span class="at">subject</span> <span class="op">=</span> subject<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-10" title="10"><span class="op">}</span></a></code></pre></div>
+<p>But this is just redefining the properties anew, not inheriting them from <code>Person()</code>, so it defeats the point of what we are trying to do. It also takes more lines of code.</p>
+<h3 id="inheriting-from-a-constructor-with-no-parameters">Inheriting from a constructor with no parameters</h3>
+<p>Note that if the constructor you are inheriting from doesn’t take its property values from parameters, you don’t need to specify them as additional arguments in <code>call()</code>. So, for example, if you had something really simple like this:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">function</span> <span class="at">Brick</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="kw">this</span>.<span class="at">width</span> <span class="op">=</span> <span class="dv">10</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-3" title="3">  <span class="kw">this</span>.<span class="at">height</span> <span class="op">=</span> <span class="dv">20</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="op">}</span></a></code></pre></div>
+<p>You could inherit the <code>width</code> and <code>height</code> properties by doing this (as well as the other steps described below, of course):</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">function</span> <span class="at">BlueGlassBrick</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="va">Brick</span>.<span class="at">call</span>(<span class="kw">this</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-3" title="3"></a>
+<a class="sourceLine" id="cb6-4" title="4">  <span class="kw">this</span>.<span class="at">opacity</span> <span class="op">=</span> <span class="fl">0.5</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-5" title="5">  <span class="kw">this</span>.<span class="at">color</span> <span class="op">=</span> <span class="st">&#39;blue&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="op">}</span></a></code></pre></div>
+<p>Note that we’ve only specified <code>this</code> inside <code>call()</code> — no other parameters are required as we are not inheriting any properties from the parent that are set via parameters.</p>
+<h2 id="setting-teachers-prototype-and-constructor-reference">Setting Teacher()’s prototype and constructor reference</h2>
+<p>All is good so far, but we have a problem. We have defined a new constructor, and it has a <code>prototype</code> property, which by default just contains an object with a reference to the constructor function itself. It does not contain the methods of the Person constructor’s <code>prototype</code> property. To see this, enter <code>Object.getOwnPropertyNames(Teacher.prototype)</code> into either the text input field or your JavaScript console. Then enter it again, replacing <code>Teacher</code> with <code>Person</code>. Nor does the new constructor <em>inherit</em> those methods. To see this, compare the outputs of <code>Person.prototype.greeting</code> and <code>Teacher.prototype.greeting</code>. We need to get <code>Teacher()</code> to inherit the methods defined on <code>Person()</code>’s prototype. So how do we do that?</p>
+<ol type="1">
+<li><p>Add the following line below your previous addition:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1"><span class="va">Teacher</span>.<span class="at">prototype</span> <span class="op">=</span> <span class="va">Object</span>.<span class="at">create</span>(<span class="va">Person</span>.<span class="at">prototype</span>)<span class="op">;</span></a></code></pre></div>
+<p>Here our friend <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/create"><code>create()</code></a> comes to the rescue again. In this case we are using it to create a new object and make it the value of <code>Teacher.prototype</code>. The new object has <code>Person.prototype</code> as its prototype and will therefore inherit, if and when needed, all the methods available on <code>Person.prototype</code>.</p></li>
+<li>We need to do one more thing before we move on. After adding the last line, the <code>constructor</code> property of <code>Teacher.prototype</code> is now equal to <code>Person()</code>, because we just set <code>Teacher.prototype</code> to reference an object that inherits its properties from <code>Person.prototype</code>! Try saving your code, loading the page in a browser, and entering <code>Teacher.prototype.constructor</code> into the console to verify.</li>
+<li><p>This can become a problem, so we need to set this right. You can do so by going back to your source code and adding the following line at the bottom:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="va">Object</span>.<span class="at">defineProperty</span>(<span class="va">Teacher</span>.<span class="at">prototype</span><span class="op">,</span> <span class="st">&#39;constructor&#39;</span><span class="op">,</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-2" title="2">    <span class="dt">value</span><span class="op">:</span> Teacher<span class="op">,</span></a>
+<a class="sourceLine" id="cb8-3" title="3">    <span class="dt">enumerable</span><span class="op">:</span> <span class="kw">false</span><span class="op">,</span> <span class="co">// so that it does not appear in &#39;for in&#39; loop</span></a>
+<a class="sourceLine" id="cb8-4" title="4">    <span class="dt">writable</span><span class="op">:</span> <span class="kw">true</span> <span class="op">}</span>)<span class="op">;</span></a></code></pre></div></li>
+<li><p>Now if you save and refresh, entering <code>Teacher.prototype.constructor</code> should return <code>Teacher()</code>, as desired, plus we are now inheriting from <code>Person()</code>!</p></li>
+</ol>
+<h2 id="giving-teacher-a-new-greeting-function">Giving Teacher() a new greeting() function</h2>
+<p>To finish off our code, we need to define a new <code>greeting()</code> function on the <code>Teacher()</code> constructor.</p>
+<p>The easiest way to do this is to define it on <code>Teacher()</code>’s prototype — add the following at the bottom of your code:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="va">Teacher</span>.<span class="va">prototype</span>.<span class="at">greeting</span> <span class="op">=</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-2" title="2">  <span class="kw">let</span> prefix<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-3" title="3"></a>
+<a class="sourceLine" id="cb9-4" title="4">  <span class="cf">if</span> (<span class="kw">this</span>.<span class="at">gender</span> <span class="op">===</span> <span class="st">&#39;male&#39;</span> <span class="op">||</span> <span class="kw">this</span>.<span class="at">gender</span> <span class="op">===</span> <span class="st">&#39;Male&#39;</span> <span class="op">||</span> <span class="kw">this</span>.<span class="at">gender</span> <span class="op">===</span> <span class="st">&#39;m&#39;</span> <span class="op">||</span> <span class="kw">this</span>.<span class="at">gender</span> <span class="op">===</span> <span class="st">&#39;M&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-5" title="5">    prefix <span class="op">=</span> <span class="st">&#39;Mr.&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-6" title="6">  <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (<span class="kw">this</span>.<span class="at">gender</span> <span class="op">===</span> <span class="st">&#39;female&#39;</span> <span class="op">||</span> <span class="kw">this</span>.<span class="at">gender</span> <span class="op">===</span> <span class="st">&#39;Female&#39;</span> <span class="op">||</span> <span class="kw">this</span>.<span class="at">gender</span> <span class="op">===</span> <span class="st">&#39;f&#39;</span> <span class="op">||</span> <span class="kw">this</span>.<span class="at">gender</span> <span class="op">===</span> <span class="st">&#39;F&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-7" title="7">    prefix <span class="op">=</span> <span class="st">&#39;Ms.&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-8" title="8">  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-9" title="9">    prefix <span class="op">=</span> <span class="st">&#39;Mx.&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-10" title="10">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb9-11" title="11"></a>
+<a class="sourceLine" id="cb9-12" title="12">  <span class="at">alert</span>(<span class="st">&#39;Hello. My name is &#39;</span> <span class="op">+</span> prefix <span class="op">+</span> <span class="st">&#39; &#39;</span> <span class="op">+</span> <span class="kw">this</span>.<span class="va">name</span>.<span class="at">last</span> <span class="op">+</span> <span class="st">&#39;, and I teach &#39;</span> <span class="op">+</span> <span class="kw">this</span>.<span class="at">subject</span> <span class="op">+</span> <span class="st">&#39;.&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb9-13" title="13"><span class="op">};</span></a></code></pre></div>
+<p>This alerts the teacher’s greeting, which also uses an appropriate name prefix for their gender, worked out using a conditional statement.</p>
+<h2 id="trying-the-example-out">Trying the example out</h2>
+<p>Now that you’ve entered all the code, try creating an object instance from <code>Teacher()</code> by putting the following at the bottom of your JavaScript (or something similar of your choosing):</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">let</span> teacher1 <span class="op">=</span> <span class="kw">new</span> <span class="at">Teacher</span>(<span class="st">&#39;Dave&#39;</span><span class="op">,</span> <span class="st">&#39;Griffiths&#39;</span><span class="op">,</span> <span class="dv">31</span><span class="op">,</span> <span class="st">&#39;male&#39;</span><span class="op">,</span> [<span class="st">&#39;football&#39;</span><span class="op">,</span> <span class="st">&#39;cookery&#39;</span>]<span class="op">,</span> <span class="st">&#39;mathematics&#39;</span>)<span class="op">;</span></a></code></pre></div>
+<p>Now save and refresh, and try accessing the properties and methods of your new <code>teacher1</code> object, for example:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1"><span class="va">teacher1</span>.<span class="va">name</span>.<span class="at">first</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb11-2" title="2"><span class="va">teacher1</span>.<span class="at">interests</span>[<span class="dv">0</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-3" title="3"><span class="va">teacher1</span>.<span class="at">bio</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-4" title="4"><span class="va">teacher1</span>.<span class="at">subject</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb11-5" title="5"><span class="va">teacher1</span>.<span class="at">greeting</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-6" title="6"><span class="va">teacher1</span>.<span class="at">farewell</span>()<span class="op">;</span></a></code></pre></div>
+<p>These should all work just fine. The queries on lines 1, 2, 3, and 6 access members inherited from the generic <code>Person()</code> constructor (class). The query on line 4 accesses a member that is available only on the more specialized <code>Teacher()</code> constructor (class). The query on line 5 would have accessed a member inherited from <code>Person()</code>, except for the fact that <code>Teacher()</code> has its own member with the same name, so the query accesses that member.</p>
+<blockquote>
+<p><strong>Note:</strong> If you have trouble getting this to work, compare your code to our <a href="https://github.com/mdn/learning-area/blob/master/javascript/oojs/advanced/oojs-class-inheritance-finished.html">finished version</a> (see it <a href="https://mdn.github.io/learning-area/javascript/oojs/advanced/oojs-class-inheritance-finished.html">running live</a> also).</p>
+</blockquote>
+<p>The technique we covered here is not the only way to create inheriting classes in JavaScript, but it works OK, and it gives you a good idea about how to implement inheritance in JavaScript.</p>
+<p>A common way is to use a JavaScript library — most of the popular options have an easy set of functionality available for doing inheritance more easily and quickly. <a href="https://coffeescript.org/#classes">CoffeeScript</a> for example provides <code>class</code>, <code>extends</code>, etc.</p>
+<h2 id="a-further-exercise">A further exercise</h2>
+<p>In our <a href="/en-US/docs/Learn/JavaScript/Objects/Object-oriented_JS#object-oriented_programming_from_10000_meters">OOP theory section</a>, we also included a <code>Student</code> class as a concept, which inherits all the features of <code>Person</code>, and also has a different <code>greeting()</code> method from <code>Person</code> that is much more informal than the <code>Teacher</code>’s greeting. Have a look at what the student’s greeting looks like in that section, and try implementing your own <code>Student()</code> constructor that inherits all the features of <code>Person()</code>, and implements the different <code>greeting()</code> function.</p>
+<blockquote>
+<p><strong>Note:</strong> If you have trouble getting this to work, have a look at our <a href="https://github.com/mdn/learning-area/blob/master/javascript/oojs/advanced/oojs-class-inheritance-student.html">finished version</a> (see it <a href="https://mdn.github.io/learning-area/javascript/oojs/advanced/oojs-class-inheritance-student.html">running live</a> also).</p>
+</blockquote>
+<h2 id="object-member-summary">Object member summary</h2>
+<p>To summarize, you’ve got four types of property/method to worry about:</p>
+<ol type="1">
+<li>Those defined inside a constructor function that are given to object instances. These are fairly easy to spot — in your own custom code, they are the members defined inside a constructor using the <code>this.x = x</code> type lines; in built in browser code, they are the members only available to object instances (usually created by calling a constructor using the <code>new</code> keyword, e.g. <code>let myInstance = new myConstructor()</code>).</li>
+<li>Those defined directly on the constructor themselves, that are available only on the constructor. These are commonly only available on built-in browser objects, and are recognized by being chained directly onto a constructor, <em>not</em> an instance. For example, <a href="/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/keys"><code>Object.keys()</code></a>. These are also known as <strong>static properties/methods</strong>.</li>
+<li>Those defined on a constructor’s prototype, which are inherited by all instances and inheriting object classes. These include any member defined on a Constructor’s <code>prototype</code> property, e.g. <code>myConstructor.prototype.x()</code>.</li>
+<li>Those available on an object instance, which can either be an object created when a constructor is instantiated like we saw above (so for example <code>let teacher1 = new Teacher( 'Chris' );</code> and then <code>teacher1.name</code>), or an object literal (<code>let teacher1 = { name : 'Chris' }</code> and then <code>teacher1.name</code>).</li>
+</ol>
+<p>If you are not sure which is which, don’t worry about it just yet — you are still learning, and familiarity will come with practice.</p>
+<h2 id="ecmascript-2015-classes">ECMAScript 2015 Classes</h2>
+<p>ECMAScript 2015 introduces <a href="/en-US/docs/Web/JavaScript/Reference/Classes">class syntax</a> to JavaScript as a way to write reusable classes using easier, cleaner syntax, which is more similar to classes in C++ or Java. In this section we’ll convert the Person and Teacher examples from prototypal inheritance to classes, to show you how it’s done.</p>
+<blockquote>
+<p><strong>Note:</strong> This modern way of writing classes is supported in all modern browsers, but it is still worth knowing about the underlying prototypal inheritance in case you work on a project that requires supporting a browser that doesn’t support this syntax (most notably Internet Explorer).</p>
+</blockquote>
+<p>Let’s look at a rewritten version of the Person example, class-style:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb12-1" title="1"><span class="kw">class</span> Person <span class="op">{</span></a>
+<a class="sourceLine" id="cb12-2" title="2">  <span class="at">constructor</span>(first<span class="op">,</span> last<span class="op">,</span> age<span class="op">,</span> gender<span class="op">,</span> interests) <span class="op">{</span></a>
+<a class="sourceLine" id="cb12-3" title="3">    <span class="kw">this</span>.<span class="at">name</span> <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb12-4" title="4">      first<span class="op">,</span></a>
+<a class="sourceLine" id="cb12-5" title="5">      last</a>
+<a class="sourceLine" id="cb12-6" title="6">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb12-7" title="7">    <span class="kw">this</span>.<span class="at">age</span> <span class="op">=</span> age<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-8" title="8">    <span class="kw">this</span>.<span class="at">gender</span> <span class="op">=</span> gender<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-9" title="9">    <span class="kw">this</span>.<span class="at">interests</span> <span class="op">=</span> interests<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-10" title="10">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb12-11" title="11"></a>
+<a class="sourceLine" id="cb12-12" title="12">  <span class="at">greeting</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb12-13" title="13">    <span class="va">console</span>.<span class="at">log</span>(<span class="vs">`Hi! I&#39;m </span><span class="sc">${</span><span class="kw">this</span>.<span class="va">name</span>.<span class="at">first</span><span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-14" title="14">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb12-15" title="15"></a>
+<a class="sourceLine" id="cb12-16" title="16">  <span class="at">farewell</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb12-17" title="17">    <span class="va">console</span>.<span class="at">log</span>(<span class="vs">`</span><span class="sc">${</span><span class="kw">this</span>.<span class="va">name</span>.<span class="at">first</span><span class="sc">}</span><span class="vs"> has left the building. Bye for now!`</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb12-18" title="18">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb12-19" title="19"><span class="op">}</span></a></code></pre></div>
+<p>The <a href="/en-US/docs/Web/JavaScript/Reference/Statements/class">class</a> statement indicates that we are creating a new class. Inside this block, we define all the features of the class:</p>
+<ul>
+<li>The <a href="/en-US/docs/Web/JavaScript/Reference/Classes/constructor"><code>constructor()</code></a> method defines the constructor function that represents our <code>Person</code> class.</li>
+<li><code>greeting()</code> and <code>farewell()</code> are class methods. Any methods you want associated with the class are defined inside it, after the constructor. In this example, we’ve used <a href="/en-US/docs/Web/JavaScript/Reference/Template_literals">template literals</a> rather than string concatenation to make the code easier to read.</li>
+</ul>
+<p>We can now instantiate object instances using the <a href="/en-US/docs/Web/JavaScript/Reference/Operators/new"><code>new</code> operator</a>, in just the same way as we did before:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb13-1" title="1"><span class="kw">let</span> han <span class="op">=</span> <span class="kw">new</span> <span class="at">Person</span>(<span class="st">&#39;Han&#39;</span><span class="op">,</span> <span class="st">&#39;Solo&#39;</span><span class="op">,</span> <span class="dv">25</span><span class="op">,</span> <span class="st">&#39;male&#39;</span><span class="op">,</span> [<span class="st">&#39;Smuggling&#39;</span>])<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-2" title="2"><span class="va">han</span>.<span class="at">greeting</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-3" title="3"><span class="co">// Hi! I&#39;m Han</span></a>
+<a class="sourceLine" id="cb13-4" title="4"></a>
+<a class="sourceLine" id="cb13-5" title="5"><span class="kw">let</span> leia <span class="op">=</span> <span class="kw">new</span> <span class="at">Person</span>(<span class="st">&#39;Leia&#39;</span><span class="op">,</span> <span class="st">&#39;Organa&#39;</span><span class="op">,</span> <span class="dv">19</span><span class="op">,</span> <span class="st">&#39;female&#39;</span><span class="op">,</span> [<span class="st">&#39;Government&#39;</span>])<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-6" title="6"><span class="va">leia</span>.<span class="at">farewell</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-7" title="7"><span class="co">// Leia has left the building. Bye for now</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> Under the hood, your classes are being converted into Prototypal Inheritance models — this is just syntactic sugar. But I’m sure you’ll agree that it’s easier to write.</p>
+</blockquote>
+<h3 id="inheritance-with-class-syntax">Inheritance with class syntax</h3>
+<p>Above we created a class to represent a person. They have a series of properties that are common to all people; in this section we’ll create our specialized <code>Teacher</code> class, making it inherit from <code>Person</code> using modern class syntax. This is called creating a subclass or subclassing.</p>
+<p>To create a subclass we use the <a href="/en-US/docs/Web/JavaScript/Reference/Classes/extends">extends keyword</a> to tell JavaScript the class we want to base our class on,</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb14-1" title="1"><span class="kw">class</span> Teacher <span class="kw">extends</span> Person <span class="op">{</span></a>
+<a class="sourceLine" id="cb14-2" title="2">  <span class="at">constructor</span>(subject<span class="op">,</span> grade) <span class="op">{</span></a>
+<a class="sourceLine" id="cb14-3" title="3">    <span class="kw">this</span>.<span class="at">subject</span> <span class="op">=</span> subject<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-4" title="4">    <span class="kw">this</span>.<span class="at">grade</span> <span class="op">=</span> grade<span class="op">;</span></a>
+<a class="sourceLine" id="cb14-5" title="5">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb14-6" title="6"><span class="op">}</span></a></code></pre></div>
+<p>but there’s a little catch.</p>
+<p>Unlike old-school constructor functions where the <a href="/en-US/docs/Web/JavaScript/Reference/Operators/new"><code>new</code> operator</a> does the initialization of <code>this</code> to a newly-allocated object, this isn’t automatically initialized for a class defined by the <a href="/en-US/docs/Web/JavaScript/Reference/Classes/extends">extends</a> keyword, i.e the sub-classes.</p>
+<p>Therefore running the above code will give an error:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb15-1" title="1">Uncaught ReferenceError<span class="op">:</span> Must call <span class="kw">super</span> constructor <span class="kw">in</span> derived <span class="kw">class</span> before</a>
+<a class="sourceLine" id="cb15-2" title="2">accessing <span class="st">&#39;this&#39;</span> or returning <span class="im">from</span> derived constructor</a></code></pre></div>
+<p>For sub-classes, the <code>this</code> initialization to a newly allocated object is always dependant on the parent class constructor, i.e the constructor function of the class from which you’re extending.</p>
+<p>Here we are extending the <code>Person</code> class — the <code>Teacher</code> sub-class is an extension of the <code>Person</code> class. So for <code>Teacher</code>, the <code>this</code> initialization is done by the <code>Person</code> constructor.</p>
+<p>To call the parent constructor we have to use the <a href="/en-US/docs/Web/JavaScript/Reference/Operators/super"><code>super()</code> operator</a>, like so:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb16-1" title="1"><span class="kw">class</span> Teacher <span class="kw">extends</span> Person <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-2" title="2">  <span class="at">constructor</span>(subject<span class="op">,</span> grade) <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-3" title="3">    <span class="kw">super</span>()<span class="op">;</span> <span class="co">// Now &#39;this&#39; is initialized by calling the parent constructor.</span></a>
+<a class="sourceLine" id="cb16-4" title="4">    <span class="kw">this</span>.<span class="at">subject</span> <span class="op">=</span> subject<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-5" title="5">    <span class="kw">this</span>.<span class="at">grade</span> <span class="op">=</span> grade<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-6" title="6">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb16-7" title="7"><span class="op">}</span></a></code></pre></div>
+<p>There is no point having a sub-class if it doesn’t inherit properties from the parent class. It is good then, that the <a href="/en-US/docs/Web/JavaScript/Reference/Operators/super"><code>super()</code> operator</a> also accepts arguments for the parent constructor.</p>
+<p>Looking back to our <code>Person</code> constructor, we can see it has the following block of code in its constructor method:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb17-1" title="1"> <span class="at">constructor</span>(first<span class="op">,</span> last<span class="op">,</span> age<span class="op">,</span> gender<span class="op">,</span> interests) <span class="op">{</span></a>
+<a class="sourceLine" id="cb17-2" title="2">   <span class="kw">this</span>.<span class="at">name</span> <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb17-3" title="3">     first<span class="op">,</span></a>
+<a class="sourceLine" id="cb17-4" title="4">     last</a>
+<a class="sourceLine" id="cb17-5" title="5">   <span class="op">};</span></a>
+<a class="sourceLine" id="cb17-6" title="6">   <span class="kw">this</span>.<span class="at">age</span> <span class="op">=</span> age<span class="op">;</span></a>
+<a class="sourceLine" id="cb17-7" title="7">   <span class="kw">this</span>.<span class="at">gender</span> <span class="op">=</span> gender<span class="op">;</span></a>
+<a class="sourceLine" id="cb17-8" title="8">   <span class="kw">this</span>.<span class="at">interests</span> <span class="op">=</span> interests<span class="op">;</span></a>
+<a class="sourceLine" id="cb17-9" title="9"><span class="op">}</span></a></code></pre></div>
+<p>Since the <a href="/en-US/docs/Web/JavaScript/Reference/Operators/super"><code>super()</code></a> operator is actually the parent class constructor, passing it the necessary arguments of the <code>Parent</code> class constructor will also initialize the parent class properties in our sub-class, thereby inheriting it:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb18-1" title="1"><span class="kw">class</span> Teacher <span class="kw">extends</span> Person <span class="op">{</span></a>
+<a class="sourceLine" id="cb18-2" title="2">  <span class="at">constructor</span>(first<span class="op">,</span> last<span class="op">,</span> age<span class="op">,</span> gender<span class="op">,</span> interests<span class="op">,</span> subject<span class="op">,</span> grade) <span class="op">{</span></a>
+<a class="sourceLine" id="cb18-3" title="3">    <span class="kw">super</span>(first<span class="op">,</span> last<span class="op">,</span> age<span class="op">,</span> gender<span class="op">,</span> interests)<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-4" title="4"></a>
+<a class="sourceLine" id="cb18-5" title="5">    <span class="co">// subject and grade are specific to Teacher</span></a>
+<a class="sourceLine" id="cb18-6" title="6">    <span class="kw">this</span>.<span class="at">subject</span> <span class="op">=</span> subject<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-7" title="7">    <span class="kw">this</span>.<span class="at">grade</span> <span class="op">=</span> grade<span class="op">;</span></a>
+<a class="sourceLine" id="cb18-8" title="8">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb18-9" title="9"><span class="op">}</span></a></code></pre></div>
+<p>Now when we instantiate <code>Teacher</code> object instances, we can call methods and properties defined on both <code>Teacher</code>and <code>Person</code> as we’d expect:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb19-1" title="1"><span class="kw">let</span> snape <span class="op">=</span> <span class="kw">new</span> <span class="at">Teacher</span>(<span class="st">&#39;Severus&#39;</span><span class="op">,</span> <span class="st">&#39;Snape&#39;</span><span class="op">,</span> <span class="dv">58</span><span class="op">,</span> <span class="st">&#39;male&#39;</span><span class="op">,</span> [<span class="st">&#39;Potions&#39;</span>]<span class="op">,</span> <span class="st">&#39;Dark arts&#39;</span><span class="op">,</span> <span class="dv">5</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb19-2" title="2"><span class="va">snape</span>.<span class="at">greeting</span>()<span class="op">;</span> <span class="co">// Hi! I&#39;m Severus.</span></a>
+<a class="sourceLine" id="cb19-3" title="3"><span class="va">snape</span>.<span class="at">farewell</span>()<span class="op">;</span> <span class="co">// Severus has left the building. Bye for now.</span></a>
+<a class="sourceLine" id="cb19-4" title="4"><span class="va">snape</span>.<span class="at">age</span><span class="op">;</span> <span class="co">// 58</span></a>
+<a class="sourceLine" id="cb19-5" title="5"><span class="va">snape</span>.<span class="at">subject</span><span class="op">;</span> <span class="co">// Dark arts</span></a></code></pre></div>
+<p>Like we did with Teachers, we could create other subclasses of <code>Person</code> to make them more specialized without modifying the base class.</p>
+<blockquote>
+<p><strong>Note:</strong> You can find this example on GitHub as <a href="https://github.com/mdn/learning-area/blob/master/javascript/oojs/advanced/es2015-class-inheritance.html">es2015-class-inheritance.html</a> (<a href="https://mdn.github.io/learning-area/javascript/oojs/advanced/es2015-class-inheritance.html">see it live also</a>).</p>
+</blockquote>
+<h2 id="getters-and-setters">Getters and Setters</h2>
+<p>There may be times when we want to change the values of properties in the classes we create, or times when we don’t know what the final value of a particular property will be. Using the <code>Teacher</code> example, we may not know what subject the teacher will teach before we create them, or their subject may change between terms.</p>
+<p>We can handle such situations with getters and setters.</p>
+<p>Let’s enhance the Teacher class with getters and setters. The class starts the same as it was the last time we looked at it.</p>
+<p>Getters and setters work in pairs. A getter returns the current value of the variable and its corresponding setter changes the value of the variable to the one it defines.</p>
+<p>The modified <code>Teacher</code> class looks like this:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb20-1" title="1"><span class="kw">class</span> Teacher <span class="kw">extends</span> Person <span class="op">{</span></a>
+<a class="sourceLine" id="cb20-2" title="2">  <span class="at">constructor</span>(first<span class="op">,</span> last<span class="op">,</span> age<span class="op">,</span> gender<span class="op">,</span> interests<span class="op">,</span> subject<span class="op">,</span> grade) <span class="op">{</span></a>
+<a class="sourceLine" id="cb20-3" title="3">    <span class="kw">super</span>(first<span class="op">,</span> last<span class="op">,</span> age<span class="op">,</span> gender<span class="op">,</span> interests)<span class="op">;</span></a>
+<a class="sourceLine" id="cb20-4" title="4">    <span class="co">// subject and grade are specific to Teacher</span></a>
+<a class="sourceLine" id="cb20-5" title="5">    <span class="kw">this</span>.<span class="at">_subject</span> <span class="op">=</span> subject<span class="op">;</span></a>
+<a class="sourceLine" id="cb20-6" title="6">    <span class="kw">this</span>.<span class="at">grade</span> <span class="op">=</span> grade<span class="op">;</span></a>
+<a class="sourceLine" id="cb20-7" title="7">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb20-8" title="8"></a>
+<a class="sourceLine" id="cb20-9" title="9">  get <span class="at">subject</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb20-10" title="10">    <span class="cf">return</span> <span class="kw">this</span>.<span class="at">_subject</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb20-11" title="11">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb20-12" title="12"></a>
+<a class="sourceLine" id="cb20-13" title="13">  set <span class="at">subject</span>(newSubject) <span class="op">{</span></a>
+<a class="sourceLine" id="cb20-14" title="14">    <span class="kw">this</span>.<span class="at">_subject</span> <span class="op">=</span> newSubject<span class="op">;</span></a>
+<a class="sourceLine" id="cb20-15" title="15">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb20-16" title="16"><span class="op">}</span></a></code></pre></div>
+<p>In our class above we have a getter and setter for the <code>subject</code> property. We use <strong><code>_</code></strong> to create a separate value in which to store our name property. Without using this convention, we would get errors every time we called get or set. At this point:</p>
+<ul>
+<li>To show the current value of the <code>_subject</code> property of the <code>snape</code> object we can use the <code>snape.subject</code> getter method.</li>
+<li>To assign a new value to the <code>_subject</code> property we can use the <code>snape.subject="new value"</code> setter method.</li>
+</ul>
+<p>The example below shows the two features in action:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb21-1" title="1"><span class="co">// Check the default value</span></a>
+<a class="sourceLine" id="cb21-2" title="2"><span class="va">console</span>.<span class="at">log</span>(<span class="va">snape</span>.<span class="at">subject</span>) <span class="co">// Returns &quot;Dark arts&quot;</span></a>
+<a class="sourceLine" id="cb21-3" title="3"></a>
+<a class="sourceLine" id="cb21-4" title="4"><span class="co">// Change the value</span></a>
+<a class="sourceLine" id="cb21-5" title="5"><span class="va">snape</span>.<span class="at">subject</span> <span class="op">=</span> <span class="st">&quot;Balloon animals&quot;</span> <span class="co">// Sets _subject to &quot;Balloon animals&quot;</span></a>
+<a class="sourceLine" id="cb21-6" title="6"></a>
+<a class="sourceLine" id="cb21-7" title="7"><span class="co">// Check it again and see if it matches the new value</span></a>
+<a class="sourceLine" id="cb21-8" title="8"><span class="va">console</span>.<span class="at">log</span>(<span class="va">snape</span>.<span class="at">subject</span>) <span class="co">// Returns &quot;Balloon animals&quot;</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> You can find this example on GitHub as <a href="https://github.com/mdn/learning-area/blob/master/javascript/oojs/advanced/es2015-getters-setters.html">es2015-getters-setters.html</a> (<a href="https://mdn.github.io/learning-area/javascript/oojs/advanced/es2015-getters-setters.html">see it live also</a>).</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> Getters and setters can be very useful at times, for example when you want to run some code every time a property is requested or set. For simple cases, however, plain property access without a getter or setter will do just fine.</p>
+</blockquote>
+<h2 id="when-would-you-use-inheritance-in-javascript">When would you use inheritance in JavaScript?</h2>
+<p>Particularly after this last article, you might be thinking “woo, this is complicated”. Well, you are right. Prototypes and inheritance represent some of the most complex aspects of JavaScript, but a lot of JavaScript’s power and flexibility comes from its object structure and inheritance, and it is worth understanding how it works.</p>
+<p>In a way, you use inheritance all the time. Whenever you use various features of a Web API , or methods/properties defined on a built-in browser object that you call on your strings, arrays, etc., you are implicitly using inheritance.</p>
+<p>In terms of using inheritance in your own code, you probably won’t use it often, especially to begin with, and in small projects. It is a waste of time to use objects and inheritance just for the sake of it when you don’t need them. But as your code bases get larger, you are more likely to find a need for it. If you find yourself starting to create a number of objects that have similar features, then creating a generic object type to contain all the shared functionality and inheriting those features in more specialized object types can be convenient and useful.</p>
+<blockquote>
+<p><strong>Note:</strong> Because of the way JavaScript works, with the prototype chain, etc., the sharing of functionality between objects is often called <strong>delegation</strong>. Specialized objects delegate functionality to a generic object type.</p>
+</blockquote>
+<p>When using inheritance, you are advised to not have too many levels of inheritance, and to keep careful track of where you define your methods and properties. It is possible to start writing code that temporarily modifies the prototypes of built-in browser objects, but you should not do this unless you have a really good reason. Too much inheritance can lead to endless confusion, and endless pain when you try to debug such code.</p>
+<p>Ultimately, objects are just another form of code reuse, like functions or loops, with their own specific roles and advantages. If you find yourself creating a bunch of related variables and functions and want to track them all together and package them neatly, an object is a good idea. Objects are also very useful when you want to pass a collection of data from one place to another. Both of these things can be achieved without use of constructors or inheritance. If you only need a single instance of an object, then you are probably better off just using an object literal, and you certainly don’t need inheritance.</p>
+<h2 id="alternatives-for-extending-the-prototype-chain">Alternatives for extending the prototype chain</h2>
+<p>In JavaScript, there are several different ways to extend the prototype of an object aside from what we’ve shown above. To find out more about the other ways, visit our <a href="/en-US/docs/Web/JavaScript/Inheritance_and_the_prototype_chain#different_ways_to_create_objects_and_the_resulting_prototype_chain">Inheritance and the prototype chain</a> article.</p>
+<h2 id="test-your-skills">Test your skills!</h2>
+<p>You’ve reached the end of this article, but can you remember the most important information? You can find some further tests to verify that you’ve retained this information before you move on — see <a href="/en-US/docs/Learn/JavaScript/Objects/Test_your_skills:_Object-oriented_JavaScript">Test your skills: Object-oriented JavaScript</a>.</p>
+<h2 id="summary">Summary</h2>
+<p>This article has covered the remainder of the core OOJS theory and syntax that we think you should know now. At this point you should understand JavaScript object and OOP basics, prototypes and prototypal inheritance, how to create classes (constructors) and object instances, add features to classes, and create subclasses that inherit from other classes.</p>
+<p>In the next article we’ll have a look at how to work with JavaScript Object Notation (JSON), a common data exchange format written using JavaScript objects.</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="http://www.objectplayground.com/">ObjectPlayground.com</a> — A really useful interactive learning site for learning about objects.</li>
+<li><a href="https://www.manning.com/books/secrets-of-the-javascript-ninja-second-edition">Secrets of the JavaScript Ninja</a>, Chapter 7 — A good book on advanced JavaScript concepts and techniques, by John Resig, Bear Bibeault, and Josip Maras. Chapter 7 covers aspects of prototypes and inheritance really well; you can probably track down a print or online copy fairly easily.</li>
+<li><a href="https://github.com/getify/You-Dont-Know-JS/blob/1st-ed/this%20%26%20object%20prototypes/README.md">You Don’t Know JS: this &amp; Object Prototypes</a> — Part of Kyle Simpson’s excellent series of JavaScript manuals, Chapter 5 in particular looks at prototypes in much more detail than we do here. We’ve presented a simplified view in this series of articles aimed at beginners, whereas Kyle goes into great depth and provides a more complex but more accurate picture.</li>
+</ul>
+<p>{{PreviousMenuNext(“Learn/JavaScript/Objects/Object_prototypes”, “Learn/JavaScript/Objects/JSON”, “Learn/JavaScript/Objects”)}}</p>
+<h2 id="in-this-module">In this module</h2>
+<ul>
+<li><a href="/en-US/docs/Learn/JavaScript/Objects/Basics">Object basics</a></li>
+<li><a href="/en-US/docs/Learn/JavaScript/Objects/Object-oriented_JS">Object-oriented JavaScript for beginners</a></li>
+<li><a href="/en-US/docs/Learn/JavaScript/Objects/Object_prototypes">Object prototypes</a></li>
+<li><a href="/en-US/docs/Learn/JavaScript/Objects/Inheritance">Inheritance in JavaScript</a></li>
+<li><a href="/en-US/docs/Learn/JavaScript/Objects/JSON">Working with JSON data</a></li>
+<li><a href="/en-US/docs/Learn/JavaScript/Objects/Object_building_practice">Object building practice</a></li>
+<li><a href="/en-US/docs/Learn/JavaScript/Objects/Adding_bouncing_balls_features">Adding features to our bouncing balls demo</a></li>
+</ul>

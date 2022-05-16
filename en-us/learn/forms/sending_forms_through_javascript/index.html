@@ -1,0 +1,323 @@
+<p>{{LearnSidebar}}</p>
+<p>HTML forms can send an <a href="/en-US/docs/Web/HTTP">HTTP</a> request declaratively. But forms can also prepare an HTTP request to send via JavaScript, for example via <code>XMLHttpRequest</code>. This article explores such approaches.</p>
+<h2 id="a-form-is-not-always-a-form">A form is not always a form</h2>
+<p>With progressive web apps, single page apps, and framework based apps, it’s common to use <a href="/en-US/docs/Learn/Forms">HTML forms</a> to send data without loading a new document when response data is received. Let’s first talk about why this requires a different approach.</p>
+<h3 id="gaining-control-of-the-global-interface">Gaining control of the global interface</h3>
+<p>Standard HTML form submission, as described in the previous article, loads the URL where the data was sent, which means the browser window navigates with a full page load. Avoiding a full page load can provide a smoother experience by avoiding network lag, and possible visual issues like flickering.</p>
+<p>Many modern UIs only use HTML forms to collect input from the user, and not for data submission. When the user tries to send the data, the application takes control and transmits the data asynchronously in the background, updating only the parts of the UI that require changes.</p>
+<p>Sending arbitrary data asynchronously is generally called <a href="/en-US/docs/Web/Guide/AJAX">AJAX</a>, which stands for <strong>“Asynchronous JavaScript And XML”</strong>.</p>
+<h3 id="how-is-it-different">How is it different?</h3>
+<p>The {{domxref(“XMLHttpRequest”)}} (XHR) DOM object can build HTTP requests, send them, and retrieve their results. Historically, {{domxref(“XMLHttpRequest”)}} was designed to fetch and send <a href="/en-US/docs/Web/XML">XML</a> as an exchange format, which has since been superseded by <a href="/en-US/docs/Glossary/JSON">JSON</a>. But neither XML nor JSON fit into form data request encoding. Form data (<code>application/x-www-form-urlencoded</code>) is made of URL-encoded lists of key/value pairs. For transmitting binary data, the HTTP request is reshaped into <code>multipart/form-data</code>.</p>
+<blockquote>
+<p><strong>Note:</strong> The <a href="/en-US/docs/Web/API/Fetch_API">Fetch API</a> is often used in place of XHR these days — it is a modern, updated version of XHR, which works in a similar fashion but has some advantages. Most of the XHR code you’ll see in this article could be swapped out for Fetch.</p>
+</blockquote>
+<p>If you control the front-end (the code that’s executed in the browser) and the back-end (the code which is executed on the server), you can send JSON/XML and process them however you want.</p>
+<p>But if you want to use a third party service, you need to send the data in the format the services require.</p>
+<p>So how should we send such data? The different techniques you’ll require are done below.</p>
+<h2 id="sending-form-data">Sending form data</h2>
+<p>There are 3 ways to send form data:</p>
+<ul>
+<li>Building an <code>XMLHttpRequest</code> manually.</li>
+<li>Using a standalone <code>FormData</code> object.</li>
+<li>Using <code>FormData</code> bound to a <code>&lt;form&gt;</code> element.</li>
+</ul>
+<p>Let’s look at them in detail.</p>
+<h3 id="building-an-xmlhttprequest-manually">Building an XMLHttpRequest manually</h3>
+<p>{{domxref(“XMLHttpRequest”)}} is the safest and most reliable way to make HTTP requests. To send form data with {{domxref(“XMLHttpRequest”)}}, prepare the data by URL-encoding it, and obey the specifics of form data requests.</p>
+<p>Let’s look at an example:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">&lt;button&gt;</span>Click Me!<span class="kw">&lt;/button&gt;</span></a></code></pre></div>
+<p>And now the JavaScript:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">const</span> btn <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;button&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="kw">function</span> <span class="at">sendData</span>( data ) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="va">console</span>.<span class="at">log</span>( <span class="st">&#39;Sending data&#39;</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="kw">const</span> XHR <span class="op">=</span> <span class="kw">new</span> <span class="at">XMLHttpRequest</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7"></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="kw">let</span> urlEncodedData <span class="op">=</span> <span class="st">&quot;&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-9" title="9">      urlEncodedDataPairs <span class="op">=</span> []<span class="op">,</span></a>
+<a class="sourceLine" id="cb2-10" title="10">      name<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-11" title="11"></a>
+<a class="sourceLine" id="cb2-12" title="12">  <span class="co">// Turn the data object into an array of URL-encoded key/value pairs.</span></a>
+<a class="sourceLine" id="cb2-13" title="13">  <span class="cf">for</span>( name <span class="kw">in</span> data ) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-14" title="14">    <span class="va">urlEncodedDataPairs</span>.<span class="at">push</span>( <span class="at">encodeURIComponent</span>( name ) <span class="op">+</span> <span class="st">&#39;=&#39;</span> <span class="op">+</span> <span class="at">encodeURIComponent</span>( data[name] ) )<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-15" title="15">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-16" title="16"></a>
+<a class="sourceLine" id="cb2-17" title="17">  <span class="co">// Combine the pairs into a single string and replace all %-encoded spaces to</span></a>
+<a class="sourceLine" id="cb2-18" title="18">  <span class="co">// the &#39;+&#39; character; matches the behavior of browser form submissions.</span></a>
+<a class="sourceLine" id="cb2-19" title="19">  urlEncodedData <span class="op">=</span> <span class="va">urlEncodedDataPairs</span>.<span class="at">join</span>( <span class="st">&#39;&amp;&#39;</span> ).<span class="at">replace</span>( <span class="ss">/%20/g</span><span class="op">,</span> <span class="st">&#39;+&#39;</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-20" title="20"></a>
+<a class="sourceLine" id="cb2-21" title="21">  <span class="co">// Define what happens on successful data submission</span></a>
+<a class="sourceLine" id="cb2-22" title="22">  <span class="va">XHR</span>.<span class="at">addEventListener</span>( <span class="st">&#39;load&#39;</span><span class="op">,</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-23" title="23">    <span class="at">alert</span>( <span class="st">&#39;Yeah! Data sent and response loaded.&#39;</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-24" title="24">  <span class="op">}</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-25" title="25"></a>
+<a class="sourceLine" id="cb2-26" title="26">  <span class="co">// Define what happens in case of error</span></a>
+<a class="sourceLine" id="cb2-27" title="27">  <span class="va">XHR</span>.<span class="at">addEventListener</span>( <span class="st">&#39;error&#39;</span><span class="op">,</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-28" title="28">    <span class="at">alert</span>( <span class="st">&#39;Oops! Something went wrong.&#39;</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-29" title="29">  <span class="op">}</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-30" title="30"></a>
+<a class="sourceLine" id="cb2-31" title="31">  <span class="co">// Set up our request</span></a>
+<a class="sourceLine" id="cb2-32" title="32">  <span class="va">XHR</span>.<span class="at">open</span>( <span class="st">&#39;POST&#39;</span><span class="op">,</span> <span class="st">&#39;https://example.com/cors.php&#39;</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-33" title="33"></a>
+<a class="sourceLine" id="cb2-34" title="34">  <span class="co">// Add the required HTTP header for form data POST requests</span></a>
+<a class="sourceLine" id="cb2-35" title="35">  <span class="va">XHR</span>.<span class="at">setRequestHeader</span>( <span class="st">&#39;Content-Type&#39;</span><span class="op">,</span> <span class="st">&#39;application/x-www-form-urlencoded&#39;</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-36" title="36"></a>
+<a class="sourceLine" id="cb2-37" title="37">  <span class="co">// Finally, send our data.</span></a>
+<a class="sourceLine" id="cb2-38" title="38">  <span class="va">XHR</span>.<span class="at">send</span>( urlEncodedData )<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-39" title="39"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-40" title="40"></a>
+<a class="sourceLine" id="cb2-41" title="41"><span class="va">btn</span>.<span class="at">addEventListener</span>( <span class="st">&#39;click&#39;</span><span class="op">,</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-42" title="42">  <span class="at">sendData</span>( <span class="op">{</span><span class="dt">test</span><span class="op">:</span><span class="st">&#39;ok&#39;</span><span class="op">}</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-43" title="43"><span class="op">}</span> )</a></code></pre></div>
+<p>Here’s the live result:</p>
+<p>{{EmbedLiveSample(“Building_an_XMLHttpRequest_manually”, “100%”, 50)}}</p>
+<blockquote>
+<p><strong>Note:</strong> This use of {{domxref(“XMLHttpRequest”)}} is subject to the {{glossary(‘same-origin policy’)}} if you want to send data to a third party web site. For cross-origin requests, you’ll need <a href="/en-US/docs/Web/HTTP/CORS">CORS and HTTP access control</a>.</p>
+</blockquote>
+<h3 id="using-xmlhttprequest-and-the-formdata-object">Using XMLHttpRequest and the FormData object</h3>
+<p>Building an HTTP request by hand can be overwhelming. Fortunately, the <a href="https://www.w3.org/TR/XMLHttpRequest/">XMLHttpRequest specification</a> provides a newer, simpler way to handle form data requests with the {{domxref(“FormData”,“FormData”)}} object.</p>
+<p>The {{domxref(“FormData”,“FormData”)}} object can be used to build form data for transmission, or to get the data within a form element to manage how it’s sent. Note that {{domxref(“FormData”,“FormData”)}} objects are “write only”, which means you can change them, but not retrieve their contents.</p>
+<p>Using this object is detailed in <a href="/en-US/docs/Web/API/FormData/Using_FormData_Objects">Using FormData Objects</a>, but here are two examples:</p>
+<h4 id="using-a-standalone-formdata-object">Using a standalone FormData object</h4>
+<div class="sourceCode" id="cb3"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">&lt;button&gt;</span>Click Me!<span class="kw">&lt;/button&gt;</span></a></code></pre></div>
+<p>You should be familiar with that HTML sample. Now for the JavaScript:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">const</span> btn <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;button&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-2" title="2"></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="kw">function</span> <span class="at">sendData</span>( data ) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-4" title="4">  <span class="kw">const</span> XHR <span class="op">=</span> <span class="kw">new</span> <span class="at">XMLHttpRequest</span>()<span class="op">,</span></a>
+<a class="sourceLine" id="cb4-5" title="5">        FD  <span class="op">=</span> <span class="kw">new</span> <span class="at">FormData</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-6" title="6"></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="co">// Push our data into our FormData object</span></a>
+<a class="sourceLine" id="cb4-8" title="8">  <span class="cf">for</span>( name <span class="kw">in</span> data ) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-9" title="9">    <span class="va">FD</span>.<span class="at">append</span>( name<span class="op">,</span> data[ name ] )<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-10" title="10">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-11" title="11"></a>
+<a class="sourceLine" id="cb4-12" title="12">  <span class="co">// Define what happens on successful data submission</span></a>
+<a class="sourceLine" id="cb4-13" title="13">  <span class="va">XHR</span>.<span class="at">addEventListener</span>( <span class="st">&#39;load&#39;</span><span class="op">,</span> <span class="kw">function</span>( event ) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-14" title="14">    <span class="at">alert</span>( <span class="st">&#39;Yeah! Data sent and response loaded.&#39;</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-15" title="15">  <span class="op">}</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-16" title="16"></a>
+<a class="sourceLine" id="cb4-17" title="17">  <span class="co">// Define what happens in case of error</span></a>
+<a class="sourceLine" id="cb4-18" title="18">  <span class="va">XHR</span>.<span class="at">addEventListener</span>(<span class="st">&#39; error&#39;</span><span class="op">,</span> <span class="kw">function</span>( event ) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-19" title="19">    <span class="at">alert</span>( <span class="st">&#39;Oops! Something went wrong.&#39;</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-20" title="20">  <span class="op">}</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-21" title="21"></a>
+<a class="sourceLine" id="cb4-22" title="22">  <span class="co">// Set up our request</span></a>
+<a class="sourceLine" id="cb4-23" title="23">  <span class="va">XHR</span>.<span class="at">open</span>( <span class="st">&#39;POST&#39;</span><span class="op">,</span> <span class="st">&#39;https://example.com/cors.php&#39;</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-24" title="24"></a>
+<a class="sourceLine" id="cb4-25" title="25">  <span class="co">// Send our FormData object; HTTP headers are set automatically</span></a>
+<a class="sourceLine" id="cb4-26" title="26">  <span class="va">XHR</span>.<span class="at">send</span>( FD )<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-27" title="27"><span class="op">}</span></a>
+<a class="sourceLine" id="cb4-28" title="28"></a>
+<a class="sourceLine" id="cb4-29" title="29"><span class="va">btn</span>.<span class="at">addEventListener</span>( <span class="st">&#39;click&#39;</span><span class="op">,</span> <span class="kw">function</span>()</a>
+<a class="sourceLine" id="cb4-30" title="30">  <span class="op">{</span> <span class="at">sendData</span>( <span class="op">{</span><span class="dt">test</span><span class="op">:</span><span class="st">&#39;ok&#39;</span><span class="op">}</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-31" title="31"><span class="op">}</span> )</a></code></pre></div>
+<p>Here’s the live result:</p>
+<p>{{EmbedLiveSample(“Using_a_standalone_FormData_object”, “100%”, 50)}}</p>
+<h4 id="using-formdata-bound-to-a-form-element">Using FormData bound to a form element</h4>
+<p>You can also bind a <code>FormData</code> object to an {{HTMLElement(“form”)}} element. This creates a <code>FormData</code> object that represents the data contained in the form.</p>
+<p>The HTML is typical:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">&lt;form</span><span class="ot"> id=</span><span class="st">&quot;myForm&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;myName&quot;</span><span class="kw">&gt;</span>Send me your name:<span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb5-3" title="3">  <span class="kw">&lt;input</span><span class="ot"> id=</span><span class="st">&quot;myName&quot;</span><span class="ot"> name=</span><span class="st">&quot;name&quot;</span><span class="ot"> value=</span><span class="st">&quot;John&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb5-4" title="4">  <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;submit&quot;</span><span class="ot"> value=</span><span class="st">&quot;Send Me!&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="kw">&lt;/form&gt;</span></a></code></pre></div>
+<p>But JavaScript takes over the form:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="va">window</span>.<span class="at">addEventListener</span>( <span class="st">&quot;load&quot;</span><span class="op">,</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="kw">function</span> <span class="at">sendData</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-3" title="3">    <span class="kw">const</span> XHR <span class="op">=</span> <span class="kw">new</span> <span class="at">XMLHttpRequest</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-4" title="4"></a>
+<a class="sourceLine" id="cb6-5" title="5">    <span class="co">// Bind the FormData object and the form element</span></a>
+<a class="sourceLine" id="cb6-6" title="6">    <span class="kw">const</span> FD <span class="op">=</span> <span class="kw">new</span> <span class="at">FormData</span>( form )<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-7" title="7"></a>
+<a class="sourceLine" id="cb6-8" title="8">    <span class="co">// Define what happens on successful data submission</span></a>
+<a class="sourceLine" id="cb6-9" title="9">    <span class="va">XHR</span>.<span class="at">addEventListener</span>( <span class="st">&quot;load&quot;</span><span class="op">,</span> <span class="kw">function</span>(event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-10" title="10">      <span class="at">alert</span>( <span class="va">event</span>.<span class="va">target</span>.<span class="at">responseText</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-11" title="11">    <span class="op">}</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-12" title="12"></a>
+<a class="sourceLine" id="cb6-13" title="13">    <span class="co">// Define what happens in case of error</span></a>
+<a class="sourceLine" id="cb6-14" title="14">    <span class="va">XHR</span>.<span class="at">addEventListener</span>( <span class="st">&quot;error&quot;</span><span class="op">,</span> <span class="kw">function</span>( event ) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-15" title="15">      <span class="at">alert</span>( <span class="st">&#39;Oops! Something went wrong.&#39;</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-16" title="16">    <span class="op">}</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-17" title="17"></a>
+<a class="sourceLine" id="cb6-18" title="18">    <span class="co">// Set up our request</span></a>
+<a class="sourceLine" id="cb6-19" title="19">    <span class="va">XHR</span>.<span class="at">open</span>( <span class="st">&quot;POST&quot;</span><span class="op">,</span> <span class="st">&quot;https://example.com/cors.php&quot;</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-20" title="20"></a>
+<a class="sourceLine" id="cb6-21" title="21">    <span class="co">// The data sent is what the user provided in the form</span></a>
+<a class="sourceLine" id="cb6-22" title="22">    <span class="va">XHR</span>.<span class="at">send</span>( FD )<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-23" title="23">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-24" title="24"></a>
+<a class="sourceLine" id="cb6-25" title="25">  <span class="co">// Access the form element...</span></a>
+<a class="sourceLine" id="cb6-26" title="26">  <span class="kw">const</span> form <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>( <span class="st">&quot;myForm&quot;</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-27" title="27"></a>
+<a class="sourceLine" id="cb6-28" title="28">  <span class="co">// ...and take over its submit event.</span></a>
+<a class="sourceLine" id="cb6-29" title="29">  <span class="va">form</span>.<span class="at">addEventListener</span>( <span class="st">&quot;submit&quot;</span><span class="op">,</span> <span class="kw">function</span> ( event ) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-30" title="30">    <span class="va">event</span>.<span class="at">preventDefault</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-31" title="31"></a>
+<a class="sourceLine" id="cb6-32" title="32">    <span class="at">sendData</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-33" title="33">  <span class="op">}</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-34" title="34"><span class="op">}</span> )<span class="op">;</span></a></code></pre></div>
+<p>Here’s the live result:</p>
+<p>{{EmbedLiveSample(“Using_FormData_bound_to_a_form_element”, “100%”, 50)}}</p>
+<p>You can even get more involved with the process by using the form’s {{domxref(“HTMLFormElement.elements”, “elements”)}} property to get a list of all of the data elements in the form and manually manage them one at a time. To learn more about that, see the example in {{SectionOnPage(“/en-US/docs/Web/API/HTMLFormElement.elements”, “Accessing the element list’s contents”)}}.</p>
+<h2 id="dealing-with-binary-data">Dealing with binary data</h2>
+<p>If you use a {{domxref(“FormData”,“FormData”)}} object with a form that includes <code>&lt;input type="file"&gt;</code> widgets, the data will be processed automatically. But to send binary data by hand, there’s extra work to do.</p>
+<p>There are many sources for binary data, including {{domxref(“FileReader”)}}, {{domxref(“HTMLCanvasElement”,“Canvas”)}}, and <a href="/en-US/docs/Web/API/Navigator/getUserMedia">WebRTC</a>. Unfortunately, some legacy browsers can’t access binary data or require complicated workarounds. To learn more about the <code>FileReader</code> API, see <a href="/en-US/docs/Web/API/File/Using_files_from_web_applications">Using files from web applications</a>.</p>
+<p>The least complicated way of sending binary data is by using {{domxref(“FormData”,“FormData”)}}’s <code>append()</code> method, demonstrated above. If you have to do it by hand, it’s trickier.</p>
+<p>In the following example, we use the {{domxref(“FileReader”)}} API to access binary data and then build the multi-part form data request by hand:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">&lt;form</span><span class="ot"> id=</span><span class="st">&quot;theForm&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="kw">&lt;p&gt;</span></a>
+<a class="sourceLine" id="cb7-3" title="3">    <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;theText&quot;</span><span class="kw">&gt;</span>text data:<span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb7-4" title="4">    <span class="kw">&lt;input</span><span class="ot"> id=</span><span class="st">&quot;theText&quot;</span><span class="ot"> name=</span><span class="st">&quot;myText&quot;</span><span class="ot"> value=</span><span class="st">&quot;Some text data&quot;</span><span class="ot"> type=</span><span class="st">&quot;text&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb7-5" title="5">  <span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb7-6" title="6">  <span class="kw">&lt;p&gt;</span></a>
+<a class="sourceLine" id="cb7-7" title="7">    <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;theFile&quot;</span><span class="kw">&gt;</span>file data:<span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb7-8" title="8">    <span class="kw">&lt;input</span><span class="ot"> id=</span><span class="st">&quot;theFile&quot;</span><span class="ot"> name=</span><span class="st">&quot;myFile&quot;</span><span class="ot"> type=</span><span class="st">&quot;file&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb7-9" title="9">  <span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb7-10" title="10">  <span class="kw">&lt;button&gt;</span>Send Me!<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb7-11" title="11"><span class="kw">&lt;/form&gt;</span></a></code></pre></div>
+<p>As you see, the HTML is a standard <code>&lt;form&gt;</code>. There’s nothing magical going on. The “magic” is in the JavaScript:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1"><span class="co">// Because we want to access DOM nodes,</span></a>
+<a class="sourceLine" id="cb8-2" title="2"><span class="co">// we initialize our script at page load.</span></a>
+<a class="sourceLine" id="cb8-3" title="3"><span class="va">window</span>.<span class="at">addEventListener</span>( <span class="st">&#39;load&#39;</span><span class="op">,</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-4" title="4"></a>
+<a class="sourceLine" id="cb8-5" title="5">  <span class="co">// These variables are used to store the form data</span></a>
+<a class="sourceLine" id="cb8-6" title="6">  <span class="kw">const</span> text <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>( <span class="st">&quot;theText&quot;</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-7" title="7">  <span class="kw">const</span> file <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-8" title="8">        <span class="dt">dom    </span><span class="op">:</span> <span class="va">document</span>.<span class="at">getElementById</span>( <span class="st">&quot;theFile&quot;</span> )<span class="op">,</span></a>
+<a class="sourceLine" id="cb8-9" title="9">        <span class="dt">binary </span><span class="op">:</span> <span class="kw">null</span></a>
+<a class="sourceLine" id="cb8-10" title="10">      <span class="op">};</span></a>
+<a class="sourceLine" id="cb8-11" title="11"></a>
+<a class="sourceLine" id="cb8-12" title="12">  <span class="co">// Use the FileReader API to access file content</span></a>
+<a class="sourceLine" id="cb8-13" title="13">  <span class="kw">const</span> reader <span class="op">=</span> <span class="kw">new</span> <span class="at">FileReader</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-14" title="14"></a>
+<a class="sourceLine" id="cb8-15" title="15">  <span class="co">// Because FileReader is asynchronous, store its</span></a>
+<a class="sourceLine" id="cb8-16" title="16">  <span class="co">// result when it finishes to read the file</span></a>
+<a class="sourceLine" id="cb8-17" title="17">  <span class="va">reader</span>.<span class="at">addEventListener</span>( <span class="st">&quot;load&quot;</span><span class="op">,</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-18" title="18">    <span class="va">file</span>.<span class="at">binary</span> <span class="op">=</span> <span class="va">reader</span>.<span class="at">result</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-19" title="19">  <span class="op">}</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-20" title="20"></a>
+<a class="sourceLine" id="cb8-21" title="21">  <span class="co">// At page load, if a file is already selected, read it.</span></a>
+<a class="sourceLine" id="cb8-22" title="22">  <span class="cf">if</span>( <span class="va">file</span>.<span class="va">dom</span>.<span class="at">files</span>[<span class="dv">0</span>] ) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-23" title="23">    <span class="va">reader</span>.<span class="at">readAsBinaryString</span>( <span class="va">file</span>.<span class="va">dom</span>.<span class="at">files</span>[<span class="dv">0</span>] )<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-24" title="24">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb8-25" title="25"></a>
+<a class="sourceLine" id="cb8-26" title="26">  <span class="co">// If not, read the file once the user selects it.</span></a>
+<a class="sourceLine" id="cb8-27" title="27">  <span class="va">file</span>.<span class="va">dom</span>.<span class="at">addEventListener</span>( <span class="st">&quot;change&quot;</span><span class="op">,</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-28" title="28">    <span class="cf">if</span>( <span class="va">reader</span>.<span class="at">readyState</span> <span class="op">===</span> <span class="va">FileReader</span>.<span class="at">LOADING</span> ) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-29" title="29">      <span class="va">reader</span>.<span class="at">abort</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-30" title="30">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb8-31" title="31"></a>
+<a class="sourceLine" id="cb8-32" title="32">    <span class="va">reader</span>.<span class="at">readAsBinaryString</span>( <span class="va">file</span>.<span class="va">dom</span>.<span class="at">files</span>[<span class="dv">0</span>] )<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-33" title="33">  <span class="op">}</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-34" title="34"></a>
+<a class="sourceLine" id="cb8-35" title="35">  <span class="co">// sendData is our main function</span></a>
+<a class="sourceLine" id="cb8-36" title="36">  <span class="kw">function</span> <span class="at">sendData</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-37" title="37">    <span class="co">// If there is a selected file, wait it is read</span></a>
+<a class="sourceLine" id="cb8-38" title="38">    <span class="co">// If there is not, delay the execution of the function</span></a>
+<a class="sourceLine" id="cb8-39" title="39">    <span class="cf">if</span>( <span class="op">!</span><span class="va">file</span>.<span class="at">binary</span> <span class="op">&amp;&amp;</span> <span class="va">file</span>.<span class="va">dom</span>.<span class="va">files</span>.<span class="at">length</span> <span class="op">&gt;</span> <span class="dv">0</span> ) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-40" title="40">      <span class="at">setTimeout</span>( sendData<span class="op">,</span> <span class="dv">10</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-41" title="41">      <span class="cf">return</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-42" title="42">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb8-43" title="43"></a>
+<a class="sourceLine" id="cb8-44" title="44">    <span class="co">// To construct our multipart form data request,</span></a>
+<a class="sourceLine" id="cb8-45" title="45">    <span class="co">// We need an XMLHttpRequest instance</span></a>
+<a class="sourceLine" id="cb8-46" title="46">    <span class="kw">const</span> XHR <span class="op">=</span> <span class="kw">new</span> <span class="at">XMLHttpRequest</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-47" title="47"></a>
+<a class="sourceLine" id="cb8-48" title="48">    <span class="co">// We need a separator to define each part of the request</span></a>
+<a class="sourceLine" id="cb8-49" title="49">    <span class="kw">const</span> boundary <span class="op">=</span> <span class="st">&quot;blob&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-50" title="50"></a>
+<a class="sourceLine" id="cb8-51" title="51">    <span class="co">// Store our body request in a string.</span></a>
+<a class="sourceLine" id="cb8-52" title="52">    <span class="kw">let</span> data <span class="op">=</span> <span class="st">&quot;&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-53" title="53"></a>
+<a class="sourceLine" id="cb8-54" title="54">    <span class="co">// So, if the user has selected a file</span></a>
+<a class="sourceLine" id="cb8-55" title="55">    <span class="cf">if</span> ( <span class="va">file</span>.<span class="va">dom</span>.<span class="at">files</span>[<span class="dv">0</span>] ) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-56" title="56">      <span class="co">// Start a new part in our body&#39;s request</span></a>
+<a class="sourceLine" id="cb8-57" title="57">      data <span class="op">+=</span> <span class="st">&quot;--&quot;</span> <span class="op">+</span> boundary <span class="op">+</span> <span class="st">&quot;</span><span class="sc">\r\n</span><span class="st">&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-58" title="58"></a>
+<a class="sourceLine" id="cb8-59" title="59">      <span class="co">// Describe it as form data</span></a>
+<a class="sourceLine" id="cb8-60" title="60">      data <span class="op">+=</span> <span class="st">&#39;content-disposition: form-data; &#39;</span></a>
+<a class="sourceLine" id="cb8-61" title="61">      <span class="co">// Define the name of the form data</span></a>
+<a class="sourceLine" id="cb8-62" title="62">            <span class="op">+</span> <span class="st">&#39;name=&quot;&#39;</span>         <span class="op">+</span> <span class="va">file</span>.<span class="va">dom</span>.<span class="at">name</span>          <span class="op">+</span> <span class="st">&#39;&quot;; &#39;</span></a>
+<a class="sourceLine" id="cb8-63" title="63">      <span class="co">// Provide the real name of the file</span></a>
+<a class="sourceLine" id="cb8-64" title="64">            <span class="op">+</span> <span class="st">&#39;filename=&quot;&#39;</span>     <span class="op">+</span> <span class="va">file</span>.<span class="va">dom</span>.<span class="at">files</span>[<span class="dv">0</span>].<span class="at">name</span> <span class="op">+</span> <span class="st">&#39;&quot;</span><span class="sc">\r\n</span><span class="st">&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-65" title="65">      <span class="co">// And the MIME type of the file</span></a>
+<a class="sourceLine" id="cb8-66" title="66">      data <span class="op">+=</span> <span class="st">&#39;Content-Type: &#39;</span> <span class="op">+</span> <span class="va">file</span>.<span class="va">dom</span>.<span class="at">files</span>[<span class="dv">0</span>].<span class="at">type</span> <span class="op">+</span> <span class="st">&#39;</span><span class="sc">\r\n</span><span class="st">&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-67" title="67"></a>
+<a class="sourceLine" id="cb8-68" title="68">      <span class="co">// There&#39;s a blank line between the metadata and the data</span></a>
+<a class="sourceLine" id="cb8-69" title="69">      data <span class="op">+=</span> <span class="st">&#39;</span><span class="sc">\r\n</span><span class="st">&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-70" title="70"></a>
+<a class="sourceLine" id="cb8-71" title="71">      <span class="co">// Append the binary data to our body&#39;s request</span></a>
+<a class="sourceLine" id="cb8-72" title="72">      data <span class="op">+=</span> <span class="va">file</span>.<span class="at">binary</span> <span class="op">+</span> <span class="st">&#39;</span><span class="sc">\r\n</span><span class="st">&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-73" title="73">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb8-74" title="74"></a>
+<a class="sourceLine" id="cb8-75" title="75">    <span class="co">// Text data is simpler</span></a>
+<a class="sourceLine" id="cb8-76" title="76">    <span class="co">// Start a new part in our body&#39;s request</span></a>
+<a class="sourceLine" id="cb8-77" title="77">    data <span class="op">+=</span> <span class="st">&quot;--&quot;</span> <span class="op">+</span> boundary <span class="op">+</span> <span class="st">&quot;</span><span class="sc">\r\n</span><span class="st">&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-78" title="78"></a>
+<a class="sourceLine" id="cb8-79" title="79">    <span class="co">// Say it&#39;s form data, and name it</span></a>
+<a class="sourceLine" id="cb8-80" title="80">    data <span class="op">+=</span> <span class="st">&#39;content-disposition: form-data; name=&quot;&#39;</span> <span class="op">+</span> <span class="va">text</span>.<span class="at">name</span> <span class="op">+</span> <span class="st">&#39;&quot;</span><span class="sc">\r\n</span><span class="st">&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-81" title="81">    <span class="co">// There&#39;s a blank line between the metadata and the data</span></a>
+<a class="sourceLine" id="cb8-82" title="82">    data <span class="op">+=</span> <span class="st">&#39;</span><span class="sc">\r\n</span><span class="st">&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-83" title="83"></a>
+<a class="sourceLine" id="cb8-84" title="84">    <span class="co">// Append the text data to our body&#39;s request</span></a>
+<a class="sourceLine" id="cb8-85" title="85">    data <span class="op">+=</span> <span class="va">text</span>.<span class="at">value</span> <span class="op">+</span> <span class="st">&quot;</span><span class="sc">\r\n</span><span class="st">&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-86" title="86"></a>
+<a class="sourceLine" id="cb8-87" title="87">    <span class="co">// Once we are done, &quot;close&quot; the body&#39;s request</span></a>
+<a class="sourceLine" id="cb8-88" title="88">    data <span class="op">+=</span> <span class="st">&quot;--&quot;</span> <span class="op">+</span> boundary <span class="op">+</span> <span class="st">&quot;--&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-89" title="89"></a>
+<a class="sourceLine" id="cb8-90" title="90">    <span class="co">// Define what happens on successful data submission</span></a>
+<a class="sourceLine" id="cb8-91" title="91">    <span class="va">XHR</span>.<span class="at">addEventListener</span>( <span class="st">&#39;load&#39;</span><span class="op">,</span> <span class="kw">function</span>( event ) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-92" title="92">      <span class="at">alert</span>( <span class="st">&#39;Yeah! Data sent and response loaded.&#39;</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-93" title="93">    <span class="op">}</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-94" title="94"></a>
+<a class="sourceLine" id="cb8-95" title="95">    <span class="co">// Define what happens in case of error</span></a>
+<a class="sourceLine" id="cb8-96" title="96">    <span class="va">XHR</span>.<span class="at">addEventListener</span>( <span class="st">&#39;error&#39;</span><span class="op">,</span> <span class="kw">function</span>( event ) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-97" title="97">      <span class="at">alert</span>( <span class="st">&#39;Oops! Something went wrong.&#39;</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-98" title="98">    <span class="op">}</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-99" title="99"></a>
+<a class="sourceLine" id="cb8-100" title="100">    <span class="co">// Set up our request</span></a>
+<a class="sourceLine" id="cb8-101" title="101">    <span class="va">XHR</span>.<span class="at">open</span>( <span class="st">&#39;POST&#39;</span><span class="op">,</span> <span class="st">&#39;https://example.com/cors.php&#39;</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-102" title="102"></a>
+<a class="sourceLine" id="cb8-103" title="103">    <span class="co">// Add the required HTTP header to handle a multipart form data POST request</span></a>
+<a class="sourceLine" id="cb8-104" title="104">    <span class="va">XHR</span>.<span class="at">setRequestHeader</span>( <span class="st">&#39;Content-Type&#39;</span><span class="op">,</span><span class="st">&#39;multipart/form-data; boundary=&#39;</span> <span class="op">+</span> boundary )<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-105" title="105"></a>
+<a class="sourceLine" id="cb8-106" title="106">    <span class="co">// And finally, send our data.</span></a>
+<a class="sourceLine" id="cb8-107" title="107">    <span class="va">XHR</span>.<span class="at">send</span>( data )<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-108" title="108">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb8-109" title="109"></a>
+<a class="sourceLine" id="cb8-110" title="110">  <span class="co">// Access our form...</span></a>
+<a class="sourceLine" id="cb8-111" title="111">  <span class="kw">const</span> form <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>( <span class="st">&quot;theForm&quot;</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-112" title="112"></a>
+<a class="sourceLine" id="cb8-113" title="113">  <span class="co">// ...to take over the submit event</span></a>
+<a class="sourceLine" id="cb8-114" title="114">  <span class="va">form</span>.<span class="at">addEventListener</span>( <span class="st">&#39;submit&#39;</span><span class="op">,</span> <span class="kw">function</span> ( event ) <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-115" title="115">    <span class="va">event</span>.<span class="at">preventDefault</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-116" title="116">    <span class="at">sendData</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-117" title="117">  <span class="op">}</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-118" title="118"><span class="op">}</span> )<span class="op">;</span></a></code></pre></div>
+<p>Here’s the live result:</p>
+<p>{{EmbedLiveSample(“Dealing_with_binary_data”, “100%”, 150)}}</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>Depending on the browser and the type of data you are dealing with, sending form data through JavaScript can be easy or difficult. The {{domxref(“FormData”,“FormData”)}} object is generally the answer, and you can use a <a href="https://github.com/jimmywarting/FormData">polyfill</a> for it on legacy browsers.</p>
+<h2 id="see-also">See also</h2>
+<h3 id="learning-path">Learning path</h3>
+<ul>
+<li><a href="/en-US/docs/Learn/Forms/Your_first_form">Your first HTML form</a></li>
+<li><a href="/en-US/docs/Learn/Forms/How_to_structure_a_web_form">How to structure an HTML form</a></li>
+<li><a href="/en-US/docs/Learn/Forms/Basic_native_form_controls">The native form widgets</a></li>
+<li><a href="/en-US/docs/Learn/Forms/HTML5_input_types">HTML5 input types</a></li>
+<li><a href="/en-US/docs/Learn/Forms/Other_form_controls">Additional form controls</a></li>
+<li><a href="/en-US/docs/Learn/Forms/UI_pseudo-classes">UI pseudo-classes</a></li>
+<li><a href="/en-US/docs/Learn/Forms/Styling_web_forms">Styling HTML forms</a></li>
+<li><a href="/en-US/docs/Learn/Forms/Form_validation">Form data validation</a></li>
+<li><a href="/en-US/docs/Learn/Forms/Sending_and_retrieving_form_data">Sending form data</a></li>
+</ul>
+<h3 id="advanced-topics">Advanced Topics</h3>
+<ul>
+<li><a href="/en-US/docs/Learn/Forms/Sending_forms_through_JavaScript">Sending forms through JavaScript</a></li>
+<li><a href="/en-US/docs/Learn/Forms/How_to_build_custom_form_controls">How to build custom form widgets</a></li>
+<li><a href="/en-US/docs/Learn/Forms/HTML_forms_in_legacy_browsers">HTML forms in legacy browsers</a></li>
+<li><a href="/en-US/docs/Learn/Forms/Advanced_form_styling">Advanced styling for HTML forms</a></li>
+<li><a href="/en-US/docs/Learn/Forms/Property_compatibility_table_for_form_controls">Property compatibility table for form widgets</a></li>
+</ul>

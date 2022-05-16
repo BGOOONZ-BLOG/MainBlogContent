@@ -1,0 +1,49 @@
+<p>Next we’ll implement our book list page. This page needs to display a list of all books in the database along with their author, with each book title being a hyperlink to its associated book detail page.</p>
+<h2 id="controller">Controller</h2>
+<p>The book list controller function needs to get a list of all <code>Book</code> objects in the database, sort them, and then pass these to the template for rendering.</p>
+<p>Open <strong>/controllers/bookController.js</strong>. Find the exported <code>book_list()</code> controller method and replace it with the following code.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="co">// Display list of all Books.</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="va">exports</span>.<span class="at">book_list</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res<span class="op">,</span> next) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-3" title="3"></a>
+<a class="sourceLine" id="cb1-4" title="4">  <span class="va">Book</span>.<span class="at">find</span>(<span class="op">{},</span> <span class="st">&#39;title author&#39;</span>)</a>
+<a class="sourceLine" id="cb1-5" title="5">    .<span class="at">sort</span>(<span class="op">{</span><span class="dt">title </span><span class="op">:</span> <span class="dv">1</span><span class="op">}</span>)</a>
+<a class="sourceLine" id="cb1-6" title="6">    .<span class="at">populate</span>(<span class="st">&#39;author&#39;</span>)</a>
+<a class="sourceLine" id="cb1-7" title="7">    .<span class="at">exec</span>(<span class="kw">function</span> (err<span class="op">,</span> list_books) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-8" title="8">      <span class="cf">if</span> (err) <span class="op">{</span> <span class="cf">return</span> <span class="at">next</span>(err)<span class="op">;</span> <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-9" title="9">      <span class="co">//Successful, so render</span></a>
+<a class="sourceLine" id="cb1-10" title="10">      <span class="va">res</span>.<span class="at">render</span>(<span class="st">&#39;book_list&#39;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">title</span><span class="op">:</span> <span class="st">&#39;Book List&#39;</span><span class="op">,</span> <span class="dt">book_list</span><span class="op">:</span> list_books <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-11" title="11">    <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-12" title="12"></a>
+<a class="sourceLine" id="cb1-13" title="13"><span class="op">};</span></a></code></pre></div>
+<p>The method uses the model’s <code>find()</code> function to return all <code>Book</code> objects, selecting to return only the <code>title</code> and <code>author</code> as we don’t need the other fields (it will also return the <code>_id</code> and virtual fields), and then sorts the results by the title alphabetically using the <code>sort()</code> method. Here we also call <code>populate()</code> on <code>Book</code>, specifying the <code>author</code> field—this will replace the stored book author id with the full author details.</p>
+<p>On success, the callback passed to the query renders the <strong>book_list</strong>(.pug) template, passing the <code>title</code> and <code>book_list</code> (list of books with authors) as variables.</p>
+<h2 id="view">View</h2>
+<p>Create <strong>/views/book_list.pug</strong> and copy in the text below.</p>
+<pre class="plain"><code>extends layout
+
+block content
+  h1= title
+
+  ul
+    each book in book_list
+      li
+        a(href=book.url) #{book.title}
+        |  (#{book.author.name})
+
+    else
+      li There are no books.</code></pre>
+<p>The view extends the <strong>layout.pug</strong> base template and overrides the <code>block</code> named ‘<strong>content</strong>’. It displays the <code>title</code> we passed in from the controller (via the <code>render()</code> method) and iterates through the <code>book_list</code> variable using the <code>each</code>-<code>in</code>-<code>else</code> syntax. A list item is created for each book displaying the book title as a link to the book’s detail page followed by the author name. If there are no books in the <code>book_list</code> then the <code>else</code> clause is executed, and displays the text ‘There are no books.’</p>
+<blockquote>
+<p><strong>Note:</strong> We use <code>book.url</code> to provide the link to the detail record for each book (we’ve implemented this route, but not the page yet). This is a virtual property of the <code>Book</code> model which uses the model instance’s <code>_id</code> field to produce a unique URL path.</p>
+</blockquote>
+<p>Of interest here is that each book is defined as two lines, using the pipe for the second line. This approach is needed because if the author name were on the previous line then it would be part of the hyperlink.</p>
+<h2 id="what-does-it-look-like">What does it look like?</h2>
+<p>Run the application (see <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/routes#testing_the_routes">Testing the routes</a> for the relevant commands) and open your browser to <a href="http://localhost:3000/" class="uri">http://localhost:3000/</a>. Then select the <em>All books</em> link. If everything is set up correctly, your site should look something like the following screenshot.</p>
+<figure>
+<img src="new_book_list.png" alt="Book List Page - Express Local Library site" /><figcaption>Book List Page - Express Local Library site</figcaption>
+</figure>
+<h2 id="next-steps">Next steps</h2>
+<ul>
+<li>Return to <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/Displaying_data">Express Tutorial Part 5: Displaying library data</a>.</li>
+<li>Proceed to the next subarticle of part 5: <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/Displaying_data/BookInstance_list_page">BookInstance list page</a>.</li>
+</ul>

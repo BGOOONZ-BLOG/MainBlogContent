@@ -1,0 +1,381 @@
+<p>This is the first example of code that explains <a href="/en-US/docs/Learn/Forms/How_to_build_custom_form_controls">how to build a custom form widget</a>.</p>
+<h2 id="basic-state">Basic state</h2>
+<h3 id="html">HTML</h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;select&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="kw">&lt;span</span><span class="ot"> class=</span><span class="st">&quot;value&quot;</span><span class="kw">&gt;</span>Cherry<span class="kw">&lt;/span&gt;</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="kw">&lt;ul</span><span class="ot"> class=</span><span class="st">&quot;optList hidden&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb1-4" title="4">    <span class="kw">&lt;li</span><span class="ot"> class=</span><span class="st">&quot;option&quot;</span><span class="kw">&gt;</span>Cherry<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb1-5" title="5">    <span class="kw">&lt;li</span><span class="ot"> class=</span><span class="st">&quot;option&quot;</span><span class="kw">&gt;</span>Lemon<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb1-6" title="6">    <span class="kw">&lt;li</span><span class="ot"> class=</span><span class="st">&quot;option&quot;</span><span class="kw">&gt;</span>Banana<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb1-7" title="7">    <span class="kw">&lt;li</span><span class="ot"> class=</span><span class="st">&quot;option&quot;</span><span class="kw">&gt;</span>Strawberry<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb1-8" title="8">    <span class="kw">&lt;li</span><span class="ot"> class=</span><span class="st">&quot;option&quot;</span><span class="kw">&gt;</span>Apple<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb1-9" title="9">  <span class="kw">&lt;/ul&gt;</span></a>
+<a class="sourceLine" id="cb1-10" title="10"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<h3 id="css">CSS</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb2-1" title="1"><span class="co">/* --------------- */</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="co">/* Required Styles */</span></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="co">/* --------------- */</span></a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="fu">.select</span> {</a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="kw">position</span>: <span class="dv">relative</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="kw">display</span> : <span class="dv">inline-block</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">}</a>
+<a class="sourceLine" id="cb2-9" title="9"></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="fu">.select.active</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="fu">.select</span><span class="in">:focus</span> {</a>
+<a class="sourceLine" id="cb2-12" title="12">  <span class="kw">box-shadow</span>: <span class="dv">0</span> <span class="dv">0</span> <span class="dv">3</span><span class="dt">px</span> <span class="dv">1</span><span class="dt">px</span> <span class="cn">#227755</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-13" title="13">  <span class="kw">outline</span>: <span class="dv">none</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" title="14">}</a>
+<a class="sourceLine" id="cb2-15" title="15"></a>
+<a class="sourceLine" id="cb2-16" title="16"><span class="fu">.select</span> <span class="fu">.optList</span> {</a>
+<a class="sourceLine" id="cb2-17" title="17">  <span class="kw">position</span>: <span class="dv">absolute</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">  <span class="kw">top</span>     : <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-19" title="19">  <span class="kw">left</span>    : <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-20" title="20">}</a>
+<a class="sourceLine" id="cb2-21" title="21"></a>
+<a class="sourceLine" id="cb2-22" title="22"><span class="fu">.select</span> <span class="fu">.optList.hidden</span> {</a>
+<a class="sourceLine" id="cb2-23" title="23">  <span class="kw">max-height</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-24" title="24">  <span class="kw">visibility</span>: <span class="dv">hidden</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-25" title="25">}</a>
+<a class="sourceLine" id="cb2-26" title="26"></a>
+<a class="sourceLine" id="cb2-27" title="27"><span class="co">/* ------------ */</span></a>
+<a class="sourceLine" id="cb2-28" title="28"><span class="co">/* Fancy Styles */</span></a>
+<a class="sourceLine" id="cb2-29" title="29"><span class="co">/* ------------ */</span></a>
+<a class="sourceLine" id="cb2-30" title="30"></a>
+<a class="sourceLine" id="cb2-31" title="31"><span class="fu">.select</span> {</a>
+<a class="sourceLine" id="cb2-32" title="32">  <span class="kw">font-size</span>   : <span class="dv">0.625</span><span class="dt">em</span><span class="op">;</span> <span class="co">/* 10px */</span></a>
+<a class="sourceLine" id="cb2-33" title="33">  <span class="kw">font-family</span> : Verdana<span class="op">,</span> Arial<span class="op">,</span> <span class="dv">sans-serif</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-34" title="34"></a>
+<a class="sourceLine" id="cb2-35" title="35">  <span class="kw">-moz-box-sizing</span> : <span class="dv">border-box</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-36" title="36">  <span class="kw">box-sizing</span> : <span class="dv">border-box</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-37" title="37"></a>
+<a class="sourceLine" id="cb2-38" title="38">  <span class="kw">padding</span> : <span class="dv">0.1</span><span class="dt">em</span> <span class="dv">2.5</span><span class="dt">em</span> <span class="dv">0.2</span><span class="dt">em</span> <span class="dv">0.5</span><span class="dt">em</span><span class="op">;</span> <span class="co">/* 1px 25px 2px 5px */</span></a>
+<a class="sourceLine" id="cb2-39" title="39">  <span class="kw">width</span>   : <span class="dv">10</span><span class="dt">em</span><span class="op">;</span> <span class="co">/* 100px */</span></a>
+<a class="sourceLine" id="cb2-40" title="40"></a>
+<a class="sourceLine" id="cb2-41" title="41">  <span class="kw">border</span>        : <span class="dv">0.2</span><span class="dt">em</span> <span class="dv">solid</span> <span class="cn">#000</span><span class="op">;</span> <span class="co">/* 2px */</span></a>
+<a class="sourceLine" id="cb2-42" title="42">  <span class="kw">border-radius</span> : <span class="dv">0.4</span><span class="dt">em</span><span class="op">;</span> <span class="co">/* 4px */</span></a>
+<a class="sourceLine" id="cb2-43" title="43"></a>
+<a class="sourceLine" id="cb2-44" title="44">  <span class="kw">box-shadow</span> : <span class="dv">0</span> <span class="dv">0.1</span><span class="dt">em</span> <span class="dv">0.2</span><span class="dt">em</span> <span class="fu">rgba(</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">,</span><span class="dv">.45</span><span class="fu">)</span><span class="op">;</span> <span class="co">/* 0 1px 2px */</span></a>
+<a class="sourceLine" id="cb2-45" title="45"></a>
+<a class="sourceLine" id="cb2-46" title="46">  <span class="kw">background</span> : <span class="cn">#F0F0F0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-47" title="47">  <span class="kw">background</span> : <span class="fu">linear-gradient(</span><span class="dv">0</span><span class="dt">deg</span><span class="op">,</span> <span class="cn">#E3E3E3</span><span class="op">,</span> <span class="cn">#fcfcfc</span> <span class="dv">50</span><span class="dt">%</span><span class="op">,</span> <span class="cn">#f0f0f0</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-48" title="48">}</a>
+<a class="sourceLine" id="cb2-49" title="49"></a>
+<a class="sourceLine" id="cb2-50" title="50"><span class="fu">.select</span> <span class="fu">.value</span> {</a>
+<a class="sourceLine" id="cb2-51" title="51">  <span class="kw">display</span>  : <span class="dv">inline-block</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-52" title="52">  <span class="kw">width</span>    : <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-53" title="53">  <span class="kw">overflow</span> : <span class="dv">hidden</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-54" title="54"></a>
+<a class="sourceLine" id="cb2-55" title="55">  <span class="kw">white-space</span>   : <span class="dv">nowrap</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-56" title="56">  <span class="kw">text-overflow</span> : <span class="dv">ellipsis</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-57" title="57">  <span class="kw">vertical-align</span>: <span class="dv">top</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-58" title="58">}</a>
+<a class="sourceLine" id="cb2-59" title="59"></a>
+<a class="sourceLine" id="cb2-60" title="60"><span class="fu">.select</span><span class="in">:after</span> {</a>
+<a class="sourceLine" id="cb2-61" title="61">  <span class="kw">content</span> : <span class="st">&quot;▼&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-62" title="62">  <span class="kw">position</span>: <span class="dv">absolute</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-63" title="63">  <span class="kw">z-index</span> : <span class="dv">1</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-64" title="64">  <span class="kw">height</span>  : <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-65" title="65">  <span class="kw">width</span>   : <span class="dv">2</span><span class="dt">em</span><span class="op">;</span> <span class="co">/* 20px */</span></a>
+<a class="sourceLine" id="cb2-66" title="66">  <span class="kw">top</span>     : <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-67" title="67">  <span class="kw">right</span>   : <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-68" title="68"></a>
+<a class="sourceLine" id="cb2-69" title="69">  <span class="kw">padding-top</span> : <span class="dv">.1</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-70" title="70"></a>
+<a class="sourceLine" id="cb2-71" title="71">  <span class="kw">-moz-box-sizing</span> : <span class="dv">border-box</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-72" title="72">  <span class="kw">box-sizing</span> : <span class="dv">border-box</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-73" title="73"></a>
+<a class="sourceLine" id="cb2-74" title="74">  <span class="kw">text-align</span> : <span class="dv">center</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-75" title="75"></a>
+<a class="sourceLine" id="cb2-76" title="76">  <span class="kw">border-left</span>  : <span class="dv">.2</span><span class="dt">em</span> <span class="dv">solid</span> <span class="cn">#000</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-77" title="77">  <span class="kw">border-radius</span>: <span class="dv">0</span> <span class="dv">.1</span><span class="dt">em</span> <span class="dv">.1</span><span class="dt">em</span> <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-78" title="78"></a>
+<a class="sourceLine" id="cb2-79" title="79">  <span class="kw">background-color</span> : <span class="cn">#000</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-80" title="80">  <span class="kw">color</span> : <span class="cn">#FFF</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-81" title="81">}</a>
+<a class="sourceLine" id="cb2-82" title="82"></a>
+<a class="sourceLine" id="cb2-83" title="83"><span class="fu">.select</span> <span class="fu">.optList</span> {</a>
+<a class="sourceLine" id="cb2-84" title="84">  <span class="kw">z-index</span> : <span class="dv">2</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-85" title="85"></a>
+<a class="sourceLine" id="cb2-86" title="86">  <span class="kw">list-style</span>: <span class="dv">none</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-87" title="87">  <span class="kw">margin</span> : <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-88" title="88">  <span class="kw">padding</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-89" title="89"></a>
+<a class="sourceLine" id="cb2-90" title="90">  <span class="kw">background</span>: <span class="cn">#f0f0f0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-91" title="91">  <span class="kw">border</span>: <span class="dv">.2</span><span class="dt">em</span> <span class="dv">solid</span> <span class="cn">#000</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-92" title="92">  <span class="kw">border-top-width</span> : <span class="dv">.1</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-93" title="93">  <span class="kw">border-radius</span>: <span class="dv">0</span> <span class="dv">0</span> <span class="dv">.4</span><span class="dt">em</span> <span class="dv">.4</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-94" title="94"></a>
+<a class="sourceLine" id="cb2-95" title="95">  <span class="kw">box-shadow</span>: <span class="dv">0</span> <span class="dv">.2</span><span class="dt">em</span> <span class="dv">.4</span><span class="dt">em</span> <span class="fu">rgba(</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">,</span><span class="dv">.4</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-96" title="96"></a>
+<a class="sourceLine" id="cb2-97" title="97">  <span class="kw">box-sizing</span> : <span class="dv">border-box</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-98" title="98"></a>
+<a class="sourceLine" id="cb2-99" title="99">  <span class="kw">min-width</span> : <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-100" title="100">  <span class="kw">max-height</span>: <span class="dv">10</span><span class="dt">em</span><span class="op">;</span> <span class="co">/* 100px */</span></a>
+<a class="sourceLine" id="cb2-101" title="101">  <span class="kw">overflow-y</span>: <span class="bu">auto</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-102" title="102">  <span class="kw">overflow-x</span>: <span class="dv">hidden</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-103" title="103">}</a>
+<a class="sourceLine" id="cb2-104" title="104"></a>
+<a class="sourceLine" id="cb2-105" title="105"><span class="fu">.select</span> <span class="fu">.option</span> {</a>
+<a class="sourceLine" id="cb2-106" title="106">  <span class="kw">padding</span>: <span class="dv">.2</span><span class="dt">em</span> <span class="dv">.3</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-107" title="107">}</a>
+<a class="sourceLine" id="cb2-108" title="108"></a>
+<a class="sourceLine" id="cb2-109" title="109"><span class="fu">.select</span> <span class="fu">.highlight</span> {</a>
+<a class="sourceLine" id="cb2-110" title="110">  <span class="kw">background</span>: <span class="cn">#000</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-111" title="111">  <span class="kw">color</span>: <span class="cn">#FFFFFF</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-112" title="112">}</a></code></pre></div>
+<h3 id="result-for-basic-state">Result for basic state</h3>
+<p>{{ EmbedLiveSample(‘Basic_state’, 120, 130) }}</p>
+<h2 id="active-state">Active state</h2>
+<h3 id="html-1">HTML</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;select active&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">&lt;span</span><span class="ot"> class=</span><span class="st">&quot;value&quot;</span><span class="kw">&gt;</span>Cherry<span class="kw">&lt;/span&gt;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="kw">&lt;ul</span><span class="ot"> class=</span><span class="st">&quot;optList hidden&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="kw">&lt;li</span><span class="ot"> class=</span><span class="st">&quot;option&quot;</span><span class="kw">&gt;</span>Cherry<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">    <span class="kw">&lt;li</span><span class="ot"> class=</span><span class="st">&quot;option&quot;</span><span class="kw">&gt;</span>Lemon<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb3-6" title="6">    <span class="kw">&lt;li</span><span class="ot"> class=</span><span class="st">&quot;option&quot;</span><span class="kw">&gt;</span>Banana<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">    <span class="kw">&lt;li</span><span class="ot"> class=</span><span class="st">&quot;option&quot;</span><span class="kw">&gt;</span>Strawberry<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">    <span class="kw">&lt;li</span><span class="ot"> class=</span><span class="st">&quot;option&quot;</span><span class="kw">&gt;</span>Apple<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">  <span class="kw">&lt;/ul&gt;</span></a>
+<a class="sourceLine" id="cb3-10" title="10"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<h3 id="css-1">CSS</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb4-1" title="1"><span class="co">/* --------------- */</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="co">/* Required Styles */</span></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="co">/* --------------- */</span></a>
+<a class="sourceLine" id="cb4-4" title="4"></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="fu">.select</span> {</a>
+<a class="sourceLine" id="cb4-6" title="6">  <span class="kw">position</span>: <span class="dv">relative</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-7" title="7">  <span class="kw">display</span> : <span class="dv">inline-block</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-8" title="8">}</a>
+<a class="sourceLine" id="cb4-9" title="9"></a>
+<a class="sourceLine" id="cb4-10" title="10"><span class="fu">.select.active</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb4-11" title="11"><span class="fu">.select</span><span class="in">:focus</span> {</a>
+<a class="sourceLine" id="cb4-12" title="12">  <span class="kw">box-shadow</span>: <span class="dv">0</span> <span class="dv">0</span> <span class="dv">3</span><span class="dt">px</span> <span class="dv">1</span><span class="dt">px</span> <span class="cn">#227755</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-13" title="13">  <span class="kw">outline</span>: <span class="dv">none</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-14" title="14">}</a>
+<a class="sourceLine" id="cb4-15" title="15"></a>
+<a class="sourceLine" id="cb4-16" title="16"><span class="fu">.select</span> <span class="fu">.optList</span> {</a>
+<a class="sourceLine" id="cb4-17" title="17">  <span class="kw">position</span>: <span class="dv">absolute</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-18" title="18">  <span class="kw">top</span>     : <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-19" title="19">  <span class="kw">left</span>    : <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-20" title="20">}</a>
+<a class="sourceLine" id="cb4-21" title="21"></a>
+<a class="sourceLine" id="cb4-22" title="22"><span class="fu">.select</span> <span class="fu">.optList.hidden</span> {</a>
+<a class="sourceLine" id="cb4-23" title="23">  <span class="kw">max-height</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-24" title="24">  <span class="kw">visibility</span>: <span class="dv">hidden</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-25" title="25">}</a>
+<a class="sourceLine" id="cb4-26" title="26"></a>
+<a class="sourceLine" id="cb4-27" title="27"><span class="co">/* ------------ */</span></a>
+<a class="sourceLine" id="cb4-28" title="28"><span class="co">/* Fancy Styles */</span></a>
+<a class="sourceLine" id="cb4-29" title="29"><span class="co">/* ------------ */</span></a>
+<a class="sourceLine" id="cb4-30" title="30"></a>
+<a class="sourceLine" id="cb4-31" title="31"><span class="fu">.select</span> {</a>
+<a class="sourceLine" id="cb4-32" title="32">  <span class="kw">font-size</span>   : <span class="dv">0.625</span><span class="dt">em</span><span class="op">;</span> <span class="co">/* 10px */</span></a>
+<a class="sourceLine" id="cb4-33" title="33">  <span class="kw">font-family</span> : Verdana<span class="op">,</span> Arial<span class="op">,</span> <span class="dv">sans-serif</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-34" title="34"></a>
+<a class="sourceLine" id="cb4-35" title="35">  <span class="kw">box-sizing</span> : <span class="dv">border-box</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-36" title="36"></a>
+<a class="sourceLine" id="cb4-37" title="37">  <span class="kw">padding</span> : <span class="dv">0.1</span><span class="dt">em</span> <span class="dv">2.5</span><span class="dt">em</span> <span class="dv">0.2</span><span class="dt">em</span> <span class="dv">0.5</span><span class="dt">em</span><span class="op">;</span> <span class="co">/* 1px 25px 2px 5px */</span></a>
+<a class="sourceLine" id="cb4-38" title="38">  <span class="kw">width</span>   : <span class="dv">10</span><span class="dt">em</span><span class="op">;</span> <span class="co">/* 100px */</span></a>
+<a class="sourceLine" id="cb4-39" title="39"></a>
+<a class="sourceLine" id="cb4-40" title="40">  <span class="kw">border</span>        : <span class="dv">0.2</span><span class="dt">em</span> <span class="dv">solid</span> <span class="cn">#000</span><span class="op">;</span> <span class="co">/* 2px */</span></a>
+<a class="sourceLine" id="cb4-41" title="41">  <span class="kw">border-radius</span> : <span class="dv">0.4</span><span class="dt">em</span><span class="op">;</span> <span class="co">/* 4px */</span></a>
+<a class="sourceLine" id="cb4-42" title="42"></a>
+<a class="sourceLine" id="cb4-43" title="43">  <span class="kw">box-shadow</span> : <span class="dv">0</span> <span class="dv">0.1</span><span class="dt">em</span> <span class="dv">0.2</span><span class="dt">em</span> <span class="fu">rgba(</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">,</span><span class="dv">.45</span><span class="fu">)</span><span class="op">;</span> <span class="co">/* 0 1px 2px */</span></a>
+<a class="sourceLine" id="cb4-44" title="44"></a>
+<a class="sourceLine" id="cb4-45" title="45">  <span class="kw">background</span> : <span class="cn">#F0F0F0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-46" title="46">  <span class="kw">background</span> : <span class="fu">linear-gradient(</span><span class="dv">0</span><span class="dt">deg</span><span class="op">,</span> <span class="cn">#E3E3E3</span><span class="op">,</span> <span class="cn">#fcfcfc</span> <span class="dv">50</span><span class="dt">%</span><span class="op">,</span> <span class="cn">#f0f0f0</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-47" title="47">}</a>
+<a class="sourceLine" id="cb4-48" title="48"></a>
+<a class="sourceLine" id="cb4-49" title="49"><span class="fu">.select</span> <span class="fu">.value</span> {</a>
+<a class="sourceLine" id="cb4-50" title="50">  <span class="kw">display</span>  : <span class="dv">inline-block</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-51" title="51">  <span class="kw">width</span>    : <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-52" title="52">  <span class="kw">overflow</span> : <span class="dv">hidden</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-53" title="53"></a>
+<a class="sourceLine" id="cb4-54" title="54">  <span class="kw">white-space</span>   : <span class="dv">nowrap</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-55" title="55">  <span class="kw">text-overflow</span> : <span class="dv">ellipsis</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-56" title="56">  <span class="kw">vertical-align</span>: <span class="dv">top</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-57" title="57">}</a>
+<a class="sourceLine" id="cb4-58" title="58"></a>
+<a class="sourceLine" id="cb4-59" title="59"><span class="fu">.select</span><span class="in">:after</span> {</a>
+<a class="sourceLine" id="cb4-60" title="60">  <span class="kw">content</span> : <span class="st">&quot;▼&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-61" title="61">  <span class="kw">position</span>: <span class="dv">absolute</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-62" title="62">  <span class="kw">z-index</span> : <span class="dv">1</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-63" title="63">  <span class="kw">height</span>  : <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-64" title="64">  <span class="kw">width</span>   : <span class="dv">2</span><span class="dt">em</span><span class="op">;</span> <span class="co">/* 20px */</span></a>
+<a class="sourceLine" id="cb4-65" title="65">  <span class="kw">top</span>     : <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-66" title="66">  <span class="kw">right</span>   : <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-67" title="67"></a>
+<a class="sourceLine" id="cb4-68" title="68">  <span class="kw">padding-top</span> : <span class="dv">.1</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-69" title="69"></a>
+<a class="sourceLine" id="cb4-70" title="70">  <span class="kw">-moz-box-sizing</span> : <span class="dv">border-box</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-71" title="71">  <span class="kw">box-sizing</span> : <span class="dv">border-box</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-72" title="72"></a>
+<a class="sourceLine" id="cb4-73" title="73">  <span class="kw">text-align</span> : <span class="dv">center</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-74" title="74"></a>
+<a class="sourceLine" id="cb4-75" title="75">  <span class="kw">border-left</span>  : <span class="dv">.2</span><span class="dt">em</span> <span class="dv">solid</span> <span class="cn">#000</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-76" title="76">  <span class="kw">border-radius</span>: <span class="dv">0</span> <span class="dv">.1</span><span class="dt">em</span> <span class="dv">.1</span><span class="dt">em</span> <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-77" title="77"></a>
+<a class="sourceLine" id="cb4-78" title="78">  <span class="kw">background-color</span> : <span class="cn">#000</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-79" title="79">  <span class="kw">color</span> : <span class="cn">#FFF</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-80" title="80">}</a>
+<a class="sourceLine" id="cb4-81" title="81"></a>
+<a class="sourceLine" id="cb4-82" title="82"><span class="fu">.select</span> <span class="fu">.optList</span> {</a>
+<a class="sourceLine" id="cb4-83" title="83">  <span class="kw">z-index</span> : <span class="dv">2</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-84" title="84"></a>
+<a class="sourceLine" id="cb4-85" title="85">  <span class="kw">list-style</span>: <span class="dv">none</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-86" title="86">  <span class="kw">margin</span> : <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-87" title="87">  <span class="kw">padding</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-88" title="88"></a>
+<a class="sourceLine" id="cb4-89" title="89">  <span class="kw">background</span>: <span class="cn">#f0f0f0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-90" title="90">  <span class="kw">border</span>: <span class="dv">.2</span><span class="dt">em</span> <span class="dv">solid</span> <span class="cn">#000</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-91" title="91">  <span class="kw">border-top-width</span> : <span class="dv">.1</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-92" title="92">  <span class="kw">border-radius</span>: <span class="dv">0</span> <span class="dv">0</span> <span class="dv">.4</span><span class="dt">em</span> <span class="dv">.4</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-93" title="93"></a>
+<a class="sourceLine" id="cb4-94" title="94">  <span class="kw">box-shadow</span>: <span class="dv">0</span> <span class="dv">.2</span><span class="dt">em</span> <span class="dv">.4</span><span class="dt">em</span> <span class="fu">rgba(</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">,</span><span class="dv">.4</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-95" title="95"></a>
+<a class="sourceLine" id="cb4-96" title="96">  <span class="kw">box-sizing</span> : <span class="dv">border-box</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-97" title="97"></a>
+<a class="sourceLine" id="cb4-98" title="98">  <span class="kw">min-width</span> : <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-99" title="99">  <span class="kw">max-height</span>: <span class="dv">10</span><span class="dt">em</span><span class="op">;</span> <span class="co">/* 100px */</span></a>
+<a class="sourceLine" id="cb4-100" title="100">  <span class="kw">overflow-y</span>: <span class="bu">auto</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-101" title="101">  <span class="kw">overflow-x</span>: <span class="dv">hidden</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-102" title="102">}</a>
+<a class="sourceLine" id="cb4-103" title="103"></a>
+<a class="sourceLine" id="cb4-104" title="104"><span class="fu">.select</span> <span class="fu">.option</span> {</a>
+<a class="sourceLine" id="cb4-105" title="105">  <span class="kw">padding</span>: <span class="dv">.2</span><span class="dt">em</span> <span class="dv">.3</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-106" title="106">}</a>
+<a class="sourceLine" id="cb4-107" title="107"></a>
+<a class="sourceLine" id="cb4-108" title="108"><span class="fu">.select</span> <span class="fu">.highlight</span> {</a>
+<a class="sourceLine" id="cb4-109" title="109">  <span class="kw">background</span>: <span class="cn">#000</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-110" title="110">  <span class="kw">color</span>: <span class="cn">#FFFFFF</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-111" title="111">}</a></code></pre></div>
+<h3 id="result-for-active-state">Result for active state</h3>
+<p>{{ EmbedLiveSample(‘Active_state’, 120, 130) }}</p>
+<h2 id="open-state">Open state</h2>
+<h3 id="html-2">HTML</h3>
+<div class="sourceCode" id="cb5"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;select active&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="kw">&lt;span</span><span class="ot"> class=</span><span class="st">&quot;value&quot;</span><span class="kw">&gt;</span>Cherry<span class="kw">&lt;/span&gt;</span></a>
+<a class="sourceLine" id="cb5-3" title="3">  <span class="kw">&lt;ul</span><span class="ot"> class=</span><span class="st">&quot;optList&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb5-4" title="4">    <span class="kw">&lt;li</span><span class="ot"> class=</span><span class="st">&quot;option highlight&quot;</span><span class="kw">&gt;</span>Cherry<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb5-5" title="5">    <span class="kw">&lt;li</span><span class="ot"> class=</span><span class="st">&quot;option&quot;</span><span class="kw">&gt;</span>Lemon<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb5-6" title="6">    <span class="kw">&lt;li</span><span class="ot"> class=</span><span class="st">&quot;option&quot;</span><span class="kw">&gt;</span>Banana<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb5-7" title="7">    <span class="kw">&lt;li</span><span class="ot"> class=</span><span class="st">&quot;option&quot;</span><span class="kw">&gt;</span>Strawberry<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb5-8" title="8">    <span class="kw">&lt;li</span><span class="ot"> class=</span><span class="st">&quot;option&quot;</span><span class="kw">&gt;</span>Apple<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb5-9" title="9">  <span class="kw">&lt;/ul&gt;</span></a>
+<a class="sourceLine" id="cb5-10" title="10"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+<h3 id="css-2">CSS</h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb6-1" title="1"><span class="co">/* --------------- */</span></a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="co">/* Required Styles */</span></a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="co">/* --------------- */</span></a>
+<a class="sourceLine" id="cb6-4" title="4"></a>
+<a class="sourceLine" id="cb6-5" title="5"><span class="fu">.select</span> {</a>
+<a class="sourceLine" id="cb6-6" title="6">  <span class="kw">position</span>: <span class="dv">relative</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-7" title="7">  <span class="kw">display</span> : <span class="dv">inline-block</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-8" title="8">}</a>
+<a class="sourceLine" id="cb6-9" title="9"></a>
+<a class="sourceLine" id="cb6-10" title="10"><span class="fu">.select.active</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb6-11" title="11"><span class="fu">.select</span><span class="in">:focus</span> {</a>
+<a class="sourceLine" id="cb6-12" title="12">  <span class="kw">box-shadow</span>: <span class="dv">0</span> <span class="dv">0</span> <span class="dv">3</span><span class="dt">px</span> <span class="dv">1</span><span class="dt">px</span> <span class="cn">#227755</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-13" title="13">  <span class="kw">outline</span>: <span class="dv">none</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-14" title="14">}</a>
+<a class="sourceLine" id="cb6-15" title="15"></a>
+<a class="sourceLine" id="cb6-16" title="16"><span class="fu">.select</span> <span class="fu">.optList</span> {</a>
+<a class="sourceLine" id="cb6-17" title="17">  <span class="kw">position</span>: <span class="dv">absolute</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-18" title="18">  <span class="kw">top</span>     : <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-19" title="19">  <span class="kw">left</span>    : <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-20" title="20">}</a>
+<a class="sourceLine" id="cb6-21" title="21"></a>
+<a class="sourceLine" id="cb6-22" title="22"><span class="fu">.select</span> <span class="fu">.optList.hidden</span> {</a>
+<a class="sourceLine" id="cb6-23" title="23">  <span class="kw">max-height</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-24" title="24">  <span class="kw">visibility</span>: <span class="dv">hidden</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-25" title="25">}</a>
+<a class="sourceLine" id="cb6-26" title="26"></a>
+<a class="sourceLine" id="cb6-27" title="27"><span class="co">/* ------------ */</span></a>
+<a class="sourceLine" id="cb6-28" title="28"><span class="co">/* Fancy Styles */</span></a>
+<a class="sourceLine" id="cb6-29" title="29"><span class="co">/* ------------ */</span></a>
+<a class="sourceLine" id="cb6-30" title="30"></a>
+<a class="sourceLine" id="cb6-31" title="31"><span class="fu">.select</span> {</a>
+<a class="sourceLine" id="cb6-32" title="32">  <span class="kw">font-size</span>   : <span class="dv">0.625</span><span class="dt">em</span><span class="op">;</span> <span class="co">/* 10px */</span></a>
+<a class="sourceLine" id="cb6-33" title="33">  <span class="kw">font-family</span> : Verdana<span class="op">,</span> Arial<span class="op">,</span> <span class="dv">sans-serif</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-34" title="34"></a>
+<a class="sourceLine" id="cb6-35" title="35">  <span class="kw">-moz-box-sizing</span> : <span class="dv">border-box</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-36" title="36">  <span class="kw">box-sizing</span> : <span class="dv">border-box</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-37" title="37"></a>
+<a class="sourceLine" id="cb6-38" title="38">  <span class="kw">padding</span> : <span class="dv">0.1</span><span class="dt">em</span> <span class="dv">2.5</span><span class="dt">em</span> <span class="dv">0.2</span><span class="dt">em</span> <span class="dv">0.5</span><span class="dt">em</span><span class="op">;</span> <span class="co">/* 1px 25px 2px 5px */</span></a>
+<a class="sourceLine" id="cb6-39" title="39">  <span class="kw">width</span>   : <span class="dv">10</span><span class="dt">em</span><span class="op">;</span> <span class="co">/* 100px */</span></a>
+<a class="sourceLine" id="cb6-40" title="40"></a>
+<a class="sourceLine" id="cb6-41" title="41">  <span class="kw">border</span>        : <span class="dv">0.2</span><span class="dt">em</span> <span class="dv">solid</span> <span class="cn">#000</span><span class="op">;</span> <span class="co">/* 2px */</span></a>
+<a class="sourceLine" id="cb6-42" title="42">  <span class="kw">border-radius</span> : <span class="dv">0.4</span><span class="dt">em</span><span class="op">;</span> <span class="co">/* 4px */</span></a>
+<a class="sourceLine" id="cb6-43" title="43"></a>
+<a class="sourceLine" id="cb6-44" title="44">  <span class="kw">box-shadow</span> : <span class="dv">0</span> <span class="dv">0.1</span><span class="dt">em</span> <span class="dv">0.2</span><span class="dt">em</span> <span class="fu">rgba(</span><span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">.45</span><span class="fu">)</span><span class="op">;</span> <span class="co">/* 0 1px 2px */</span></a>
+<a class="sourceLine" id="cb6-45" title="45"></a>
+<a class="sourceLine" id="cb6-46" title="46">  <span class="kw">background</span> : <span class="cn">#F0F0F0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-47" title="47">  <span class="kw">background</span> : <span class="fu">linear-gradient(</span><span class="dv">0</span><span class="dt">deg</span><span class="op">,</span> <span class="cn">#E3E3E3</span><span class="op">,</span> <span class="cn">#fcfcfc</span> <span class="dv">50</span><span class="dt">%</span><span class="op">,</span> <span class="cn">#f0f0f0</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-48" title="48">}</a>
+<a class="sourceLine" id="cb6-49" title="49"></a>
+<a class="sourceLine" id="cb6-50" title="50"><span class="fu">.select</span> <span class="fu">.value</span> {</a>
+<a class="sourceLine" id="cb6-51" title="51">  <span class="kw">display</span>  : <span class="dv">inline-block</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-52" title="52">  <span class="kw">width</span>    : <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-53" title="53">  <span class="kw">overflow</span> : <span class="dv">hidden</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-54" title="54"></a>
+<a class="sourceLine" id="cb6-55" title="55">  <span class="kw">white-space</span>   : <span class="dv">nowrap</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-56" title="56">  <span class="kw">text-overflow</span> : <span class="dv">ellipsis</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-57" title="57">  <span class="kw">vertical-align</span>: <span class="dv">top</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-58" title="58">}</a>
+<a class="sourceLine" id="cb6-59" title="59"></a>
+<a class="sourceLine" id="cb6-60" title="60"><span class="fu">.select</span><span class="in">:after</span> {</a>
+<a class="sourceLine" id="cb6-61" title="61">  <span class="kw">content</span> : <span class="st">&quot;▼&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-62" title="62">  <span class="kw">position</span>: <span class="dv">absolute</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-63" title="63">  <span class="kw">z-index</span> : <span class="dv">1</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-64" title="64">  <span class="kw">height</span>  : <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-65" title="65">  <span class="kw">width</span>   : <span class="dv">2</span><span class="dt">em</span><span class="op">;</span> <span class="co">/* 20px */</span></a>
+<a class="sourceLine" id="cb6-66" title="66">  <span class="kw">top</span>     : <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-67" title="67">  <span class="kw">right</span>   : <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-68" title="68"></a>
+<a class="sourceLine" id="cb6-69" title="69">  <span class="kw">padding-top</span> : <span class="dv">.1</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-70" title="70"></a>
+<a class="sourceLine" id="cb6-71" title="71">  <span class="kw">box-sizing</span> : <span class="dv">border-box</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-72" title="72"></a>
+<a class="sourceLine" id="cb6-73" title="73">  <span class="kw">text-align</span> : <span class="dv">center</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-74" title="74"></a>
+<a class="sourceLine" id="cb6-75" title="75">  <span class="kw">border-left</span>  : <span class="dv">.2</span><span class="dt">em</span> <span class="dv">solid</span> <span class="cn">#000</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-76" title="76">  <span class="kw">border-radius</span>: <span class="dv">0</span> <span class="dv">.1</span><span class="dt">em</span> <span class="dv">.1</span><span class="dt">em</span> <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-77" title="77"></a>
+<a class="sourceLine" id="cb6-78" title="78">  <span class="kw">background-color</span> : <span class="cn">#000</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-79" title="79">  <span class="kw">color</span> : <span class="cn">#FFF</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-80" title="80">}</a>
+<a class="sourceLine" id="cb6-81" title="81"></a>
+<a class="sourceLine" id="cb6-82" title="82"><span class="fu">.select</span> <span class="fu">.optList</span> {</a>
+<a class="sourceLine" id="cb6-83" title="83">  <span class="kw">z-index</span> : <span class="dv">2</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-84" title="84"></a>
+<a class="sourceLine" id="cb6-85" title="85">  <span class="kw">list-style</span>: <span class="dv">none</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-86" title="86">  <span class="kw">margin</span> : <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-87" title="87">  <span class="kw">padding</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-88" title="88"></a>
+<a class="sourceLine" id="cb6-89" title="89">  <span class="kw">background</span>: <span class="cn">#f0f0f0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-90" title="90">  <span class="kw">border</span>: <span class="dv">.2</span><span class="dt">em</span> <span class="dv">solid</span> <span class="cn">#000</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-91" title="91">  <span class="kw">border-top-width</span> : <span class="dv">.1</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-92" title="92">  <span class="kw">border-radius</span>: <span class="dv">0</span> <span class="dv">0</span> <span class="dv">.4</span><span class="dt">em</span> <span class="dv">.4</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-93" title="93"></a>
+<a class="sourceLine" id="cb6-94" title="94">  <span class="kw">box-shadow</span>: <span class="dv">0</span> <span class="dv">.2</span><span class="dt">em</span> <span class="dv">.4</span><span class="dt">em</span> <span class="fu">rgba(</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">,</span><span class="dv">.4</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-95" title="95"></a>
+<a class="sourceLine" id="cb6-96" title="96">  <span class="kw">-moz-box-sizing</span> : <span class="dv">border-box</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-97" title="97">  <span class="kw">box-sizing</span> : <span class="dv">border-box</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-98" title="98"></a>
+<a class="sourceLine" id="cb6-99" title="99">  <span class="kw">min-width</span> : <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-100" title="100">  <span class="kw">max-height</span>: <span class="dv">10</span><span class="dt">em</span><span class="op">;</span> <span class="co">/* 100px */</span></a>
+<a class="sourceLine" id="cb6-101" title="101">  <span class="kw">overflow-y</span>: <span class="bu">auto</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-102" title="102">  <span class="kw">overflow-x</span>: <span class="dv">hidden</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-103" title="103">}</a>
+<a class="sourceLine" id="cb6-104" title="104"></a>
+<a class="sourceLine" id="cb6-105" title="105"><span class="fu">.select</span> <span class="fu">.option</span> {</a>
+<a class="sourceLine" id="cb6-106" title="106">  <span class="kw">padding</span>: <span class="dv">.2</span><span class="dt">em</span> <span class="dv">.3</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-107" title="107">}</a>
+<a class="sourceLine" id="cb6-108" title="108"></a>
+<a class="sourceLine" id="cb6-109" title="109"><span class="fu">.select</span> <span class="fu">.highlight</span> {</a>
+<a class="sourceLine" id="cb6-110" title="110">  <span class="kw">background</span>: <span class="cn">#000</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-111" title="111">  <span class="kw">color</span>: <span class="cn">#FFF</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-112" title="112">}</a></code></pre></div>
+<h3 id="result-for-open-state">Result for open state</h3>
+<p>{{ EmbedLiveSample(‘Open_state’, 120, 130) }}</p>

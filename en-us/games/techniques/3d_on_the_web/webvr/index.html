@@ -1,0 +1,82 @@
+<p>{{GamesSidebar}}</p>
+<p>The concept of virtual reality in itself isn’t new, but now we have the technology to have it working as it should be, and a JavaScript API to make use of it in web applications. This article introduced WebVR from the perspective of its use in games.</p>
+<blockquote>
+<p><strong>Note:</strong> WebVR API is replaced by <a href="/en-US/docs/Web/API/WebXR_Device_API">WebXR Device API</a>. WebVR was never ratified as a standard, was implemented and enabled by default in very few browsers and supported a small number of devices.</p>
+</blockquote>
+<h2 id="vr-devices">VR devices</h2>
+<p>With the popularity of Oculus Rift and a lot of other devices in production coming soon to the market, the future looks bright — we already have sufficient technology to make the VR experience “good enough” for playing games. There are many devices to chose from: desktop ones like Oculus Rift or HTC Vive, through consoles with Playstation VR (which admittedly doesn’t support WebVR at this time), to mobile experiences like Gear VR or Google Cardboard.</p>
+<p><img src="hmds.jpg" /></p>
+<blockquote>
+<p><strong>Note:</strong> For more information, read our <a href="/en-US/docs/Web/API/WebVR_API/Concepts">WebVR Concepts</a> article.</p>
+</blockquote>
+<h2 id="the-webvr-api">The WebVR API</h2>
+<p>The <a href="/en-US/docs/Web/API/WebVR_API">WebVR API</a> is the central API for capturing information on VR Devices connected to a computer and headset position/orientation/velocity/acceleration information, and converting that into useful data you can use in your games and other applications.</p>
+<blockquote>
+<p><strong>Note:</strong> There are of course other APIs useful for creating games, for example <a href="/en-US/docs/Web/API/Gamepad_API">The Gamepad API</a> for control inputs, and the <a href="/en-US/docs/Web/API/Detecting_device_orientation">Device Orientation API</a> for handling display orientation on mobile.</p>
+</blockquote>
+<h3 id="browser-support-and-spec-status">Browser support and spec status</h3>
+<p>Currently browser support for the WebVR API is still experimental — it works in <a href="https://nightly.mozilla.org/">nightly builds of Firefox</a> and <a href="https://drive.google.com/folderview?id=0BzudLt22BqGRbW9WTHMtOWMzNjQ&amp;usp=sharing#list">experimental builds of Chrome</a> (Mozilla and Google teamed up to work on the implementation together), but sooner rather than later we’ll see it in regular builds.</p>
+<p>The <a href="https://mozvr.github.io/webvr-spec/webvr.html">WebVR spec</a> is in Editor’s Draft status which means it is still subject to change. The development is led by <a href="https://twitter.com/vvuk">Vladimir Vukicevic</a> from Mozilla and <a href="https://twitter.com/tojiro">Brandon Jones</a> from Google. For more info be sure to visit the <a href="https://mixedreality.mozilla.org/" class="uri">https://mixedreality.mozilla.org/</a> and <a href="https://webvr.info/">WebVR.info</a> websites.</p>
+<h3 id="using-the-webvr-api">Using the WebVR API</h3>
+<p>The WebVR API is based on two concepts — sending <a href="/en-US/docs/Web/API/WebVR_API/Concepts#stereoscopic_vision">stereoscopic images</a> to both lenses in your headset and receiving positional data for your head from the sensor, and those two are handled by {{domxref(“HMDVRDevice”)}} (head-mounted display virtual reality device) and {{domxref(“PositionSensorVRDevice”)}}.</p>
+<h3 id="get-the-devices">Get the devices</h3>
+<p>To get information about devices connected to your computer, you can use the {{domxref(“Navigator/getVRDisplays”)}} method:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">navigator</span>.<span class="at">getVRDevices</span>().<span class="at">then</span>(<span class="kw">function</span>(devices) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">devices</span>.<span class="at">length</span><span class="op">;</span> <span class="op">++</span>i) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-3" title="3">    <span class="cf">if</span> (devices[i] <span class="kw">instanceof</span> HMDVRDevice) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-4" title="4">      gHMD <span class="op">=</span> devices[i]<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-5" title="5">      <span class="cf">break</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-6" title="6">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-7" title="7">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-8" title="8">  <span class="cf">if</span> (gHMD) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-9" title="9">    <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">devices</span>.<span class="at">length</span><span class="op">;</span> <span class="op">++</span>i) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-10" title="10">      <span class="cf">if</span> (devices[i] <span class="kw">instanceof</span> PositionSensorVRDevice</a>
+<a class="sourceLine" id="cb1-11" title="11">         <span class="op">&amp;&amp;</span> devices[i].<span class="at">hardwareUnitId</span> <span class="op">===</span> <span class="va">gHMD</span>.<span class="at">hardwareUnitId</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-12" title="12">        gPositionSensor <span class="op">=</span> devices[i]<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-13" title="13">        <span class="cf">break</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb1-14" title="14">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-15" title="15">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-16" title="16">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb1-17" title="17"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>This code will loop through the available devices and assign proper sensors to the headsets — the first <code>devices</code> array contains the connected devices, and a check is done to find the {{domxref(“HMDVRDevice”)}}, and assign it to the <code>gHMD</code> variable — using this you can set up the scene, getting the eye parameters, setting the field of view, etc. For example:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">function</span> <span class="at">setCustomFOV</span>(up<span class="op">,</span>right<span class="op">,</span>down<span class="op">,</span>left) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">var</span> testFOV <span class="op">=</span> <span class="kw">new</span> <span class="at">VRFieldOfView</span>(up<span class="op">,</span>right<span class="op">,</span>down<span class="op">,</span>left)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4">  <span class="va">gHMD</span>.<span class="at">setFieldOfView</span>(testFOV<span class="op">,</span>testFOV<span class="op">,</span><span class="fl">0.01</span><span class="op">,</span><span class="fl">10000.0</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="op">}</span></a></code></pre></div>
+<p>The <code>gPositionSensor</code> variable holds the {{domxref(“PositionSensorVRDevice”)}} — using this you can get the current position or orientation state (for example to update the scene view on every frame), or reset the sensor. For example, the below code outputs position information on the screen:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">function</span> <span class="at">setView</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">var</span> posState <span class="op">=</span> <span class="va">gPositionSensor</span>.<span class="at">getState</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-3" title="3"></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="cf">if</span>(<span class="va">posState</span>.<span class="at">hasPosition</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-5" title="5">    <span class="va">posPara</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;Position: x&#39;</span> <span class="op">+</span> <span class="at">roundToTwo</span>(<span class="va">posState</span>.<span class="va">position</span>.<span class="at">x</span>) <span class="op">+</span> <span class="st">&quot; y&quot;</span></a>
+<a class="sourceLine" id="cb3-6" title="6">                                <span class="op">+</span> <span class="at">roundToTwo</span>(<span class="va">posState</span>.<span class="va">position</span>.<span class="at">y</span>) <span class="op">+</span> <span class="st">&quot; z&quot;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">                                <span class="op">+</span> <span class="at">roundToTwo</span>(<span class="va">posState</span>.<span class="va">position</span>.<span class="at">z</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">    xPos <span class="op">=</span> <span class="op">-</span><span class="va">posState</span>.<span class="va">position</span>.<span class="at">x</span> <span class="op">*</span> WIDTH <span class="op">*</span> <span class="dv">2</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">    yPos <span class="op">=</span> <span class="va">posState</span>.<span class="va">position</span>.<span class="at">y</span> <span class="op">*</span> HEIGHT <span class="op">*</span> <span class="dv">2</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-10" title="10">    <span class="cf">if</span>(<span class="op">-</span><span class="va">posState</span>.<span class="va">position</span>.<span class="at">z</span> <span class="op">&gt;</span> <span class="fl">0.01</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-11" title="11">      zPos <span class="op">=</span> <span class="op">-</span><span class="va">posState</span>.<span class="va">position</span>.<span class="at">z</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-12" title="12">    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-13" title="13">      zPos <span class="op">=</span> <span class="fl">0.01</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb3-14" title="14">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-15" title="15">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-16" title="16"></a>
+<a class="sourceLine" id="cb3-17" title="17">  ...</a>
+<a class="sourceLine" id="cb3-18" title="18"></a>
+<a class="sourceLine" id="cb3-19" title="19"><span class="op">}</span></a></code></pre></div>
+<p>For a full explanation and more details of the demo this is taken from, see <a href="/en-US/docs/Web/API/WebVR_API/Using_the_WebVR_API">Using the WebVR API</a>.</p>
+<h2 id="tools-and-techniques">Tools and techniques</h2>
+<p>The first WebVR experiments and demos used Three.js as it’s probably the most popular 3D engine for the web. See the <a href="https://github.com/mrdoob/three.js/blob/master/examples/js/effects/VREffect.js">VREffect</a> and <a href="https://github.com/mrdoob/three.js/blob/master/examples/js/controls/VRControls.js">VRControls</a> functions available on the Three.js github to help you implement and handle WebVR with Three.js.</p>
+<p><img src="sechelt.jpg" /></p>
+<p>Boris Smus has written about the concept of <a href="https://smus.com/responsive-vr/">Responsive WebVR</a>, where a single web game can be played on various devices like laptops without VR hardware, PCs with Oculus Rift, or smartphones inside Google Cardboard and still deliver a unique and valuable experience across all of them. It’s like responsive design, but applied to the VR world — write once and run in any VR headset … or without it. You can check the <a href="https://github.com/borismus/webvr-boilerplate">WebVR Boilerplate</a> sources — it’s a good example to start learning WebVR from, and a starting point for any web-based VR experience.</p>
+<p>There’s also a markup framework called <a href="https://aframe.io/">A-Frame</a> that offers simple building blocks for WebVR, so you can rapidly build and experiment with VR websites and games: read the <a href="/en-US/docs/Games/Techniques/3D_on_the_web/Building_up_a_basic_demo_with_A-Frame">Building up a basic demo with A-Frame</a> tutorial for more details.</p>
+<p>Immersion is more important than gameplay or graphics - you have to feel you’re “inside” the experience. It’s not easy to achieve, but it doesn’t require realistic images. Quite the contrary as having a basic shapes flying around in high framerate can make a lot. Remember: experimenting is key - see what works for your game in particular.</p>
+<h2 id="the-future-of-webvr">The future of WebVR</h2>
+<p>It’s happening — consumer devices are reaching the market right now, and we already have JavaScript APIs to support them on the Web. All we need now is a stable specification, good UX and UI, better hardware and more tools and libraries — and all of that is on the horizon. It’s the perfect time to dive in and experiment with WebVR.</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/en-US/docs/Web/API/WebVR_API">WebVR API</a></li>
+<li><a href="/en-US/docs/Web/API/WebVR_API/Concepts">WebVR concepts</a></li>
+<li><a href="/en-US/docs/Web/API/WebVR_API/Using_the_WebVR_API">Using the WebVR API</a></li>
+<li><a href="/en-US/docs/Games/Techniques/3D_on_the_web/Building_up_a_basic_demo_with_A-Frame">Building up a basic demo with A-Frame</a></li>
+</ul>

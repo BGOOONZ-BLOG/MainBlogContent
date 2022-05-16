@@ -1,0 +1,671 @@
+<p>{{LearnSidebar}}{{PreviousMenuNext(“Learn/Forms/UI_pseudo-classes”, “Learn/Forms/Sending_and_retrieving_form_data”, “Learn/HTML/Forms”)}}</p>
+<p>Before submitting data to the server, it is important to ensure all required form controls are filled out, in the correct format. This is called <strong>client-side form validation</strong>, and helps ensure data submitted matches the requirements set forth in the various form controls. This article leads you through basic concepts and examples of client-side form validation.</p>
+<table>
+<tbody>
+<tr>
+<th scope="row">
+Prerequisites:
+</th>
+<td>
+Computer literacy, a reasonable understanding of <a href="/en-US/docs/Learn/HTML">HTML</a>, <a href="/en-US/docs/Learn/CSS">CSS</a>, and <a href="/en-US/docs/Learn/JavaScript">JavaScript</a>.
+</td>
+</tr>
+<tr>
+<th scope="row">
+Objective:
+</th>
+<td>
+To understand what client-side form validation is, why it’s important, and how to apply various techniques to implement it.
+</td>
+</tr>
+</tbody>
+</table>
+<p>Client-side validation is an initial check and an important feature of good user experience; by catching invalid data on the client-side, the user can fix it straight away. If it gets to the server and is then rejected, a noticeable delay is caused by a round trip to the server and then back to the client-side to tell the user to fix their data.</p>
+<p>However, client-side validation <em>should not be considered</em> an exhaustive security measure! Your apps should always perform security checks on any form-submitted data on the <em>server-side</em> <strong>as well</strong> as the client-side, because client-side validation is too easy to bypass, so malicious users can still easily send bad data through to your server. Read <a href="/en-US/docs/Learn/Server-side/First_steps/Website_security">Website security</a> for an idea of what <em>could</em> happen; implementing server-side validation is somewhat beyond the scope of this module, but you should bear it in mind.</p>
+<h2 id="what-is-form-validation">What is form validation?</h2>
+<p>Go to any popular site with a registration form, and you will notice that they provide feedback when you don’t enter your data in the format they are expecting. You’ll get messages such as:</p>
+<ul>
+<li>“This field is required” (You can’t leave this field blank).</li>
+<li>“Please enter your phone number in the format xxx-xxxx” (A specific data format is required for it to be considered valid).</li>
+<li>“Please enter a valid email address” (the data you entered is not in the right format).</li>
+<li>“Your password needs to be between 8 and 30 characters long and contain one uppercase letter, one symbol, and a number.” (A very specific data format is required for your data).</li>
+</ul>
+<p>This is called <strong>form validation</strong>. When you enter data, the browser and/or the web server will check to see that the data is in the correct format and within the constraints set by the application. Validation done in the browser is called <strong>client-side</strong> validation, while validation done on the server is called <strong>server-side</strong> validation. In this chapter we are focusing on client-side validation.</p>
+<p>If the information is correctly formatted, the application allows the data to be submitted to the server and (usually) saved in a database; if the information isn’t correctly formatted, it gives the user an error message explaining what needs to be corrected, and lets them try again.</p>
+<p>We want to make filling out web forms as easy as possible. So why do we insist on validating our forms? There are three main reasons:</p>
+<ul>
+<li><strong>We want to get the right data, in the right format.</strong> Our applications won’t work properly if our users’ data is stored in the wrong format, is incorrect, or is omitted altogether.</li>
+<li><strong>We want to protect our users’ data</strong>. Forcing our users to enter secure passwords makes it easier to protect their account information.</li>
+<li><strong>We want to protect ourselves</strong>. There are many ways that malicious users can misuse unprotected forms to damage the application (see <a href="/en-US/docs/Learn/Server-side/First_steps/Website_security">Website security</a>). {{warning(“Never trust data passed to your server from the client. Even if your form is validating correctly and preventing malformed input on the client-side, a malicious user can still alter the network request.”)}}</li>
+</ul>
+<h2 id="different-types-of-client-side-validation">Different types of client-side validation</h2>
+<p>There are two different types of client-side validation that you’ll encounter on the web:</p>
+<ul>
+<li><strong>Built-in form validation</strong> uses HTML5 form validation features, which we’ve discussed in many places throughout this module. This validation generally doesn’t require much JavaScript. Built-in form validation has better performance than JavaScript, but it is not as customizable as JavaScript validation.</li>
+<li><strong>JavaScript</strong> validation is coded using JavaScript. This validation is completely customizable, but you need to create it all (or use a library).</li>
+</ul>
+<h2 id="using-built-in-form-validation">Using built-in form validation</h2>
+<p>One of the most significant features of <a href="/en-US/docs/Learn/Forms/HTML5_input_types">HTML5 form controls</a> is the ability to validate most user data without relying on JavaScript. This is done by using validation attributes on form elements. We’ve seen many of these earlier in the course, but to recap:</p>
+<ul>
+<li><a href="/en-US/docs/Web/HTML/Attributes/required"><code>required</code></a>: Specifies whether a form field needs to be filled in before the form can be submitted.</li>
+<li><a href="/en-US/docs/Web/HTML/Attributes/minlength"><code>minlength</code></a> and <a href="/en-US/docs/Web/HTML/Attributes/maxlength"><code>maxlength</code></a>: Specifies the minimum and maximum length of textual data (strings)</li>
+<li><a href="/en-US/docs/Web/HTML/Attributes/min"><code>min</code></a> and <a href="/en-US/docs/Web/HTML/Attributes/max"><code>max</code></a>: Specifies the minimum and maximum values of numerical input types</li>
+<li><code>type</code>: Specifies whether the data needs to be a number, an email address, or some other specific preset type.</li>
+<li><a href="/en-US/docs/Web/HTML/Attributes/pattern"><code>pattern</code></a>: Specifies a <a href="/en-US/docs/Web/JavaScript/Guide/Regular_Expressions">regular expression</a> that defines a pattern the entered data needs to follow.</li>
+</ul>
+<p>If the data entered in a form field follows all of the rules specified by the above attributes, it is considered valid. If not, it is considered invalid.</p>
+<p>When an element is valid, the following things are true:</p>
+<ul>
+<li>The element matches the {{cssxref(“:valid”)}} CSS pseudo-class, which lets you apply a specific style to valid elements.</li>
+<li>If the user tries to send the data, the browser will submit the form, provided there is nothing else stopping it from doing so (e.g., JavaScript).</li>
+</ul>
+<p>When an element is invalid, the following things are true:</p>
+<ul>
+<li>The element matches the {{cssxref(“:invalid”)}} CSS pseudo-class, and sometimes other UI pseudo-classes (e.g., {{cssxref(“:out-of-range”)}}) depending on the error, which lets you apply a specific style to invalid elements.</li>
+<li>If the user tries to send the data, the browser will block the form and display an error message.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> There are several errors that will prevent the form from being submitted, including a {{domxref(‘validityState.badInput’, ‘badInput’)}}, {{domxref(‘validityState.patternMismatch’,‘patternMismatch’)}}, {{domxref(‘validityState.rangeOverflow’,‘rangeOverflow’)}} or {{domxref(‘validityState.rangeUnderflow’,‘rangeUnderflow’)}}, {{domxref(‘validityState.stepMismatch’,‘stepMismatch’)}}, {{domxref(‘validityState.tooLong’,‘tooLong’)}} or {{domxref(‘validityState.tooShort’,‘tooShort’)}}, {{domxref(‘validityState.typeMismatch’,‘typeMismatch’)}}, {{domxref(‘validityState.valueMissing’,‘valueMissing’)}}, or a {{domxref(‘validityState.customError’,‘customError’)}}.</p>
+</blockquote>
+<h2 id="built-in-form-validation-examples">Built-in form validation examples</h2>
+<p>In this section, we’ll test out some of the attributes that we discussed above.</p>
+<h3 id="simple-start-file">Simple start file</h3>
+<p>Let’s start with a simple example: an input that allows you to choose whether you prefer a banana or a cherry. This example involves a simple text {{HTMLElement(“input”)}} with an associated {{htmlelement(“label”)}} and a submit {{htmlelement(“button”)}}. Find the source code on GitHub at <a href="https://github.com/mdn/learning-area/blob/master/html/forms/form-validation/fruit-start.html">fruit-start.html</a> and a live example below.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">&lt;form&gt;</span></a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;choose&quot;</span><span class="kw">&gt;</span>Would you prefer a banana or cherry?<span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="kw">&lt;input</span><span class="ot"> id=</span><span class="st">&quot;choose&quot;</span><span class="ot"> name=</span><span class="st">&quot;i_like&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb1-4" title="4">  <span class="kw">&lt;button&gt;</span>Submit<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="kw">&lt;/form&gt;</span></a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb2-1" title="1">input<span class="in">:invalid</span> {</a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="kw">border</span>: <span class="dv">2</span><span class="dt">px</span> <span class="dv">dashed</span> <span class="cn">red</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">}</a>
+<a class="sourceLine" id="cb2-4" title="4"></a>
+<a class="sourceLine" id="cb2-5" title="5">input<span class="in">:valid</span> {</a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="kw">border</span>: <span class="dv">2</span><span class="dt">px</span> <span class="dv">solid</span> <span class="cn">black</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" title="7">}</a></code></pre></div>
+<p>{{EmbedLiveSample(“Simple_start_file”, “100%”, 80)}}</p>
+<p>To begin, make a copy of <code>fruit-start.html</code> in a new directory on your hard drive.</p>
+<h3 id="the-required-attribute">The required attribute</h3>
+<p>The simplest HTML5 validation feature is the <a href="/en-US/docs/Web/HTML/Attributes/required"><code>required</code></a> attribute. To make an input mandatory, add this attribute to the element. When this attribute is set, the element matches the {{cssxref(‘:required’)}} UI pseudo-class and the form won’t submit, displaying an error message on submission when the input is empty. While empty, the input will also be considered invalid, matching the {{cssxref(‘:invalid’)}} UI pseudo-class.</p>
+<p>Add a <code>required</code> attribute to your input, as shown below.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">&lt;form&gt;</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;choose&quot;</span><span class="kw">&gt;</span>Would you prefer a banana or cherry? (required)<span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="kw">&lt;input</span><span class="ot"> id=</span><span class="st">&quot;choose&quot;</span><span class="ot"> name=</span><span class="st">&quot;i_like&quot;</span><span class="ot"> required</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="kw">&lt;button&gt;</span>Submit<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="kw">&lt;/form&gt;</span></a></code></pre></div>
+<p>Note the CSS that is included in the example file:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb4-1" title="1">input<span class="in">:invalid</span> {</a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="kw">border</span>: <span class="dv">2</span><span class="dt">px</span> <span class="dv">dashed</span> <span class="cn">red</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-3" title="3">}</a>
+<a class="sourceLine" id="cb4-4" title="4"></a>
+<a class="sourceLine" id="cb4-5" title="5">input<span class="in">:invalid:required</span> {</a>
+<a class="sourceLine" id="cb4-6" title="6">  <span class="kw">background-image</span>: <span class="fu">linear-gradient(</span>to <span class="dv">right</span><span class="op">,</span> <span class="cn">pink</span><span class="op">,</span> <span class="cn">lightgreen</span><span class="fu">)</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-7" title="7">}</a>
+<a class="sourceLine" id="cb4-8" title="8"></a>
+<a class="sourceLine" id="cb4-9" title="9">input<span class="in">:valid</span> {</a>
+<a class="sourceLine" id="cb4-10" title="10">  <span class="kw">border</span>: <span class="dv">2</span><span class="dt">px</span> <span class="dv">solid</span> <span class="cn">black</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb4-11" title="11">}</a></code></pre></div>
+<p>This CSS causes the input to have a red dashed border when it is invalid and a more subtle solid black border when valid. We also added a background gradient when the input is required <em>and</em> invalid. Try out the new behavior in the example below:</p>
+<p>{{EmbedLiveSample(“The_required_attribute”, “100%”, 80)}}</p>
+<blockquote>
+<p><strong>Note:</strong> You can find this example live on GitHub as <a href="https://mdn.github.io/learning-area/html/forms/form-validation/fruit-required.html">fruit-validation.html</a> (see also the <a href="https://github.com/mdn/learning-area/blob/master/html/forms/form-validation/fruit-required.html">source code</a>.)</p>
+</blockquote>
+<p>Try submitting the form without a value. Note how the invalid input gets focus, a default error message (“Please fill out this field”) appears, and the form is prevented from being sent.</p>
+<p>The presence of the <code>required</code> attribute on any element that supports this attribute means the element matches the {{cssxref(‘:required’)}} pseudoclass whether it has a value or not. If the {{HTMLElement(“input”)}} has no value, the <code>input</code> will match the {{cssxref(‘:invalid’)}} pseudoclass.</p>
+<blockquote>
+<p><strong>Note:</strong> For good user experience, indicate to the user when form fields are required. It isn’t only good user experience, it is required by WCAG <a href="/en-US/docs/Learn/Accessibility">accessibility</a> guidelines. Also, only require users to input data you actually need: For example, why do you really need to know someone’s gender or title?</p>
+</blockquote>
+<h3 id="validating-against-a-regular-expression">Validating against a regular expression</h3>
+<p>Another useful validation feature is the <a href="/en-US/docs/Web/HTML/Attributes/pattern"><code>pattern</code></a> attribute, which expects a <a href="/en-US/docs/Web/JavaScript/Guide/Regular_Expressions">Regular Expression</a> as its value. A regular expression (regex) is a pattern that can be used to match character combinations in text strings, so regexps are ideal for form validation and serve a variety of other uses in JavaScript.</p>
+<p>Regexps are quite complex, and we don’t intend to teach you them exhaustively in this article. Below are some examples to give you a basic idea of how they work.</p>
+<ul>
+<li><code>a</code> — Matches one character that is <code>a</code> (not <code>b</code>, not <code>aa</code>, and so on).</li>
+<li><code>abc</code> — Matches <code>a</code>, followed by <code>b</code>, followed by <code>c</code>.</li>
+<li><code>ab?c</code>—Matches <code>a</code>, optionally followed by a single <code>b</code>, followed by <code>c</code>. ( <code>ac</code> or <code>abc</code>)</li>
+<li><code>ab*c</code>—Matches <code>a</code>, optionally followed by any number of <code>b</code>s, followed by <code>c</code>. ( <code>ac</code> , <code>abc</code>, <code>abbbbbc</code>, and so on).</li>
+<li><code>a|b</code> — Matches one character that is <code>a</code> or <code>b</code>.</li>
+<li><code>abc|xyz</code> — Matches exactly <code>abc</code> or exactly <code>xyz</code> (but not <code>abcxyz</code> or <code>a</code> or <code>y</code>, and so on).</li>
+</ul>
+<p>There are many more possibilities that we don’t cover here. For a complete list and many examples, consult our <a href="/en-US/docs/Web/JavaScript/Guide/Regular_Expressions">Regular expressions</a> documentation.</p>
+<p>Let’s implement an example. Update your HTML to add a <a href="/en-US/docs/Web/HTML/Attributes/pattern"><code>pattern</code></a> attribute like this:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">&lt;form&gt;</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;choose&quot;</span><span class="kw">&gt;</span>Would you prefer a banana or a cherry?<span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb5-3" title="3">  <span class="kw">&lt;input</span><span class="ot"> id=</span><span class="st">&quot;choose&quot;</span><span class="ot"> name=</span><span class="st">&quot;i_like&quot;</span><span class="ot"> required pattern=</span><span class="st">&quot;[Bb]anana|[Cc]herry&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb5-4" title="4">  <span class="kw">&lt;button&gt;</span>Submit<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="kw">&lt;/form&gt;</span></a></code></pre></div>
+<p>```css hidden input:invalid { border: 2px dashed red; }</p>
+<p>input:valid { border: 2px solid black; } ```</p>
+<p>This gives us the following update — try it out:</p>
+<p>{{EmbedLiveSample(“Validating_against_a_regular_expression”, “100%”, 80)}}</p>
+<blockquote>
+<p><strong>Note:</strong> You can find this example live on GitHub as <a href="https://mdn.github.io/learning-area/html/forms/form-validation/fruit-pattern.html">fruit-pattern.html</a> (see also the <a href="https://github.com/mdn/learning-area/blob/master/html/forms/form-validation/fruit-pattern.html">source code</a>.)</p>
+</blockquote>
+<p>In this example, the {{HTMLElement(“input”)}} element accepts one of four possible values: the strings “banana”, “Banana”, “cherry”, or “Cherry”. Regular expressions are case-sensitive, but we’ve made it support capitalized as well as lower-case versions using an extra “Aa” pattern nested inside square brackets.</p>
+<p>At this point, try changing the value inside the <a href="/en-US/docs/Web/HTML/Attributes/pattern"><code>pattern</code></a> attribute to equal some of the examples you saw earlier, and look at how that affects the values you can enter to make the input value valid. Try writing some of your own, and see how it goes. Make them fruit-related where possible so that your examples make sense!</p>
+<p>If a non-empty value of the {{HTMLElement(“input”)}} doesn’t match the regular expression’s pattern, the <code>input</code> will match the {{cssxref(‘:invalid’)}} pseudoclass.</p>
+<blockquote>
+<p><strong>Note:</strong> Some {{HTMLElement(“input”)}} element types don’t need a <a href="/en-US/docs/Web/HTML/Attributes/pattern"><code>pattern</code></a> attribute to be validated against a regular expression. Specifying the <code>email</code> type, for example, validates the inputs value against a well-formed email address pattern or a pattern matching a comma-separated list of email addresses if it has the <a href="/en-US/docs/Web/HTML/Attributes/multiple"><code>multiple</code></a> attribute.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> The {{HTMLElement(“textarea”)}} element doesn’t support the <a href="/en-US/docs/Web/HTML/Attributes/pattern"><code>pattern</code></a> attribute.</p>
+</blockquote>
+<h3 id="constraining-the-length-of-your-entries">Constraining the length of your entries</h3>
+<p>You can constrain the character length of all text fields created by {{HTMLElement(“input”)}} or {{HTMLElement(“textarea”)}} by using the <a href="/en-US/docs/Web/HTML/Attributes/minlength"><code>minlength</code></a> and <a href="/en-US/docs/Web/HTML/Attributes/maxlength"><code>maxlength</code></a> attributes. A field is invalid if it has a value and that value has fewer characters than the <a href="/en-US/docs/Web/HTML/Attributes/minlength"><code>minlength</code></a> value or more than the <a href="/en-US/docs/Web/HTML/Attributes/maxlength"><code>maxlength</code></a> value.</p>
+<p>Browsers often don’t let the user type a longer value than expected into text fields. A better user experience than just using <code>maxlength</code> is to also provide character count feedback in an accessible manner and let them edit their content down to size. An example of this is the character limit seen on Twitter when Tweeting. JavaScript, including <a href="https://github.com/mimo84/bootstrap-maxlength">solutions using <code>maxlength</code></a>, can be used to provide this</p>
+<h3 id="constraining-the-values-of-your-entries">Constraining the values of your entries</h3>
+<p>For number fields (i.e. <a href="/en-US/docs/Web/HTML/Element/input/number"><code>&lt;input type="number"&gt;</code></a>), the <a href="/en-US/docs/Web/HTML/Attributes/min"><code>min</code></a> and <a href="/en-US/docs/Web/HTML/Attributes/max"><code>max</code></a> attributes can be used to provide a range of valid values. If the field contains a value outside this range, it will be invalid.</p>
+<p>Let’s look at another example. Create a new copy of the <a href="https://github.com/mdn/learning-area/blob/master/html/forms/form-validation/fruit-start.html">fruit-start.html</a> file.</p>
+<p>Now delete the contents of the <code>&lt;body&gt;</code> element, and replace it with the following:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">&lt;form&gt;</span></a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="kw">&lt;div&gt;</span></a>
+<a class="sourceLine" id="cb6-3" title="3">    <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;choose&quot;</span><span class="kw">&gt;</span>Would you prefer a banana or a cherry?<span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb6-4" title="4">    <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;text&quot;</span><span class="ot"> id=</span><span class="st">&quot;choose&quot;</span><span class="ot"> name=</span><span class="st">&quot;i_like&quot;</span><span class="ot"> required minlength=</span><span class="st">&quot;6&quot;</span><span class="ot"> maxlength=</span><span class="st">&quot;6&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb6-5" title="5">  <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb6-6" title="6">  <span class="kw">&lt;div&gt;</span></a>
+<a class="sourceLine" id="cb6-7" title="7">    <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;number&quot;</span><span class="kw">&gt;</span>How many would you like?<span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb6-8" title="8">    <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;number&quot;</span><span class="ot"> id=</span><span class="st">&quot;number&quot;</span><span class="ot"> name=</span><span class="st">&quot;amount&quot;</span><span class="ot"> value=</span><span class="st">&quot;1&quot;</span><span class="ot"> min=</span><span class="st">&quot;1&quot;</span><span class="ot"> max=</span><span class="st">&quot;10&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb6-9" title="9">  <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb6-10" title="10">  <span class="kw">&lt;div&gt;</span></a>
+<a class="sourceLine" id="cb6-11" title="11">    <span class="kw">&lt;button&gt;</span>Submit<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb6-12" title="12">  <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb6-13" title="13"><span class="kw">&lt;/form&gt;</span></a></code></pre></div>
+<ul>
+<li>Here you’ll see that we’ve given the <code>text</code> field a <code>minlength</code> and <code>maxlength</code> of six, which is the same length as banana and cherry.</li>
+<li>We’ve also given the <code>number</code> field a <code>min</code> of one and a <code>max</code> of ten. Entered numbers outside this range will show as invalid; users won’t be able to use the increment/decrement arrows to move the value outside of this range. If the user manually enters a number outside of this range, the data is invalid. The number is not required, so removing the value will still result in a valid value.</li>
+</ul>
+<p>```css hidden input:invalid { border: 2px dashed red; }</p>
+<p>input:valid { border: 2px solid black; }</p>
+<p>div { margin-bottom: 10px; } ```</p>
+<p>Here is the example running live:</p>
+<p>{{EmbedLiveSample(“Constraining_the_values_of_your_entries”, “100%”, 100)}}</p>
+<blockquote>
+<p><strong>Note:</strong> You can find this example live on GitHub as <a href="https://mdn.github.io/learning-area/html/forms/form-validation/fruit-length.html">fruit-length.html</a> (see also the <a href="https://github.com/mdn/learning-area/blob/master/html/forms/form-validation/fruit-length.html">source code</a>.)</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> <code>&lt;input type="number"&gt;</code> (and other types, such as <code>range</code> and <code>date</code>) can also take a <a href="/en-US/docs/Web/HTML/Attributes/step"><code>step</code></a> attribute, which specifies what increment the value will go up or down by when the input controls are used (such as the up and down number buttons). In the above example we’ve not included a <code>step</code> attribute, so the value defaults to <code>1</code>. This means that floats, like 3.2, will also show as invalid.</p>
+</blockquote>
+<h3 id="full-example">Full example</h3>
+<p>Here is a full example to show usage of HTML’s built-in validation features. First, some HTML:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">&lt;form&gt;</span></a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="kw">&lt;p&gt;</span></a>
+<a class="sourceLine" id="cb7-3" title="3">    <span class="kw">&lt;fieldset&gt;</span></a>
+<a class="sourceLine" id="cb7-4" title="4">      <span class="kw">&lt;legend&gt;</span>Do you have a driver&#39;s license?<span class="kw">&lt;abbr</span><span class="ot"> title=</span><span class="st">&quot;This field is mandatory&quot;</span><span class="ot"> aria-label=</span><span class="st">&quot;required&quot;</span><span class="kw">&gt;</span>*<span class="kw">&lt;/abbr&gt;&lt;/legend&gt;</span></a>
+<a class="sourceLine" id="cb7-5" title="5">      <span class="co">&lt;!-- While only one radio button in a same-named group can be selected at a time,</span></a>
+<a class="sourceLine" id="cb7-6" title="6"><span class="co">           and therefore only one radio button in a same-named group having the &quot;required&quot;</span></a>
+<a class="sourceLine" id="cb7-7" title="7"><span class="co">           attribute suffices in making a selection a requirement --&gt;</span></a>
+<a class="sourceLine" id="cb7-8" title="8">      <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;radio&quot;</span><span class="ot"> required name=</span><span class="st">&quot;driver&quot;</span><span class="ot"> id=</span><span class="st">&quot;r1&quot;</span><span class="ot"> value=</span><span class="st">&quot;yes&quot;</span><span class="kw">&gt;&lt;label</span><span class="ot"> for=</span><span class="st">&quot;r1&quot;</span><span class="kw">&gt;</span>Yes<span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb7-9" title="9">      <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;radio&quot;</span><span class="ot"> required name=</span><span class="st">&quot;driver&quot;</span><span class="ot"> id=</span><span class="st">&quot;r2&quot;</span><span class="ot"> value=</span><span class="st">&quot;no&quot;</span><span class="kw">&gt;&lt;label</span><span class="ot"> for=</span><span class="st">&quot;r2&quot;</span><span class="kw">&gt;</span>No<span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb7-10" title="10">    <span class="kw">&lt;/fieldset&gt;</span></a>
+<a class="sourceLine" id="cb7-11" title="11">  <span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb7-12" title="12">  <span class="kw">&lt;p&gt;</span></a>
+<a class="sourceLine" id="cb7-13" title="13">    <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;n1&quot;</span><span class="kw">&gt;</span>How old are you?<span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb7-14" title="14">    <span class="co">&lt;!-- The pattern attribute can act as a fallback for browsers which</span></a>
+<a class="sourceLine" id="cb7-15" title="15"><span class="co">         don&#39;t implement the number input type but support the pattern attribute.</span></a>
+<a class="sourceLine" id="cb7-16" title="16"><span class="co">         Please note that browsers that support the pattern attribute will make it</span></a>
+<a class="sourceLine" id="cb7-17" title="17"><span class="co">         fail silently when used with a number field.</span></a>
+<a class="sourceLine" id="cb7-18" title="18"><span class="co">         Its usage here acts only as a fallback --&gt;</span></a>
+<a class="sourceLine" id="cb7-19" title="19">    <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;number&quot;</span><span class="ot"> min=</span><span class="st">&quot;12&quot;</span><span class="ot"> max=</span><span class="st">&quot;120&quot;</span><span class="ot"> step=</span><span class="st">&quot;1&quot;</span><span class="ot"> id=</span><span class="st">&quot;n1&quot;</span><span class="ot"> name=</span><span class="st">&quot;age&quot;</span></a>
+<a class="sourceLine" id="cb7-20" title="20"><span class="ot">           pattern=</span><span class="st">&quot;\d+&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb7-21" title="21">  <span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb7-22" title="22">  <span class="kw">&lt;p&gt;</span></a>
+<a class="sourceLine" id="cb7-23" title="23">    <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;t1&quot;</span><span class="kw">&gt;</span>What&#39;s your favorite fruit?<span class="kw">&lt;abbr</span><span class="ot"> title=</span><span class="st">&quot;This field is mandatory&quot;</span><span class="ot"> aria-label=</span><span class="st">&quot;required&quot;</span><span class="kw">&gt;</span>*<span class="kw">&lt;/abbr&gt;&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb7-24" title="24">    <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;text&quot;</span><span class="ot"> id=</span><span class="st">&quot;t1&quot;</span><span class="ot"> name=</span><span class="st">&quot;fruit&quot;</span><span class="ot"> list=</span><span class="st">&quot;l1&quot;</span><span class="ot"> required</span></a>
+<a class="sourceLine" id="cb7-25" title="25"><span class="ot">           pattern=</span><span class="st">&quot;[Bb]anana|[Cc]herry|[Aa]pple|[Ss]trawberry|[Ll]emon|[Oo]range&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb7-26" title="26">    <span class="kw">&lt;datalist</span><span class="ot"> id=</span><span class="st">&quot;l1&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb7-27" title="27">      <span class="kw">&lt;option&gt;</span>Banana<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb7-28" title="28">      <span class="kw">&lt;option&gt;</span>Cherry<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb7-29" title="29">      <span class="kw">&lt;option&gt;</span>Apple<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb7-30" title="30">      <span class="kw">&lt;option&gt;</span>Strawberry<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb7-31" title="31">      <span class="kw">&lt;option&gt;</span>Lemon<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb7-32" title="32">      <span class="kw">&lt;option&gt;</span>Orange<span class="kw">&lt;/option&gt;</span></a>
+<a class="sourceLine" id="cb7-33" title="33">    <span class="kw">&lt;/datalist&gt;</span></a>
+<a class="sourceLine" id="cb7-34" title="34">  <span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb7-35" title="35">  <span class="kw">&lt;p&gt;</span></a>
+<a class="sourceLine" id="cb7-36" title="36">    <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;t2&quot;</span><span class="kw">&gt;</span>What&#39;s your e-mail address?<span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb7-37" title="37">    <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;email&quot;</span><span class="ot"> id=</span><span class="st">&quot;t2&quot;</span><span class="ot"> name=</span><span class="st">&quot;email&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb7-38" title="38">  <span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb7-39" title="39">  <span class="kw">&lt;p&gt;</span></a>
+<a class="sourceLine" id="cb7-40" title="40">    <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;t3&quot;</span><span class="kw">&gt;</span>Leave a short message<span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb7-41" title="41">    <span class="kw">&lt;textarea</span><span class="ot"> id=</span><span class="st">&quot;t3&quot;</span><span class="ot"> name=</span><span class="st">&quot;msg&quot;</span><span class="ot"> maxlength=</span><span class="st">&quot;140&quot;</span><span class="ot"> rows=</span><span class="st">&quot;5&quot;</span><span class="kw">&gt;&lt;/textarea&gt;</span></a>
+<a class="sourceLine" id="cb7-42" title="42">  <span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb7-43" title="43">  <span class="kw">&lt;p&gt;</span></a>
+<a class="sourceLine" id="cb7-44" title="44">    <span class="kw">&lt;button&gt;</span>Submit<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb7-45" title="45">  <span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb7-46" title="46"><span class="kw">&lt;/form&gt;</span></a></code></pre></div>
+<p>And now some CSS to style the HTML:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb8-1" title="1">form {</a>
+<a class="sourceLine" id="cb8-2" title="2">  <span class="kw">font</span>: <span class="dv">1</span><span class="dt">em</span> <span class="dv">sans-serif</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-3" title="3">  <span class="kw">max-width</span>: <span class="dv">320</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-4" title="4">}</a>
+<a class="sourceLine" id="cb8-5" title="5"></a>
+<a class="sourceLine" id="cb8-6" title="6">p <span class="op">&gt;</span> label {</a>
+<a class="sourceLine" id="cb8-7" title="7">  <span class="kw">display</span>: <span class="dv">block</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-8" title="8">}</a>
+<a class="sourceLine" id="cb8-9" title="9"></a>
+<a class="sourceLine" id="cb8-10" title="10">input<span class="ex">[type</span><span class="op">=</span><span class="st">&quot;text&quot;</span><span class="ex">]</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb8-11" title="11">input<span class="ex">[type</span><span class="op">=</span><span class="st">&quot;email&quot;</span><span class="ex">]</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb8-12" title="12">input<span class="ex">[type</span><span class="op">=</span><span class="st">&quot;number&quot;</span><span class="ex">]</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb8-13" title="13">textarea<span class="op">,</span></a>
+<a class="sourceLine" id="cb8-14" title="14">fieldset {</a>
+<a class="sourceLine" id="cb8-15" title="15">  <span class="kw">width</span> : <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-16" title="16">  <span class="kw">border</span>: <span class="dv">1</span><span class="dt">px</span> <span class="dv">solid</span> <span class="cn">#333</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-17" title="17">  <span class="kw">box-sizing</span>: <span class="dv">border-box</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-18" title="18">}</a>
+<a class="sourceLine" id="cb8-19" title="19"></a>
+<a class="sourceLine" id="cb8-20" title="20">input<span class="in">:invalid</span> {</a>
+<a class="sourceLine" id="cb8-21" title="21">  <span class="kw">box-shadow</span>: <span class="dv">0</span> <span class="dv">0</span> <span class="dv">5</span><span class="dt">px</span> <span class="dv">1</span><span class="dt">px</span> <span class="cn">red</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-22" title="22">}</a>
+<a class="sourceLine" id="cb8-23" title="23"></a>
+<a class="sourceLine" id="cb8-24" title="24">input<span class="in">:focus:invalid</span> {</a>
+<a class="sourceLine" id="cb8-25" title="25">  <span class="kw">box-shadow</span>: <span class="dv">none</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb8-26" title="26">}</a></code></pre></div>
+<p>This renders as follows:</p>
+<p>{{EmbedLiveSample(“Full_example”, “100%”, 420)}}</p>
+<p>See <a href="/en-US/docs/Web/Guide/HTML/Constraint_validation#validation-related_attributes">Validation-related attributes</a> for a complete list of attributes that can be used to constrain input values and the input types that support them.</p>
+<blockquote>
+<p><strong>Note:</strong> You can find this example live on GitHub as <a href="https://mdn.github.io/learning-area/html/forms/form-validation/full-example.html">full-example.html</a> (see also the <a href="https://github.com/mdn/learning-area/blob/master/html/forms/form-validation/full-example.html">source code</a>.)</p>
+</blockquote>
+<h2 id="validating-forms-using-javascript">Validating forms using JavaScript</h2>
+<p>You must use JavaScript if you want to take control over the look and feel of native error messages or to deal with legacy browsers that do not support HTML’s built-in form validation. In this section we will look at the different ways to do this.</p>
+<h3 id="the-constraint-validation-api">The Constraint Validation API</h3>
+<p>Most browsers support the <a href="/en-US/docs/Web/API/Constraint_validation">Constraint Validation API</a>, which consists of a set of methods and properties available on the following form element DOM interfaces:</p>
+<ul>
+<li><a href="/en-US/docs/Web/API/HTMLButtonElement"><code>HTMLButtonElement</code></a> (represents a <a href="/en-US/docs/Web/HTML/Element/button"><code>&lt;button&gt;</code></a> element)</li>
+<li><a href="/en-US/docs/Web/API/HTMLFieldSetElement"><code>HTMLFieldSetElement</code></a> (represents a <a href="/en-US/docs/Web/HTML/Element/fieldset"><code>&lt;fieldset&gt;</code></a> element)</li>
+<li><a href="/en-US/docs/Web/API/HTMLInputElement"><code>HTMLInputElement</code></a> (represents an <a href="/en-US/docs/Web/HTML/Element/input"><code>&lt;input&gt;</code></a> element)</li>
+<li><a href="/en-US/docs/Web/API/HTMLOutputElement"><code>HTMLOutputElement</code></a> (represents an <a href="/en-US/docs/Web/HTML/Element/output"><code>&lt;output&gt;</code></a> element)</li>
+<li><a href="/en-US/docs/Web/API/HTMLSelectElement"><code>HTMLSelectElement</code></a> (represents a <a href="/en-US/docs/Web/HTML/Element/select"><code>&lt;select&gt;</code></a> element)</li>
+<li><a href="/en-US/docs/Web/API/HTMLTextAreaElement"><code>HTMLTextAreaElement</code></a> (represents a <a href="/en-US/docs/Web/HTML/Element/textarea"><code>&lt;textarea&gt;</code></a> element)</li>
+</ul>
+<p>The Constraint validation API makes the following properties available on the above elements.</p>
+<ul>
+<li><code>validationMessage</code>: Returns a localized message describing the validation constraints that the control doesn’t satisfy (if any). If the control is not a candidate for constraint validation (<code>willValidate</code> is <code>false</code>) or the element’s value satisfies its constraints (is valid), this will return an empty string.</li>
+<li><p><code>validity</code>: Returns a <code>ValidityState</code> object that contains several properties describing the validity state of the element. You can find full details of all the available properties in the {{domxref(“ValidityState”)}} reference page; below is listed a few of the more common ones:</p>
+<ul>
+<li>{{domxref(“ValidityState.patternMismatch”, “patternMismatch”)}}: Returns <code>true</code> if the value does not match the specified {{htmlattrxref(“pattern”, “input”)}}, and <code>false</code> if it does match. If true, the element matches the {{cssxref(“:invalid”)}} CSS pseudo-class.</li>
+<li>{{domxref(“ValidityState.tooLong”, “tooLong”)}}: Returns <code>true</code> if the value is longer than the maximum length specified by the {{htmlattrxref(“maxlength”, “input”)}} attribute, or <code>false</code> if it is shorter than or equal to the maximum. If true, the element matches the {{cssxref(“:invalid”)}} CSS pseudo-class.</li>
+<li>{{domxref(“ValidityState.tooShort”, “tooShort”)}}: Returns <code>true</code> if the value is shorter than the minimum length specified by the {{htmlattrxref(“minlength”, “input”)}} attribute, or <code>false</code> if it is greater than or equal to the minimum. If true, the element matches the {{cssxref(“:invalid”)}} CSS pseudo-class.</li>
+<li>{{domxref(“ValidityState.rangeOverflow”, “rangeOverflow”)}}: Returns <code>true</code> if the value is greater than the maximum specified by the {{htmlattrxref(“max”, “input”)}} attribute, or <code>false</code> if it is less than or equal to the maximum. If true, the element matches the {{cssxref(“:invalid”)}} and {{cssxref(“:out-of-range”)}} CSS pseudo-classes.</li>
+<li>{{domxref(“ValidityState.rangeUnderflow”, “rangeUnderflow”)}}: Returns <code>true</code> if the value is less than the minimum specified by the {{htmlattrxref(“min”, “input”)}} attribute, or <code>false</code> if it is greater than or equal to the minimum. If true, the element matches the {{cssxref(“:invalid”)}} and {{cssxref(“:out-of-range”)}} CSS pseudo-classes.</li>
+<li>{{domxref(“ValidityState.typeMismatch”, “typeMismatch”)}}: Returns <code>true</code> if the value is not in the required syntax (when {{htmlattrxref(“type”, “input”)}} is <code>email</code> or <code>url</code>), or <code>false</code> if the syntax is correct. If <code>true</code>, the element matches the {{cssxref(“:invalid”)}} CSS pseudo-class.</li>
+<li><code>valid</code>: Returns <code>true</code> if the element meets all its validation constraints, and is therefore considered to be valid, or <code>false</code> if it fails any constraint. If true, the element matches the {{cssxref(“:valid”)}} CSS pseudo-class; the {{cssxref(“:invalid”)}} CSS pseudo-class otherwise.</li>
+<li><code>valueMissing</code>: Returns <code>true</code> if the element has a {{htmlattrxref(“required”, “input”)}} attribute, but no value, or <code>false</code> otherwise. If true, the element matches the {{cssxref(“:invalid”)}} CSS pseudo-class.</li>
+</ul></li>
+<li><p><code>willValidate</code>: Returns <code>true</code> if the element will be validated when the form is submitted; <code>false</code> otherwise.</p></li>
+</ul>
+<p>The Constraint Validation API also makes the following methods available on the above elements and the <a href="/en-US/docs/Web/HTML/Element/form"><code>form</code></a> element.</p>
+<ul>
+<li><code>checkValidity()</code>: Returns <code>true</code> if the element’s value has no validity problems; <code>false</code> otherwise. If the element is invalid, this method also fires an <a href="/en-US/docs/Web/API/HTMLInputElement/invalid_event"><code>invalid</code> event</a> on the element.</li>
+<li><code>reportValidity()</code>: Reports invalid field(s) using events. Useful in combination with <code>preventDefault()</code> in an <code>onSubmit</code> event handler</li>
+<li><code>setCustomValidity(message)</code>: Adds a custom error message to the element; if you set a custom error message, the element is considered to be invalid, and the specified error is displayed. This lets you use JavaScript code to establish a validation failure other than those offered by the standard HTML5 validation constraints. The message is shown to the user when reporting the problem.</li>
+</ul>
+<h4 id="implementing-a-customized-error-message">Implementing a customized error message</h4>
+<p>As you saw in the HTML5 validation constraint examples earlier, each time a user tries to submit an invalid form, the browser displays an error message. The way this message is displayed depends on the browser.</p>
+<p>These automated messages have two drawbacks:</p>
+<ul>
+<li>There is no standard way to change their look and feel with CSS.</li>
+<li>They depend on the browser locale, which means that you can have a page in one language but an error message displayed in another language, as seen in the following Firefox screenshot.</li>
+</ul>
+<figure>
+<img src="error-firefox-win7.png" alt="Example of an error message with Firefox in French on an English page" /><figcaption>Example of an error message with Firefox in French on an English page</figcaption>
+</figure>
+<p>Customizing these error messages is one of the most common use cases of the <a href="/en-US/docs/Web/API/Constraint_validation">constraint validation API</a>. Let’s work through a simple example of how to do this.</p>
+<p>We’ll start with some simple HTML (feel free to put this in a blank HTML file; use a fresh copy of <a href="https://github.com/mdn/learning-area/blob/master/html/forms/form-validation/fruit-start.html">fruit-start.html</a> as a basis, if you like):</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">&lt;form&gt;</span></a>
+<a class="sourceLine" id="cb9-2" title="2">  <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;mail&quot;</span><span class="kw">&gt;</span>I would like you to provide me with an e-mail address:<span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb9-3" title="3">  <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;email&quot;</span><span class="ot"> id=</span><span class="st">&quot;mail&quot;</span><span class="ot"> name=</span><span class="st">&quot;mail&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb9-4" title="4">  <span class="kw">&lt;button&gt;</span>Submit<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb9-5" title="5"><span class="kw">&lt;/form&gt;</span></a></code></pre></div>
+<p>And add the following JavaScript to the page:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">const</span> email <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;mail&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-2" title="2"></a>
+<a class="sourceLine" id="cb10-3" title="3"><span class="va">email</span>.<span class="at">addEventListener</span>(<span class="st">&quot;input&quot;</span><span class="op">,</span> <span class="kw">function</span> (event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-4" title="4">  <span class="cf">if</span> (<span class="va">email</span>.<span class="va">validity</span>.<span class="at">typeMismatch</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-5" title="5">    <span class="va">email</span>.<span class="at">setCustomValidity</span>(<span class="st">&quot;I am expecting an e-mail address!&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-6" title="6">  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-7" title="7">    <span class="va">email</span>.<span class="at">setCustomValidity</span>(<span class="st">&quot;&quot;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-8" title="8">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb10-9" title="9"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>Here we store a reference to the email input, then add an event listener to it that runs the contained code each time the value inside the input is changed.</p>
+<p>Inside the contained code, we check whether the email input’s <code>validity.typeMismatch</code> property returns <code>true</code>, meaning that the contained value doesn’t match the pattern for a well-formed email address. If so, we call the {{domxref(“HTMLInputElement.setCustomValidity()”,“setCustomValidity()”)}} method with a custom message. This renders the input invalid, so that when you try to submit the form, submission fails and the custom error message is displayed.</p>
+<p>If the <code>validity.typeMismatch</code> property returns <code>false</code>, we call the <code>setCustomValidity()</code> method an empty string. This renders the input valid, so the form will submit.</p>
+<p>You can try it out below:</p>
+<p>{{EmbedGHLiveSample(“learning-area/html/forms/form-validation/custom-error-message.html”, ‘100%’, 80)}}</p>
+<blockquote>
+<p><strong>Note:</strong> You can find this example live on GitHub as <a href="https://mdn.github.io/learning-area/html/forms/form-validation/custom-error-message.html">custom-error-message.html</a> (see also the <a href="https://github.com/mdn/learning-area/blob/master/html/forms/form-validation/custom-error-message.html">source code</a>.)</p>
+</blockquote>
+<h4 id="a-more-detailed-example">A more detailed example</h4>
+<p>Now that we’ve seen a really simple example, let’s see how we can use this API to build some slightly more complex custom validation.</p>
+<p>First, the HTML. Again, feel free to build this along with us:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb11-1" title="1"><span class="kw">&lt;form</span><span class="ot"> novalidate</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb11-2" title="2">  <span class="kw">&lt;p&gt;</span></a>
+<a class="sourceLine" id="cb11-3" title="3">    <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;mail&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb11-4" title="4">      <span class="kw">&lt;span&gt;</span>Please enter an email address:<span class="kw">&lt;/span&gt;</span></a>
+<a class="sourceLine" id="cb11-5" title="5">      <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;email&quot;</span><span class="ot"> id=</span><span class="st">&quot;mail&quot;</span><span class="ot"> name=</span><span class="st">&quot;mail&quot;</span><span class="ot"> required minlength=</span><span class="st">&quot;8&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb11-6" title="6">      <span class="kw">&lt;span</span><span class="ot"> class=</span><span class="st">&quot;error&quot;</span><span class="ot"> aria-live=</span><span class="st">&quot;polite&quot;</span><span class="kw">&gt;&lt;/span&gt;</span></a>
+<a class="sourceLine" id="cb11-7" title="7">    <span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb11-8" title="8">  <span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb11-9" title="9">  <span class="kw">&lt;button&gt;</span>Submit<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb11-10" title="10"><span class="kw">&lt;/form&gt;</span></a></code></pre></div>
+<p>This simple form uses the <a href="/en-US/docs/Web/HTML/Attributes/novalidate"><code>novalidate</code></a> attribute to turn off the browser’s automatic validation; this lets our script take control over validation. However, this doesn’t disable support for the constraint validation API nor the application of CSS pseudo-classes like {{cssxref(“:valid”)}}, etc. That means that even though the browser doesn’t automatically check the validity of the form before sending its data, you can still do it yourself and style the form accordingly.</p>
+<p>Our input to validate is an <a href="/en-US/docs/Web/HTML/Element/input/email"><code>&lt;input type="email"&gt;</code></a>, which is <code>required</code>, and has a <code>minlength</code> of 8 characters. Let’s check these using our own code, and show a custom error message for each one.</p>
+<p>We are aiming to show the error messages inside a <code>&lt;span&gt;</code> element. The <a href="/en-US/docs/Web/Accessibility/ARIA/ARIA_Live_Regions"><code>aria-live</code></a> attribute is set on that <code>&lt;span&gt;</code> to make sure that our custom error message will be presented to everyone, including it being read out to screenreader users.</p>
+<blockquote>
+<p><strong>Note:</strong> A key point here is that setting the <code>novalidate</code> attribute on the form is what stops the form from showing its own error message bubbles, and allows us to instead display the custom error messages in the DOM in some manner of our own choosing.</p>
+</blockquote>
+<p>Now onto some basic CSS to improve the look of the form slightly, and provide some visual feedback when the input data is invalid:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb12-1" title="1">body {</a>
+<a class="sourceLine" id="cb12-2" title="2">  <span class="kw">font</span>: <span class="dv">1</span><span class="dt">em</span> <span class="dv">sans-serif</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-3" title="3">  <span class="kw">width</span>: <span class="dv">200</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-4" title="4">  <span class="kw">padding</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-5" title="5">  <span class="kw">margin</span> : <span class="dv">0</span> <span class="bu">auto</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-6" title="6">}</a>
+<a class="sourceLine" id="cb12-7" title="7"></a>
+<a class="sourceLine" id="cb12-8" title="8">p <span class="op">*</span> {</a>
+<a class="sourceLine" id="cb12-9" title="9">  <span class="kw">display</span>: <span class="dv">block</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-10" title="10">}</a>
+<a class="sourceLine" id="cb12-11" title="11"></a>
+<a class="sourceLine" id="cb12-12" title="12">input<span class="ex">[type</span><span class="op">=</span><span class="st">email</span><span class="ex">]</span>{</a>
+<a class="sourceLine" id="cb12-13" title="13">  <span class="kw">-webkit-appearance</span>: <span class="dv">none</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-14" title="14">  <span class="kw">appearance</span>: <span class="dv">none</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-15" title="15"></a>
+<a class="sourceLine" id="cb12-16" title="16">  <span class="kw">width</span>: <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-17" title="17">  <span class="kw">border</span>: <span class="dv">1</span><span class="dt">px</span> <span class="dv">solid</span> <span class="cn">#333</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-18" title="18">  <span class="kw">margin</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-19" title="19"></a>
+<a class="sourceLine" id="cb12-20" title="20">  <span class="kw">font-family</span>: <span class="bu">inherit</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-21" title="21">  <span class="kw">font-size</span>: <span class="dv">90</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-22" title="22"></a>
+<a class="sourceLine" id="cb12-23" title="23">  <span class="kw">box-sizing</span>: <span class="dv">border-box</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-24" title="24">}</a>
+<a class="sourceLine" id="cb12-25" title="25"></a>
+<a class="sourceLine" id="cb12-26" title="26"><span class="co">/* This is our style for the invalid fields */</span></a>
+<a class="sourceLine" id="cb12-27" title="27">input<span class="in">:invalid</span>{</a>
+<a class="sourceLine" id="cb12-28" title="28">  <span class="kw">border-color</span>: <span class="cn">#900</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-29" title="29">  <span class="kw">background-color</span>: <span class="cn">#FDD</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-30" title="30">}</a>
+<a class="sourceLine" id="cb12-31" title="31"></a>
+<a class="sourceLine" id="cb12-32" title="32">input<span class="in">:focus:invalid</span> {</a>
+<a class="sourceLine" id="cb12-33" title="33">  <span class="kw">outline</span>: <span class="dv">none</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-34" title="34">}</a>
+<a class="sourceLine" id="cb12-35" title="35"></a>
+<a class="sourceLine" id="cb12-36" title="36"><span class="co">/* This is the style of our error messages */</span></a>
+<a class="sourceLine" id="cb12-37" title="37"><span class="fu">.error</span> {</a>
+<a class="sourceLine" id="cb12-38" title="38">  <span class="kw">width</span>  : <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-39" title="39">  <span class="kw">padding</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-40" title="40"></a>
+<a class="sourceLine" id="cb12-41" title="41">  <span class="kw">font-size</span>: <span class="dv">80</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-42" title="42">  <span class="kw">color</span>: <span class="cn">white</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-43" title="43">  <span class="kw">background-color</span>: <span class="cn">#900</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-44" title="44">  <span class="kw">border-radius</span>: <span class="dv">0</span> <span class="dv">0</span> <span class="dv">5</span><span class="dt">px</span> <span class="dv">5</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-45" title="45"></a>
+<a class="sourceLine" id="cb12-46" title="46">  <span class="kw">box-sizing</span>: <span class="dv">border-box</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-47" title="47">}</a>
+<a class="sourceLine" id="cb12-48" title="48"></a>
+<a class="sourceLine" id="cb12-49" title="49"><span class="fu">.error.active</span> {</a>
+<a class="sourceLine" id="cb12-50" title="50">  <span class="kw">padding</span>: <span class="dv">0.3</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb12-51" title="51">}</a></code></pre></div>
+<p>Now lets look at the JavaScript that implements the custom error validation.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb13-1" title="1"><span class="co">// There are many ways to pick a DOM node; here we get the form itself and the email</span></a>
+<a class="sourceLine" id="cb13-2" title="2"><span class="co">// input box, as well as the span element into which we will place the error message.</span></a>
+<a class="sourceLine" id="cb13-3" title="3"><span class="kw">const</span> form  <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementsByTagName</span>(<span class="st">&#39;form&#39;</span>)[<span class="dv">0</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-4" title="4"></a>
+<a class="sourceLine" id="cb13-5" title="5"><span class="kw">const</span> email <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;mail&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-6" title="6"><span class="kw">const</span> emailError <span class="op">=</span> <span class="va">document</span>.<span class="at">querySelector</span>(<span class="st">&#39;#mail + span.error&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-7" title="7"></a>
+<a class="sourceLine" id="cb13-8" title="8"><span class="va">email</span>.<span class="at">addEventListener</span>(<span class="st">&#39;input&#39;</span><span class="op">,</span> <span class="kw">function</span> (event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-9" title="9">  <span class="co">// Each time the user types something, we check if the</span></a>
+<a class="sourceLine" id="cb13-10" title="10">  <span class="co">// form fields are valid.</span></a>
+<a class="sourceLine" id="cb13-11" title="11"></a>
+<a class="sourceLine" id="cb13-12" title="12">  <span class="cf">if</span> (<span class="va">email</span>.<span class="va">validity</span>.<span class="at">valid</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-13" title="13">    <span class="co">// In case there is an error message visible, if the field</span></a>
+<a class="sourceLine" id="cb13-14" title="14">    <span class="co">// is valid, we remove the error message.</span></a>
+<a class="sourceLine" id="cb13-15" title="15">    <span class="va">emailError</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;&#39;</span><span class="op">;</span> <span class="co">// Reset the content of the message</span></a>
+<a class="sourceLine" id="cb13-16" title="16">    <span class="va">emailError</span>.<span class="at">className</span> <span class="op">=</span> <span class="st">&#39;error&#39;</span><span class="op">;</span> <span class="co">// Reset the visual state of the message</span></a>
+<a class="sourceLine" id="cb13-17" title="17">  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-18" title="18">    <span class="co">// If there is still an error, show the correct error</span></a>
+<a class="sourceLine" id="cb13-19" title="19">    <span class="at">showError</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-20" title="20">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb13-21" title="21"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-22" title="22"></a>
+<a class="sourceLine" id="cb13-23" title="23"><span class="va">form</span>.<span class="at">addEventListener</span>(<span class="st">&#39;submit&#39;</span><span class="op">,</span> <span class="kw">function</span> (event) <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-24" title="24">  <span class="co">// if the email field is valid, we let the form submit</span></a>
+<a class="sourceLine" id="cb13-25" title="25"></a>
+<a class="sourceLine" id="cb13-26" title="26">  <span class="cf">if</span>(<span class="op">!</span><span class="va">email</span>.<span class="va">validity</span>.<span class="at">valid</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-27" title="27">    <span class="co">// If it isn&#39;t, we display an appropriate error message</span></a>
+<a class="sourceLine" id="cb13-28" title="28">    <span class="at">showError</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-29" title="29">    <span class="co">// Then we prevent the form from being sent by canceling the event</span></a>
+<a class="sourceLine" id="cb13-30" title="30">    <span class="va">event</span>.<span class="at">preventDefault</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-31" title="31">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb13-32" title="32"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb13-33" title="33"></a>
+<a class="sourceLine" id="cb13-34" title="34"><span class="kw">function</span> <span class="at">showError</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-35" title="35">  <span class="cf">if</span>(<span class="va">email</span>.<span class="va">validity</span>.<span class="at">valueMissing</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-36" title="36">    <span class="co">// If the field is empty,</span></a>
+<a class="sourceLine" id="cb13-37" title="37">    <span class="co">// display the following error message.</span></a>
+<a class="sourceLine" id="cb13-38" title="38">    <span class="va">emailError</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;You need to enter an e-mail address.&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb13-39" title="39">  <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span>(<span class="va">email</span>.<span class="va">validity</span>.<span class="at">typeMismatch</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-40" title="40">    <span class="co">// If the field doesn&#39;t contain an email address,</span></a>
+<a class="sourceLine" id="cb13-41" title="41">    <span class="co">// display the following error message.</span></a>
+<a class="sourceLine" id="cb13-42" title="42">    <span class="va">emailError</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&#39;Entered value needs to be an e-mail address.&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb13-43" title="43">  <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span>(<span class="va">email</span>.<span class="va">validity</span>.<span class="at">tooShort</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb13-44" title="44">    <span class="co">// If the data is too short,</span></a>
+<a class="sourceLine" id="cb13-45" title="45">    <span class="co">// display the following error message.</span></a>
+<a class="sourceLine" id="cb13-46" title="46">    <span class="va">emailError</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="vs">`Email should be at least </span><span class="sc">${</span> <span class="va">email</span>.<span class="at">minLength</span> <span class="sc">}</span><span class="vs"> characters; you entered </span><span class="sc">${</span> <span class="va">email</span>.<span class="va">value</span>.<span class="at">length</span> <span class="sc">}</span><span class="vs">.`</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb13-47" title="47">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb13-48" title="48"></a>
+<a class="sourceLine" id="cb13-49" title="49">  <span class="co">// Set the styling appropriately</span></a>
+<a class="sourceLine" id="cb13-50" title="50">  <span class="va">emailError</span>.<span class="at">className</span> <span class="op">=</span> <span class="st">&#39;error active&#39;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb13-51" title="51"><span class="op">}</span></a></code></pre></div>
+<p>The comments explain things pretty well, but briefly:</p>
+<ul>
+<li>Every time we change the value of the input, we check to see if it contains valid data. If it has then we remove any error message being shown. If the data is not valid, we run <code>showError()</code> to show the appropriate error.</li>
+<li>Every time we try to submit the form, we again check to see if the data is valid. If so, we let the form submit. If not, we run <code>showError()</code> to show the appropriate error, and stop the form submitting with <a href="/en-US/docs/Web/API/Event/preventDefault"><code>preventDefault()</code></a>.</li>
+<li>The <code>showError()</code> function uses various properties of the input’s <code>validity</code> object to determine what the error is, and then displays an error message as appropriate.</li>
+</ul>
+<p>Here is the live result:</p>
+<p>{{EmbedGHLiveSample(“learning-area/html/forms/form-validation/detailed-custom-validation.html”, ‘100%’, 150)}}</p>
+<blockquote>
+<p><strong>Note:</strong> You can find this example live on GitHub as <a href="https://mdn.github.io/learning-area/html/forms/form-validation/detailed-custom-validation.html">detailed-custom-validation.html</a> (see also the <a href="https://github.com/mdn/learning-area/blob/master/html/forms/form-validation/detailed-custom-validation.html">source code</a>.)</p>
+</blockquote>
+<p>The constraint validation API gives you a powerful tool to handle form validation, letting you have enormous control over the user interface above and beyond what you can do with HTML and CSS alone.</p>
+<blockquote>
+<p><strong>Note:</strong> For further information, see our <a href="/en-US/docs/Web/Guide/HTML/Constraint_validation">Constraint validation guide</a>, and the <a href="/en-US/docs/Web/API/Constraint_validation">Constraint Validation API</a> reference.</p>
+</blockquote>
+<h3 id="validating-forms-without-a-built-in-api">Validating forms without a built-in API</h3>
+<p>In some cases, such as legacy browser support or <a href="/en-US/docs/Learn/Forms/How_to_build_custom_form_controls">custom controls</a>, you won’t be able to or won’t want to use the Constraint Validation API.You’re still able to use JavaScript to validate your form, but you’ll just have to write your own.</p>
+<p>To validate a form, ask yourself a few questions:</p>
+<ul>
+<li>What kind of validation should I perform?
+<ul>
+<li>: You need to determine how to validate your data: string operations, type conversion, regular expressions, and so on. It’s up to you.</li>
+</ul></li>
+<li>What should I do if the form doesn’t validate?
+<ul>
+<li>: This is clearly a UI matter. You have to decide how the form will behave. Does the form send the data anyway? Should you highlight the fields that are in error? Should you display error messages?</li>
+</ul></li>
+<li><p>How can I help the user to correct invalid data?</p>
+<ul>
+<li><p>: In order to reduce the user’s frustration, it’s very important to provide as much helpful information as possible in order to guide them in correcting their inputs. You should offer up-front suggestions so they know what’s expected, as well as clear error messages. If you want to dig into form validation UI requirements, here are some useful articles you should read:</p>
+<ul>
+<li>SmashingMagazine: <a href="https://uxdesign.smashingmagazine.com/2012/06/27/form-field-validation-errors-only-approach/">Form-Field Validation: The Errors-Only Approach</a></li>
+<li>SmashingMagazine: <a href="https://www.smashingmagazine.com/2009/07/07/web-form-validation-best-practices-and-tutorials/">Web Form Validation: Best Practices and Tutorials</a></li>
+<li>WebFX: <a href="https://www.webfx.com/blog/web-design/10-tips-for-optimizing-web-form-submission-usability/">10 Tips for Optimizing Web Form Submission Usability</a></li>
+<li>A List Apart: <a href="https://www.alistapart.com/articles/inline-validation-in-web-forms/">Inline Validation in Web Forms</a></li>
+</ul></li>
+</ul></li>
+</ul>
+<h4 id="an-example-that-doesnt-use-the-constraint-validation-api">An example that doesn’t use the constraint validation API</h4>
+<p>In order to illustrate this, the following is a simplified version of the previous example that works with legacy browsers.</p>
+<p>The HTML is almost the same; we just removed the HTML validation features.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb14-1" title="1"><span class="kw">&lt;form&gt;</span></a>
+<a class="sourceLine" id="cb14-2" title="2">  <span class="kw">&lt;p&gt;</span></a>
+<a class="sourceLine" id="cb14-3" title="3">    <span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;mail&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb14-4" title="4">        <span class="kw">&lt;span&gt;</span>Please enter an email address:<span class="kw">&lt;/span&gt;</span></a>
+<a class="sourceLine" id="cb14-5" title="5">        <span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;text&quot;</span><span class="ot"> id=</span><span class="st">&quot;mail&quot;</span><span class="ot"> name=</span><span class="st">&quot;mail&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb14-6" title="6">        <span class="kw">&lt;span</span><span class="ot"> class=</span><span class="st">&quot;error&quot;</span><span class="ot"> aria-live=</span><span class="st">&quot;polite&quot;</span><span class="kw">&gt;&lt;/span&gt;</span></a>
+<a class="sourceLine" id="cb14-7" title="7">    <span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb14-8" title="8">  <span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb14-9" title="9">  <span class="co">&lt;!-- Some legacy browsers need to have the `type` attribute</span></a>
+<a class="sourceLine" id="cb14-10" title="10"><span class="co">       explicitly set to `submit` on the `button`element --&gt;</span></a>
+<a class="sourceLine" id="cb14-11" title="11">  <span class="kw">&lt;button</span><span class="ot"> type=</span><span class="st">&quot;submit&quot;</span><span class="kw">&gt;</span>Submit<span class="kw">&lt;/button&gt;</span></a>
+<a class="sourceLine" id="cb14-12" title="12"><span class="kw">&lt;/form&gt;</span></a></code></pre></div>
+<p>Similarly, the CSS doesn’t need to change very much; we’ve just turned the {{cssxref(“:invalid”)}} CSS pseudo-class into a real class and avoided using the attribute selector that doesn’t work on Internet Explorer 6.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode css"><code class="sourceCode css"><a class="sourceLine" id="cb15-1" title="1">body {</a>
+<a class="sourceLine" id="cb15-2" title="2">  <span class="kw">font</span>: <span class="dv">1</span><span class="dt">em</span> <span class="dv">sans-serif</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-3" title="3">  <span class="kw">width</span>: <span class="dv">200</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-4" title="4">  <span class="kw">padding</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-5" title="5">  <span class="kw">margin</span> : <span class="dv">0</span> <span class="bu">auto</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-6" title="6">}</a>
+<a class="sourceLine" id="cb15-7" title="7"></a>
+<a class="sourceLine" id="cb15-8" title="8">form {</a>
+<a class="sourceLine" id="cb15-9" title="9">  <span class="kw">max-width</span>: <span class="dv">200</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-10" title="10">}</a>
+<a class="sourceLine" id="cb15-11" title="11"></a>
+<a class="sourceLine" id="cb15-12" title="12">p <span class="op">*</span> {</a>
+<a class="sourceLine" id="cb15-13" title="13">  <span class="kw">display</span>: <span class="dv">block</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-14" title="14">}</a>
+<a class="sourceLine" id="cb15-15" title="15"></a>
+<a class="sourceLine" id="cb15-16" title="16">input<span class="fu">.mail</span> {</a>
+<a class="sourceLine" id="cb15-17" title="17">  <span class="kw">-webkit-appearance</span>: <span class="dv">none</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-18" title="18"></a>
+<a class="sourceLine" id="cb15-19" title="19">  <span class="kw">width</span>: <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-20" title="20">  <span class="kw">border</span>: <span class="dv">1</span><span class="dt">px</span> <span class="dv">solid</span> <span class="cn">#333</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-21" title="21">  <span class="kw">margin</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-22" title="22"></a>
+<a class="sourceLine" id="cb15-23" title="23">  <span class="kw">font-family</span>: <span class="bu">inherit</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-24" title="24">  <span class="kw">font-size</span>: <span class="dv">90</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-25" title="25"></a>
+<a class="sourceLine" id="cb15-26" title="26">  <span class="kw">box-sizing</span>: <span class="dv">border-box</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-27" title="27">}</a>
+<a class="sourceLine" id="cb15-28" title="28"></a>
+<a class="sourceLine" id="cb15-29" title="29"><span class="co">/* This is our style for the invalid fields */</span></a>
+<a class="sourceLine" id="cb15-30" title="30">input<span class="fu">.invalid</span>{</a>
+<a class="sourceLine" id="cb15-31" title="31">  <span class="kw">border-color</span>: <span class="cn">#900</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-32" title="32">  <span class="kw">background-color</span>: <span class="cn">#FDD</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-33" title="33">}</a>
+<a class="sourceLine" id="cb15-34" title="34"></a>
+<a class="sourceLine" id="cb15-35" title="35">input<span class="in">:focus</span><span class="fu">.invalid</span> {</a>
+<a class="sourceLine" id="cb15-36" title="36">  <span class="kw">outline</span>: <span class="dv">none</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-37" title="37">}</a>
+<a class="sourceLine" id="cb15-38" title="38"></a>
+<a class="sourceLine" id="cb15-39" title="39"><span class="co">/* This is the style of our error messages */</span></a>
+<a class="sourceLine" id="cb15-40" title="40"><span class="fu">.error</span> {</a>
+<a class="sourceLine" id="cb15-41" title="41">  <span class="kw">width</span>  : <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-42" title="42">  <span class="kw">padding</span>: <span class="dv">0</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-43" title="43"></a>
+<a class="sourceLine" id="cb15-44" title="44">  <span class="kw">font-size</span>: <span class="dv">80</span><span class="dt">%</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-45" title="45">  <span class="kw">color</span>: <span class="cn">white</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-46" title="46">  <span class="kw">background-color</span>: <span class="cn">#900</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-47" title="47">  <span class="kw">border-radius</span>: <span class="dv">0</span> <span class="dv">0</span> <span class="dv">5</span><span class="dt">px</span> <span class="dv">5</span><span class="dt">px</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-48" title="48">  <span class="kw">box-sizing</span>: <span class="dv">border-box</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-49" title="49">}</a>
+<a class="sourceLine" id="cb15-50" title="50"></a>
+<a class="sourceLine" id="cb15-51" title="51"><span class="fu">.error.active</span> {</a>
+<a class="sourceLine" id="cb15-52" title="52">  <span class="kw">padding</span>: <span class="dv">0.3</span><span class="dt">em</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb15-53" title="53">}</a></code></pre></div>
+<p>The big changes are in the JavaScript code, which needs to do much more heavy lifting.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb16-1" title="1"><span class="co">// There are fewer ways to pick a DOM node with legacy browsers</span></a>
+<a class="sourceLine" id="cb16-2" title="2"><span class="kw">const</span> form  <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementsByTagName</span>(<span class="st">&#39;form&#39;</span>)[<span class="dv">0</span>]<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-3" title="3"><span class="kw">const</span> email <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&#39;mail&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-4" title="4"></a>
+<a class="sourceLine" id="cb16-5" title="5"><span class="co">// The following is a trick to reach the next sibling Element node in the DOM</span></a>
+<a class="sourceLine" id="cb16-6" title="6"><span class="co">// This is dangerous because you can easily build an infinite loop.</span></a>
+<a class="sourceLine" id="cb16-7" title="7"><span class="co">// In modern browsers, you should prefer using element.nextElementSibling</span></a>
+<a class="sourceLine" id="cb16-8" title="8"><span class="kw">let</span> error <span class="op">=</span> email<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-9" title="9"><span class="cf">while</span> ((error <span class="op">=</span> <span class="va">error</span>.<span class="at">nextSibling</span>).<span class="at">nodeType</span> <span class="op">!=</span> <span class="dv">1</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-10" title="10"></a>
+<a class="sourceLine" id="cb16-11" title="11"><span class="co">// As per the HTML5 Specification</span></a>
+<a class="sourceLine" id="cb16-12" title="12"><span class="kw">const</span> emailRegExp <span class="op">=</span> <span class="ss">/</span><span class="sc">^[a-zA-Z0-9.!#$%&amp;&#39;*+/=?^_`{|}~-]+</span><span class="ss">@</span><span class="sc">[a-zA-Z0-9-]+(?</span><span class="ss">:</span><span class="sc">\.[a-zA-Z0-9-]+)*$</span><span class="ss">/</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-13" title="13"></a>
+<a class="sourceLine" id="cb16-14" title="14"><span class="co">// Many legacy browsers do not support the addEventListener method.</span></a>
+<a class="sourceLine" id="cb16-15" title="15"><span class="co">// Here is a simple way to handle this; it&#39;s far from the only one.</span></a>
+<a class="sourceLine" id="cb16-16" title="16"><span class="kw">function</span> <span class="at">addEvent</span>(element<span class="op">,</span> event<span class="op">,</span> callback) <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-17" title="17">  <span class="kw">let</span> previousEventCallBack <span class="op">=</span> element[<span class="st">&quot;on&quot;</span><span class="op">+</span>event]<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-18" title="18">  element[<span class="st">&quot;on&quot;</span><span class="op">+</span>event] <span class="op">=</span> <span class="kw">function</span> (e) <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-19" title="19">    <span class="kw">const</span> output <span class="op">=</span> <span class="at">callback</span>(e)<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-20" title="20"></a>
+<a class="sourceLine" id="cb16-21" title="21">    <span class="co">// A callback that returns `false` stops the callback chain</span></a>
+<a class="sourceLine" id="cb16-22" title="22">    <span class="co">// and interrupts the execution of the event callback.</span></a>
+<a class="sourceLine" id="cb16-23" title="23">    <span class="cf">if</span> (output <span class="op">===</span> <span class="kw">false</span>) <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-24" title="24"></a>
+<a class="sourceLine" id="cb16-25" title="25">    <span class="cf">if</span> (<span class="kw">typeof</span> previousEventCallBack <span class="op">===</span> <span class="st">&#39;function&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-26" title="26">      output <span class="op">=</span> <span class="at">previousEventCallBack</span>(e)<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-27" title="27">      <span class="cf">if</span>(output <span class="op">===</span> <span class="kw">false</span>) <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-28" title="28">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb16-29" title="29">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb16-30" title="30"><span class="op">};</span></a>
+<a class="sourceLine" id="cb16-31" title="31"></a>
+<a class="sourceLine" id="cb16-32" title="32"><span class="co">// Now we can rebuild our validation constraint</span></a>
+<a class="sourceLine" id="cb16-33" title="33"><span class="co">// Because we do not rely on CSS pseudo-class, we have to</span></a>
+<a class="sourceLine" id="cb16-34" title="34"><span class="co">// explicitly set the valid/invalid class on our email field</span></a>
+<a class="sourceLine" id="cb16-35" title="35"><span class="at">addEvent</span>(window<span class="op">,</span> <span class="st">&quot;load&quot;</span><span class="op">,</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-36" title="36">  <span class="co">// Here, we test if the field is empty (remember, the field is not required)</span></a>
+<a class="sourceLine" id="cb16-37" title="37">  <span class="co">// If it is not, we check if its content is a well-formed e-mail address.</span></a>
+<a class="sourceLine" id="cb16-38" title="38">  <span class="kw">const</span> test <span class="op">=</span> <span class="va">email</span>.<span class="va">value</span>.<span class="at">length</span> <span class="op">===</span> <span class="dv">0</span> <span class="op">||</span> <span class="va">emailRegExp</span>.<span class="at">test</span>(<span class="va">email</span>.<span class="at">value</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-39" title="39"></a>
+<a class="sourceLine" id="cb16-40" title="40">  <span class="va">email</span>.<span class="at">className</span> <span class="op">=</span> test <span class="op">?</span> <span class="st">&quot;valid&quot;</span> : <span class="st">&quot;invalid&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-41" title="41"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-42" title="42"></a>
+<a class="sourceLine" id="cb16-43" title="43"><span class="co">// This defines what happens when the user types in the field</span></a>
+<a class="sourceLine" id="cb16-44" title="44"><span class="at">addEvent</span>(email<span class="op">,</span> <span class="st">&quot;input&quot;</span><span class="op">,</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-45" title="45">  <span class="kw">const</span> test <span class="op">=</span> <span class="va">email</span>.<span class="va">value</span>.<span class="at">length</span> <span class="op">===</span> <span class="dv">0</span> <span class="op">||</span> <span class="va">emailRegExp</span>.<span class="at">test</span>(<span class="va">email</span>.<span class="at">value</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-46" title="46">  <span class="cf">if</span> (test) <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-47" title="47">    <span class="va">email</span>.<span class="at">className</span> <span class="op">=</span> <span class="st">&quot;valid&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-48" title="48">    <span class="va">error</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&quot;&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-49" title="49">    <span class="va">error</span>.<span class="at">className</span> <span class="op">=</span> <span class="st">&quot;error&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-50" title="50">  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-51" title="51">    <span class="va">email</span>.<span class="at">className</span> <span class="op">=</span> <span class="st">&quot;invalid&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-52" title="52">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb16-53" title="53"><span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-54" title="54"></a>
+<a class="sourceLine" id="cb16-55" title="55"><span class="co">// This defines what happens when the user tries to submit the data</span></a>
+<a class="sourceLine" id="cb16-56" title="56"><span class="at">addEvent</span>(form<span class="op">,</span> <span class="st">&quot;submit&quot;</span><span class="op">,</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-57" title="57">  <span class="kw">const</span> test <span class="op">=</span> <span class="va">email</span>.<span class="va">value</span>.<span class="at">length</span> <span class="op">===</span> <span class="dv">0</span> <span class="op">||</span> <span class="va">emailRegExp</span>.<span class="at">test</span>(<span class="va">email</span>.<span class="at">value</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-58" title="58"></a>
+<a class="sourceLine" id="cb16-59" title="59">  <span class="cf">if</span> (<span class="op">!</span>test) <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-60" title="60">    <span class="va">email</span>.<span class="at">className</span> <span class="op">=</span> <span class="st">&quot;invalid&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-61" title="61">    <span class="va">error</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&quot;I expect an e-mail, darling!&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-62" title="62">    <span class="va">error</span>.<span class="at">className</span> <span class="op">=</span> <span class="st">&quot;error active&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-63" title="63"></a>
+<a class="sourceLine" id="cb16-64" title="64">    <span class="co">// Some legacy browsers do not support the event.preventDefault() method</span></a>
+<a class="sourceLine" id="cb16-65" title="65">    <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-66" title="66">  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-67" title="67">    <span class="va">email</span>.<span class="at">className</span> <span class="op">=</span> <span class="st">&quot;valid&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-68" title="68">    <span class="va">error</span>.<span class="at">textContent</span> <span class="op">=</span> <span class="st">&quot;&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-69" title="69">    <span class="va">error</span>.<span class="at">className</span> <span class="op">=</span> <span class="st">&quot;error&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb16-70" title="70">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb16-71" title="71"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>The result looks like this:</p>
+<p>{{EmbedLiveSample(“An_example_that_doesnt_use_the_constraint_validation_API”, “100%”, 130)}}</p>
+<p>As you can see, it’s not that hard to build a validation system on your own. The difficult part is to make it generic enough to use both cross-platform and on any form you might create. There are many libraries available to perform form validation, such as <a href="https://rickharrison.github.io/validate.js/">Validate.js</a>.</p>
+<h2 id="test-your-skills">Test your skills!</h2>
+<p>You’ve reached the end of this article, but can you remember the most important information? You can find some further tests to verify that you’ve retained this information before you move on — see <a href="/en-US/docs/Learn/Forms/Test_your_skills:_Form_validation">Test your skills: Form validation</a>.</p>
+<h2 id="summary">Summary</h2>
+<p>Client-side form validation sometimes requires JavaScript if you want to customize styling and error messages, but it <em>always</em> requires you to think carefully about the user. Always remember to help your users correct the data they provide. To that end, be sure to:</p>
+<ul>
+<li>Display explicit error messages.</li>
+<li>Be permissive about the input format.</li>
+<li>Point out exactly where the error occurs, especially on large forms.</li>
+</ul>
+<p>Once you have checked that the form is filled out correctly, the form can be submitted. We’ll cover <a href="/en-US/docs/Learn/Forms/Sending_and_retrieving_form_data">sending form data</a> next.</p>
+<p>{{PreviousMenuNext(“Learn/Forms/UI_pseudo-classes”, “Learn/Forms/Sending_and_retrieving_form_data”, “Learn/HTML/Forms”)}}</p>
+<h2 id="in-this-module">In this module</h2>
+<ul>
+<li><a href="/en-US/docs/Learn/Forms/Your_first_form">Your first form</a></li>
+<li><a href="/en-US/docs/Learn/Forms/How_to_structure_a_web_form">How to structure a web form</a></li>
+<li><a href="/en-US/docs/Learn/Forms/Basic_native_form_controls">Basic native form controls</a></li>
+<li><a href="/en-US/docs/Learn/Forms/HTML5_input_types">The HTML5 input types</a></li>
+<li><a href="/en-US/docs/Learn/Forms/Other_form_controls">Other form controls</a></li>
+<li><a href="/en-US/docs/Learn/Forms/Styling_web_forms">Styling web forms</a></li>
+<li><a href="/en-US/docs/Learn/Forms/Advanced_form_styling">Advanced form styling</a></li>
+<li><a href="/en-US/docs/Learn/Forms/UI_pseudo-classes">UI pseudo-classes</a></li>
+<li><a href="/en-US/docs/Learn/Forms/Form_validation">Client-side form validation</a></li>
+<li><a href="/en-US/docs/Learn/Forms/Sending_and_retrieving_form_data">Sending form data</a></li>
+</ul>
+<h3 id="advanced-topics">Advanced Topics</h3>
+<ul>
+<li><a href="/en-US/docs/Learn/Forms/How_to_build_custom_form_controls">How to build custom form controls</a></li>
+<li><a href="/en-US/docs/Learn/Forms/Sending_forms_through_JavaScript">Sending forms through JavaScript</a></li>
+<li><a href="/en-US/docs/Learn/Forms/Property_compatibility_table_for_form_controls">Property compatibility table for form widgets</a></li>
+</ul>

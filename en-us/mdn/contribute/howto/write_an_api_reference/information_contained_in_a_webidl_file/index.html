@@ -1,0 +1,374 @@
+<p>{{MDNSidebar}}</p>
+<p>When writing documentation about an API, the sources of information are many: the specifications describe what should be implemented as well as the model, and the implementations describe what has actually been put in the browsers. WebIDL files are a very condensed way of giving a lot, but not all, of the information about the API. This document provides a reference to help understand WebIDL syntax.</p>
+<p>IDL stands for <strong><em>Interface Definition Language</em></strong> and it is designed to describe APIs. In the wider world of computing there are several kinds of IDL. In the world of browsers, the IDL we use is called <em>WebIDL</em>. Two kinds of WebIDL are available: the one given in the WebIDL spec, and the one implemented in browsers. The spec is the canonical reference, and the browser WebIDL describes what is actually implemented in a particular browser, and contains additional things such as annotations, information about non-standard elements, and browser-specific extensions to the IDL specification.</p>
+<h2 id="where-to-find-webidl-files">Where to find WebIDL files</h2>
+<p>WebIDL can be found in multiple locations:</p>
+<ul>
+<li>Each specification contains WebIDL inside the text: it is a very convenient way to convey precise definition. These describe the syntax of the API. Though the canonical reference, we have to keep in mind that they may differ from the actual implementation. On MDN we want to be practical and document what the Web platform really is, not what it ideally should be. So double check what is there with implementations (and don’t hesitate to file bugs if you discover incoherence).</li>
+<li><p>Three browser engines use (modified) WebIDL as part as their toolchain: Gecko, Chromium/Blink, and WebCore/WebKit. Pre-Chromium versions of Edge used it internally, but these are unfortunately not public.</p>
+<ul>
+<li>For Gecko, all WebIDL files are grouped in a single directory: <a href="https://dxr.mozilla.org/mozilla-central/source/dom/webidl/" class="uri">https://dxr.mozilla.org/mozilla-central/source/dom/webidl/</a>. Their extension is <code>.webidl</code>. There are other <code>*.idl</code> files in the Gecko source tree but they are not WebIDL, so you can ignore them. Older versions of Gecko have some of their WebIDL scattered around somewhat, and may even use Mozilla’s IDL instead of WebIDL to describe some Web interfaces, but this won’t be a problem in any recent Gecko code.</li>
+<li>For Chromium, they are located in two locations, both subtrees of the source code’s <a href="https://source.chromium.org/chromium/chromium/src/+/master:third_party/blink/renderer/"><code>renderer/</code></a> directory: <a href="https://source.chromium.org/chromium/chromium/src/+/master:third_party/blink/renderer/core/"><code>core/</code></a> and <a href="https://source.chromium.org/chromium/chromium/src/+/master:third_party/blink/renderer/modules/"><code>modules/</code></a>. Chromium source code has IDL files in other locations, but these are part of the testing system and not relevant to API implementations.</li>
+<li>For WebCore, they are scattered around the source code, so you need to dig a bit more: E.g. <a href="https://github.com/WebKit/webkit/blob/master/Source/WebCore/html/DOMTokenList.idl" class="uri">https://github.com/WebKit/webkit/blob/master/Source/WebCore/html/DOMTokenList.idl</a></li>
+</ul></li>
+</ul>
+<h2 id="different-dialects-of-webidl">Different dialects of WebIDL</h2>
+<p>WebIDL is defined in <a href="https://heycam.github.io/webidl/">its specification</a>. But it has been designed to be extended to convey more information, and browser vendors have done so:</p>
+<ul>
+<li>For Gecko, MDN has the <a href="/en-US/docs/Mozilla/WebIDL_bindings">documentation</a> of its dialectal WebIDL.</li>
+<li>For Chromium, Google also created a <a href="https://www.chromium.org/blink/webidl">document</a> to describe its extensions.</li>
+<li>For WebCore, Apple also made available a <a href="https://trac.webkit.org/wiki/WebKitIDL">page</a> for its dialect.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> We describe here only the subset of WebIDL which is most useful when writing documentation. There are many more annotations useful for implementers; refer to the four documents linked above to have a complete overview.</p>
+</blockquote>
+<h2 id="interfaces">Interfaces</h2>
+<p>This section explains the WebIDL syntax that describes overall API features.</p>
+<h3 id="name-of-the-interface">Name of the interface</h3>
+<p>The interface name is the string that appears after the keyword <code>interface</code> and before the next opening bracket (<code>'{'</code>) or colon (<code>':'</code>).</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">interface</span> URL <span class="op">{};</span></a></code></pre></div>
+<p>Each WebIDL interface, being a true interface or a mixin, has its own page in the documentation, listing every constructor, property and method defined for it.</p>
+<h3 id="inheritance-chain">Inheritance chain</h3>
+<p>The parent, if any, of a given interface is defined after the interface name, following a colon (<code>':'</code>). There can be only one parent per interface.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">interface</span> HTMLMediaElement <span class="op">:</span> HTMLElement <span class="op">{</span>…<span class="op">}</span></a></code></pre></div>
+<p>The inheritance chain is listed automatically in the sidebar (using the \{{APIRef}} macro). It can also be added as an SVG image via the macro \{{InheritanceDiagram}}.</p>
+<h3 id="mixins">Mixins</h3>
+<p>Some properties or methods are available to several interfaces. To prevent redefinition they are defined in special WebIDL interfaces called <em>mixins</em>.</p>
+<p>As of September 2019, mixin syntax was updated. In the new syntax, you use <code>interface mixin</code> to define a mixin interface, like so:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">interface</span> MyInterface <span class="op">{};</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw">interface</span> mixin MyMixin <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="kw">void</span> <span class="at">somethingMixedIn</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="op">}</span></a></code></pre></div>
+<p>You then use the <code>includes</code> keyword to say that the properties defined inside a mixin are available on an interface:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1">MyInterface includes MyMixin<span class="op">;</span></a></code></pre></div>
+<p>Mixins have no inheritance and cannot include other mixins. They do however support partials, so you will see things like this:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">interface</span> MyInterface <span class="op">{};</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="kw">interface</span> mixin MyMixin <span class="op">{};</span></a>
+<a class="sourceLine" id="cb5-3" title="3"></a>
+<a class="sourceLine" id="cb5-4" title="4">partial <span class="kw">interface</span> mixin MyMixin <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-5" title="5">  <span class="kw">void</span> <span class="at">somethingMixedIn</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-6" title="6"><span class="op">};</span></a>
+<a class="sourceLine" id="cb5-7" title="7"></a>
+<a class="sourceLine" id="cb5-8" title="8">MyInterface includes MyMixin<span class="op">;</span></a></code></pre></div>
+<p>For documentation purposes, MDN hides mixins. They are abstract and specification-only constructs. You can’t see them in the browser console and it is more useful to know on which real interfaces methods and properties are implemented on.</p>
+<p>If you encounter a mixin in IDL, like <a href="https://html.spec.whatwg.org/multipage/links.html#htmlhyperlinkelementutils">HTMLHyperlinkElementUtils</a>, search for the interfaces that implement the mixin, for example <a href="https://html.spec.whatwg.org/multipage/text-level-semantics.html#htmlanchorelement">HTMLAnchorElement</a>, and document the mixin members directly on those interfaces.</p>
+<p>In practice this means instead of documenting <code>HTMLHyperlinkElementUtils</code>, docs are added to the concrete interfaces, like <a href="/en-US/docs/Web/API/HTMLAnchorElement"><code>HTMLAnchorElement</code></a> and <a href="/en-US/docs/Web/API/HTMLAreaElement"><code>HTMLAreaElement</code></a>.</p>
+<p>See the following two pages that document <code>HTMLHyperlinkElementUtils.hash</code> accordingly:</p>
+<ul>
+<li><a href="/en-US/docs/Web/API/HTMLAnchorElement/hash"><code>HTMLAnchorElement.hash</code></a></li>
+<li><a href="/en-US/docs/Web/API/HTMLAreaElement/hash"><code>HTMLAreaElement.hash</code></a></li>
+</ul>
+<p>For compat data, consult the <a href="https://github.com/mdn/browser-compat-data/blob/master/docs/data-guidelines.md#mixins">data guideline for mixins in BCD</a>.</p>
+<h3 id="old-mixin-syntax">Old mixin syntax</h3>
+<p>In the old-style WebIDL mixin syntax, which you still might encounter in some places, mixins are prefixed using the <code>[NoInterfaceObject]</code> annotation:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1">[NoInterfaceObject]</a>
+<a class="sourceLine" id="cb6-2" title="2">   <span class="kw">interface</span> MyMixin <span class="op">{</span>…<span class="op">}</span></a></code></pre></div>
+<p>In the old-style syntax, mixins implemented on an interface are defined using the <code>implements</code> keyword.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb7-1" title="1">MyInterface <span class="kw">implements</span> MyMixin<span class="op">;</span></a></code></pre></div>
+<h3 id="availability-in-window-and-workers">Availability in window and workers</h3>
+<p>Availability in Web workers (of any type) and on the Window scope is defined using an annotation: <code>[Exposed=(Window,Worker)]</code>. The annotation applies to the partial interface it is listed with.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb8-1" title="1">[Exposed<span class="op">=</span>(Window<span class="op">,</span>Worker)]</a>
+<a class="sourceLine" id="cb8-2" title="2"><span class="kw">interface</span> Performance <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-3" title="3">   [DependsOn<span class="op">=</span>DeviceState<span class="op">,</span> Affects<span class="op">=</span>Nothing]</a>
+<a class="sourceLine" id="cb8-4" title="4">   DOMHighResTimeStamp <span class="at">now</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-5" title="5"><span class="op">};</span></a>
+<a class="sourceLine" id="cb8-6" title="6"></a>
+<a class="sourceLine" id="cb8-7" title="7">[Exposed<span class="op">=</span>Window]</a>
+<a class="sourceLine" id="cb8-8" title="8">partial <span class="kw">interface</span> Performance <span class="op">{</span></a>
+<a class="sourceLine" id="cb8-9" title="9">   [Constant]</a>
+<a class="sourceLine" id="cb8-10" title="10">   readonly attribute PerformanceTiming timing<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-11" title="11">   [Constant]</a>
+<a class="sourceLine" id="cb8-12" title="12">   readonly attribute PerformanceNavigation navigation<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-13" title="13"></a>
+<a class="sourceLine" id="cb8-14" title="14">   jsonifier<span class="op">;</span></a>
+<a class="sourceLine" id="cb8-15" title="15"><span class="op">};</span></a></code></pre></div>
+<p>In this case <code>Performance.now()</code> is available on the <code>Window</code> scope and to any worker, while <code>Performance.timing</code>, <code>Performance.navigation</code> and <code>Performance.toJSON()</code> are not available to Web workers.</p>
+<p>The most common values for the <code>[Exposed]</code> are:</p>
+<ul>
+<li><code>Window</code>
+<ul>
+<li>: The partial interface is available to the {{domxref(‘Window’)}} global scope.</li>
+</ul></li>
+<li><code>Worker</code>
+<ul>
+<li>: The partial interface is available to any kind of worker, that is if the global scope is a descendant of {{domxref(‘WorkerGlobalScope’)}} — {{domxref(‘DedicatedWorkerGlobalScope’)}}, {{domxref(‘SharedWorkerGlobalScope’)}}, or {{domxref(‘ServiceWorkerGlobalScope’)}} (It also is available to <code>ChromeWorker</code>, but we don’t document this as they are not visible on the Web and are internal to Firefox.)</li>
+</ul></li>
+<li><code>DedicatedWorker</code>
+<ul>
+<li>: The partial interface is available to the {{domxref(‘DedicatedWorkerGlobalScope’)}} only.</li>
+</ul></li>
+<li><code>SharedWorker</code>
+<ul>
+<li>: The partial interface is available to the {{domxref(‘SharedWorkerGlobalScope’)}} only.</li>
+</ul></li>
+<li><code>ServiceWorker</code>
+<ul>
+<li>: The partial interface is available to the {{domxref(‘ServiceWorkerGlobalScope’)}} only.</li>
+</ul></li>
+</ul>
+<p>Another value is possible, like <code>System</code>, but this has a <a href="/en-US/docs/Mozilla/WebIDL_bindings#Exposed">special meaning</a> and doesn’t need to be documented.</p>
+<p>Note that these possible values are themselves defined in WebIDL files. Interfaces may have a <code>[Global=xyz]</code> annotation. It means that when an object of this type is used as a global scope, any interface, property or method, with <code>xyz</code> as a value of <code>[Exposed]</code> is available.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1">[Global<span class="op">=</span>(Worker<span class="op">,</span>DedicatedWorker)<span class="op">,</span> Exposed<span class="op">=</span>DedicatedWorker]</a>
+<a class="sourceLine" id="cb9-2" title="2"><span class="kw">interface</span> DedicatedWorkerGlobalScope <span class="op">:</span> WorkerGlobalScope <span class="op">{</span>…<span class="op">}</span></a></code></pre></div>
+<p>Here, it is defined that when the global scope is of type <code>DedicatedWorkerGlobalScope</code>, that is if we are in a dedicated worker, any interface, property or method exposed – using the <code>[Exposed]</code> annotation – to <code>Worker</code> or <code>DedicatedWorker</code> is available.</p>
+<h3 id="preferences">Preferences</h3>
+<blockquote>
+<p><strong>Note:</strong> this information is specific to Gecko and should only be used in the Browser compatibility section.</p>
+</blockquote>
+<p>In Gecko, the availability of a partial interface, including its constructor, properties and methods may be controlled by a preference (usually called a “pref”). This is marked in the WebIDL too.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb10-1" title="1">[Pref<span class="op">=</span><span class="st">&quot;media.webspeech.synth.enabled&quot;</span>]</a>
+<a class="sourceLine" id="cb10-2" title="2"><span class="kw">interface</span> SpeechSynthesis <span class="op">{</span></a>
+<a class="sourceLine" id="cb10-3" title="3">   readonly attribute boolean pending<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-4" title="4">   readonly attribute boolean speaking<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-5" title="5">   readonly attribute boolean paused<span class="op">;</span></a>
+<a class="sourceLine" id="cb10-6" title="6"><span class="op">};</span></a></code></pre></div>
+<p>Here <code>media.webspeech.synth.enabled</code> controls the <code>SpeechSynthesis</code> interface and its properties (the full listing has more than 3.)</p>
+<blockquote>
+<p><strong>Note:</strong> the default value of the preference is not available directly in the WebIDL (it can be different from one product using Gecko to another.)</p>
+</blockquote>
+<h3 id="available-only-in-system-code">Available only in system code</h3>
+<p>Some interface features might only be available in browser internal system code, or chrome code. To signify this, in Gecko we use [ChromeOnly], for example the property propName in the following example is only callable via chrome code:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1"><span class="kw">interface</span> MyInterface <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-2" title="2">  [ChromeOnly]</a>
+<a class="sourceLine" id="cb11-3" title="3">  readonly attribute PropValue propName<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-4" title="4"><span class="op">};</span></a></code></pre></div>
+<h2 id="properties">Properties</h2>
+<p>You can recognize the definition of a property by the presence of the <code>attribute</code> keyword.</p>
+<h3 id="name-of-the-property">Name of the property</h3>
+<div class="sourceCode" id="cb12"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb12-1" title="1">readonly attribute MediaError<span class="op">?</span> error<span class="op">;</span></a></code></pre></div>
+<p>In the above example the name of the property is <code>error</code>; in the docs we will refer to it as <code>HTMLMediaElement.error</code> as it belongs to the <code>HTMLMediaElement</code> interface. Linking to the page is either done <strong>with</strong> the interface prefix using \{{domxref(‘HTMLMediaElement.error’)}} or <strong>without</strong> the prefix using \{{domxref(‘HTMLMediaElement.error’, ‘error’)}} when the context is obvious and unambiguous.</p>
+<h3 id="type-of-the-property">Type of the property</h3>
+<div class="sourceCode" id="cb13"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb13-1" title="1">readonly attribute MediaError<span class="op">?</span> error<span class="op">;</span></a></code></pre></div>
+<p>The property value is an object of type <code>MediaError</code>. The question mark (<code>'?'</code>) indicates that it can take a value of <code>null</code>, and the documentation must explain <em>when</em> this may occur. If no question mark is present, the <code>error</code> property can’t be <code>null</code>.</p>
+<h3 id="writing-permissions-on-the-property">Writing permissions on the property</h3>
+<div class="sourceCode" id="cb14"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb14-1" title="1">readonly attribute MediaError<span class="op">?</span> error<span class="op">;</span></a></code></pre></div>
+<p>If the keyword <code>readonly</code> is present, the property can’t be modified. It must be marked as read-only:</p>
+<ul>
+<li>In the interface, by adding the \{{ReadOnlyInline}} macro next to its definition term.</li>
+<li>In the first sentence of its own page, by starting the description with: <em>The read-only <strong><code>HTMLMediaElement.error</code></strong> property…</em></li>
+<li>By adding the <code>Read-only</code> tag to its own page.</li>
+<li>By starting its description in the interface page with <em>Returns…</em></li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> Only read-only properties can be described as ‘returning’ a value. Non read-only properties can also be used to set a value.</p>
+</blockquote>
+<h3 id="throwing-exceptions">Throwing exceptions</h3>
+<div class="sourceCode" id="cb15"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb15-1" title="1">[SetterThrows]</a>
+<a class="sourceLine" id="cb15-2" title="2">            attribute DOMString src<span class="op">;</span></a></code></pre></div>
+<p>In some cases, like when some values are illegal, setting a new value can lead to an exception being raised. This is marked using the <code>[SetterThrows]</code> annotation. When this happens, the Syntax section of the property page <em>must</em> have an Exceptions subsection. The list of exceptions and the conditions to have them thrown are listed, as textual information, in the specification of that API.</p>
+<p>Note that some exceptions are not explicitly marked but are defined by the JavaScript bindings. <a href="https://heycam.github.io/webidl/#es-enumeration">Trying to set an illegal enumerated value</a> (mapped to a JavaScript {{jsxref(‘String’)}}) raises a {{exception(‘TypeError’)}} exception. This must be documented, but is only implicitly marked in the WebIDL document.</p>
+<p>It is uncommon to have getters throwing exceptions, though it happens in a few cases. In this case the <code>[GetterThrows]</code> annotation is used. Here also, the Syntax section of the property page <em>must</em> have an Exceptions subsection.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb16-1" title="1">partial <span class="kw">interface</span> Blob <span class="op">{</span></a>
+<a class="sourceLine" id="cb16-2" title="2">  [GetterThrows]</a>
+<a class="sourceLine" id="cb16-3" title="3">  readonly attribute unsigned long long size<span class="op">;</span></a>
+<a class="sourceLine" id="cb16-4" title="4"><span class="op">};</span></a></code></pre></div>
+<h3 id="not-throwing-exceptions">Not throwing exceptions</h3>
+<p>When the semantics of Webidl is not followed, an exception is often thrown, even without <code>[SetterThrows]</code> or <code>[GetterThrows]</code> set. For example, in strict mode, if we try to set a read-only property to a new value, that is to call its implicit setter, a read-only property will throw in strict mode.</p>
+<p>Mostly for compatibility purpose, this behavior is sometimes annoying. To prevent this by creating a no-op setter (that is by silently ignoring any attempt to set the property to a new value), the <code>[LenientSetter]</code> annotation can be used.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb17-1" title="1">partial <span class="kw">interface</span> Document <span class="op">{</span></a>
+<a class="sourceLine" id="cb17-2" title="2">  [LenientSetter]</a>
+<a class="sourceLine" id="cb17-3" title="3">  readonly attribute boolean fullscreen<span class="op">;</span></a>
+<a class="sourceLine" id="cb17-4" title="4">  [LenientSetter]</a>
+<a class="sourceLine" id="cb17-5" title="5">  readonly attribute boolean fullscreenEnabled<span class="op">;</span></a>
+<a class="sourceLine" id="cb17-6" title="6"><span class="op">};</span></a></code></pre></div>
+<p>In these cases, an extra sentence is added to the description of the property. E.g</p>
+<p><em>Although this property is read-only, it will not throw if it is modified (even in strict mode); the setter is a no-operation and it will be ignored.</em></p>
+<h3 id="new-objects-or-references">New objects or references</h3>
+<p>The return value of a property can be either a copy of an internal object, a newly created synthetic object, or a reference to an internal object.</p>
+<p>Basic objects with types like {{jsxref(“String”)}} (being an IDL <code>DOMString</code>, or other), {{jsxref(“Number”)}} (being an IDL <code>byte</code>, <code>octet</code>, <code>unsigned int</code>, or other), and {{jsxref(“Boolean”)}} are always copied and nothing special has to be noted about them (it is natural behavior expected by a JavaScript developer.)</p>
+<p>For interface objects, the default is to return a <em>reference</em> to the internal object. This has to be mentioned both in the short description in the interface page, and in the description in the specific sub-pages.</p>
+<blockquote>
+<p><strong>Note:</strong> The keyword <code>readonly</code> used with a property returning an object applies to the reference (the internal object cannot be changed.) The properties of the returned object can be changed, even if they are marked as read-only in the relevant interface.</p>
+</blockquote>
+<p>Sometimes an API must return a <em>new</em> object, or a <em>copy</em> of an internal one. This case is indicated in the WebIDL using the <code>[NewObject]</code> annotation.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb18-1" title="1">[NewObject]</a>
+<a class="sourceLine" id="cb18-2" title="2">   readonly attribute TimeRanges buffered<span class="op">;</span></a></code></pre></div>
+<p>In this case, each call to <code>buffered</code> returns a different object: changing it will not change the internal value, and a change in the internal value will not affect each object instance. In the documentation, we will mark it by using the adjective <em>new</em> next to object:</p>
+<p><em>The <strong><code>HTMLMediaElement.buffered</code></strong> read-only property returns a new \{{domxref(“TimeRanges”)}} object that…</em></p>
+<p>and</p>
+<ul>
+<li><em>\{{domxref(“HTMLMediaElement.buffered”)}}\{{readonlyinline}}</em>
+<ul>
+<li>: <em>Returns a new \{{domxref(“TimeRanges”)}} object that …</em></li>
+</ul></li>
+</ul>
+<p>In the case of a reference to a collection object (like <code>HTMLCollection</code>, <code>HTMLFormElementsCollection</code>, or <code>HTMLOptionsCollection</code>, always without <code>[NewObject]</code>), we make it explicit that changes to the underlying object will be available via the returned reference. To mark this, we qualify the collection as a <strong>live</strong> <code>HTMLCollection</code> (or <code>HTMLFormElementsCollections</code>, or <code>HTMLOptionsCollection</code>), both in the interface description and in the subpage.</p>
+<p>E.g.</p>
+<ul>
+<li>\{{domxref(“HTMLFormElement.elements”)}}\{{readonlyinline}}
+<ul>
+<li>: Returns a live \{{domxref(“HTMLFormControlsCollection”)}} containing…</li>
+</ul></li>
+</ul>
+<h3 id="availability-in-workers">Availability in workers</h3>
+<p>Individual property availability in workers is also found in the WebIDL. For a property, the default is the same availability as the <code>interface</code> (that is available to {{domxref(‘Window’)}} context only if nothing special is marked) or as the <code>partial interface</code> it is defined in.</p>
+<p>For documentation, the subpage must contain a sentence indicating if it is available or not in Web workers, right before the “Syntax” section.</p>
+<h3 id="preferences-1">Preferences</h3>
+<blockquote>
+<p><strong>Note:</strong> This information is specific to Gecko and should only be used in the Browser compatibility section.</p>
+</blockquote>
+<p>In Gecko, the availability of some properties may be controlled by a preference. This is marked in the WebIDL too.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb19-1" title="1">[Pref<span class="op">=</span><span class="st">&quot;media.webvtt.enabled&quot;</span>]</a>
+<a class="sourceLine" id="cb19-2" title="2">    readonly attribute TextTrackList<span class="op">?</span> textTracks<span class="op">;</span></a></code></pre></div>
+<p>Here <code>media.webvtt.enabled</code> controls the <code>textTracks</code> property.</p>
+<blockquote>
+<p><strong>Note:</strong> The default value of the preference is not available directly in the WebIDL (it can be different from one product using Gecko to another).</p>
+</blockquote>
+<h2 id="methods">Methods</h2>
+<p>You can recognize the definition of a method by the presence of parentheses after the name.</p>
+<h3 id="name-of-the-method">Name of the method</h3>
+<div class="sourceCode" id="cb20"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb20-1" title="1">DOMString <span class="at">canPlayType</span>(DOMString type)<span class="op">;</span></a></code></pre></div>
+<p>The name of the method is <code>canPlayType</code>, and we will refer to it as <code>HTMLMediaElement.canPlayType()</code> (with the parentheses that indicate that it is a method) in the docs, as it belongs to the <code>HTMLMediaElement</code> interface. Linking to the page is either done <strong>with</strong> the interface prefix using \{{domxref(‘HTMLMediaElement.canPlayType()’)}}, or <strong>without</strong> the prefix using \{{domxref(‘HTMLMediaElement.canPlayType’, ‘canPlayType()’)}} when the context is obvious and unambiguous. The parentheses should always be included.</p>
+<h3 id="parameters">Parameters</h3>
+<div class="sourceCode" id="cb21"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb21-1" title="1">TextTrack <span class="at">addTextTrack</span>(TextTrackKind kind<span class="op">,</span></a>
+<a class="sourceLine" id="cb21-2" title="2">                       optional DOMString label <span class="op">=</span> <span class="st">&quot;&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb21-3" title="3">                       optional DOMString language <span class="op">=</span> <span class="st">&quot;&quot;</span>)<span class="op">;</span></a></code></pre></div>
+<p>The parameters of a method are listed in the Syntax section of the method sub-page. They are listed in the WebIDL in order, between the parenthesis, as a comma-separated list. Each parameter has a name (indicated above) and a type (e.g. a <code>'?'</code> means that the <code>null</code> value is valid.) If marked <code>optional</code>, the parameter is optional to include in a method call and must have the \{{OptionalInline}} flag included when it is listed in the Syntax section. The parameter’s default value is listed after the equality sign (<code>'='</code>).</p>
+<h3 id="type-of-the-return-value">Type of the return value</h3>
+<div class="sourceCode" id="cb22"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb22-1" title="1">DOMString <span class="at">canPlayType</span>(DOMString type)<span class="op">;</span></a></code></pre></div>
+<p>The return value type is indicated first inside the parentheses — in the above case the value is an object of type <code>DOMString</code>. if followed by a question mark (<code>'?'</code>), a value of <code>null</code> can be returned too, and the documentation must explain <em>when</em> this may happen. If no question mark is present, like here,  the return value can’t be <code>null</code>.</p>
+<p>The keyword <code>void</code> means that there is no return value. It is not a return value type. If the WebIDL entry reads <code>void</code>, the <em>Return value</em> section in the docs should contain only a simple <em>None</em>.</p>
+<h3 id="throwing-exceptions-1">Throwing exceptions</h3>
+<div class="sourceCode" id="cb23"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb23-1" title="1">[Throws]</a>
+<a class="sourceLine" id="cb23-2" title="2">   <span class="kw">void</span> <span class="at">fastSeek</span>(double time)<span class="op">;</span></a></code></pre></div>
+<p>Some methods can throw exceptions. This is marked using the <code>[Throws]</code> annotation. When this happens, the Syntax section of the method page <em>must</em> have an Exceptions subsection. The list of exceptions and the conditions to have them thrown are listed, as textual information, in the specification of that API.</p>
+<p>Note that some exceptions are not explicitly marked but are defined by the JavaScript bindings. <a href="https://heycam.github.io/webidl/#es-enumeration">Trying to set an illegal enumerated value</a> (mapped to a JavaScript {{jsxref(‘String’)}}) as a parameter will raise a {{exception(‘TypeError’)}} exception. This must be documented, but it is only implicitly marked in the WebIDL document.</p>
+<p>Have a look at one of these <a href="/en-US/docs/Web/API/SubtleCrypto/importKey#exceptions"><em>Exceptions</em> sections</a>.</p>
+<h3 id="availability-in-workers-1">Availability in workers</h3>
+<p>Individual method availability in workers is also found in the WebIDL. For a method, the default is the same availability as the <code>interface</code> (that is available to {{domxref(‘Window’)}} context only if nothing special is marked) or as the <code>partial interface</code> it is defined it.</p>
+<p>For the documentation, the sub-page must contain a sentence indicating if it is available in Web workers, right before the Syntax section.</p>
+<h3 id="preferences-2">Preferences</h3>
+<blockquote>
+<p><strong>Note:</strong> this information is specific to Gecko and should only be used in the Browser compatibility section.</p>
+</blockquote>
+<p>In Gecko, the availability of some properties may be controlled by a preference. This is marked in the WebIDL too.</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb24-1" title="1">[Pref<span class="op">=</span><span class="st">&quot;media.webvtt.enabled&quot;</span>]</a>
+<a class="sourceLine" id="cb24-2" title="2">   TextTrack <span class="at">addTextTrack</span>(TextTrackKind kind<span class="op">,</span></a>
+<a class="sourceLine" id="cb24-3" title="3">                          optional DOMString label <span class="op">=</span> <span class="st">&quot;&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb24-4" title="4">                          optional DOMString language <span class="op">=</span> <span class="st">&quot;&quot;</span>)<span class="op">;</span></a></code></pre></div>
+<p>Here <code>media.webvtt.enabled</code> controls the <code>addTextTrack()</code> method.</p>
+<blockquote>
+<p><strong>Note:</strong> The default value of the preference is not available directly in the WebIDL (it can be different from one product using Gecko to another.)</p>
+</blockquote>
+<h2 id="special-methods">Special methods</h2>
+<p>Some methods are not listed as regular methods in WebIDL but instead as special keywords, which translate to specific standard JavaScript methods.</p>
+<h3 id="tostring-and-tojson">toString() and toJSON()</h3>
+<p>A stringifier specifies how an object based on an interface is resolved in contexts expecting a string. (See the <a href="#stringifiers">Stringifiers</a> section.) Additionally, the keyword is mapped to <code>toString()</code> and defined as:</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb25-1" title="1">stringifier<span class="op">;</span></a></code></pre></div>
+<p>The <code>toString()</code> method is listed just like any other method of the interface and has its own sub-page (E.g. {{domxref(“Range.toString()”)}})</p>
+<p>A jsonifier is mapped to <code>toJSON()</code> and defined as:</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb26-1" title="1">jsonifier<span class="op">;</span> <span class="co">// Gecko version</span></a>
+<a class="sourceLine" id="cb26-2" title="2">serializer<span class="op">;</span> <span class="co">// Standard version</span></a></code></pre></div>
+<p>The <code>toJSON()</code> method is listed just like any other method of the interface and has its own sub-page (E.g. {{domxref(“Performance.toJSON()”)}})</p>
+<blockquote>
+<p><strong>Note:</strong> the WebIDL specification uses <code>serializer</code> instead of <code>jsonifier</code>. This is not used in Gecko — only the non-standard likely early proposal <code>jsonifier</code> is found in mozilla-central.</p>
+</blockquote>
+<h3 id="iterator-like-methods">Iterator-like methods</h3>
+<p>An interface may be defined as <em>iterable</em>, meaning that it will have the following methods: <code>entries()</code>, <code>keys()</code>, <code>values()</code> and <code>forEach()</code>. They also supports the use of {{jsxref(“Statements/for…of”, “for…of”)}} on an object implementing this interface.</p>
+<p>There are two kinds of iteration possible: the <em>value iterator</em> and the <em>pair iterator.</em></p>
+<h4 id="value-iterator">Value iterator</h4>
+<div class="sourceCode" id="cb27"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb27-1" title="1">iterable<span class="op">&lt;</span>valueType<span class="op">&gt;</span></a></code></pre></div>
+<p>The iterator will iterate over values of type <em>valueType</em>. The generated methods will be:</p>
+<ul>
+<li><code>entries()</code>, which returns an <a href="/en-US/docs/Web/JavaScript/Reference/Iteration_protocols"><code>iterator</code></a> on the indexes (that are <code>unsigned long</code>).</li>
+<li><code>values()</code>, which returns an <a href="/en-US/docs/Web/JavaScript/Reference/Iteration_protocols"><code>iterator</code></a> on the values.</li>
+<li><code>keys()</code>, which returns an <a href="/en-US/docs/Web/JavaScript/Reference/Iteration_protocols"><code>iterator</code></a> on the keys, that are its indexes (that are <code>unsigned long</code>). In the case of value iterators, <code>keys()</code> and <code>entries()</code> are identical.</li>
+<li><code>forEach()</code>, which returns an <a href="/en-US/docs/Web/JavaScript/Reference/Iteration_protocols"><code>iterator</code></a> on the keys that calls a given callback function one for each entry in the list.</li>
+</ul>
+<p>Such an iterator allows to use the syntax <code>for (var p in object)</code> as a shorthand of <code>for (var p in object.entries())</code>. We add a sentence about it in the interface description.</p>
+<blockquote>
+<p><strong>Note:</strong> the value pairs to iterate over can be defined in two different ways:</p>
+<ol type="1">
+<li>Outside the webidl file, in the prose accompanying it. Such a prose is in the spec and usually starts with: <em>“The <a href="https://heycam.github.io/webidl/#dfn-values-to-iterate-over">values to iterate over</a>…”</em>.</li>
+<li>In the webidl file, implicitly, if the interface supports indexed properties, that is when the interface has a <code>getter</code> methods with a parameter of type <code>unsigned long</code>.</li>
+</ol>
+</blockquote>
+<h4 id="pair-iterator">Pair iterator</h4>
+<div class="sourceCode" id="cb28"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb28-1" title="1">iterable<span class="op">&lt;</span>keyType<span class="op">,</span> valueType<span class="op">&gt;</span></a></code></pre></div>
+<p>The iterator will iterate over values of type <em>valueType</em>, with keys of type <em>keyType</em>. The generated methods will be:</p>
+<ul>
+<li><code>entries()</code> that returns an <a href="/en-US/docs/Web/JavaScript/Reference/Iteration_protocols"><code>iterator</code></a> on the indexes (of type <em>keyType</em>). E.g. {{domxref(‘FormData.entries()’)}}</li>
+<li><code>values()</code> that returns an <a href="/en-US/docs/Web/JavaScript/Reference/Iteration_protocols"><code>iterator</code></a> on the values. E.g. {{domxref(‘FormData.values()’)}}</li>
+<li><code>keys()</code> that returns an <a href="/en-US/docs/Web/JavaScript/Reference/Iteration_protocols"><code>iterator</code></a> on the keys. E.g. {{domxref(‘FormData.keys()’)}}</li>
+<li>Once {{bug(1216751)}} lands, <code>forEach()</code>.</li>
+</ul>
+<p>Such an iterator allows to use the syntax <code>for (var p in object)</code> as a shorthand of <code>for (var p in object.entries())</code>. We add a sentence about it in the interface description. E.g. {{domxref(‘FormData’)}}.</p>
+<blockquote>
+<p><strong>Note:</strong> the value pairs to iterate over are <em>not</em> defined in the webidl file, but in the prose accompanying it. Such a prose is in the spec and usually starts with: <em>“The <a href="https://heycam.github.io/webidl/#dfn-value-pairs-to-iterate-over">value pairs to iterate over</a>…”</em></p>
+<p>E.g, for {{domxref(‘FormData’)}} you find in the spec: <em>“The <a href="https://heycam.github.io/webidl/#dfn-value-pairs-to-iterate-over">value pairs to iterate over</a> are the <a href="https://xhr.spec.whatwg.org/#concept-formdata-entry" title="concept-FormData-entry">entries</a> with the key being the <a href="https://xhr.spec.whatwg.org/#concept-formdata-entry-name" title="concept-FormData-entry-name">name</a> and the value the <a href="https://xhr.spec.whatwg.org/#concept-formdata-entry-value" title="concept-FormData-entry-value">value</a>.”</em></p>
+</blockquote>
+<h3 id="set-like-methods">Set-like methods</h3>
+<p>An interface may be defined as <em>set-like</em>, meaning that it represents an <em>ordered set of values</em> will have the following methods: <code>entries()</code>, <code>keys()</code>,  <code>values()</code>, <code>forEach(),</code> and <code>has()</code> (it also has the <code>size</code> property). They also supports the use of {{jsxref(“Statements/for…of”, “for…of”)}} on an object implementing this interface. The set-like can be prefixed <code>readonly</code> or not. If not read-only, the methods to modify the set are also implemented: <code>add()</code>, <code>clear()</code>, and <code>delete()</code>.</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb29-1" title="1">setlike<span class="op">&lt;</span>valueType<span class="op">&gt;</span></a></code></pre></div>
+<p>The generated properties will be:</p>
+<ul>
+<li><code>entries()</code> that returns an <a href="/en-US/docs/Web/JavaScript/Reference/Iteration_protocols"><code>iterator</code></a> on the indexes. E.g. {{domxref(‘NodeList.entries()’)}}.</li>
+<li><code>values()</code> that returns an <a href="/en-US/docs/Web/JavaScript/Reference/Iteration_protocols"><code>iterator</code></a> on the values. E.g. {{domxref(‘NodeList.values()’)}}.</li>
+<li><code>keys()</code> that returns an <a href="/en-US/docs/Web/JavaScript/Reference/Iteration_protocols"><code>iterator</code></a> on the keys. E.g. {{domxref(‘NodeList.keys()’)}},</li>
+<li><code>forEach()</code>.</li>
+</ul>
+<p>In cases where the set-like declaration is not prefixed by read-only, the following methods are also generated:</p>
+<ul>
+<li><code>add()</code> that adds an entry. E.g. the <code>.add()</code> method of {{domxref(‘FontFaceSet’)}}.</li>
+<li><code>clear()</code> that empties the set-like structure. E.g. the <code>.clear()</code> method of {{domxref(‘FontFaceSet’)}}.</li>
+<li><code>delete()</code> that removes an entry. E.g. the <code>.delete()</code> method of {{domxref(‘FontFaceSet’)}}.</li>
+</ul>
+<p>Such an set interface also allows to use the syntax <code>for (var p in object)</code> as a shorthand of <code>for (var p in object.entries())</code>.</p>
+<h2 id="special-behaviors">Special Behaviors</h2>
+<p>Some IDL members indicate special behaviors that should be noted on appropriate pages.</p>
+<h3 id="stringifiers">Stringifiers</h3>
+<p>In addition to adding the <code>toString()</code> method to an interface as described in <a href="#tostring_and_tojson">toString() and toJSON()</a>, stringifiers also indicate that an object instance, when used as a string, returns a <code>DOMString</code> other than the default. (The default is usually a JSON representation of the object). Exactly how depends on the way it is specified in the IDL. Regardless of the how, the non-default behavior should be described on the interface page.</p>
+<p>When the <code>stringifier</code> keyword accompanies an attribute name, referencing the object name has the same result as referencing the attribute name. Consider the following IDL:</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb30-1" title="1"><span class="kw">interface</span> InterfaceIdentifier <span class="op">{</span></a>
+<a class="sourceLine" id="cb30-2" title="2">  stringifier attribute DOMString DOMString name<span class="op">;</span></a>
+<a class="sourceLine" id="cb30-3" title="3"><span class="op">};</span></a></code></pre></div>
+<p>For a class based on this interface, the following lines of code below are equivalent. The behavior should be noted on the property page in addition to the interface page.</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb31-1" title="1"><span class="va">console</span>.<span class="at">log</span>(interfaceIdentifier)<span class="op">;</span></a>
+<a class="sourceLine" id="cb31-2" title="2"><span class="va">console</span>.<span class="at">log</span>(<span class="va">interfaceIdentifier</span>.<span class="at">name</span>)<span class="op">;</span></a></code></pre></div>
+<p>When the <code>stringifier</code> keyword is used by itself, an object of the interface may be used as above, but the behavior is defined in source code.</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb32-1" title="1"><span class="kw">interface</span> InterfaceIdentifier <span class="op">{</span></a>
+<a class="sourceLine" id="cb32-2" title="2">  stringifier<span class="op">;</span></a>
+<a class="sourceLine" id="cb32-3" title="3"><span class="op">};</span></a></code></pre></div>
+<p>To learn what an interface reference actually does, refer to the interface’s spec or experiment with the interface to determine its output.</p>
+<h2 id="constructors">Constructors</h2>
+<p>Constructors are a little bit hidden in WebIDL: they are listed as annotations of the main interface.</p>
+<h3 id="unnamed-constructors">Unnamed constructors</h3>
+<p>This is the most common case for constructors. The constructor of a given interface A, can be used as <code>a = new A(parameters);</code></p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb33-1" title="1">[Constructor<span class="op">,</span> Func<span class="op">=</span><span class="st">&quot;MessageChannel::Enabled&quot;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb33-2" title="2">  Exposed<span class="op">=</span>(Window<span class="op">,</span>Worker)]</a>
+<a class="sourceLine" id="cb33-3" title="3">    <span class="kw">interface</span> MessageChannel <span class="op">{</span>…<span class="op">};</span></a></code></pre></div>
+<p>A constructor with the same interface is defined using the <code>Constructor</code> annotation on the interface. There can be parenthesis and a list of parameters or not (like in the above example.) We document all the unnamed constructors on a sub-page — for example the above is given the slug <em>Web/API/MessageChannel/MessageChannel</em> and the title <code>MessageChannel()</code>.</p>
+<p>Another example of an unnamed constructor, with parameters:</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb34-1" title="1">[<span class="at">Constructor</span>(DOMString type<span class="op">,</span> optional MessageEventInit eventInitDict)<span class="op">,</span></a>
+<a class="sourceLine" id="cb34-2" title="2"> Exposed<span class="op">=</span>(Window<span class="op">,</span>Worker<span class="op">,</span>System)]</a>
+<a class="sourceLine" id="cb34-3" title="3">   <span class="kw">interface</span> MessageEvent <span class="op">:</span> Event <span class="op">{</span>…<span class="op">};</span></a></code></pre></div>
+<p>There can also be several unnamed constructors, differing by their parameter lists. All syntax is documented in one single sub-page.</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb35-1" title="1">[<span class="at">Constructor</span>(DOMString url<span class="op">,</span> URL base)<span class="op">,</span></a>
+<a class="sourceLine" id="cb35-2" title="2"> <span class="at">Constructor</span>(DOMString url<span class="op">,</span> optional DOMString base)<span class="op">,</span></a>
+<a class="sourceLine" id="cb35-3" title="3"> Exposed<span class="op">=</span>(Window<span class="op">,</span>Worker)]</a>
+<a class="sourceLine" id="cb35-4" title="4">    <span class="kw">interface</span> URL <span class="op">{};</span></a></code></pre></div>
+<h3 id="named-constructors">Named constructors</h3>
+<div class="sourceCode" id="cb36"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb36-1" title="1">[NamedConstructor<span class="op">=</span><span class="at">Image</span>(optional unsigned long width<span class="op">,</span> optional unsigned long height)]</a>
+<a class="sourceLine" id="cb36-2" title="2">    <span class="kw">interface</span> HTMLImageElement <span class="op">:</span> HTMLElement <span class="op">{</span>…</a></code></pre></div>
+<p>A named constructor is a constructor that has a different name than that of its interface. For example<code>new Image(…)</code> creates a new <code>HTMLImageElement</code> object. They are defined in the WebIDL using the <code>NamedConstructor</code> annotation on the interface, followed by the name of the constructor after the equality sign (<code>'='</code>) and the parameter inside the parenthesis, in the same format as you’ll see for methods.</p>
+<p>There can be several named constructors for a specific interface, but this is extremely rare; in such a case we include one sub-page per name.</p>
+<h3 id="new-constructor-syntax">New constructor syntax</h3>
+<p>As of September 2019, WebIDL constructor syntax was updated. Constructor syntax no longer involves an extended attribute on the interface:</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb37-1" title="1">[<span class="at">Constructor</span>(DOMString str)]</a>
+<a class="sourceLine" id="cb37-2" title="2">    <span class="kw">interface</span> MyInterface <span class="op">{</span></a>
+<a class="sourceLine" id="cb37-3" title="3">      ...</a>
+<a class="sourceLine" id="cb37-4" title="4"><span class="op">};</span></a></code></pre></div>
+<p>New specs instead use a method-like syntax named <code>constructor</code> with no explicitly-defined return type, written like so:</p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb38-1" title="1"><span class="kw">interface</span> MyInterface <span class="op">{</span></a>
+<a class="sourceLine" id="cb38-2" title="2">  <span class="at">constructor</span>(DOMString str)<span class="op">;</span></a>
+<a class="sourceLine" id="cb38-3" title="3"><span class="op">};</span></a></code></pre></div>
+<p>This means extended attributes can now be specified on the constructor, and it is no longer assumed that all constructors throw. If a constructor does throw, <code>[Throws]</code> will be used to indicate that:</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb39-1" title="1"><span class="kw">interface</span> MyInterface <span class="op">{</span></a>
+<a class="sourceLine" id="cb39-2" title="2">  [Throws] <span class="at">constructor</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb39-3" title="3"><span class="op">};</span></a></code></pre></div>
+<p>It is unlikely that <em>all</em> specs will be updated to use the new syntax, so you’ll probably encounter both out in the wild. We will therefore continue to cover both types of syntax here.</p>
+<h3 id="availability-in-workers-2">Availability in workers</h3>
+<p>Constructors have the same availability as the interface, or partial interface, they are defined on. The sub-page provides this information in the same way as for a method.</p>
+<h3 id="preferences-3">Preferences</h3>
+<p>Constructors are controlled by the same preference as the interface, or partial interface, they are defined on. The sub-page provides this information in the same way as for a method.</p>

@@ -1,0 +1,99 @@
+<p>The controller code for some of our <em>LocalLibrary</em> pages will depend on the results of multiple asynchronous requests, which may be required to run either in some particular order or in parallel. In order to manage flow control, and render pages when we have all the required information available, we’ll use the popular node <a href="https://www.npmjs.com/package/async">async</a> module.</p>
+<blockquote>
+<p><strong>Note:</strong> There are a number of other ways to manage asynchronous behavior and flow control in JavaScript, including relatively recent JavaScript language features like <a href="/en-US/docs/Archive/Add-ons/Techniques/Promises">Promises</a>.</p>
+</blockquote>
+<p>Async has a lot of useful methods (check out <a href="https://caolan.github.io/async/v3/docs.html">the documentation</a>). Some of the more important functions are:</p>
+<ul>
+<li><a href="https://caolan.github.io/async/v3/docs.html#parallel"><code>async.parallel()</code></a> to execute any operations that must be performed in parallel.</li>
+<li><a href="https://caolan.github.io/async/v3/docs.html#series"><code>async.series()</code></a> for when we need to ensure that asynchronous operations are performed in series.</li>
+<li><a href="https://caolan.github.io/async/v3/docs.html#waterfall"><code>async.waterfall()</code></a> for operations that must be run in series, with each operation depending on the results of preceding operations.</li>
+</ul>
+<h2 id="why-is-this-needed">Why is this needed?</h2>
+<p>Most of the methods we use in <em>Express</em> are asynchronous—you specify an operation to perform, passing a callback. The method returns immediately, and the callback is invoked when the requested operation completes. By convention in <em>Express</em>, callback functions pass an <em>error</em> value as the first parameter (or <code>null</code> on success) and the results from the function (if there are any) as the second parameter.</p>
+<p>If a controller only needs to <em>perform <strong>one</strong> asynchronous operation</em> to get the information required to render a page then the implementation is easy—we render the template in the callback. The code fragment below shows this for a function that renders the count of a model <code>SomeModel</code> (using the Mongoose <a href="https://mongoosejs.com/docs/api.html#model_Model.countDocuments"><code>countDocuments</code></a> method):</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb1-1" title="1"><span class="va">exports</span>.<span class="at">some_model_count</span> <span class="op">=</span> <span class="kw">function</span>(req<span class="op">,</span> res<span class="op">,</span> next) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-2" title="2"></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="va">SomeModel</span>.<span class="at">countDocuments</span>(<span class="op">{</span> <span class="dt">a_model_field</span><span class="op">:</span> <span class="st">&#39;match_value&#39;</span> <span class="op">},</span> <span class="kw">function</span> (err<span class="op">,</span> count) <span class="op">{</span></a>
+<a class="sourceLine" id="cb1-4" title="4">    <span class="co">// ... do something if there is an err</span></a>
+<a class="sourceLine" id="cb1-5" title="5"></a>
+<a class="sourceLine" id="cb1-6" title="6">    <span class="co">// On success, render the result by passing count into the render function (here, as the variable &#39;data&#39;).</span></a>
+<a class="sourceLine" id="cb1-7" title="7">    <span class="va">res</span>.<span class="at">render</span>(<span class="st">&#39;the_template&#39;</span><span class="op">,</span> <span class="op">{</span> <span class="dt">data</span><span class="op">:</span> count <span class="op">}</span> )<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-8" title="8">  <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb1-9" title="9"><span class="op">}</span></a></code></pre></div>
+<p>What if you need to make <strong>multiple</strong> asynchronous queries, and you can’t render the page until all the operations have completed? A naive implementation could “daisy chain” the requests, kicking off subsequent requests in the callback of a previous request, and rendering the response in the final callback. The problem with this approach is that our requests would have to be run in series, even though it might be more efficient to run them in parallel. This could also result in complicated nested code, commonly referred to as <a href="http://callbackhell.com/">callback hell</a>.</p>
+<p>A much better solution would be to execute all the requests in parallel and then have a single callback that executes when all of the queries have completed. This is the sort of flow operation that the <em>Async</em> module makes easy!</p>
+<h2 id="asynchronous-operations-in-parallel">Asynchronous operations in parallel</h2>
+<p>The method <a href="https://caolan.github.io/async/v3/docs.html#parallel"><code>async.parallel()</code></a> is used to run multiple asynchronous operations in parallel.</p>
+<p>The first argument to <code>async.parallel()</code> is a collection of the asynchronous functions to run (an array, object or other iterable). Each function is passed a <code>callback(err, result)</code> which it must call on completion with an error <code>err</code> (which can be <code>null</code>) and an optional <code>results</code> value.</p>
+<p>The optional second argument to  <code>async.parallel()</code> is a callback that will be run when all the functions in the first argument have completed. The callback is invoked with an error argument and a result collection that contains the results of the individual asynchronous operations. The result collection is of the same type as the first argument (i.e. if you pass an array of asynchronous functions, the final callback will be invoked with an array of results). If any of the parallel functions reports an error the callback is invoked early (with the error value).</p>
+<p>The example below shows how this works when we pass an object as the first argument. As you can see, the results are <em>returned</em> in an object with the same property names as the original functions that were passed in.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">async</span>.<span class="at">parallel</span>(<span class="op">{</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="dt">one</span><span class="op">:</span> <span class="kw">function</span>(callback) <span class="op">{</span> ... <span class="op">},</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  <span class="dt">two</span><span class="op">:</span> <span class="kw">function</span>(callback) <span class="op">{</span> ... <span class="op">},</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  ...</a>
+<a class="sourceLine" id="cb2-5" title="5">  <span class="dt">something_else</span><span class="op">:</span> <span class="kw">function</span>(callback) <span class="op">{</span> ... <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="op">},</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  <span class="co">// optional callback</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  <span class="kw">function</span>(err<span class="op">,</span> results) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-9" title="9">    <span class="co">// &#39;results&#39; is now equal to: {one: 1, two: 2, ..., something_else: some_value}</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-11" title="11">)<span class="op">;</span></a></code></pre></div>
+<p>If you instead pass an array of functions as the first argument, the results will be an array (the array order results will match the original order that the functions were declared—not the order in which they completed).</p>
+<h2 id="asynchronous-operations-in-series">Asynchronous operations in series</h2>
+<p>The method <a href="https://caolan.github.io/async/v3/docs.html#series"><code>async.series()</code></a> is used to run multiple asynchronous operations in sequence, when subsequent functions do not depend on the output of earlier functions. It is essentially declared and behaves in the same way as <code>async.parallel()</code>.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">async</span>.<span class="at">series</span>(<span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="dt">one</span><span class="op">:</span> <span class="kw">function</span>(callback) <span class="op">{</span> ... <span class="op">},</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="dt">two</span><span class="op">:</span> <span class="kw">function</span>(callback) <span class="op">{</span> ... <span class="op">},</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  ...</a>
+<a class="sourceLine" id="cb3-5" title="5">  <span class="dt">something_else</span><span class="op">:</span> <span class="kw">function</span>(callback) <span class="op">{</span> ... <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="op">},</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="co">// optional callback after the last asynchronous function completes.</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="kw">function</span>(err<span class="op">,</span> results) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-9" title="9">    <span class="co">// &#39;results&#39; is now equal to: {one: 1, two: 2, ..., something_else: some_value}</span></a>
+<a class="sourceLine" id="cb3-10" title="10">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-11" title="11">)<span class="op">;</span></a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> The ECMAScript (JavaScript) language specification states that the order of enumeration of an object is undefined, so it is possible that the functions will not be called in the same order as you specify them on all platforms. If the order really is important, then you should pass an array instead of an object, as shown below.</p>
+</blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">async</span>.<span class="at">series</span>([</a>
+<a class="sourceLine" id="cb4-2" title="2">  <span class="kw">function</span>(callback) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-3" title="3">    <span class="co">// do some stuff ...</span></a>
+<a class="sourceLine" id="cb4-4" title="4">    <span class="at">callback</span>(<span class="kw">null</span><span class="op">,</span> <span class="st">&#39;one&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-5" title="5">  <span class="op">},</span></a>
+<a class="sourceLine" id="cb4-6" title="6">  <span class="kw">function</span>(callback) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-7" title="7">    <span class="co">// do some more stuff ...</span></a>
+<a class="sourceLine" id="cb4-8" title="8">    <span class="at">callback</span>(<span class="kw">null</span><span class="op">,</span> <span class="st">&#39;two&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb4-9" title="9">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-10" title="10"> ]<span class="op">,</span></a>
+<a class="sourceLine" id="cb4-11" title="11">  <span class="co">// optional callback</span></a>
+<a class="sourceLine" id="cb4-12" title="12">  <span class="kw">function</span>(err<span class="op">,</span> results) <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-13" title="13">  <span class="co">// results is now equal to [&#39;one&#39;, &#39;two&#39;]</span></a>
+<a class="sourceLine" id="cb4-14" title="14">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb4-15" title="15">)<span class="op">;</span></a></code></pre></div>
+<h2 id="dependent-asynchronous-operations-in-series">Dependent asynchronous operations in series</h2>
+<p>The method <a href="https://caolan.github.io/async/v3/docs.html#waterfall"><code>async.waterfall()</code></a> is used to run multiple asynchronous operations in sequence when each operation is dependent on the result of the previous operation.</p>
+<p>The callback invoked by each asynchronous function contains <code>null</code> for the first argument and results in subsequent arguments. Each function in the series takes the results arguments of the previous callback as the first parameters, and then a callback function. When all operations are complete, a final callback is invoked with the result of the last operation. The way this works is more clear when you consider the code fragment below (this example is from the <em>async</em> documentation):</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">async</span>.<span class="at">waterfall</span>([</a>
+<a class="sourceLine" id="cb5-2" title="2">  <span class="kw">function</span>(callback) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-3" title="3">    <span class="at">callback</span>(<span class="kw">null</span><span class="op">,</span> <span class="st">&#39;one&#39;</span><span class="op">,</span> <span class="st">&#39;two&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-4" title="4">  <span class="op">},</span></a>
+<a class="sourceLine" id="cb5-5" title="5">  <span class="kw">function</span>(arg1<span class="op">,</span> arg2<span class="op">,</span> callback) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-6" title="6">    <span class="co">// arg1 now equals &#39;one&#39; and arg2 now equals &#39;two&#39;</span></a>
+<a class="sourceLine" id="cb5-7" title="7">    <span class="at">callback</span>(<span class="kw">null</span><span class="op">,</span> <span class="st">&#39;three&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-8" title="8">  <span class="op">},</span></a>
+<a class="sourceLine" id="cb5-9" title="9">  <span class="kw">function</span>(arg1<span class="op">,</span> callback) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-10" title="10">    <span class="co">// arg1 now equals &#39;three&#39;</span></a>
+<a class="sourceLine" id="cb5-11" title="11">    <span class="at">callback</span>(<span class="kw">null</span><span class="op">,</span> <span class="st">&#39;done&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-12" title="12">  <span class="op">}</span></a>
+<a class="sourceLine" id="cb5-13" title="13">]<span class="op">,</span> <span class="kw">function</span> (err<span class="op">,</span> result) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-14" title="14">  <span class="co">// result now equals &#39;done&#39;</span></a>
+<a class="sourceLine" id="cb5-15" title="15"><span class="op">}</span></a>
+<a class="sourceLine" id="cb5-16" title="16">)<span class="op">;</span></a></code></pre></div>
+<h2 id="installing-async">Installing async</h2>
+<p>Install the async module using the NPM package manager so that we can use it in our code. You do this in the usual way, by opening a prompt in the root of the <em>LocalLibrary</em> project and entering the following command:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb6-1" title="1"><span class="ex">npm</span> install async</a></code></pre></div>
+<h2 id="next-steps">Next steps</h2>
+<ul>
+<li>Return to <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/Displaying_data">Express Tutorial Part 5: Displaying library data</a>.</li>
+<li>Proceed to the next subarticle of Part 5: <a href="/en-US/docs/Learn/Server-side/Express_Nodejs/Displaying_data/Template_primer">Template primer</a>.</li>
+</ul>
